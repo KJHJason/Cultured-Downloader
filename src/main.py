@@ -182,13 +182,12 @@ def get_driver(browserType):
     if browserType == "chrome":
         #minimise the browser window and hides unnecessary text output
         cOptions = chromeOptions()
-        cOptions.add_argument('--headless')
-        cOptions.add_argument('--disable-gpu')
+        cOptions.headless = True
         cOptions.add_argument('--log-level=3')
 
         # for checking response code
         capabilities = DesiredCapabilities.CHROME.copy()
-        capabilities["loggingPrefs"] = {"performance": "ALL"}
+        capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
 
         # auto downloads chromedriver.exe
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
@@ -198,7 +197,7 @@ def get_driver(browserType):
     elif browserType == "firefox":
         #minimise the browser window and hides unnecessary text output
         fOptions = firefoxOptions()
-        fOptions.add_argument('--headless')
+        fOptions.headless = True
         fOptions.add_argument('--log-level=3')
 
         # for checking response code
@@ -215,7 +214,7 @@ def get_driver(browserType):
     elif browserType == "edge":
         #minimise the browser window and hides unnecessary text output
         eOptions = edgeOptions()
-        eOptions.add_argument('--headless')
+        eOptions.headless = True
         eOptions.add_argument('--log-level=3')
 
         # for checking response code
@@ -318,7 +317,7 @@ def print_progress_bar(prog, totalEl, caption):
     barLength = 20 #size of progress bar
     currentProg = prog / totalEl
     sys.stdout.write("\r")
-    sys.stdout.write(f"[{'=' * int(barLength * currentProg):{barLength}s}] {int(100 * currentProg)}% {caption}")
+    sys.stdout.write(f"{S.YELLOW}[{'=' * int(barLength * currentProg):{barLength}s}] {int(100 * currentProg)}% {caption}{END}")
     sys.stdout.flush()
 
 def check_if_directory_has_files(dirPath):
@@ -401,12 +400,12 @@ def save_image(imageURL, pathToSave):
         with open(pathToSave, "wb") as f:
             shutil.copyfileobj(r.raw, f)
 
-def download(directoryPath, urlInput, website):
+def download(urlInput, website, subFolderPath):
     driver.get(urlInput)
     if website == "FantiaImageURL":
         image = driver.find_element(by=By.TAG_NAME, value="img")
         imageSrc = image.get_attribute("src")
-        imagePath = directoryPath.joinpath(get_image_name(imageSrc, "Fantia"))
+        imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Fantia"))
         save_image(imageSrc, imagePath)
     elif website == "FantiaPost":
         imagePosts = driver.find_elements(by=By.CLASS_NAME, value="fantiaImage")
@@ -415,13 +414,13 @@ def download(directoryPath, urlInput, website):
             driver.get(imageHREFLink)
             image = driver.find_element(by=By.TAG_NAME, value="img")
             imageSrc = image.get_attribute("src")
-            imagePath = directoryPath.joinpath(get_image_name(imageSrc, "Fantia"))
+            imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Fantia"))
             save_image(imageSrc, imagePath)
     elif website == "Pixiv":
         images = driver.find_elements(by=By.XPATH, value="//img[@class='sc-14k46gk-1']")
         for image in images:
             imageSrc = get_pixiv_image_full_res_url(image.get_attribute("src"))
-            imagePath = directoryPath.joinpath(get_image_name(imageSrc, "Pixiv"))
+            imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Pixiv"))
             save_image(imageSrc, imagePath)
 
 def create_subfolder():
@@ -471,11 +470,13 @@ def main():
         if cmdInput == "1":
             imagePath = create_subfolder()
             if imagePath != "X":
+                # imagesNum = int(input("Enter number of images to download: "))
                 urlInput = input("Enter the URL of the first image: ")
                 imageCounter = 1
                 print(f"{S.YELLOW}Downloading images...{END}")
 
                 urlArray = []
+                # for i in range(imagesNum):
                 while True:
                     driver.get(urlInput)
                     logs = driver.get_log("performance")
@@ -485,21 +486,23 @@ def main():
                     urlArray.append(urlInput)
 
                     # increment the urlInput by one to retrieve the next image
-                    spiltURL = url.split("/")
-                    urlNumString = spiltURL[-1]
-                    urlNum = str(int(urlNumString) + 1)
-                    urlInput = "/".join(spiltURL[0:-1]) + urlNum
+                    splitURL = urlInput.split("/")
+                    urlNum = str(int(splitURL[-1]) + 1)
+                    urlPartsArray = splitURL[0:-1]
+                    urlPartsArray.append(urlNum)
+                    urlInput = "/".join(urlPartsArray)
+                    del urlPartsArray
 
                 if imageCounter != 1:
                     progress = 1
                     totalImages = len(urlArray)
                     for url in urlArray:
-                        download(directoryPath, url, "FantiaImageURL")
+                        download(url, "FantiaImageURL", imagePath)
                         print_progress_bar(progress, totalImages, f"{S.YELLOW}Downloading image no.{progress} out of {totalImages}{END}")
                         sleep(0.1)
                         progress += 1
 
-                    print(f"{S.GREEN}All {imageCounter} images downloaded successfully!{END}")
+                    print(f"\n{S.GREEN}All {imageCounter - 1} images downloaded successfully!{END}")
                 else: print(f"{S.RED}Error: No images to download.{END}")
         elif cmdInput == "2":
             imagePath = create_subfolder()
@@ -527,24 +530,17 @@ def main():
                     progress = 1
                     totalImages = len(urlArray)
                     for url in urlArray:
-                        download(directoryPath, url, "FantiaImageURL")
+                        download(url, "FantiaImageURL", imagePath)
                         print_progress_bar(progress, totalImages, f"{S.YELLOW}Downloading image no.{progress} out of {totalImages}{END}")
                         sleep(0.1)
                         progress += 1
 
-                    print(f"{S.GREEN}All {imageCounter} images downloaded successfully!{END}")
+                    print(f"{S.GREEN}All {imageCounter - 1} images downloaded successfully!{END}")
                 else: print(f"{S.RED}Error: No images to download.{END}")
         elif cmdInput == "3":
-            while True:
-                foldername = input("Enter the name of the folder you want to save the images: ")
-                pathtodownload = str(pathlib.Path(__file__).resolve().parent)
-                
-                directoryPath = pathlib.Path(pathtodownload).joinpath("downloaded_images", foldername)
-                directoryPath.mkdir(parents=True, exist_ok=True)
-
-                if check_if_directory_has_files(directoryPath): print(f"{S.RED}Error: Folder already exists with images inside.{END}\n{S.GREEN}Please enter a different NEW name for a new folder.{END}")
-                else: break
-        elif cmdInput == "4": pass
+            imagePath = create_subfolder()
+        elif cmdInput == "4":
+            imagePath = create_subfolder()
         elif cmdInput == "5":
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
@@ -643,7 +639,8 @@ if __name__ == "__main__":
             if continueLoggingIn == "y": change_account_details("All")
             elif continueLoggingIn == "retry": continue
             else:
-                print(f"{S.YELLOW}Continuing as a guest...{END}")
+                print(f"{S.YELLOW}Ignoring login errors...{END}")
+                print(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}")
                 break
 
     main()
