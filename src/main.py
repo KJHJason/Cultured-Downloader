@@ -7,6 +7,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import pathlib, json, sys, shutil
 from colorama import Fore, Style
 from time import sleep
+from cryptography.fernet import Fernet
 
 # function below from https://stackoverflow.com/questions/5799228/how-to-get-status-code-by-using-selenium-py-python-code
 def get_status(logs):
@@ -77,18 +78,24 @@ def check_if_json_file_exists():
             json.dump({}, f)
     else: print(f"{Fore.GREEN}Loading configurations from config.json...{RESET}")
 
+def encrypt_string(inputString):
+    return decKey.encrypt(inputString.encode()).decode()
+
+def decrypt_string(inputString):
+    return decKey.decrypt(inputString.encode()).decode()
+
 def get_user_account():
     jsonPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "config.json")
     with open(jsonPath, "r") as f:
         config = json.load(f)
     try:
-        fantiaEmail = config["Accounts"]["Fantia"]["User"].strip()
-        fantiaPassword = config["Accounts"]["Fantia"]["Password"].strip()
-        pixivUsername = config["Accounts"]["pixiv"]["User"].strip()
-        pixivPassword = config["Accounts"]["pixiv"]["Password"].strip()
+        fantiaEmail = config["Accounts"]["Fantia"]["User"]
+        fantiaPassword = config["Accounts"]["Fantia"]["Password"]
+        pixivUsername = config["Accounts"]["pixiv"]["User"]
+        pixivPassword = config["Accounts"]["pixiv"]["Password"]
         if fantiaEmail == "" or fantiaPassword == "" or pixivUsername == "" or pixivPassword == "":
             raise Exception("Account details had empty values.")
-        return fantiaEmail, fantiaPassword, pixivUsername, pixivPassword
+        return fantiaEmail, decrypt_string(fantiaPassword), pixivUsername, decrypt_string(pixivPassword)
     except:
         print(f"{Fore.RED}Error: config.json does not have all the necessary account details.{Fore.RESET}")
 
@@ -115,7 +122,7 @@ def get_user_account():
             else: print(f"{Fore.RED}Error: Invalid Input.{Fore.RESET}")
         
         if configInput == "n": 
-            print(f"{Fore.RED}Warning: Since you have not added your account details yet, you will not be able to download any images that requires membership.\nHence, you can add your account details later or manually in the config.json file.{Fore.RESET}")
+            print(f"{Fore.RED}Warning: Since you have not added your account details yet, you will not be able to download any images that requires a membership.\nHence, you can add your account details later.{Fore.RESET}")
 
             if not accountsKeyExists:
                 config.update(data)
@@ -128,9 +135,9 @@ def get_user_account():
             fantiaEmail = input("Enter your email address for Fantia: ").strip()
             if accountsKeyExists: data["Fantia"]["User"] = fantiaEmail
             else: data["Accounts"]["Fantia"]["User"] = fantiaEmail
-            fantiaPassword = input("Enter your password for Fantia: ").strip()
-            if accountsKeyExists: data["Fantia"]["Password"] = fantiaPassword
-            else: data["Accounts"]["Fantia"]["Password"] = fantiaPassword
+            fantiaPassword = input("Enter your password for Fantia: ")
+            if accountsKeyExists: data["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+            else: data["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
 
             print(f"{Fore.GREEN}Fantia Account successfully added!{RESET}")
 
@@ -139,16 +146,13 @@ def get_user_account():
             pixivUsername = input("Enter your username for pixiv: ").strip()
             if accountsKeyExists: data["pixiv"]["User"] = pixivUsername
             else: data["Accounts"]["pixiv"]["User"] = pixivUsername
-            pixivPassword = input("Enter your password for pixiv: ").strip()
-            if accountsKeyExists: data["pixiv"]["Password"] = pixivPassword
-            else: data["Accounts"]["pixiv"]["Password"] = pixivPassword
+            pixivPassword = input("Enter your password for pixiv: ")
+            if accountsKeyExists: data["pixiv"]["Password"] = encrypt_string(pixivPassword)
+            else: data["Accounts"]["pixiv"]["Password"] = encrypt_string(pixivPassword)
 
             with open(jsonPath, "w") as f:
-                if not accountsKeyExists:
-                    config.update(data)
-                    json.dump(config, f, indent=4)
-                else:
-                    json.dump(config, f, indent=4)
+                if not accountsKeyExists: config.update(data)
+                json.dump(config, f, indent=4)
 
             print(f"{Fore.GREEN}pixiv Account successfully added!{RESET}")
             
@@ -190,10 +194,55 @@ def get_chrome_driver_path():
                 else: print(f"{Fore.RED}Error: ChromeDriver.exe does not exist in the path.{Fore.RESET}")
             else: print(f"{Fore.RED}Error: ChromeDriver.exe does not exist in the path.{Fore.RESET}")
 
+def get_key():
+    jsonPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "config.json")
+    with open(jsonPath, "r") as f:
+        config = json.load(f)
+    try:
+        key = config["Key"]
+        if key == "":
+            raise Exception("Key is empty.")
+        return key
+    except:
+        print(f"{Fore.RED}Error: Key is not defined in the config.json file.{Fore.RESET}")
+
+        keyExists = False
+        if "Key" in config:
+            dataKey = config["Key"]
+            keyExists = True
+        else: 
+            dataKey = {"Key": ""}
+            
+        key = Fernet.generate_key().decode()
+
+        if keyExists: dataKey = key
+        else: dataKey["Key"] = key
+
+        with open(jsonPath, "w") as f:
+            if not keyExists: config.update(dataKey)
+            json.dump(config, f, indent=4)
+
+        return key
+
 def main():
+    # menu
+    menuEn = f"""
+---------------------- {Fore.YELLOW}Download Options{RESET} ----------------------
+      {Fore.GREEN}1. Download images from Fantia using an image URL{RESET}
+      {Fore.GREEN}2. Download images from a Fantia post URL{RESET}
+      {Fore.CYAN}3. Download images from a pixiv fanbox post URL{RESET}
+      {Fore.RED}X. Shutdown the program{RESET}
+ """
+    menuJp = f"""
+---------------------- {Fore.YELLOW}ダウンロードのオプション{RESET} ----------------------
+      {Fore.GREEN}1. 画像URLでFantiaから画像をダウンロード{RESET}
+      {Fore.GREEN}2. Fantia投稿URLから画像をダウンロードする{RESET}
+      {Fore.CYAN}3. pixivファンボックスの投稿URLから画像をダウンロードする{RESET}
+      {Fore.RED}X. プログラムを終了する{RESET}
+"""
+    menu = menuEn if lang == "en" else menuJp
     while True:
-        if lang == "en": print(menuEn)
-        elif lang == "jp": print(menuJp)
+        print(menu)
         cmdInput = input("Enter command: ").upper()
         if cmdInput == "1":
             while True:
@@ -294,6 +343,13 @@ if __name__ == "__main__":
     # checks if config.json exists and the necessary configs are defined
     check_if_json_file_exists()
 
+    # generate a key for the encryption of passwords so that it won't be stored in plaintext
+    global decKey
+    try: decKey = Fernet(get_key())
+    except:
+        print(f"{Fore.RED}Fatal Error: Unable to retrieve key for decryption.{RESET}")
+        sys.exit(1)
+
     # run Install_Chrome_Driver.py if you do not have chromedriver.exe downloaded
     gService = Service(get_chrome_driver_path())
 
@@ -301,29 +357,14 @@ if __name__ == "__main__":
     global fantiaPassword
     global pixivUsername
     global pixivPassword
-    fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account()
+    try: fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account()
+    except:
+        print(f"{Fore.RED}Fatal Error: Unable to retrieve user accounts for Fantia and pixiv Fanbox.{RESET}")
+        sys.exit(1)
 
     # start webdriver
     global driver
     driver = webdriver.Chrome(service=gService, options=chrome_options, desired_capabilities=capabilities)
-
-    # menu
-    global menuEn
-    global menuJp
-    menuEn = f"""
----------------------- {Fore.YELLOW}Download Options{RESET} ----------------------
-      {Fore.GREEN}1. Download images from Fantia using an image URL{RESET}
-      {Fore.GREEN}2. Download images from a Fantia post URL{RESET}
-      {Fore.CYAN}3. Download images from a pixiv fanbox post URL{RESET}
-      {Fore.RED}X. Shutdown the program{RESET}
- """
-    menuJp = f"""
----------------------- {Fore.YELLOW}ダウンロードのオプション{RESET} ----------------------
-      {Fore.GREEN}1. 画像URLでFantiaから画像をダウンロード{RESET}
-      {Fore.GREEN}2. Fantia投稿URLから画像をダウンロードする{RESET}
-      {Fore.CYAN}3. pixivファンボックスの投稿URLから画像をダウンロードする{RESET}
-      {Fore.RED}X. プログラムを終了する{RESET}
-"""
 
     global lang
     while True:
@@ -333,4 +374,5 @@ if __name__ == "__main__":
 
     main()
     print(f"{Fore.RED}Program terminated.{RESET}")
-    # driver.close()
+    print(f"{Fore.YELLOW}Thank you for using Cultured Downloader.{RESET}")
+    driver.close()

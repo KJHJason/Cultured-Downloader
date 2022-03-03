@@ -1,3 +1,3 @@
-venv/*
+dep/*
 test.py
 src/configs/config.json
