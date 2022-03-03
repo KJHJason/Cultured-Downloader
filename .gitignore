@@ -2,3 +2,4 @@ dep/*
 test.py
 src/configs/config.json
 geckodriver.log
+src/__pycache__/*
