@@ -42,16 +42,20 @@ def shutdown():
 def error_shutdown(**errorMessages):
     if "en" in errorMessages and lang == "en":
         enErrorMessages = errorMessages.get("en")
-        for line in enErrorMessages:
-            print(f"{S.RED}{line}{END}")
+        if type(enErrorMessages) == tuple:
+            for line in enErrorMessages:
+                print(f"{S.RED}{line}{END}")
+        else: print(f"{S.RED}{enErrorMessages}{END}")
         input("Please enter any key to exit...")
         print("Thank you for your understanding.")
         sleep(2)
         sys.exit(1)
     elif "jp" in errorMessages and lang == "jp":
         jpErrorMessages = errorMessages.get("jp")
-        for line in jpErrorMessages:
-            print(f"{S.RED}{line}{END}")
+        if type(jpErrorMessages) == tuple:
+            for line in jpErrorMessages:
+                print(f"{S.RED}{line}{END}")
+        else: print(f"{S.RED}{jpErrorMessages}{END}")
         input("何か入力すると終了します。。。")
         print("ご理解頂き誠にありがとうございます。")
         sleep(2)
@@ -79,31 +83,35 @@ def get_input_from_user(**kwargs):
     warning = kwargs.get("warning")
 
     if prints != None:
-        for line in prints:
-            print(f"{S.YELLOW}{line}{END}")
+        if type(prints) == tuple:
+            for line in prints:
+                print(f"{S.YELLOW}{line}{END}")
+        else: print(f"{S.YELLOW}{prints}{END}")
 
     while True:
-        userInput = input(prompt).lower()
+        userInput = input(prompt).lower().strip()
         if userInput in commands: return userInput
         else: 
             try:
                 if warning and lang == "en": print(f"{S.RED}Error: {warning}.{END}")
                 elif warning and lang == "jp": print(f"{S.RED}エラー: {warning}{END}")
                 else: 
-                    commandToPrint = " or ".join(commands)
+                    if lang == "en": commandToPrint = " or ".join(commands)
+                    else: commandToPrint = "または".join(commands)
                     print_in_both_en_jp(
-                        en=(f"{S.RED}Error: Invalid input. Please enter a {commandToPrint}.{END}"),
+                        en=(f"{S.RED}Error: Invalid input. Please enter {commandToPrint}.{END}"),
                         jp=(f"{S.RED}エラー: 不正な入力です。{commandToPrint}を入力してください。{END}")
                     )
             except NameError:
                 # if lang is not defined yet
+                commandToPrintEn = " or ".join(commands)
+                commandToPrintJp = "または".join(commands)
                 if warning: 
-                    print(f"{S.RED}Error: {warning}.{END}")
+                    print(f"{S.RED}Error: Invalid language prefix entered.{END}")
                     print(f"{S.RED}エラー: 入力された言語プレフィックスが無効です。{END}")
                 else: 
-                    commandToPrint = " or ".join(commands)
-                    print(f"{S.RED}Error: Invalid input. Please enter a {commandToPrint}.{END}"),
-                    print(f"{S.RED}エラー: 不正な入力です。{commandToPrint}を入力してください。{END}")
+                    print(f"{S.RED}Error: Invalid input. Please enter {commandToPrintEn}.{END}"),
+                    print(f"{S.RED}エラー: 不正な入力です。{commandToPrintJp}を入力してください。{END}")
 
 def check_if_json_file_exists():
     jsonFolderPath = pathlib.Path(__file__).resolve().parent.joinpath("configs")
@@ -288,52 +296,54 @@ def get_user_account():
             return fantiaEmail, fantiaPassword, pixivUsername, pixivPassword
 
 def change_account_details(typeToChange, **credToUpdate):
-    credentialsToChangeTuple = credToUpdate.get("cred")
+    credentialsToChangeList = credToUpdate.get("cred")
     with open(jsonPath, "r") as f:
         config = json.load(f)
     try:
-        if typeToChange == "Fantia":
+        if typeToChange == "fantia":
             print_in_both_en_jp(
                 en=(f"\n{S.YELLOW}Changing account details for Fantia...{END}"),
                 jp=(f"\n{S.YELLOW}Fantiaアカウント情報を変更する...{END}")
             )
 
-            if "user" in credentialsToChangeTuple:
+            if "username" in credentialsToChangeList:
                 if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
                 else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
                 if fantiaEmail.upper() != "X": config["Accounts"]["Fantia"]["User"] = fantiaEmail
 
-            if "pass" in credentialsToChangeTuple:
+            if "password" in credentialsToChangeList:
                 if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
                 else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
                 if fantiaPassword.upper() != "X": config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
 
-        elif typeToChange == "Pixiv":
+        elif typeToChange == "pixiv":
             print_in_both_en_jp(
                 en=(f"\n{S.YELLOW}Changing Pixiv Account Details...{END}"),
                 jp=(f"\n{S.YELLOW}Pixivアカウント情報を変更する...{END}")
             )
 
-            if "user" in credentialsToChangeTuple:
-                pixivUsername = input("Enter your new username (X to cancel): ").strip()
+            if "username" in credentialsToChangeList:
+                if lang == "en": pixivUsername = input("Enter your username for Pixiv (X to cancel): ").strip()
+                else: pixivUsername = input("新しいPixivアカウントのユーザー名を入力してください（\"X\"でキャンセル）： ").strip()
                 if pixivUsername.upper() != "X": config["Accounts"]["Pixiv"]["User"] = pixivUsername
 
-            if "pass" in credentialsToChangeTuple:
-                pixivPassword = input("Enter your new password (X to cancel): ")
+            if "password" in credentialsToChangeList:
+                if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
                 if pixivPassword.upper() != "X": config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
                 
-        elif typeToChange == "All":
+        elif typeToChange == "all":
             print_in_both_en_jp(
                 en=(f"\n{S.YELLOW}Changing account details for Fantia...{END}"),
                 jp=(f"\n{S.YELLOW}Fantiaアカウント情報を変更する...{END}")
             )
 
-            if "user" in credentialsToChangeTuple:
+            if "username" in credentialsToChangeList:
                 if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
                 else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
                 if fantiaEmail.upper() != "X": config["Accounts"]["Fantia"]["User"] = fantiaEmail
             
-            if "pass" in credentialsToChangeTuple:
+            if "password" in credentialsToChangeList:
                 if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
                 else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
                 if pixivPassword.upper() != "X": config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
@@ -343,12 +353,12 @@ def change_account_details(typeToChange, **credToUpdate):
                 jp=(f"\n{S.YELLOW}Pixivアカウント情報を変更する...{END}")
             )
 
-            if "user" in credentialsToChangeTuple:
+            if "username" in credentialsToChangeList:
                 if lang == "en": pixivUsername = input("Enter your username for Pixiv (X to cancel): ").strip()
                 else: pixivUsername = input("新しいPixivアカウントのユーザー名を入力してください（\"X\"でキャンセル）： ").strip()
                 if pixivUsername.upper() != "X": config["Accounts"]["Pixiv"]["User"] = pixivUsername
 
-            if "pass" in credentialsToChangeTuple:
+            if "password" in credentialsToChangeList:
                 if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
                 else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
                 if pixivPassword.upper() != "X": config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
@@ -442,7 +452,10 @@ def get_driver(browserType):
     return driver
 
 def get_user_browser_preference():
-    selectedBrowser = get_input_from_user(prompt="What browser would you like to use?", command=("chrome", "firefox", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Firefox, Edge."), warning="Invalid browser, please enter a browser from the available browsers.")
+    if lang == "en":
+        selectedBrowser = get_input_from_user(prompt="What browser would you like to use?", command=("chrome", "firefox", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Firefox, Edge."), warning="Error: Invalid browser, please enter a browser from the available browsers.")
+    else:
+        selectedBrowser = get_input_from_user(prompt="どのブラウザを使用しますか？", command=("chrome", "firefox", "edge"), prints=("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Firefox, Edge。"), warning="エラー： 不正なブラウザです。使用可能なブラウザから選んでください。")
     return selectedBrowser
 
 def check_browser_config():
@@ -470,7 +483,10 @@ def save_browser_config(selectedBrowser):
     config["Browser"] = selectedBrowser
     with open(jsonPath, "w") as f:
         json.dump(config, f, indent=4)
-    print(f"{S.GREEN}{selectedBrowser.title()} will be automatically loaded next time!{END}")
+    print_in_both_en_jp(
+        en=(f"{S.GREEN}{selectedBrowser.title()} will be automatically loaded next time!{END}"),
+        jp=(f"{S.GREEN}{selectedBrowser.title()}は次回起動時に自動的にロードされます！{END}")
+    )
 
 def get_key():
     with open(jsonPath, "r") as f:
@@ -481,7 +497,10 @@ def get_key():
             raise Exception("Key is empty.")
         return key
     except:
-        print(f"{S.RED}Error: Key is not defined in the config.json file.{END}")
+        print_in_both_en_jp(
+            en=(f"{S.RED}Error: Key is not defined in the config.json file.{END}"),
+            jp=(f"{S.RED}エラー： config.jsonのKeyが空です。{END}")
+        )
 
         keyExists = False
         if "Key" in config:
@@ -531,10 +550,16 @@ def fantia_login(fantiaEmail, fantiaPassword):
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.CLASS_NAME, "loggedin"))
         )
-        print(f"{S.GREEN}Successfully logged in to Fantia!{END}")
+        print_in_both_en_jp(
+            en=(f"{S.GREEN}Successfully logged in to Fantia!{END}"),
+            jp=(f"{S.GREEN}Fantiaへのログインに成功しました!{END}")
+        )
     except TimeoutException:
-        # if there is no element with a class name of "avatar", it will raise a TimeoutException
-        print(f"{S.RED}Error: Fantia login failed.{END}")
+        # if there is no element with a class name of "loggedin", it will raise a TimeoutException
+        print_in_both_en_jp(
+            en=(f"{S.RED}Error: Fantia login failed.{END}"),
+            jp=(f"{S.RED}エラー： Fantiaのログインに失敗しました。{END}")
+        )
         return False
     except:
         error_shutdown(
@@ -555,10 +580,16 @@ def pixiv_login(pixivUsername, pixivPassword):
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.XPATH, "//a[@href='/creators/supporting' and @class='sc-1mdohqc-0 ilARNI']"))
         )
-        print(f"{S.GREEN}Successfully logged in to Pixiv!{END}")
+        print_in_both_en_jp(
+            en=(f"{S.GREEN}Successfully logged in to Pixiv!{END}"),
+            jp=(f"{S.GREEN}Pixivへのログインに成功しました!{END}")
+        )
     except TimeoutException:
-        # if there is no element with a class name of "avatar", it will raise a TimeoutException
-        print(f"{S.RED}Error: Pixiv login failed.{END}")
+        # if there is no anchor tag element with a class of "sc-1mdohqc-0 ilARNI", it will raise a TimeoutException
+        print_in_both_en_jp(
+            en=(f"{S.RED}Error: Pixiv login failed.{END}"),
+            jp=(f"{S.RED}エラー： Pixivのログインに失敗しました。{END}")
+        )
         return False
     except:
         error_shutdown(
@@ -607,6 +638,18 @@ def print_progress_bar(prog, totalEl, caption):
     sys.stdout.write(f"{S.YELLOW}[{'=' * int(barLength * currentProg):{barLength}s}] {int(100 * currentProg)}% {caption}{END}")
     sys.stdout.flush()
 
+def print_download_completion_message(totalImage):
+    if totalImage > 0:
+        print_in_both_en_jp(
+            en=f"{S.GREEN}Successfully downloaded {totalImage} images!{END}",
+            jp=f"{S.GREEN}{totalImage}枚の画像をダウンロードしました!{END}"
+        )
+    else:
+        print_in_both_en_jp(
+            en=(f"{S.RED}Error: No images to download.{END}"),
+            jp=(f"{S.RED}エラー： ダウンロードする画像がありません。{END}")
+        )
+
 def download(urlInput, website, subFolderPath):
     driver.get(urlInput)
 
@@ -632,7 +675,11 @@ def download(urlInput, website, subFolderPath):
             imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Fantia"))
             save_image(imageSrc, imagePath)
 
-            print_progress_bar(imagePostsProgress, totalImagePosts, f"Stage 1: Downloading image no.{imagePostsProgress} out of {totalImagePosts}")
+            if lang == "en":
+                print_progress_bar(imagePostsProgress, totalImagePosts, f"Stage 1: Downloading image no.{imagePostsProgress} out of {totalImagePosts}")
+            elif lang == "jp":
+                print_progress_bar(imagePostsProgress, totalImagePosts, f"ステージ 1: 画像 {imagePostsProgress} / {totalImagePosts} をダウンロード中")
+            
             imagePostsProgress += 1
             driver.get(urlInput) # returns to the original page
 
@@ -651,13 +698,16 @@ def download(urlInput, website, subFolderPath):
             imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Fantia"))
             save_image(imageSrc, imagePath)
 
-            print_progress_bar(premiumImagesProgress, totalPremiumImages, f"{S.YELLOW}Stage 2: Downloading image no.{premiumImagesProgress} out of {totalPremiumImages}{END}")
+            if lang == "en":
+                print_progress_bar(premiumImagesProgress, totalPremiumImages, f"{S.YELLOW}Stage 2: Downloading image no.{premiumImagesProgress} out of {totalPremiumImages}{END}")
+            else:
+                print_progress_bar(premiumImagesProgress, totalPremiumImages, f"ステージ 2: 画像 {premiumImagesProgress} / {totalPremiumImages} をダウンロード中")
+
             premiumImagesProgress += 1
             driver.get(urlInput) # returns to the original page
 
         totalImages = totalImagePosts + totalPremiumImages
-        if totalImages != 0: print(f"{S.GREEN}Successfully downloaded {totalImages} images!{END}")
-        else: print(f"{S.RED}Error: No images to download.{END}")
+        print_download_completion_message(totalImages)
 
     elif website == "Pixiv":
         # downloads gifs or static images based on a pixiv post
@@ -671,57 +721,83 @@ def download(urlInput, website, subFolderPath):
             imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Pixiv"))
             save_image(imageSrc, imagePath)
 
-            print_progress_bar(progress, totalImages, f"Downloading image no.{progress} out of {totalImages}")
+            if lang == "en":
+                print_progress_bar(progress, totalImages, f"Downloading image no.{progress} out of {totalImages}")
+            else:
+                print_progress_bar(progress, totalImages, f"画像 {progress} / {totalImages} をダウンロード中")
+          
             progress += 1
             driver.get(urlInput) # returns to the original page
 
+        print_download_completion_message(totalImages)
+
 def create_subfolder():
     while True:
-        foldername = input("Enter the name of the folder you want to save the images (X to cancel): ")
-        if foldername.upper() == "X": return "X"
-        
-        # main download folder
-        if not directoryPath.is_dir():
-            directoryPath.mkdir(parents=True)
+        if lang == "en": folderName = input("Enter the name of the folder you want to save the images (X to cancel): ").strip()
+        else: folderName = input("画像を保存するフォルダーの名前を入力してください (\"X\"でキャンセル): ").strip()
+        if folderName.upper() == "X": return "X"
+        if folderName != "":
+            
+            # main download folder
+            if not directoryPath.is_dir():
+                directoryPath.mkdir(parents=True)
 
-        # subfolder
-        imagePath = directoryPath.joinpath(foldername)
-        if not imagePath.is_dir():
-            imagePath.mkdir(parents=True)
+            # subfolder
+            imagePath = directoryPath.joinpath(folderName)
+            if not imagePath.is_dir():
+                imagePath.mkdir(parents=True)
 
-        if check_if_directory_has_files(imagePath): print(f"{S.RED}Error: Folder already exists with images inside.\nPlease enter a different NEW name for a new folder.{END}")
-        else: return imagePath
+            if check_if_directory_has_files(imagePath): 
+                print_in_both_en_jp(
+                    en=(f"{S.RED}Error: Folder already exists with images inside.\nPlease enter a different {END}{S.UNDERLINE}{S.BOLD}{S.RED}NEW{END} {S.RED}name for a new folder.{END}"),
+                    jp=(f"{S.RED}エラー： フォルダはすでに存在し、その中に画像があります。{END}{S.UNDERLINE}{S.BOLD}{S.RED}新しい名前{END}{S.RED}を入力してください。{END}")
+                )
+            else: return imagePath
+        else:
+            print_in_both_en_jp(
+                en=(f"{S.RED}Error: Please enter a name for the folder.{END}"),
+                jp=(f"{S.RED}エラー： フォルダの名前を入力してください。{END}")
+            )
 
 def print_menu():
+    if "Fantia" in loggedIn: emailFantia = loggedIn["Fantia"]["email"]
+    else: emailFantia = "Guest"
+    if "Pixiv" in loggedIn: usernamePixiv = loggedIn["Pixiv"]["username"]
+    else: usernamePixiv = "Guest"
+
     if lang == "en": menu = f"""
-========================== {S.LIGHT_BLUE}CULTURED DOWNLOADER {version}{END} ==========================
-=============== https://github.com/KJHJason/Cultured-Downloader ===============
----------------------- {S.YELLOW}Download Options{END} ----------------------
+> You are currently logged in as...
+> Fantia Email: {emailFantia}
+> Pixiv Username: {usernamePixiv}
+
+--------------------- {S.YELLOW}Download Options{END} --------------------
       {S.GREEN}1. Download images from Fantia using an image URL{END}
       {S.GREEN}2. Download images from a Fantia post URL{END}
       {S.CYAN}3. Download images from a Pixiv Fanbox post URL{END}
 
 ---------------------- {S.YELLOW}Config Options{END} ----------------------
-               {S.LIGHT_BLUE}4. Update Account Details{END}
-               {S.LIGHT_BLUE}5. Change Default Browser{END}
-               {S.LIGHT_BLUE}6. Change Language{END}
-               {S.LIGHT_BLUE}7. Change Download Folder{END}
-               {S.RED}X. Shutdown the program{END}
+      {S.LIGHT_BLUE}4. Update Account Details{END}
+      {S.LIGHT_BLUE}5. Change Default Browser{END}
+      {S.LIGHT_BLUE}6. Change Language{END}
+      {S.RED}X. Shutdown the program{END}
  """
     else: menu = f"""
----------------------- {S.YELLOW}ダウンロードのオプション{END} ----------------------
+> あなたのログイン情報...
+> FantiaEメール: {emailFantia}
+> Pixivユーザー名: {usernamePixiv}
+
+--------------------- {S.YELLOW}ダウンロードのオプション{END} ---------------------
       {S.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
       {S.GREEN}2. Fantia投稿URLから画像をダウンロードする{END}
       {S.CYAN}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
 
 ---------------------- {S.YELLOW}コンフィグのオプション{END} ----------------------
-               {S.LIGHT_BLUE}4. アカウント情報を更新する{END}
-               {S.LIGHT_BLUE}5. ブラウザを変更する{END}
-               {S.LIGHT_BLUE}6. 言語を変更する{END}
-               {S.LIGHT_BLUE}7. ダウンロードフォルダを変更する{END}
-               {S.RED}X. プログラムを終了する{END}
+      {S.LIGHT_BLUE}4. アカウント情報を更新する{END}
+      {S.LIGHT_BLUE}5. ブラウザを変更する{END}
+      {S.LIGHT_BLUE}6. 言語を変更する{END}
+      {S.RED}X. プログラムを終了する{END}
 """
-    return menu
+    print(menu)
 
 def main():
     # declare global variables
@@ -734,7 +810,7 @@ def main():
     global lang
 
     loggedIn = {}
-    lang = get_input_from_user(prompt="Select a language/言語を選択してください (en/jp): ", command=("en", "jp"), warning="Invalid language prefix entered")
+    lang = get_input_from_user(prompt="Select a language/言語を選択してください (en/jp): ", command=("en", "jp"))
     print_in_both_en_jp(
         en=(f"{S.YELLOW}Running program...{END}"),
         jp=(f"{S.YELLOW}プログラムを実行する...{END}")
@@ -784,12 +860,16 @@ def main():
     if userLoginCmd == "x": shutdown()
     elif userLoginCmd == "y":
         # logging into Fantia and Pixiv
-        if lang == "en":
-            print(f"\n{S.YELLOW}Logging in to Fantia and Pixiv...{END}")
-            print(f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}")
-        else:
-            print(f"\n{S.YELLOW}FantiaとPixivにログイン中...{END}")
-            print(f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}")
+        print_in_both_en_jp(
+            en=(
+                f"\n{S.YELLOW}Logging in to Fantia and Pixiv...{END}", 
+                f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}"
+            ),
+            jp=(
+                f"\n{S.YELLOW}FantiaとPixivにログイン中...{END}",
+                f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}"
+            )
+        )
 
         loginOnce = False
         while True:
@@ -807,8 +887,10 @@ def main():
                 pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
             loginOnce = True
             if fantiaSuccess and pixivSuccess:
-                if lang == "en": print(f"{S.GREEN}Logins were successful!{END}")
-                else: print(f"{S.GREEN}ログインに成功しました！{END}")
+                print_in_both_en_jp(
+                    en=(f"{S.GREEN}Logins were successful!{END}"),
+                    jp=(f"{S.GREEN}ログインに成功しました！{END}")
+                )
                 loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
                 loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
                 break
@@ -818,7 +900,7 @@ def main():
                 else:
                     continueLoggingIn = get_input_from_user(prints=("\n再試行またはアカウント情報をすべて変更し、再度ログインしますか？", "使用できるコマンド：\n\"y\" アカウント情報を変更する。\n\"n\" ログインを中止します。\n\"r\" ログインを再試行する。"), prompt="続行するには、\"y\"または\"n\"または\"r\"を入力してください： ", command=("y", "n", "r"))
 
-                if continueLoggingIn == "y": change_account_details("All", cred=("user", "pass"))
+                if continueLoggingIn == "y": change_account_details("all", cred=["username", "password"])
                 elif continueLoggingIn == "r":
                     if not fantiaSuccess: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
                     if not pixivSuccess: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
@@ -834,7 +916,7 @@ def main():
                     break
 
         if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-        if pixivSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
+        if pixivSuccess: loggedIn["Pixiv"] = {"email": fantiaEmail, "password": fantiaPassword}
     else:
         print_in_both_en_jp(
             en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
@@ -842,19 +924,34 @@ def main():
         )
 
     cmdInput = ""
+    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "x")
     while cmdInput != "x":
         print_menu()
-        cmdInput = get_input_from_user(prompt="Enter command: ", command=("1", "2", "3", "4", "5", "6", "7", "x"), warning="Invalid command input, please enter a valid command from the menu above.")
+        if lang == "en":
+            cmdInput = get_input_from_user(prompt="Enter command: ", command=cmdCommands, warning="Error: Invalid command input, please enter a valid command from the menu above.")
+        else:
+            cmdInput = get_input_from_user(prompt="コマンドを入力してください： ", command=cmdCommands, warning="エラー： 不正なコマンド入力です。上のメニューから正しいコマンドを入力してください。")
         if cmdInput == "1":
             imagePath = create_subfolder()
             if imagePath != "X":
-                # imagesNum = int(input("Enter number of images to download: "))
-                urlInput = input("Enter the URL of the first image: ")
+                while True:
+                    if lang == "en": urlInput = input("Enter the URL of the first image: ").strip()
+                    else: urlInput = input("最初の画像のURLを入力してください： ").strip()
+
+                    if urlInput == "": 
+                        print_in_both_en_jp(
+                            en=(f"{S.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
+                            jp=(f"{S.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
+                        )
+                    else: break
+
                 imageCounter = 1
-                print(f"{S.YELLOW}Downloading images...{END}")
+                print_in_both_en_jp(
+                    en=(f"{S.YELLOW}Downloading images...{END}"),
+                    jp=(f"{S.GREEN}画像をダウンロードする...{END}")
+                )
 
                 urlArray = []
-                # for i in range(imagesNum):
                 while True:
                     driver.get(urlInput)
                     logs = driver.get_log("performance")
@@ -876,32 +973,67 @@ def main():
                     totalImages = len(urlArray)
                     for url in urlArray:
                         download(url, "FantiaImageURL", imagePath)
-                        print_progress_bar(progress, totalImages, f"{S.YELLOW}Downloading image no.{progress} out of {totalImages}{END}")
-                        sleep(0.1)
+                        if lang == "en":
+                            print_progress_bar(progress, totalImages, f"{S.YELLOW}Downloading image no.{progress} out of {totalImages}{END}")
+                        else:
+                            print_progress_bar(progress, totalImages, f"画像 {progress} / {totalImages} をダウンロード中")
+                        
                         progress += 1
 
-                    print(f"\n{S.GREEN}All {imageCounter - 1} images downloaded successfully!{END}")
-                else: print(f"{S.RED}Error: No images to download.{END}")
+                print_download_completion_message(imageCounter-1)
 
         elif cmdInput == "2":
             imagePath = create_subfolder()
             if imagePath != "X":
-                urlInput = input("Enter the URL of the Fantia post: ")
+                while True:
+                    if lang == "en": urlInput = input("Enter the URL of the Fantia post: ").strip()
+                    else: urlInput = input("Fantiaの投稿のURLを入力します： ").strip()
+
+                    if urlInput == "": print_in_both_en_jp(
+                                        en=(f"{S.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
+                                        jp=(f"{S.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
+                                    )
+                    else: break
+
                 imageCounter = 1
-                print(f"{S.YELLOW}Downloading images...{END}")
+                print_in_both_en_jp(
+                    en=(f"{S.YELLOW}Downloading images...{END}"),
+                    jp=(f"{S.GREEN}画像をダウンロードする...{END}")
+                )
                 download(urlInput, "FantiaPost", imagePath)
 
         elif cmdInput == "3":
             imagePath = create_subfolder()
             if imagePath != "X":
-                urlInput = input("Enter the URL of the Pixiv Fanbox post: ")
+                while True:
+                    if lang == "en": urlInput = input("Enter the URL of the Pixiv Fanbox post: ").strip()
+                    else: urlInput = input("Pixivファンボックスの投稿URLを入力してください： ").strip()
+                    if urlInput == "": print_in_both_en_jp(
+                                        en=(f"{S.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
+                                        jp=(f"{S.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
+                                    )
+                    else: break
+
                 imageCounter = 1
-                print(f"{S.YELLOW}Downloading images...{END}")
+                print_in_both_en_jp(
+                    en=(f"{S.YELLOW}Downloading images...{END}"),
+                    jp=(f"{S.GREEN}画像をダウンロードする...{END}")
+                )
                 download(urlInput, "Pixiv", imagePath)
 
         elif cmdInput == "4":
-            website = get_input_from_user(prompt="Which accounts would you like to update for? (Fantia/Pixiv): ", command=("fantia", "pixiv", "all"))
-            credentialsToChange = get_input_from_user(prompt="Enter the credentials to change (username/password): ", command=("username", "password", "all"))
+            if lang == "en": webPrompt = "Which accounts would you like to update for? (Fantia/Pixiv): "
+            else: webPrompt = "どのアカウントを更新しますか？（Fantia/Pixiv/All）： "
+
+            if lang == "en": credPrompt = "Enter the credentials to change (Username/Password/All): "
+            else: credPrompt = "変更する資格情報を入力してください（Username/Password/All): "
+
+            website = get_input_from_user(prompt=webPrompt, command=("fantia", "pixiv", "all"))
+            credentialsToChange = get_input_from_user(prompt=credPrompt, command=("username", "password", "all"))
+            
+            if credentialsToChange == "all": credentialsToChange = ["username", "password"]
+            else: credentialsToChange = [credentialsToChange] # convert to list
+            change_account_details(website, cred=credentialsToChange)
             
         elif cmdInput == "5":
             defaultBrowser = check_browser_config()
@@ -909,17 +1041,24 @@ def main():
                 newDefaultBrowser = get_user_browser_preference()
                 save_browser_config(newDefaultBrowser)
             else:
-                print(f"{S.RED}Error: No default browser found.{END}")
-                saveBrowser = get_input_from_user(prompt="Would you like to save a browser as your default browser for this program? (y/n): ", command=("y", "n"))
+                print_in_both_en_jp(
+                    en=(f"{S.RED}Error: No default browser found.{END}"),
+                    jp=(f"{S.RED}エラー： デフォルトのブラウザが見つかりませんでした。{END}")
+                )
+
+                if lang == "en": browserPrompt = "Would you like to save a browser as your default browser for this program? (y/n): "
+                else: browserPrompt = "このプログラムのデフォルトのブラウザを保存しますか？ (y/n): "
+                saveBrowser = get_input_from_user(prompt=browserPrompt, command=("y", "n"))
 
                 if saveBrowser == "y":
                     newDefaultBrowser = get_user_browser_preference()
                     save_browser_config(newDefaultBrowser)
-                else: print(f"{S.YELLOW}Default Browser is unchanged.{END}")
+                else: print_in_both_en_jp(
+                        en=(f"{S.YELLOW}Note: Default Browser is unchanged.{END}"),
+                        jp=(f"{S.YELLOW}注意： デフォルトブラウザは変更なし。{END}")
+                    )
 
         elif cmdInput == "6":
-            pass
-        elif cmdInput == "7":
             if lang == "en": confirmPrompt = "Are you sure you would like to change the language? (y/n): "
             elif lang == "jp": confirmPrompt = "言語を変更してもよろしいですか？(y/n)： "
             confirmInput = get_input_from_user(prompt=confirmPrompt, command=("y", "n"))
@@ -930,9 +1069,10 @@ def main():
                     en=("Error: Invalid language prefix.", "Please report this error to the developer."), 
                     jp=("エラー： 言語のプレフィックスが不正です。", "このエラーを開発者に報告してください。")
                 )
-            else: 
-                if lang == "en": print(f"{S.YELLOW}Language change cancelled.{END}")
-                else: print(f"{S.YELLOW}言語変更中止。{END}")
+            else: print_in_both_en_jp(
+                    en=(f"{S.YELLOW}Language change cancelled.{END}"),
+                    jp=(f"{S.YELLOW}言語変更中止。{END}")
+                )
 
 if __name__ == "__main__":
     global END

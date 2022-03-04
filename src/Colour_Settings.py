@@ -1,8 +1,10 @@
 def colour(r, g, b):
-    return "\033[38;2;{};{};{}m".format(r, g, b)
+    return f"\033[38;2;{r};{g};{b}m"
 
 class TerminalColours:
-    RESET = '\033[0m'
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = '\033[4m'
     RED = colour(255, 0, 0)
     GREEN = colour(0, 255, 0)
     BLUE = colour(0, 0, 255)
