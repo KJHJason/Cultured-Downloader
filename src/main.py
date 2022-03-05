@@ -243,8 +243,8 @@ def get_user_account():
                 fantiaData["Username"] = fantiaEmail
 
                 print_in_both_en_jp(
-                    en=(f"{S.GREEN}Username for Fantia Account successfully added!{END}"),
-                    jp=(f"{S.GREEN}FantiaアカウントのID追加に成功しました！{END}")
+                    en=(f"{S.GREEN}Email for Fantia Account successfully added!{END}"),
+                    jp=(f"{S.GREEN}FantiaアカウントのEメール追加に成功しました！{END}")
                 )
             if fantiaData["Password"] == "":
                 print_in_both_en_jp(
