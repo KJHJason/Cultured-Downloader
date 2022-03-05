@@ -1,7 +1,7 @@
 version = "0.01"
 
 # Import Third-party Libraries
-import requests
+import requests, dill
 from cryptography.fernet import Fernet
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -24,8 +24,9 @@ import pathlib, json, sys, shutil
 from time import sleep
 from warnings import filterwarnings, catch_warnings
 
-# Importing Custom Python File as a Module
+# Importing Custom Python Files as Modules
 from Colour_Settings import TerminalColours as S
+from Key import Key
 
 """--------------------------- Config Codes ---------------------------"""
 
@@ -116,16 +117,15 @@ def check_if_json_file_exists():
     jsonFolderPath = pathlib.Path(__file__).resolve().parent.joinpath("configs")
     if not jsonFolderPath.is_dir(): jsonFolderPath.mkdir(parents=True)
     if not jsonPath.is_file():
-        print_in_both_en_jp(
-            en=(f"{S.RED}Error: config.json does not exist.{END}", f"{S.YELLOW}Creating config.json file...{END}"),
-            jp=(f"{S.RED}エラー: config.jsonが存在しません。{END}", f"{S.YELLOW}config.jsonファイルを作成しています...{END}")
-        )
+        print(f"{S.RED}Error: config.json does not exist.{END}", f"{S.YELLOW}Creating config.json file...{END}"),
+        print(f"{S.RED}エラー: config.jsonが存在しません。{END}", f"{S.YELLOW}config.jsonファイルを作成しています...{END}")
+        
         with open(jsonPath, "w") as f:
             json.dump({}, f)
-    else: print_in_both_en_jp(
-        en=(f"{S.GREEN}Loading configurations from config.json...{END}"),
-        jp=(f"{S.GREEN}config.jsonから設定を読み込みます...{END}")
-    )
+    else: 
+        print(f"{S.GREEN}Loading configurations from config.json...{END}")
+        print(f"{S.GREEN}config.jsonから設定を読み込みます...{END}")
+
 
 def encrypt_string(inputString):
     return decKey.encrypt(inputString.encode()).decode()
@@ -194,12 +194,19 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Fantiaのアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
-                else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
-                data["Accounts"]["Fantia"]["User"] = fantiaEmail
-                if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
-                else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
-                data["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+                while True:
+                    if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
+                    else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
+                    if fantiaEmail != "":
+                        data["Accounts"]["Fantia"]["User"] = fantiaEmail
+                        break
+                
+                while True:
+                    if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
+                    else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
+                    if fantiaPassword != "":
+                        data["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+                        break
 
                 print_in_both_en_jp(
                     en=(f"{S.GREEN}Fantia Account successfully added!{END}"),
@@ -211,12 +218,19 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Pixivアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
-                else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
-                data["Accounts"]["Pixiv"]["User"] = pixivUsername
-                if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
-                data["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                while True:
+                    if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
+                    else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
+                    if pixivUsername != "":
+                        data["Accounts"]["Pixiv"]["User"] = pixivUsername
+                        break
+                
+                while True:
+                    if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                    else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
+                    if fantiaPassword != "":
+                        data["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                        break
 
                 with open(jsonPath, "w") as f:
                     config.update(data)
@@ -238,9 +252,12 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Fantiaのアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
-                else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
-                fantiaData["Username"] = fantiaEmail
+                while True:
+                    if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
+                    else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
+                    if fantiaEmail != "":
+                        fantiaData["Username"] = fantiaEmail
+                        break
 
                 print_in_both_en_jp(
                     en=(f"{S.GREEN}Email for Fantia Account successfully added!{END}"),
@@ -252,9 +269,12 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Fantiaのアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
-                else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
-                fantiaData["Password"] = encrypt_string(fantiaPassword)
+                while True:
+                    if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
+                    else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
+                    if fantiaPassword != "":
+                        fantiaData["Password"] = encrypt_string(fantiaPassword)
+                        break
 
                 print_in_both_en_jp(
                     en=(f"{S.GREEN}Password for Fantia Account successfully added!{END}"),
@@ -266,9 +286,12 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Pixivアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
-                else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
-                pixivData["Username"] = pixivUsername
+                while True:
+                    if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
+                    else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
+                    if pixivUsername != "":
+                        pixivData["Username"] = pixivUsername
+                        break
 
                 print_in_both_en_jp(
                     en=(f"{S.GREEN}Pixiv ID successfully added!{END}"),
@@ -280,9 +303,12 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Pixivアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
-                pixivData["Password"] = encrypt_string(pixivPassword)
+                while True:
+                    if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                    else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
+                    if pixivPassword != "":
+                        pixivData["Password"] = encrypt_string(pixivPassword)
+                        break
 
                 print_in_both_en_jp(
                     en=(f"{S.GREEN}Password for Pixiv Account successfully added!{END}"),
@@ -306,14 +332,32 @@ def change_account_details(typeToChange, **credToUpdate):
             )
 
             if "username" in credentialsToChangeList:
-                if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
-                else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
-                if fantiaEmail.upper() != "X": config["Accounts"]["Fantia"]["User"] = fantiaEmail
+                while True:
+                    if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
+                    else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
+                    if fantiaEmail.upper() != "X" and fantiaEmail != "": 
+                        config["Accounts"]["Fantia"]["User"] = fantiaEmail
+                        break
+                    elif fantiaEmail.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
 
             if "password" in credentialsToChangeList:
-                if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
-                else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                if fantiaPassword.upper() != "X": config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+                while True:
+                    if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
+                    else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
+                    if fantiaPassword.upper() != "X" and fantiaPassword != "": 
+                        config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+                        break
+                    elif fantiaPassword.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
 
         elif typeToChange == "pixiv":
             print_in_both_en_jp(
@@ -322,14 +366,32 @@ def change_account_details(typeToChange, **credToUpdate):
             )
 
             if "username" in credentialsToChangeList:
-                if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
-                else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
-                if pixivUsername.upper() != "X": config["Accounts"]["Pixiv"]["User"] = pixivUsername
+                while True:
+                    if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
+                    else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
+                    if pixivUsername.upper() != "X" and pixivUsername != "": 
+                        config["Accounts"]["Pixiv"]["User"] = pixivUsername
+                        break
+                    elif pixivUsername.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
 
             if "password" in credentialsToChangeList:
-                if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                if pixivPassword.upper() != "X": config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                while True:
+                    if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                    else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
+                    if pixivPassword.upper() != "X" and pixivPassword != "": 
+                        config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                        break
+                    elif pixivPassword.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
                 
         elif typeToChange == "all":
             print_in_both_en_jp(
@@ -338,14 +400,32 @@ def change_account_details(typeToChange, **credToUpdate):
             )
 
             if "username" in credentialsToChangeList:
-                if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
-                else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
-                if fantiaEmail.upper() != "X": config["Accounts"]["Fantia"]["User"] = fantiaEmail
+                while True:
+                    if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
+                    else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
+                    if fantiaEmail.upper() != "X" and fantiaEmail != "": 
+                        config["Accounts"]["Fantia"]["User"] = fantiaEmail
+                        break
+                    elif fantiaEmail.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
             
             if "password" in credentialsToChangeList:
-                if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
-                else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                if pixivPassword.upper() != "X": config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+                while True:
+                    if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
+                    else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
+                    if fantiaPassword.upper() != "X" and fantiaPassword != "": 
+                        config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
+                        break
+                    elif fantiaPassword.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
 
             print_in_both_en_jp(
                 en=(f"\n{S.YELLOW}Changing Pixiv Account Details...{END}"),
@@ -353,14 +433,32 @@ def change_account_details(typeToChange, **credToUpdate):
             )
 
             if "username" in credentialsToChangeList:
-                if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
-                else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
-                if pixivUsername.upper() != "X": config["Accounts"]["Pixiv"]["User"] = pixivUsername
+                while True:
+                    if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
+                    else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
+                    if pixivUsername.upper() != "X" and pixivUsername != "": 
+                        config["Accounts"]["Pixiv"]["User"] = pixivUsername
+                        break
+                    elif pixivUsername.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
 
             if "password" in credentialsToChangeList:
-                if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                if pixivPassword.upper() != "X": config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                while True:
+                    if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                    else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
+                    if pixivPassword.upper() != "X" and pixivPassword != "": 
+                        config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                        break
+                    elif pixivPassword.upper() == "X":
+                        print_in_both_en_jp(
+                            en=(f"{S.GREEN}No changes made!{END}"),
+                            jp=(f"{S.GREEN}変更は行われませんでした！{END}")
+                        )
+                        break
         else:
             error_shutdown(
                 en=("Unexpected Error: Error when trying to change account details.", 
@@ -394,13 +492,12 @@ def get_driver(browserType):
         # for checking response code
         capabilities = DesiredCapabilities.CHROME.copy()
         capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
-        cOptions.set_capability("goog:chromeOptions", capabilities)
 
         # auto downloads chromedriver.exe
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
-        driver = webdriver.Chrome(service=gService, options=cOptions)
+        driver = webdriver.Chrome(service=gService, options=cOptions, desired_capabilities=capabilities)
     elif browserType == "firefox":
         #minimise the browser window and hides unnecessary text output
         fOptions = firefoxOptions()
@@ -411,7 +508,6 @@ def get_driver(browserType):
         # for checking response code
         capabilities = DesiredCapabilities.FIREFOX.copy()
         capabilities["moz:loggingPrefs"] = {"performance": "ALL"}
-        fOptions.set_capability("moz:firefoxOptions", capabilities)
 
         # auto downloads geckodriver.exe
         fService = firefoxService(GeckoDriverManager(log_level=0, print_first_line=False).install())
@@ -419,7 +515,7 @@ def get_driver(browserType):
         # start webdriver
         with catch_warnings():
             filterwarnings("ignore", category=DeprecationWarning)
-            driver = webdriver.Firefox(service=fService, options=fOptions)
+            driver = webdriver.Firefox(service=fService, options=fOptions, capabilities=capabilities)
     elif browserType == "edge":
         # minimise the browser window and hides unnecessary text output
         eOptions = edgeOptions()
@@ -431,13 +527,12 @@ def get_driver(browserType):
         # for checking response code
         capabilities = DesiredCapabilities.EDGE.copy()
         capabilities["ms:loggingPrefs"] = {"performance": "ALL"}
-        eOptions.set_capability("ms:edgeOptions", capabilities)
 
         # auto downloads msedgedriver.exe
         eService = edgeService(EdgeChromiumDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
-        driver = webdriver.Edge(service=eService, options=eOptions)
+        driver = webdriver.Edge(service=eService, options=eOptions, capabilities=capabilities)
     else:
         with open(jsonPath, "w") as f:
             config = json.load(f)
@@ -488,36 +583,92 @@ def save_browser_config(selectedBrowser):
     )
 
 def get_key():
+    keyPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "key.pik")
+    if keyPath.is_file():
+        with open(keyPath, "rb") as f:
+            keyObject = dill.load(f)
+    else:
+        keyObject = Key()
+        with open(keyPath, "wb") as f:
+            dill.dump(keyObject, f)
+
+    return keyObject.get_decKey()
+
+def set_lang(config):
+    try:
+        print_in_both_en_jp(
+            en=(f"\n{S.RED}Error: Language is not defined in the config.json file.{END}"),
+            jp=(f"\n{S.RED}エラー： config.jsonのLanguage（言語）が見当たらないです。{END}")
+        )
+    except:
+        print(f"\n{S.RED}エラー： config.jsonのLanguage（言語）が見当たらないです。{END}")
+        print(f"\n{S.RED}Error: Language is not defined in the config.json file.{END}")
+
+
+    langInput = get_input_from_user(prompt="Select a language/言語を選択してください (en/jp): ", command=("en", "jp"))
+
+    langExists = False
+    if "Language" in config:
+        languageData = config["Language"]
+        langExists = True
+    else: 
+        languageData = {"Language": ""}
+
+    if langExists: languageData = langInput
+    else: languageData["Language"] = langInput
+
+    with open(jsonPath, "w") as f:
+        if not langExists: config.update(languageData)
+        json.dump(config, f, indent=4)
+
+    return langInput
+
+def get_lang():
     with open(jsonPath, "r") as f:
         config = json.load(f)
     try:
-        key = config["Key"]
-        if key == "":
-            raise Exception("Key is empty.")
-        return key
+        prefLang = config["Language"]
+        if prefLang == "": raise Exception("Key is empty.")
+        return prefLang
     except:
-        print_in_both_en_jp(
-            en=(f"{S.RED}Error: Key is not defined in the config.json file.{END}"),
-            jp=(f"{S.RED}エラー： config.jsonのKeyが空です。{END}")
-        )
+        return set_lang(config)
 
-        keyExists = False
-        if "Key" in config:
-            dataKey = config["Key"]
-            keyExists = True
-        else: 
-            dataKey = {"Key": ""}
+def update_lang():
+    with open(jsonPath, "r") as f:
+        config = json.load(f)
+
+    if "Language" in config:
+        if lang == "en": langPrompt = "Are you sure you would like to change the language? (y/n): "
+        else: langPrompt = "言語を変更してもよろしいですか？(y/n)： "
+        langChange = get_input_from_user(prompt=langPrompt, command=("y", "n"))
+
+        if langChange == "y":
+            if lang == "en":
+                config["Language"] = "jp"
+            else:
+                config["Language"] = "en"
             
-        key = Fernet.generate_key().decode()
 
-        if keyExists: dataKey = key
-        else: dataKey["Key"] = key
+            with open(jsonPath, "w") as f:
+                json.dump(config, f, indent=4)
+        else:
+            print_in_both_en_jp(
+                en=(f"{S.YELLOW}Language change cancelled.{END}"),
+                jp=(f"{S.YELLOW}言語変更中止。{END}")
+            )
 
-        with open(jsonPath, "w") as f:
-            if not keyExists: config.update(dataKey)
-            json.dump(config, f, indent=4)
+        return config["Language"]
+    else:
+        return set_lang(config)
 
-        return key
+def check_if_user_is_logged_in():
+    fantiaLoggedIn = pixivLoggedIn = False
+
+    if "Fantia" in loggedIn: fantiaLoggedIn = True
+    if "Pixiv" in loggedIn: pixivLoggedIn = True
+
+    if fantiaLoggedIn and pixivLoggedIn: return True
+    else: return False
 
 """--------------------------- End of Config Codes ---------------------------"""
 
@@ -544,12 +695,12 @@ def fantia_login(fantiaEmail, fantiaPassword):
     driver.find_element(by=By.ID, value="user_password").send_keys(fantiaPassword)
     driver.find_element(by=By.XPATH, value="//button[@class='btn btn-primary btn-block mb-10 p-15']").click()
 
-    # checks if the user is authenticated and wait for a max of 10 seconds for the page to load
+    # checks if the user is authenticated and wait for a max of 15 seconds for the page to load
     try:
-        sleep(5)
+        sleep(3)
         driver.get("https://fantia.jp/mypage/cart")
 
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
         if driver.title != "ショッピングカート｜ファンティア[Fantia]": raise Exception("Fantia login failed.")
@@ -577,15 +728,14 @@ def pixiv_login(pixivUsername, pixivPassword):
     driver.find_element(by=By.XPATH, value="//input[@placeholder='password']").send_keys(pixivPassword)
     driver.find_element(by=By.XPATH, value="//button[@class='signup-form__submit']").click()
 
-    # checks if the user is authenticated and wait for a max of 20 seconds for the page to load
+    # checks if the user is authenticated and wait for a max of 15 seconds for the page to load
     try:
-        sleep(5)
+        sleep(3)
         driver.get("https://www.fanbox.cc/creators/supporting")
 
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
-        
         if driver.title == "Supported Creators｜pixivFANBOX" or driver.title == "支援中のクリエイター｜pixivFANBOX": pass
         else: raise Exception("Pixiv login failed.")
 
@@ -649,13 +799,13 @@ def print_progress_bar(prog, totalEl, caption):
 def print_download_completion_message(totalImage):
     if totalImage > 0:
         print_in_both_en_jp(
-            en=f"{S.GREEN}Successfully downloaded {totalImage} images!{END}",
-            jp=f"{S.GREEN}{totalImage}枚の画像をダウンロードしました!{END}"
+            en=f"\n{S.GREEN}Successfully downloaded {totalImage} images!{END}",
+            jp=f"\n{S.GREEN}{totalImage}枚の画像をダウンロードしました!{END}"
         )
     else:
         print_in_both_en_jp(
-            en=(f"{S.RED}Error: No images to download.{END}"),
-            jp=(f"{S.RED}エラー： ダウンロードする画像がありません。{END}")
+            en=(f"\n{S.RED}Error: No images to download.{END}"),
+            jp=(f"\n{S.RED}エラー： ダウンロードする画像がありません。{END}")
         )
 
 def download(urlInput, website, subFolderPath):
@@ -769,15 +919,56 @@ def create_subfolder():
 
 def print_menu():
     if "Fantia" in loggedIn: emailFantia = loggedIn["Fantia"]["email"]
-    else: emailFantia = "Guest"
+    else: emailFantia = "Guest (Not logged in)"
     if "Pixiv" in loggedIn: usernamePixiv = loggedIn["Pixiv"]["username"]
-    else: usernamePixiv = "Guest"
+    else: usernamePixiv = "Guest (Not logged in)"
 
-    if lang == "en": menu = f"""
+    if emailFantia == "Guest (Not logged in)" or usernamePixiv == "Guest (Not logged in)":
+        if lang == "jp": 
+            emailFantia = "ゲスト（ログインしていない）"
+            usernamePixiv = "ゲスト（ログインしていない）"
+
+        if lang == "en": menu = f"""{S.YELLOW}
 > You are currently logged in as...
 > Fantia Email: {emailFantia}
 > Pixiv ID: {usernamePixiv}
+{END}
+--------------------- {S.YELLOW}Download Options{END} --------------------
+      {S.GREEN}1. Download images from Fantia using an image URL{END}
+      {S.GREEN}2. Download images from a Fantia post URL{END}
+      {S.CYAN}3. Download images from a Pixiv Fanbox post URL{END}
 
+---------------------- {S.YELLOW}Config Options{END} ----------------------
+      {S.LIGHT_BLUE}4. Update Account Details{END}
+      {S.LIGHT_BLUE}5. Change Default Browser{END}
+      {S.LIGHT_BLUE}6. Change Language{END}
+      {S.LIGHT_BLUE}7. Login{END}
+      {S.RED}X. Shutdown the program{END}
+ """
+        else: menu = f"""{S.YELLOW}
+> あなたのログイン情報...
+> FantiaEメール: {emailFantia}
+> Pixiv ID: {usernamePixiv}
+{END}
+--------------------- {S.YELLOW}ダウンロードのオプション{END} ---------------------
+      {S.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
+      {S.GREEN}2. Fantia投稿URLから画像をダウンロードする{END}
+      {S.CYAN}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
+
+---------------------- {S.YELLOW}コンフィグのオプション{END} ----------------------
+      {S.LIGHT_BLUE}4. アカウント情報を更新する{END}
+      {S.LIGHT_BLUE}5. ブラウザを変更する{END}
+      {S.LIGHT_BLUE}6. 言語を変更する{END}
+      {S.LIGHT_BLUE}7. ログインする{END}
+      {S.RED}X. プログラムを終了する{END}
+"""
+
+    else:
+        if lang == "en": menu = f"""{S.YELLOW}
+> You are currently logged in as...
+> Fantia Email: {emailFantia}
+> Pixiv ID: {usernamePixiv}
+{END}
 --------------------- {S.YELLOW}Download Options{END} --------------------
       {S.GREEN}1. Download images from Fantia using an image URL{END}
       {S.GREEN}2. Download images from a Fantia post URL{END}
@@ -789,11 +980,11 @@ def print_menu():
       {S.LIGHT_BLUE}6. Change Language{END}
       {S.RED}X. Shutdown the program{END}
  """
-    else: menu = f"""
+        else: menu = f"""{S.YELLOW}
 > あなたのログイン情報...
 > FantiaEメール: {emailFantia}
 > Pixiv ID: {usernamePixiv}
-
+{END}
 --------------------- {S.YELLOW}ダウンロードのオプション{END} ---------------------
       {S.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
       {S.GREEN}2. Fantia投稿URLから画像をダウンロードする{END}
@@ -808,6 +999,13 @@ def print_menu():
     print(menu)
 
 def main():
+    pythonMainVer = sys.version_info[0]
+    pythonSubVer = sys.version_info[1]
+    if pythonMainVer < 3 or pythonSubVer < 8:
+        print(f"{S.RED}Fatal Error: This program requires running Python 3.8 or higher!", f"You are running Python {pythonMainVer}.{pythonSubVer}{S.RESET}"),
+        print("{S.RED}致命的なエラー： このプログラムにはPython 3.8以上が必要です。", f"あなたはPython {pythonMainVer}.{pythonSubVer}を実行しています。{S.RESET}")
+
+
     # declare global variables
     global jsonPath
     global directoryPath
@@ -817,27 +1015,18 @@ def main():
     global loggedIn
     global lang
 
+    jsonPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "config.json")
+    directoryPath = pathlib.Path(__file__).resolve().parent.joinpath("downloads")
+
+    # checks if config.json exists and the necessary configs are defined
+    check_if_json_file_exists()
+
     loggedIn = {}
-    lang = get_input_from_user(prompt="Select a language/言語を選択してください (en/jp): ", command=("en", "jp"))
+    lang = get_lang()
     print_in_both_en_jp(
         en=(f"{S.YELLOW}Running program...{END}"),
         jp=(f"{S.YELLOW}プログラムを実行する...{END}")
     )
-    
-    jsonPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "config.json")
-    
-    directoryPath = pathlib.Path(__file__).resolve().parent.joinpath("downloads")
-
-    pythonMainVer = sys.version_info[0]
-    pythonSubVer = sys.version_info[1]
-    if pythonMainVer < 3 or pythonSubVer < 8:
-        error_shutdown(
-            en=("Fatal Error: This program requires running Python 3.8 or higher!", f"You are running Python {pythonMainVer}.{pythonSubVer}"),
-            jp=("致命的なエラー： このプログラムにはPython 3.8以上が必要です。", f"あなたはPython {pythonMainVer}.{pythonSubVer}を実行しています。")
-        )
-    
-    # checks if config.json exists and the necessary configs are defined
-    check_if_json_file_exists()
 
     # generate a key for the encryption of passwords so that it won't be stored in plaintext
     try: decKey = Fernet(get_key())
@@ -871,57 +1060,56 @@ def main():
         print_in_both_en_jp(
             en=(
                 f"\n{S.YELLOW}Logging in to Fantia and Pixiv...{END}", 
-                f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}"
+                f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
             ),
             jp=(
                 f"\n{S.YELLOW}FantiaとPixivにログイン中...{END}",
-                f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}"
+                f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
             )
         )
 
-        loginOnce = False
-        while True:
-            # gets account details for Fantia and Pixiv for downloading images that requires a membership
-            try: fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account()
-            except: error_shutdown(
-                        en=("Fatal Error: Unable to retrieve user accounts for Fantia and Pixiv Fanbox.", "Please report this error to the developer."),
-                        jap=("致命的なエラー： FantiaとPixiv Fanboxのユーザーアカウントを取得できません。", "開発者にこのエラーを報告してください。")
-                    )
+        # gets account details for Fantia and Pixiv for downloading images that requires a membership
+        try: fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account()
+        except: error_shutdown(
+                en=("Fatal Error: Unable to retrieve user accounts for Fantia and Pixiv Fanbox.", "Please report this error to the developer."),
+                jap=("致命的なエラー： FantiaとPixiv Fanboxのユーザーアカウントを取得できません。", "開発者にこのエラーを報告してください。")
+            )
 
-            if fantiaEmail == None and fantiaPassword == None and pixivUsername == None and pixivPassword == None: break
-            
-            if loginOnce != True:
-                fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-                pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
-            loginOnce = True
-            if fantiaSuccess and pixivSuccess:
-                print_in_both_en_jp(
-                    en=(f"{S.GREEN}Logins were successful!{END}"),
-                    jp=(f"{S.GREEN}ログインに成功しました！{END}")
-                )
-                loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-                loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
-                break
-            else:
-                if lang == "en":
-                    continueLoggingIn = get_input_from_user(prints=("\nWould you like to retry or change all your account details and login again?", "Available commands:\n\"y\" to change account details\n\"n\" to abort logging in\n\"r\" to re-attempt to login."), prompt="Please enter \"y\" or \"n\" or \"r\" to continue: ", command=("y", "n", "r"))
-                else:
-                    continueLoggingIn = get_input_from_user(prints=("\n再試行またはアカウント情報をすべて変更し、再度ログインしますか？", "使用できるコマンド：\n\"y\" アカウント情報を変更する。\n\"n\" ログインを中止します。\n\"r\" ログインを再試行する。"), prompt="続行するには、\"y\"または\"n\"または\"r\"を入力してください： ", command=("y", "n", "r"))
-
-                if continueLoggingIn == "y": change_account_details("all", cred=["username", "password"])
-                elif continueLoggingIn == "r":
-                    if not fantiaSuccess: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-                    if not pixivSuccess: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
-                else:
+        if fantiaEmail != None != fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
+            loginOnce = False
+            while True:
+                if loginOnce != True:
+                    fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+                    pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
+                loginOnce = True
+                if fantiaSuccess and pixivSuccess:
                     print_in_both_en_jp(
-                        en=(f"\n{S.YELLOW}Ignoring login errors...{END}", 
-                            f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"
-                        ),
-                        jp=(f"\n{S.YELLOW}ログインエラーを無視する...{END}", 
-                            f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}"
-                        )
+                        en=(f"{S.GREEN}Logins were successful!{END}"),
+                        jp=(f"{S.GREEN}ログインに成功しました！{END}")
                     )
+                    loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
+                    loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
                     break
+                else:
+                    if lang == "en":
+                        continueLoggingIn = get_input_from_user(prints=("\nWould you like to retry or change all your account details and login again?", "Available commands:\n\"y\" to change account details\n\"n\" to abort logging in\n\"r\" to re-attempt to login."), prompt="Please enter \"y\" or \"n\" or \"r\" to continue: ", command=("y", "n", "r"))
+                    else:
+                        continueLoggingIn = get_input_from_user(prints=("\n再試行またはアカウント情報をすべて変更し、再度ログインしますか？", "使用できるコマンド：\n\"y\" アカウント情報を変更する。\n\"n\" ログインを中止します。\n\"r\" ログインを再試行する。"), prompt="続行するには、\"y\"または\"n\"または\"r\"を入力してください： ", command=("y", "n", "r"))
+
+                    if continueLoggingIn == "y": change_account_details("all", cred=["username", "password"])
+                    elif continueLoggingIn == "r":
+                        if not fantiaSuccess: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+                        if not pixivSuccess: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
+                    else:
+                        print_in_both_en_jp(
+                            en=(f"\n{S.YELLOW}Ignoring login errors...{END}", 
+                                f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"
+                            ),
+                            jp=(f"\n{S.YELLOW}ログインエラーを無視する...{END}", 
+                                f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}"
+                            )
+                        )
+                        break
 
         if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
         if pixivSuccess: loggedIn["Pixiv"] = {"username": pixivUsername, "password": fantiaPassword}
@@ -1030,18 +1218,20 @@ def main():
                 download(urlInput, "Pixiv", imagePath)
 
         elif cmdInput == "4":
-            if lang == "en": webPrompt = "Which accounts would you like to update for? (Fantia/Pixiv): "
-            else: webPrompt = "どのアカウントを更新しますか？（Fantia/Pixiv/All）： "
+            if lang == "en": webPrompt = "Which accounts would you like to update for? (Fantia/Pixiv/X to cancel): "
+            else: webPrompt = "どのアカウントを更新しますか？（Fantia/Pixiv/All/Xでキャンセル）： "
 
-            if lang == "en": credPrompt = "Enter the credentials to change (Username/Password/All): "
-            else: credPrompt = "変更する資格情報を入力してください（Username/Password/All): "
+            if lang == "en": credPrompt = "Enter the credentials to change (Username/Password/All/X to cancel): "
+            else: credPrompt = "変更する資格情報を入力してください（Username/Password/All/Xでキャンセル）: "
 
-            website = get_input_from_user(prompt=webPrompt, command=("fantia", "pixiv", "all"))
-            credentialsToChange = get_input_from_user(prompt=credPrompt, command=("username", "password", "all"))
-            
-            if credentialsToChange == "all": credentialsToChange = ["username", "password"]
-            else: credentialsToChange = [credentialsToChange] # convert to list
-            change_account_details(website, cred=credentialsToChange)
+            website = get_input_from_user(prompt=webPrompt, command=("fantia", "pixiv", "all", "x"))
+            if website != "x":
+                credentialsToChange = get_input_from_user(prompt=credPrompt, command=("username", "password", "all", "x"))
+
+                if credentialsToChange != "x":
+                    if credentialsToChange == "all": credentialsToChange = ["username", "password"]
+                    else: credentialsToChange = [credentialsToChange] # convert to list
+                    change_account_details(website, cred=credentialsToChange)
             
         elif cmdInput == "5":
             defaultBrowser = check_browser_config()
@@ -1067,20 +1257,10 @@ def main():
                     )
 
         elif cmdInput == "6":
-            if lang == "en": confirmPrompt = "Are you sure you would like to change the language? (y/n): "
-            elif lang == "jp": confirmPrompt = "言語を変更してもよろしいですか？(y/n)： "
-            confirmInput = get_input_from_user(prompt=confirmPrompt, command=("y", "n"))
-            if confirmInput == "y":
-                if lang == "en": lang = "jp"
-                elif lang == "jp": lang = "en"
-                else: error_shutdown(
-                    en=("Error: Invalid language prefix.", "Please report this error to the developer."), 
-                    jp=("エラー： 言語のプレフィックスが不正です。", "このエラーを開発者に報告してください。")
-                )
-            else: print_in_both_en_jp(
-                    en=(f"{S.YELLOW}Language change cancelled.{END}"),
-                    jp=(f"{S.YELLOW}言語変更中止。{END}")
-                )
+            lang = update_lang()
+
+        elif cmdInput == "7" and not check_if_user_is_logged_in():
+            pass
 
 if __name__ == "__main__":
     global END
@@ -1090,14 +1270,14 @@ if __name__ == "__main__":
 ====================== {S.LIGHT_BLUE}CULTURED DOWNLOADER v{version}{END} ======================
 =========== {S.LIGHT_BLUE}https://github.com/KJHJason/Cultured-Downloader{END} ===========
 ================ {S.LIGHT_BLUE}Author/開発者: KJHJason, aka Dratornic{END} ================
-
+{S.YELLOW}
 Purpose/目的: Allows you to download multiple images from Fantia or Pixiv Fanbox automatically.
               FantiaやPixivファンボックスから複数の画像を自動でダウンロードできるようにします。
 
 Note/注意: Requires the user to provide his/her credentials for images that requires a membership.
            This program is not affiliated with Pixiv or Fantia.
            会員登録が必要な画像には、ユーザーの認証情報の提供が必要です。
-           このプログラムはPixivやFantiaとは関係ありません。
+           このプログラムはPixivやFantiaとは関係ありません。{END}
 """
     print(introMenu)
     main()
