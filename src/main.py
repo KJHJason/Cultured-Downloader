@@ -36,7 +36,6 @@ def shutdown():
     else:
         print(f"{S.YELLOW}Cultured Downloaderをご利用いただきありがとうございます。{END}")
         input("何か入力すると終了します。。。")
-    driver.close()
     sys.exit(0)
 
 def error_shutdown(**errorMessages):
@@ -212,8 +211,8 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Pixivアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": pixivUsername = input("Enter your username for Pixiv: ").strip()
-                else: pixivUsername = input("Pixivアカウントのユーザー名を入力してください： ").strip()
+                if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
+                else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
                 data["Accounts"]["Pixiv"]["User"] = pixivUsername
                 if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
                 else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
@@ -245,7 +244,7 @@ def get_user_account():
 
                 print_in_both_en_jp(
                     en=(f"{S.GREEN}Username for Fantia Account successfully added!{END}"),
-                    jp=(f"{S.GREEN}Fantiaアカウントのユーザー名追加に成功しました！{END}")
+                    jp=(f"{S.GREEN}FantiaアカウントのID追加に成功しました！{END}")
                 )
             if fantiaData["Password"] == "":
                 print_in_both_en_jp(
@@ -267,13 +266,13 @@ def get_user_account():
                     jp=(f"\n{S.YELLOW}Pixivアカウント情報を追加しています...{END}")
                 )
 
-                if lang == "en": pixivUsername = input("Enter your username for Pixiv: ").strip()
-                else: pixivUsername = input("Pixivアカウントのユーザー名を入力してください： ").strip()
+                if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
+                else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
                 pixivData["Username"] = pixivUsername
 
                 print_in_both_en_jp(
-                    en=(f"{S.GREEN}Username for Pixiv Account successfully added!{END}"),
-                    jp=(f"{S.GREEN}Pixivアカウントのユーザー名追加に成功しました！{END}")
+                    en=(f"{S.GREEN}Pixiv ID successfully added!{END}"),
+                    jp=(f"{S.GREEN}PixivアカウントのID追加に成功しました！{END}")
                 )
             if pixivData["Password"] == "":
                 print_in_both_en_jp(
@@ -323,8 +322,8 @@ def change_account_details(typeToChange, **credToUpdate):
             )
 
             if "username" in credentialsToChangeList:
-                if lang == "en": pixivUsername = input("Enter your username for Pixiv (X to cancel): ").strip()
-                else: pixivUsername = input("新しいPixivアカウントのユーザー名を入力してください（\"X\"でキャンセル）： ").strip()
+                if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
+                else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
                 if pixivUsername.upper() != "X": config["Accounts"]["Pixiv"]["User"] = pixivUsername
 
             if "password" in credentialsToChangeList:
@@ -354,8 +353,8 @@ def change_account_details(typeToChange, **credToUpdate):
             )
 
             if "username" in credentialsToChangeList:
-                if lang == "en": pixivUsername = input("Enter your username for Pixiv (X to cancel): ").strip()
-                else: pixivUsername = input("新しいPixivアカウントのユーザー名を入力してください（\"X\"でキャンセル）： ").strip()
+                if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
+                else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
                 if pixivUsername.upper() != "X": config["Accounts"]["Pixiv"]["User"] = pixivUsername
 
             if "password" in credentialsToChangeList:
@@ -453,9 +452,9 @@ def get_driver(browserType):
 
 def get_user_browser_preference():
     if lang == "en":
-        selectedBrowser = get_input_from_user(prompt="What browser would you like to use?", command=("chrome", "firefox", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Firefox, Edge."), warning="Error: Invalid browser, please enter a browser from the available browsers.")
+        selectedBrowser = get_input_from_user(prompt="Select a browser from the available options: ", command=("chrome", "firefox", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Firefox, Edge."), warning="Error: Invalid browser, please enter a browser from the available browsers.")
     else:
-        selectedBrowser = get_input_from_user(prompt="どのブラウザを使用しますか？", command=("chrome", "firefox", "edge"), prints=("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Firefox, Edge。"), warning="エラー： 不正なブラウザです。使用可能なブラウザから選んでください。")
+        selectedBrowser = get_input_from_user(prompt="利用可能なオプションからブラウザを選択します： ", command=("chrome", "firefox", "edge"), prints=("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Firefox, Edge。"), warning="エラー： 不正なブラウザです。使用可能なブラウザから選んでください。")
     return selectedBrowser
 
 def check_browser_config():
@@ -545,16 +544,21 @@ def fantia_login(fantiaEmail, fantiaPassword):
     driver.find_element(by=By.ID, value="user_password").send_keys(fantiaPassword)
     driver.find_element(by=By.XPATH, value="//button[@class='btn btn-primary btn-block mb-10 p-15']").click()
 
-    # checks if the user is authenticated and wait for a max of 30 seconds for the page to load
+    # checks if the user is authenticated and wait for a max of 10 seconds for the page to load
     try:
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "loggedin"))
+        sleep(5)
+        driver.get("https://fantia.jp/mypage/cart")
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
+        if driver.title != "ショッピングカート｜ファンティア[Fantia]": raise Exception("Fantia login failed.")
         print_in_both_en_jp(
             en=(f"{S.GREEN}Successfully logged in to Fantia!{END}"),
             jp=(f"{S.GREEN}Fantiaへのログインに成功しました!{END}")
         )
-    except TimeoutException:
+        return True
+    except Exception or TimeoutException:
         # if there is no element with a class name of "loggedin", it will raise a TimeoutException
         print_in_both_en_jp(
             en=(f"{S.RED}Error: Fantia login failed.{END}"),
@@ -567,24 +571,30 @@ def fantia_login(fantiaEmail, fantiaPassword):
             jap=("予期せぬエラー： Fantiaにログインしようとするとエラーが発生します。", "このエラーを開発者に報告してください。")
         )
 
-    return True
-    
 def pixiv_login(pixivUsername, pixivPassword):
     driver.get("https://www.fanbox.cc/login")
     driver.find_element(by=By.XPATH, value="//input[@placeholder='E-mail address / pixiv ID']").send_keys(pixivUsername)
     driver.find_element(by=By.XPATH, value="//input[@placeholder='password']").send_keys(pixivPassword)
     driver.find_element(by=By.XPATH, value="//button[@class='signup-form__submit']").click()
 
-    # checks if the user is authenticated and wait for a max of 30 seconds for the page to load
+    # checks if the user is authenticated and wait for a max of 20 seconds for the page to load
     try:
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, "//a[@href='/creators/supporting' and @class='sc-1mdohqc-0 ilARNI']"))
+        sleep(5)
+        driver.get("https://www.fanbox.cc/creators/supporting")
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
+        
+        if driver.title == "Supported Creators｜pixivFANBOX" or driver.title == "支援中のクリエイター｜pixivFANBOX": pass
+        else: raise Exception("Pixiv login failed.")
+
         print_in_both_en_jp(
             en=(f"{S.GREEN}Successfully logged in to Pixiv!{END}"),
             jp=(f"{S.GREEN}Pixivへのログインに成功しました!{END}")
         )
-    except TimeoutException:
+        return True
+    except Exception or TimeoutException:
         # if there is no anchor tag element with a class of "sc-1mdohqc-0 ilARNI", it will raise a TimeoutException
         print_in_both_en_jp(
             en=(f"{S.RED}Error: Pixiv login failed.{END}"),
@@ -596,8 +606,6 @@ def pixiv_login(pixivUsername, pixivPassword):
             en=("Unexpected Error: Error when trying to login to Pixiv.", "Please report this error to the developer."),
             jap=("予期せぬエラー： Pixivにログインしようとするとエラーが発生します。", "このエラーを開発者に報告してください。")
         )
-    
-    return True
 
 def get_image_name(imageURL, website):
     if website == "Fantia":
@@ -768,7 +776,7 @@ def print_menu():
     if lang == "en": menu = f"""
 > You are currently logged in as...
 > Fantia Email: {emailFantia}
-> Pixiv Username: {usernamePixiv}
+> Pixiv ID: {usernamePixiv}
 
 --------------------- {S.YELLOW}Download Options{END} --------------------
       {S.GREEN}1. Download images from Fantia using an image URL{END}
@@ -784,7 +792,7 @@ def print_menu():
     else: menu = f"""
 > あなたのログイン情報...
 > FantiaEメール: {emailFantia}
-> Pixivユーザー名: {usernamePixiv}
+> Pixiv ID: {usernamePixiv}
 
 --------------------- {S.YELLOW}ダウンロードのオプション{END} ---------------------
       {S.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
@@ -916,7 +924,7 @@ def main():
                     break
 
         if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-        if pixivSuccess: loggedIn["Pixiv"] = {"email": fantiaEmail, "password": fantiaPassword}
+        if pixivSuccess: loggedIn["Pixiv"] = {"username": pixivUsername, "password": fantiaPassword}
     else:
         print_in_both_en_jp(
             en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
