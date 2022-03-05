@@ -21,6 +21,7 @@ from selenium.webdriver.edge.options import Options as edgeOptions
 
 # Import Standard Libraries
 import pathlib, json, sys, shutil
+from os import _exit as os_exit
 from time import sleep
 from warnings import filterwarnings, catch_warnings
 
@@ -49,7 +50,7 @@ def error_shutdown(**errorMessages):
         input("Please enter any key to exit...")
         print("Thank you for your understanding.")
         sleep(2)
-        sys.exit(1)
+        os_exit(1)
     elif "jp" in errorMessages and lang == "jp":
         jpErrorMessages = errorMessages.get("jp")
         if type(jpErrorMessages) == tuple:
@@ -59,7 +60,7 @@ def error_shutdown(**errorMessages):
         input("何か入力すると終了します。。。")
         print("ご理解頂き誠にありがとうございます。")
         sleep(2)
-        sys.exit(1)
+        os_exit(1)
 
 def print_in_both_en_jp(**message):
     enMessages = message.get("en")
@@ -138,9 +139,18 @@ def decrypt_string(inputString):
             en=(f"{S.RED}Fatal Error: Could not decrypt string.{END}", f"{S.RED}Resetting Key and encrypted values in config.json...{END}"),
             jp=(f"{S.RED}致命的なエラー: 文字列を復号化できませんでした。{END}", f"{S.RED}config.jsonのキーと暗号化された値をリセットしています...{END}")
         )
-        keyPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "key.pik")
+        keyPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "key")
         if keyPath.is_file():
             keyPath.unlink()
+        
+        with open(jsonPath, "r") as f:
+            config = json.load(f)
+        
+        config["Accounts"]["Fantia"]["Password"] = ""
+        config["Accounts"]["Pixiv"]["Password"] = ""
+        
+        with open(jsonPath, "w") as f:
+            json.dump(config, f, indent=4)
             
         error_shutdown(en=("Please restart the program."), jp=("このプログラムを再起動してください。"))
 
@@ -580,7 +590,7 @@ def save_browser_config(selectedBrowser):
     )
 
 def get_key():
-    keyPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "key.pik")
+    keyPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "key")
     if keyPath.is_file():
         with open(keyPath, "rb") as f:
             keyObject = dill.load(f)

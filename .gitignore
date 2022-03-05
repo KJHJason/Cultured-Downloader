@@ -4,4 +4,4 @@ src/configs/config.json
 geckodriver.log
 src/__pycache__/*
 src/downloads/*
-src/configs/key.pik
+src/configs/*
