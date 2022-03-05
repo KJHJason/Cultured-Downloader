@@ -138,13 +138,10 @@ def decrypt_string(inputString):
             en=(f"{S.RED}Fatal Error: Could not decrypt string.{END}", f"{S.RED}Resetting Key and encrypted values in config.json...{END}"),
             jp=(f"{S.RED}致命的なエラー: 文字列を復号化できませんでした。{END}", f"{S.RED}config.jsonのキーと暗号化された値をリセットしています...{END}")
         )
-        with open(jsonPath, "r") as f:
-            config = json.load(f)
-        config["Key"] = ""
-        config["Accounts"]["Fantia"]["Password"] = ""
-        config["Accounts"]["Pixiv"]["Password"] = ""
-        with open(jsonPath, "w") as f:
-            json.dump(config, f, indent=4)
+        keyPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "key.pik")
+        if keyPath.is_file():
+            keyPath.unlink()
+            
         error_shutdown(en=("Please restart the program."), jp=("このプログラムを再起動してください。"))
 
 def get_user_account():
@@ -1004,7 +1001,6 @@ def main():
     if pythonMainVer < 3 or pythonSubVer < 8:
         print(f"{S.RED}Fatal Error: This program requires running Python 3.8 or higher!", f"You are running Python {pythonMainVer}.{pythonSubVer}{S.RESET}"),
         print("{S.RED}致命的なエラー： このプログラムにはPython 3.8以上が必要です。", f"あなたはPython {pythonMainVer}.{pythonSubVer}を実行しています。{S.RESET}")
-
 
     # declare global variables
     global jsonPath
