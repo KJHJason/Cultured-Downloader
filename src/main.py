@@ -1,4 +1,4 @@
-version = "0.01"
+version = "0.50"
 
 # Import Third-party Libraries
 import requests, dill
@@ -12,17 +12,15 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as chromeService
 from selenium.webdriver.chrome.options import Options as chromeOptions
-from webdriver_manager.firefox import GeckoDriverManager
-from selenium.webdriver.firefox.service import Service as firefoxService
-from selenium.webdriver.firefox.options import Options as firefoxOptions
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from selenium.webdriver.edge.service import Service as edgeService
 from selenium.webdriver.edge.options import Options as edgeOptions
 
 # Import Standard Libraries
 import pathlib, json, sys, shutil, logging
+from json.decoder import JSONDecodeError
+from random import uniform
 from time import sleep
-from warnings import filterwarnings, catch_warnings
 from datetime import datetime
 
 # Importing Custom Python Files as Modules
@@ -38,11 +36,15 @@ def shutdown():
     else:
         print(f"{S.YELLOW}Cultured Downloaderをご利用いただきありがとうございます。{END}")
         input("何か入力すると終了します。。。")
+    try: driver.close()
+    except: pass
     sys.exit(0)
 
 def print_error_log_notification():
-    print(f"{S.RED}Unknown Error Occurred/不明なエラーが発生した{END}")
-    print(f"{S.RED}Please provide the developer with a error text file generated in the logs folder/\nlogs フォルダに生成されたエラーテキストファイルを開発者に提供してください。\n{END}")
+    print(f"\n{S.RED}Unknown Error Occurred/不明なエラーが発生した{END}")
+    print(f"{S.RED}Please provide the developer with a error text file generated in the logs folder/\nlogsフォルダに生成されたエラーテキストファイルを開発者に提供してください。\n{END}")
+    try: driver.close()
+    except: pass
 
 def log_error():
     filePath = pathlib.Path(__file__).resolve().parent.joinpath("logs")
@@ -80,6 +82,7 @@ def error_shutdown(**errorMessages):
         input("何か入力すると終了します。。。")
         print("ご理解頂き誠にありがとうございます。")
 
+    driver.close()
     log_error()
     sleep(2)
     raise SystemExit
@@ -535,29 +538,19 @@ def get_driver(browserType):
         capabilities = DesiredCapabilities.CHROME.copy()
         capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
 
+        # change default download location
+        downloadPath = appPath.joinpath("pixiv_downloads")
+        if not downloadPath.is_dir(): downloadPath.mkdir(parents=True)
+        cOptions.add_experimental_option("prefs", {
+            "download.default_directory": str(downloadPath),
+            "profile.managed_default_content_settings.images": 2
+        })
+
         # auto downloads chromedriver.exe
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
         driver = webdriver.Chrome(service=gService, options=cOptions, desired_capabilities=capabilities)
-    elif browserType == "firefox":
-        #minimise the browser window and hides unnecessary text output
-        fOptions = firefoxOptions()
-        fOptions.headless = True
-        fOptions.add_argument("--log-level=3")
-        fOptions.add_argument("--disable-gpu")
-
-        # for checking response code
-        capabilities = DesiredCapabilities.FIREFOX.copy()
-        capabilities["moz:loggingPrefs"] = {"performance": "ALL"}
-
-        # auto downloads geckodriver.exe
-        fService = firefoxService(GeckoDriverManager(log_level=0, print_first_line=False).install())
-
-        # start webdriver
-        with catch_warnings():
-            filterwarnings("ignore", category=DeprecationWarning)
-            driver = webdriver.Firefox(service=fService, options=fOptions, capabilities=capabilities)
     elif browserType == "edge":
         # minimise the browser window and hides unnecessary text output
         eOptions = edgeOptions()
@@ -570,28 +563,40 @@ def get_driver(browserType):
         capabilities = DesiredCapabilities.EDGE.copy()
         capabilities["ms:loggingPrefs"] = {"performance": "ALL"}
 
+        # change default download location
+        downloadPath = appPath.joinpath("pixiv_downloads")
+        if not downloadPath.is_dir(): downloadPath.mkdir(parents=True)
+        eOptions.add_experimental_option("prefs", {
+            "download.default_directory": str(downloadPath),
+            "profile.managed_default_content_settings.images": 2
+        })
+
         # auto downloads msedgedriver.exe
         eService = edgeService(EdgeChromiumDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
         driver = webdriver.Edge(service=eService, options=eOptions, capabilities=capabilities)
     else:
-        with open(jsonPath, "w") as f:
+        with open(jsonPath, "r") as f:
             config = json.load(f)
-            config["Browser"] = ""
+        
+        config["Browser"] = ""
+        with open(jsonPath, "w") as f:
             json.dump(config, f, indent=4)
+
         error_shutdown(
             en=("Error: Unknown browser type in config.json", "Please restart this program."),
             jap=("エラー： config.jsonに不明なブラウザタイプがある。", "このプログラムを再起動してください。")
         )
 
+    # driver.minimize_window()
     return driver
 
 def get_user_browser_preference():
     if lang == "en":
-        selectedBrowser = get_input_from_user(prompt="Select a browser from the available options: ", command=("chrome", "firefox", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Firefox, Edge."), warning="Error: Invalid browser, please enter a browser from the available browsers.")
+        selectedBrowser = get_input_from_user(prompt="Select a browser from the available options: ", command=("chrome", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Edge."), warning="Error: Invalid browser, please enter a browser from the available browsers.")
     else:
-        selectedBrowser = get_input_from_user(prompt="利用可能なオプションからブラウザを選択します： ", command=("chrome", "firefox", "edge"), prints=("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Firefox, Edge。"), warning="エラー： 不正なブラウザです。使用可能なブラウザから選んでください。")
+        selectedBrowser = get_input_from_user(prompt="利用可能なオプションからブラウザを選択します： ", command=("chrome", "edge"), prints=("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge。"), warning="エラー： 不正なブラウザです。使用可能なブラウザから選んでください。")
     return selectedBrowser
 
 def check_browser_config():
@@ -672,6 +677,10 @@ def get_lang():
         prefLang = config["Language"]
         if prefLang == "": raise Exception("Key is empty.")
         return prefLang
+    except JSONDecodeError:
+        with open(jsonPath, "w") as f:
+            json.dump({}, f)
+        return set_lang(config)
     except:
         return set_lang(config)
 
@@ -731,35 +740,60 @@ def check_if_directory_has_files(dirPath):
     hasFiles = any(dirPath.iterdir())
     return hasFiles
 
+def randomise_delay():
+    sleep(round(uniform(0.2, 0.6), 2))
+
+def save_pixiv_cookie():
+    with open(appPath.joinpath("configs", "pixiv_cookies"), 'wb') as f:
+        dill.dump(driver.get_cookies(), f)
+
+def load_pixiv_cookie():
+    cookiePath = appPath.joinpath("configs", "pixiv_cookies")
+
+    driver.get("https://www.fanbox.cc/")
+    
+    sleep(5)
+    if cookiePath.is_file():
+        with open(cookiePath, 'rb') as f:
+            cookies = dill.load(f)
+        for cookie in cookies:
+            driver.add_cookie(cookie)
+
+        driver.get("https://www.fanbox.cc/messages")
+        sleep(5)
+        if driver.current_url == "https://www.fanbox.cc/messages": 
+            print_in_both_en_jp(
+                en=(f"{S.GREEN}Pixiv Fanbox cookied loaded successfully!{END}"),
+                jp=(f"{S.GREEN}Pixivファンボックスのcookieが正常に読み込まれました！{END}")
+            )
+            return True
+        else: return False
+    else: return False
+
 def fantia_login(fantiaEmail, fantiaPassword):
     # a bunch of sleep delays to prevent being detected for being a bot
     driver.get("https://fantia.jp/sessions/signin")
-    sleep(5)
+    sleep(4)
     driver.find_element(by=By.ID, value="user_email").send_keys(fantiaEmail)
-    sleep(2)
-    driver.find_element(by=By.ID, value="user_password").send_keys(fantiaPassword)
-    sleep(2)
-    driver.find_element(by=By.XPATH, value="//button[@class='btn btn-primary btn-block mb-10 p-15']").click()
     sleep(3)
+    driver.find_element(by=By.ID, value="user_password").send_keys(fantiaPassword)
+    sleep(3)
+    driver.find_element(by=By.XPATH, value="//button[@class='btn btn-primary btn-block mb-10 p-15']").click()
 
-    # checks if the user is authenticated and wait for a max of 15 seconds for the page to load
+    # checks if the user is authenticated
     try:
-        sleep(5)
+        sleep(6)
         driver.get("https://fantia.jp/mypage/cart")
-        sleep(5)
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
-
-        # print(driver.title)
-        if driver.title != "ショッピングカート｜ファンティア[Fantia]": raise Exception("Fantia login failed.")
+        if driver.current_url != "https://fantia.jp/mypage/cart": raise Exception("Fantia login failed.")
         print_in_both_en_jp(
             en=(f"{S.GREEN}Successfully logged in to Fantia!{END}"),
             jp=(f"{S.GREEN}Fantiaへのログインに成功しました!{END}")
         )
         return True
     except Exception or TimeoutException:
-        # if there is no element with a class name of "loggedin", it will raise a TimeoutException
         print_in_both_en_jp(
             en=(f"{S.RED}Error: Fantia login failed.{END}"),
             jp=(f"{S.RED}エラー： Fantiaのログインに失敗しました。{END}")
@@ -774,33 +808,40 @@ def fantia_login(fantiaEmail, fantiaPassword):
 def pixiv_login(pixivUsername, pixivPassword):
     # a bunch of sleep delays to prevent being detected for being a bot
     driver.get("https://www.fanbox.cc/login")
+    if driver.current_url == "https://www.fanbox.cc/": return True
+    driver.execute_script("window.scroll({top: 250, left: 0, behavior: 'smooth'});")
     sleep(5)
-    driver.find_element(by=By.XPATH, value="//input[@placeholder='E-mail address / pixiv ID']").send_keys(pixivUsername)
+    for char in pixivUsername:
+        driver.find_element(by=By.XPATH, value="//input[@placeholder='E-mail address / pixiv ID']").send_keys(char)
+        randomise_delay()
+
     sleep(2)
-    driver.find_element(by=By.XPATH, value="//input[@placeholder='password']").send_keys(pixivPassword)
+    for char in pixivPassword:
+        driver.find_element(by=By.XPATH, value="//input[@placeholder='password']").send_keys(char)
+        randomise_delay()
+
     sleep(2)
     driver.find_element(by=By.XPATH, value="//button[@class='signup-form__submit']").click()
     sleep(3)
 
-    # checks if the user is authenticated and wait for a max of 15 seconds for the page to load
+    # checks if the user is authenticated
     try:
-        sleep(5)
+        sleep(6)
         driver.get("https://www.fanbox.cc/creators/supporting")
-
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
-        # print(driver.title)
-        if driver.title == "Supported Creators｜pixivFANBOX" or driver.title == "支援中のクリエイター｜pixivFANBOX": pass
-        else: raise Exception("Pixiv login failed.")
+        if driver.current_url != "https://www.fanbox.cc/creators/supporting": raise Exception("Pixiv login failed.")
 
         print_in_both_en_jp(
             en=(f"{S.GREEN}Successfully logged in to Pixiv!{END}"),
             jp=(f"{S.GREEN}Pixivへのログインに成功しました!{END}")
         )
+        save_pixiv_cookie()
+        sleep(3)
+        driver.get("https://github.com/KJHJason/Cultured-Downloader")
         return True
     except Exception or TimeoutException:
-        # if there is no anchor tag element with a class of "sc-1mdohqc-0 ilARNI", it will raise a TimeoutException
         print_in_both_en_jp(
             en=(f"{S.RED}Error: Pixiv login failed.{END}"),
             jp=(f"{S.RED}エラー： Pixivのログインに失敗しました。{END}")
@@ -831,13 +872,16 @@ def get_image_name(imageURL, website):
         )
 
 def get_pixiv_image_full_res_url(imageURL):
-    if imageURL.split(".")[-1] == "gif": return imageURL
-    else:
-        urlArray = []
-        for urlParts in imageURL.split("/"):
-            if urlParts == "w" or urlParts == "1200": pass
-            else: urlArray.append(urlParts)
-        return "/".join(urlArray)
+    try:
+        if imageURL.split(".")[-1] == "gif": return imageURL
+        else:
+            urlArray = []
+            for urlParts in imageURL.split("/"):
+                if urlParts == "w" or urlParts == "1200": pass
+                else: urlArray.append(urlParts)
+            return "/".join(urlArray)
+    except AttributeError:
+        raise AttributeError
 
 def save_image(imageURL, pathToSave):
     with requests.get(imageURL, stream=True) as r:
@@ -863,6 +907,29 @@ def print_download_completion_message(totalImage):
             jp=(f"\n{S.RED}エラー： ダウンロードする画像がありません。{END}")
         )
 
+def open_new_tab():
+    driver.execute_script("window.open('_blank');")
+    driver.switch_to.window(driver.window_handles[-1])
+
+def close_new_tab():
+    driver.execute_script("window.close();")
+    driver.switch_to.window(driver.window_handles[0])
+
+def download_image_javascript(imageSrcURL):
+    downloadImageExecuteFn = f"download('{imageSrcURL}');"
+    downloadImageMainJS = """function download(imageURL) {
+    const fileName = imageURL.split('/').pop();
+	var el = document.createElement("a");
+	el.setAttribute("href", imageURL);
+	el.setAttribute("download", fileName);
+	document.body.appendChild(el);
+ 	el.click();
+	el.remove();
+}
+
+"""
+    return downloadImageMainJS + downloadImageExecuteFn
+
 def download(urlInput, website, subFolderPath):
     driver.get(urlInput)
 
@@ -875,74 +942,156 @@ def download(urlInput, website, subFolderPath):
         save_image(imageSrc, imagePath)
 
     elif website == "FantiaPost":
-        imagePosts = driver.find_elements(by=By.CLASS_NAME, value="fantiaImage")
+        sleep(5)
+        try: fullyDisplayedImageAnchor = driver.find_elements(by=By.XPATH, value="//a[@class='image-container clickable']")
+        except: fullyDisplayedImageAnchor = []
+
+        fullyDisplayedImagesProgress = 1
+        totalFullyDisplayedImages = len(fullyDisplayedImageAnchor)
+
+        if totalFullyDisplayedImages > 0:
+            downloadFolder = subFolderPath.joinpath("1")
+            downloadFolder.mkdir(parents=True, exist_ok=True)
+        else:
+            print_in_both_en_jp(
+                en=(f"{S.YELLOW}Skipping stage 1...{END}"),
+                jp=(f"{S.YELLOW}ステージ1をスキップします...{END}")
+            )
+
+        fullyDisplayedImageContainerArray = []
+        for anchor in fullyDisplayedImageAnchor:
+            anchor.click()
+            sleep(0.5)
+            fullyDisplayedImageURL = driver.find_element(by=By.XPATH, value="//a[contains(text(),'オリジナルサイズを表示 ')]").get_attribute("href")
+            fullyDisplayedImageContainerArray.append(fullyDisplayedImageURL)
+            driver.find_element(by=By.XPATH, value="//a[@class='btn btn-dark btn-sm']").click()
+            sleep(0.5)
+
+        for imageURL in fullyDisplayedImageContainerArray:
+            driver.get(imageURL)
+            sleep(1)
+            image = driver.find_element(by=By.TAG_NAME, value="img")
+            imageSrc = image.get_attribute("src")
+            imagePath = downloadFolder.joinpath(get_image_name(imageSrc, "Fantia"))
+            save_image(imageSrc, imagePath)
+
+            if lang == "en":
+                print_progress_bar(fullyDisplayedImagesProgress, totalFullyDisplayedImages, f"Stage 1: Downloading image no.{fullyDisplayedImagesProgress} out of {totalFullyDisplayedImages}")
+            elif lang == "jp":
+                print_progress_bar(fullyDisplayedImagesProgress, totalFullyDisplayedImages, f"ステージ 1: 画像 {fullyDisplayedImagesProgress} / {totalFullyDisplayedImages} をダウンロード中")
+            
+            fullyDisplayedImagesProgress += 1
+            close_new_tab()
+
+        try: imagePosts = driver.find_elements(by=By.CLASS_NAME, value="fantiaImage")
+        except: imagePosts = []
+
         imagePostsProgress = 1
         totalImagePosts = len(imagePosts)
 
+        if totalImagePosts > 0:
+            downloadFolder = subFolderPath.joinpath("2")
+            downloadFolder.mkdir(parents=True, exist_ok=True)
+        else:
+            print_in_both_en_jp(
+                en=(f"{S.YELLOW}Skipping stage 2...{END}"),
+                jp=(f"{S.YELLOW}ステージ2をスキップします...{END}")
+            )
+
         # downloading Fantia blog images that are may be locked by default due to membership restrictions
+        if totalFullyDisplayedImages > 0: print("\n")
         for imagePost in imagePosts:
             imageHREFLink = imagePost.get_attribute("href")
+            open_new_tab()
             driver.get(imageHREFLink)
             image = driver.find_element(by=By.TAG_NAME, value="img")
             imageSrc = image.get_attribute("src")
-            imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Fantia"))
+            imagePath = downloadFolder.joinpath(get_image_name(imageSrc, "Fantia"))
             save_image(imageSrc, imagePath)
 
             if lang == "en":
-                print_progress_bar(imagePostsProgress, totalImagePosts, f"Stage 1: Downloading image no.{imagePostsProgress} out of {totalImagePosts}")
+                print_progress_bar(imagePostsProgress, totalImagePosts, f"Stage 2: Downloading image no.{imagePostsProgress} out of {totalImagePosts}")
             elif lang == "jp":
-                print_progress_bar(imagePostsProgress, totalImagePosts, f"ステージ 1: 画像 {imagePostsProgress} / {totalImagePosts} をダウンロード中")
+                print_progress_bar(imagePostsProgress, totalImagePosts, f"ステージ2: 画像 {imagePostsProgress} / {totalImagePosts} をダウンロード中")
             
             imagePostsProgress += 1
-            driver.get(urlInput) # returns to the original page
+            close_new_tab()
 
         # downloading Fantia images that are locked by default unless the user has a monthly subscription to the artist
-        premiumImages = driver.find_elements(by=By.XPATH, value="//a[@class='image-container force-square clickable']")
+        driver.get(urlInput)
+        sleep(5)
+        try: premiumImages = driver.find_elements(by=By.XPATH, value="//a[@class='image-container force-square clickable']")
+        except: premiumImages = []
         premiumImagesProgress = 1
-        totalPremiumImages = len(imagePosts)
+        totalPremiumImages = len(premiumImages)
 
+        if totalPremiumImages > 0:
+            downloadFolder = subFolderPath.joinpath("3")
+            downloadFolder.mkdir(parents=True, exist_ok=True)
+        else:
+            print_in_both_en_jp(
+                en=(f"{S.YELLOW}Skipping stage 3...{END}"),
+                jp=(f"{S.YELLOW}ステージ3をスキップします...{END}")
+            )
+        
+        paidImageContainerArray = []
         for paidImageContainer in premiumImages:
             paidImageContainer.click()
-            fullSizeButton = driver.find_element(by=By.XPATH, value="//button[@class='btn btn-secondary btn-sm mr-10 ng-scope']")
-            imageHREFLink = fullSizeButton.get_attribute("href")
-            driver.get(imageHREFLink)
+            sleep(0.5)
+            paidImageURL = driver.find_element(by=By.XPATH, value="//a[contains(text(),'オリジナルサイズを表示 ')]").get_attribute("href")
+            paidImageContainerArray.append(paidImageURL)
+            driver.find_element(by=By.XPATH, value="//a[@class='btn btn-dark btn-sm']").click()
+            sleep(0.5)
+        
+        if totalPremiumImages > 0: print("\n")
+        for imageURL in paidImageContainerArray:
+            driver.get(imageURL)
+            sleep(1)
             image = driver.find_element(by=By.TAG_NAME, value="img")
             imageSrc = image.get_attribute("src")
-            imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Fantia"))
+            imagePath = downloadFolder.joinpath(get_image_name(imageSrc, "Fantia"))
             save_image(imageSrc, imagePath)
 
             if lang == "en":
-                print_progress_bar(premiumImagesProgress, totalPremiumImages, f"{S.YELLOW}Stage 2: Downloading image no.{premiumImagesProgress} out of {totalPremiumImages}{END}")
+                print_progress_bar(premiumImagesProgress, totalPremiumImages, f"{S.YELLOW}Stage 3: Downloading image no.{premiumImagesProgress} out of {totalPremiumImages}{END}")
             else:
-                print_progress_bar(premiumImagesProgress, totalPremiumImages, f"ステージ 2: 画像 {premiumImagesProgress} / {totalPremiumImages} をダウンロード中")
+                print_progress_bar(premiumImagesProgress, totalPremiumImages, f"ステージ3: 画像 {premiumImagesProgress} / {totalPremiumImages} をダウンロード中")
 
             premiumImagesProgress += 1
-            driver.get(urlInput) # returns to the original page
+            close_new_tab()
 
-        totalImages = totalImagePosts + totalPremiumImages
+        totalImages = totalFullyDisplayedImages + totalImagePosts + totalPremiumImages
         print_download_completion_message(totalImages)
-
     elif website == "Pixiv":
+        sleep(5)
         # downloads gifs or static images based on a pixiv post
-        images = driver.find_elements(by=By.XPATH, value="//img[@class='sc-14k46gk-1']")
+        try: imagesAnchors = driver.find_elements(by=By.XPATH, value="//a[contains(@class, 'iyApTb')]")
+        except: imagesAnchors = []
 
         progress = 1
-        totalImages = len(images)
+        totalImages = len(imagesAnchors)
 
-        for image in images:
-            imageSrc = get_pixiv_image_full_res_url(image.get_attribute("src"))
-            imagePath = subFolderPath.joinpath(get_image_name(imageSrc, "Pixiv"))
-            save_image(imageSrc, imagePath)
-
+        for anchor in imagesAnchors:
+            imageHREF = anchor.get_attribute("href")
+            open_new_tab()
+            driver.get(imageHREF)
+            image = driver.find_element(by=By.TAG_NAME, value="img")
+            imageSrc = image.get_attribute("src")
+            driver.execute_script(download_image_javascript(imageSrc))
             if lang == "en":
                 print_progress_bar(progress, totalImages, f"Downloading image no.{progress} out of {totalImages}")
             else:
                 print_progress_bar(progress, totalImages, f"画像 {progress} / {totalImages} をダウンロード中")
           
             progress += 1
-            driver.get(urlInput) # returns to the original page
+            close_new_tab()
 
         print_download_completion_message(totalImages)
+        if totalImages > 0:
+            print_in_both_en_jp(
+                en=(f"{S.GREEN}Note: All images has been saved to the folder, pixiv_downloads{END}"),
+                jp=(f"{S.GREEN}注意：画像はすべてpixiv_downloadsというフォルダに保存されています。{END}")
+            )
 
 def create_subfolder():
     while True:
@@ -1072,7 +1221,7 @@ def main():
 
     appPath = pathlib.Path(__file__).resolve().parent
     jsonPath = pathlib.Path(__file__).resolve().parent.joinpath("configs", "config.json")
-    directoryPath = pathlib.Path(__file__).resolve().parent.joinpath("downloads")
+    directoryPath = pathlib.Path(__file__).resolve().parent.joinpath("fantia_downloads")
 
     # checks if config.json exists and the necessary configs are defined
     check_if_json_file_exists()
@@ -1109,45 +1258,93 @@ def main():
     # gets account details for Fantia and Pixiv for downloading images that requires a membership
     fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account()
 
-    if lang == "en": loginPrompt = "Would you like to login to Fantia and Pixiv? (y/n) or (\"X\" to shutdown): "
-    else: loginPrompt = "FantiaとPixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
+    # retrieve cookie if exists
+    pixivCookieLoaded = load_pixiv_cookie()
+    if pixivCookieLoaded: loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
+    while True:
+        if pixivCookieLoaded != True:
 
-    userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
-    if userLoginCmd == "x": shutdown()
-    elif userLoginCmd == "y":
-        print_in_both_en_jp(
-            en=(
-                f"\n{S.YELLOW}Logging in to Fantia and Pixiv...{END}", 
-                f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-            ),
-            jp=(
-                f"\n{S.YELLOW}FantiaとPixivにログイン中...{END}",
-                f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
-            )
-        )
+            if lang == "en": loginPrompt = "Would you like to login to Fantia and Pixiv? (y/n) or (\"X\" to shutdown): "
+            else: loginPrompt = "FantiaとPixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
 
-        if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
-            fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-            pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
+            userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
+            if userLoginCmd == "x": shutdown()
+            elif userLoginCmd == "y":
+                print_in_both_en_jp(
+                    en=(
+                        f"\n{S.YELLOW}Logging in to Fantia and Pixiv...{END}", 
+                        f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
+                    ),
+                    jp=(
+                        f"\n{S.YELLOW}FantiaとPixivにログイン中...{END}",
+                        f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                    )
+                )
 
-        if fantiaSuccess and pixivSuccess:
-            print_in_both_en_jp(
-                en=(f"{S.GREEN}Logins were successful!{END}"),
-                jp=(f"{S.GREEN}ログインに成功しました！{END}")
-            )
+                if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
+                    fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+                    if not pixivCookieLoaded: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
+
+                if fantiaSuccess and pixivSuccess:
+                    print_in_both_en_jp(
+                        en=(f"{S.GREEN}Logins were successful!{END}"),
+                        jp=(f"{S.GREEN}ログインに成功しました！{END}")
+                    )
+                else:
+                    print_in_both_en_jp(
+                    en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
+                    jap=(f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
+                )
+
+                if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
+                if pixivSuccess: loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
+                break
+            else:
+                print_in_both_en_jp(
+                    en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
+                    jap=(f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
+                )
+                break
         else:
-            print_in_both_en_jp(
-            en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-            jap=(f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-        )
+            if lang == "en": loginPrompt = "Would you like to login to Fantia (y/n) or (\"X\" to shutdown): "
+            else: loginPrompt = "Fantiaにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
 
-        if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-        if pixivSuccess: loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
-    else:
-        print_in_both_en_jp(
-            en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-            jap=(f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-        )
+            userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
+            if userLoginCmd == "x": shutdown()
+            elif userLoginCmd == "y":
+                print_in_both_en_jp(
+                    en=(
+                        f"\n{S.YELLOW}Logging in to Fantia...{END}", 
+                        f"{S.ORANGE}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
+                    ),
+                    jp=(
+                        f"\n{S.YELLOW}Fantiaにログイン中...{END}",
+                        f"{S.ORANGE}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                    )
+                )
+
+                if fantiaEmail != None and fantiaPassword != None: 
+                    fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+
+                if fantiaSuccess:
+                    print_in_both_en_jp(
+                        en=(f"{S.GREEN}Logins were successful!{END}"),
+                        jp=(f"{S.GREEN}ログインに成功しました！{END}")
+                    )
+                else:
+                    print_in_both_en_jp(
+                    en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
+                    jap=(f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
+                )
+
+                if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
+                break
+            else:
+                print_in_both_en_jp(
+                    en=(f"{S.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
+                    jap=(f"{S.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
+                )
+                break
 
     cmdInput = ""
     cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "x")
@@ -1229,23 +1426,20 @@ def main():
                 download(urlInput, "FantiaPost", imagePath)
 
         elif cmdInput == "3":
-            imagePath = create_subfolder()
-            if imagePath != "X":
-                while True:
-                    if lang == "en": urlInput = input("Enter the URL of the Pixiv Fanbox post: ").strip()
-                    else: urlInput = input("Pixivファンボックスの投稿URLを入力してください： ").strip()
-                    if urlInput == "": print_in_both_en_jp(
-                                        en=(f"{S.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
-                                        jp=(f"{S.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
-                                    )
-                    else: break
+            while True:
+                if lang == "en": urlInput = input("Enter the URL of the Pixiv Fanbox post: ").strip()
+                else: urlInput = input("Pixivファンボックスの投稿URLを入力してください： ").strip()
+                if urlInput == "": print_in_both_en_jp(
+                                    en=(f"{S.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
+                                    jp=(f"{S.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
+                                )
+                else: break
 
-                imageCounter = 1
-                print_in_both_en_jp(
-                    en=(f"{S.YELLOW}Downloading images...{END}"),
-                    jp=(f"{S.GREEN}画像をダウンロードする...{END}")
-                )
-                download(urlInput, "Pixiv", imagePath)
+            print_in_both_en_jp(
+                en=(f"{S.YELLOW}Downloading images...{END}"),
+                jp=(f"{S.GREEN}画像をダウンロードする...{END}")
+            )
+            download(urlInput, "Pixiv", "")
 
         elif cmdInput == "4":
             if lang == "en": webPrompt = "Which accounts would you like to update for? (Fantia/Pixiv/X to cancel): "
@@ -1290,14 +1484,16 @@ def main():
             lang = update_lang()
 
         elif cmdInput == "7" and not check_if_user_is_logged_in():
+            fantiaSuccessful = False
+            pixivSuccessful = False
             while True:
-                if "Fantia" not in loggedIn:
-                    fantiaSuccessful = fantia_login(fantiaEmail, fantiaPassword)
-                if "Pixiv" not in loggedIn:
-                    pixivSuccessful = pixiv_login(pixivUsername, pixivPassword)
+                if "Fantia" not in loggedIn: fantiaSuccessful = fantia_login(fantiaEmail, fantiaPassword)
+                else: fantiaSuccessful = True
+                if "Pixiv" not in loggedIn: pixivSuccessful = pixiv_login(pixivUsername, pixivPassword)
+                else: pixivSuccessful = True
                 
-                if fantiaSuccessful: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-                if pixivSuccessful: loggedIn["Pixiv"] = {"username": pixivUsername, "password": fantiaPassword}
+                if fantiaSuccessful and "Fantia" not in loggedIn: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
+                if pixivSuccessful and "Pixiv" not in loggedIn: loggedIn["Pixiv"] = {"username": pixivUsername, "password": fantiaPassword}
                 
                 if pixivSuccessful != True or fantiaSuccessful != True:
                     if lang == "en": 
@@ -1333,6 +1529,18 @@ Note/注意: Requires the user to provide his/her credentials for images that re
            This program is not affiliated with Pixiv or Fantia.
            会員登録が必要な画像には、ユーザーの認証情報の提供が必要です。
            このプログラムはPixivやFantiaとは関係ありません。{END}
+{S.LIGHT_RED}
+Known Issues/知られている問題: 
+1. Frequent logins to Pixiv per day will show a captcha which will render the program useless...
+   To resolve this, please go to pixiv manually and try to login again and clear the captcha.
+   Pixivに1日に何度もログインすると、キャプチャが表示され、プログラムが使えなくなる...
+   解決するには、手動でpixivにアクセスし、再度ログインしてキャプチャをクリアしてみてください。
+
+2. If both Fantia and Pixiv logins fails, the program may shutdown without any errors if user re-attempts to login again.
+   To resolve this on your end, please make sure your credentials are correct and that you have a strong Wi-Fi connection.
+   FantiaとPixivの両方のログインに失敗した場合、ユーザーが再度ログインを試みても、プログラムはエラーにならずに終了することがあります。
+   解決するには、認証情報が正しいかどうか、高速のWi-Fi接続があるかどうかを確認してください。
+{END}
 """
     print(introMenu)
     try:
@@ -1342,9 +1550,11 @@ Note/注意: Requires the user to provide his/her credentials for images that re
     except UnboundLocalError:
         print_error_log_notification()
         log_error()
+        sys.exit(1)
     except KeyError:
         print_error_log_notification()
         log_error()
+        sys.exit(1)
     except KeyboardInterrupt:
         print(f"\n{S.RED}Program Terminated/プログラムが終了しました{END}")
         sleep(1)
@@ -1352,8 +1562,10 @@ Note/注意: Requires the user to provide his/her credentials for images that re
     except TypeError:
         print_error_log_notification()
         log_error()
+        sys.exit(1)
     except:
         print_error_log_notification()
         log_error()
+        sys.exit(1)
 
     shutdown()
