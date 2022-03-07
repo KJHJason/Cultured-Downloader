@@ -331,7 +331,7 @@ def get_user_account(website):
                         if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
                         else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
                         if fantiaEmail != "":
-                            fantiaData["Username"] = fantiaEmail
+                            fantiaData["User"] = fantiaEmail
                             break
 
                     print_in_both_en_jp(
@@ -365,7 +365,7 @@ def get_user_account(website):
                         if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
                         else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
                         if pixivUsername != "":
-                            pixivData["Username"] = pixivUsername
+                            pixivData["User"] = pixivUsername
                             break
 
                     print_in_both_en_jp(
@@ -483,7 +483,7 @@ def get_user_account(website):
                         if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
                         else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
                         if fantiaEmail != "":
-                            fantiaData["Username"] = fantiaEmail
+                            fantiaData["User"] = fantiaEmail
                             break
 
                     print_in_both_en_jp(
