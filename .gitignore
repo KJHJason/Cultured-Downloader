@@ -1,13 +1,6 @@
 dep/*
 test.py
-src/configs/config.json
-geckodriver.log
 src/__pycache__/*
-src/fantia_downloads/*
-src/pixiv_downloads/*
-src/configs/*
-src/logs/*
-main_os_path.py
 src/build/*
 src/dist/*
 src/*.spec
