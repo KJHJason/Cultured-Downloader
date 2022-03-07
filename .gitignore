@@ -7,3 +7,7 @@ src/fantia_downloads/*
 src/pixiv_downloads/*
 src/configs/*
 src/logs/*
+main_os_path.py
+src/build/*
+src/dist/*
+src/*.spec

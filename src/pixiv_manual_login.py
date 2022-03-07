@@ -1,8 +1,10 @@
-version = "0.10"
+version = "0.20"
 
 # Import Third-party Libraries
 import dill
 from colorama import init as coloramaInit
+from colorama import Style
+from colorama import Fore as F
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -20,25 +22,28 @@ import pathlib, sys, logging
 from datetime import datetime
 from time import sleep
 
-# Importing Custom Python Files as Modules
-from Colour_Settings import TerminalColours as S
+def get_saved_config_data_folder():
+    dataDirectory = pathlib.Path.home().joinpath("AppData", "LocalLow", "Cultured Downloader")
+    if not dataDirectory.is_dir(): dataDirectory.mkdir(parents=True)
+    return dataDirectory
 
 def print_error_log_notification():
-    print(f"\n{S.RED}Unknown Error Occurred/不明なエラーが発生した{END}")
-    print(f"{S.RED}Please provide the developer with a error text file generated in the logs folder/\nlogsフォルダに生成されたエラーテキストファイルを開発者に提供してください。\n{END}")
+    logFolderPath = get_saved_config_data_folder().joinpath("logs")
+    print(f"\n{F.RED}Unknown Error Occurred/不明なエラーが発生した{END}")
+    print(f"{F.RED}Please provide the developer with a error text file generated in {logFolderPath}\n{logFolderPath}に生成されたエラーテキストファイルを開発者に提供してください。\n{END}")
     try: driver.close()
     except: pass
 
 def log_error():
-    filePath = pathlib.Path(__file__).resolve().parent.joinpath("logs")
+    filePath = get_saved_config_data_folder().joinpath("logs")
     if not filePath.is_dir(): filePath.mkdir(parents=True)
 
-    fileName = "".join(["pixiv-login-error-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
+    fileName = "".join([f"pixiv-manual-login-error-v{version}-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
     fullFilePath = filePath.joinpath(fileName)
     
     if not fullFilePath.is_file():
         with open(fullFilePath, "w") as f:
-            f.write(f"Cultured Downloader's Pixiv Manual Login Program v{version} Error Logs\n\n")
+            f.write(f"Cultured Downloader Pixiv Manual Login v{version} Error Logs\n\n")
     else:
         with open(fullFilePath, "a") as f:
             f.write(f"\n")
@@ -55,7 +60,16 @@ def print_in_both_en_jp(**message):
             for enLine in enMessages:
                 print(enLine)
         else: print(enMessages)
+    elif lang == "jp":
+        if type(jpMessages) == tuple:
+            for jpLine in jpMessages:
+                print(jpLine)
+        else: print(jpMessages)
     else:
+        if type(enMessages) == tuple:
+            for enLine in enMessages:
+                print(enLine)
+        else: print(enMessages)
         if type(jpMessages) == tuple:
             for jpLine in jpMessages:
                 print(jpLine)
@@ -70,33 +84,33 @@ def get_input_from_user(**kwargs):
     if prints != None:
         if type(prints) == tuple:
             for line in prints:
-                print(f"{S.YELLOW}{line}{END}")
-        else: print(f"{S.YELLOW}{prints}{END}")
+                print(f"{F.LIGHTYELLOW_EX}{line}{END}")
+        else: print(f"{F.LIGHTYELLOW_EX}{prints}{END}")
 
     while True:
         userInput = input(prompt).lower().strip()
         if userInput in commands: return userInput
         else: 
             try:
-                if warning and lang == "en": print(f"{S.RED}Error: {warning}.{END}")
-                elif warning and lang == "jp": print(f"{S.RED}エラー: {warning}{END}")
+                if warning and lang == "en": print(f"{F.RED}Error: {warning}.{END}")
+                elif warning and lang == "jp": print(f"{F.RED}エラー: {warning}{END}")
                 else: 
                     if lang == "en": commandToPrint = " or ".join(commands)
                     else: commandToPrint = "または".join(commands)
                     print_in_both_en_jp(
-                        en=(f"{S.RED}Error: Invalid input. Please enter {commandToPrint}.{END}"),
-                        jp=(f"{S.RED}エラー: 不正な入力です。{commandToPrint}を入力してください。{END}")
+                        en=(f"{F.RED}Error: Invalid input. Please enter {commandToPrint}.{END}"),
+                        jp=(f"{F.RED}エラー: 不正な入力です。{commandToPrint}を入力してください。{END}")
                     )
             except NameError:
                 # if lang is not defined yet
                 commandToPrintEn = " or ".join(commands)
                 commandToPrintJp = "または".join(commands)
                 if warning: 
-                    print(f"{S.RED}Error: Invalid language prefix entered.{END}")
-                    print(f"{S.RED}エラー: 入力された言語プレフィックスが無効です。{END}")
+                    print(f"{F.RED}Error: Invalid language prefix entered.{END}")
+                    print(f"{F.RED}エラー: 入力された言語プレフィックスが無効です。{END}")
                 else: 
-                    print(f"{S.RED}Error: Invalid input. Please enter {commandToPrintEn}.{END}"),
-                    print(f"{S.RED}エラー: 不正な入力です。{commandToPrintJp}を入力してください。{END}")
+                    print(f"{F.RED}Error: Invalid input. Please enter {commandToPrintEn}.{END}"),
+                    print(f"{F.RED}エラー: 不正な入力です。{commandToPrintJp}を入力してください。{END}")
 
 def get_user_browser_preference():
     if lang == "en":
@@ -140,8 +154,8 @@ def pixiv_login():
     if driver.current_url == "https://www.fanbox.cc/": return True
 
     print_in_both_en_jp(
-        en=(f"{S.YELLOW}A new browser should have opened.{END}", f"{S.YELLOW}Please enter your username and password and login to Pixiv manually.{END}"),
-        jp=(f"{S.YELLOW}新しいブラウザが起動したはずです。{END}", f"{S.YELLOW}ユーザー名とパスワードを入力し、手動でPixivにログインしてください。{END}")
+        en=(f"{F.LIGHTYELLOW_EX}A new browser should have opened.{END}", f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to Pixiv manually.{END}"),
+        jp=(f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。{END}", f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動でPixivにログインしてください。{END}")
     )
 
     if lang == "en": input("Press any key to continue after logging in...")
@@ -149,28 +163,32 @@ def pixiv_login():
 
     try:
         driver.get("https://www.fanbox.cc/creators/supporting")
+        sleep(3)
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.XPATH, "/html/head/title"))
         )
     except TimeoutException:
         print_in_both_en_jp(
-            en=(f"{S.RED}Error: TimeoutException. Please try again.{END}"),
-            jp=(f"{S.RED}エラー: タイムアウトエラー。再度実行してください。{END}")
+            en=(f"{F.RED}Error: TimeoutException. Please try again.{END}"),
+            jp=(f"{F.RED}エラー: タイムアウトエラー。再度実行してください。{END}")
         )
         return False
 
     if driver.current_url != "https://www.fanbox.cc/creators/supporting":
-        print_in_both_en_jp(
-            en=(f"{S.RED}Error: Pixiv login failed.{END}"),
-            jp=(f"{S.RED}エラー： Pixivのログインに失敗しました。{END}")
-        )
         return False
 
 def main():
     global lang
     global driver
+    global appPath
+
+    appPath = get_saved_config_data_folder()
+    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
     
-    lang = get_input_from_user(prompt="Select a language/言語を選択してください (en/jp): ", command=("en", "jp"))
+    print(f"{F.YELLOW}Select a language/言語を選択してください{END}")
+    lang = get_input_from_user(prompt="(en/jp) or/または (\"X\" to shutdown/\"X\"でキャンセル） : ", command=("en", "jp", "x"))
+    
+    if lang == "x": raise SystemExit
 
     browserType = get_user_browser_preference()
     driver = get_driver(browserType)
@@ -180,38 +198,48 @@ def main():
         pixivLoggedIn = pixiv_login()
         if pixivLoggedIn: break
         else:
+            print_in_both_en_jp(
+                en=(f"{F.RED}Error: Pixiv login failed.{END}"),
+                jp=(f"{F.RED}エラー： Pixivのログインに失敗しました。{END}")
+            )
             if lang == "en": retryInput = get_input_from_user(prompt="Would you like to retry logging in manually? (y/n): ", command=("y", "n"))
             else: retryInput = get_input_from_user(prompt="もう一度手動でログインし直しますか？(y/n)： ", command=("y", "n"))
             if retryInput == "n": break
 
     if pixivLoggedIn:
         if driver.current_url != "https://www.fanbox.cc/": driver.get("https://www.fanbox.cc/")
-        configFolder = pathlib.Path(__file__).resolve().parent.joinpath("configs")
+        configFolder = appPath.joinpath("configs")
         if not configFolder.is_dir(): configFolder.mkdir(parents=True)
-        with open(configFolder.joinpath("pixiv_cookies"), 'wb') as f:
+        with open(pixivCookiePath, 'wb') as f:
             dill.dump(driver.get_cookies(), f)
         print_in_both_en_jp(
-            en=(f"{S.GREEN}The cookie saved will be automatically loaded in!{END}"),
-            jp=(f"{S.GREEN}保存されたクッキーは自動的に読み込まれます！{END}")
+            en=(f"{F.GREEN}The cookie saved to {pixivCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader!{END}"),
+            jp=(f"{F.GREEN}{pixivCookiePath} に保存されたCookieは、次回からCultured Downloaderで自動的に読み込まれるようになります!{END}")
         )
     
     driver.close()
     raise SystemExit
             
 if __name__ == "__main__":
-    coloramaInit(autoreset=False, wrap=False)
+    coloramaInit(autoreset=False, convert=True)
     global END
-    END = S.RESET
+    END = Style.RESET_ALL
+
     introMenu = f"""
-====================== {S.LIGHT_BLUE}CULTURED DOWNLOADER's PIXIV MANUAL LOGIN PROGRAM v{version}{END} ======================
-========================== {S.LIGHT_BLUE}https://github.com/KJHJason/Cultured-Downloader{END} =========================
-============================== {S.LIGHT_BLUE}Author/開発者: KJHJason, aka Dratornic{END} ==============================
-{S.YELLOW}
+====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's PIXIV MANUAL LOGIN PROGRAM v{version}{END} ======================
+========================== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} =========================
+============================== {F.LIGHTBLUE_EX}Author/開発者: KJHJason, aka Dratornic{END} ==============================
+{F.LIGHTYELLOW_EX}
 Purpose/目的: Allows you to login to Pixiv manually and save the cookie for faster login in the main program, Cultured Downloader.
               Pixivに手動でログインし、メインプログラムのCultured Downloaderでより速くログインするためのクッキーを保存できるようにします。
 
 Note/注意: This program is not affiliated with Pixiv or Fantia.
            このプログラムはPixivやFantiaとは関係ありません。{END}
+{F.LIGHTRED_EX}
+Known Issues/既知のバグについて: 
+1. Sometimes the program does not shutdown automatically. In this case, please close the program manually or press CTRL + C to terminate the program.
+   プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください
+{END}
 """
     print(introMenu)
 
@@ -219,16 +247,17 @@ Note/注意: This program is not affiliated with Pixiv or Fantia.
         main()
     except SystemExit:
         print_in_both_en_jp(
-            en=(f"{S.YELLOW}Thank you, this program will now exit...{END}"),
-            jp=(f"{S.YELLOW}ありがとうございました、このプログラムは終了します...{END}")
+            en=(f"{F.LIGHTYELLOW_EX}Thank you, this program will now exit...{END}"),
+            jp=(f"{F.LIGHTYELLOW_EX}ありがとうございました、このプログラムは終了します...{END}")
         )
         if lang == "en": input("Please enter any key to exit...")
-        else: input("何か入力すると終了します。。。")
-        sys.exit(0)
+        elif lang == "jp": input("何か入力すると終了します。。。")
+        else: input("Please enter any key to exit/何か入力すると終了します。。。")
+        sys.exit()
     except KeyboardInterrupt:
-        print(f"\n{S.RED}Program Terminated/プログラムが終了しました{END}")
+        print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
         sleep(1)
-        sys.exit(0)
+        sys.exit()
     except:
         print_error_log_notification()
         log_error()
