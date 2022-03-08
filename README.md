@@ -22,7 +22,7 @@ I did this mini-project as I was tired of downloading images manually as some ar
 
 Hence, I coded this program to automate the process of downloading images from a post via web scraping.
 
-In the end, I spent about 6 days on this mini-project so you can expect some bugs
+In the end, I spent about 6 days on this mini-project so you can expect some bugs...
 
 ## Disclaimers
 1. This program, Cultured Downloader, is not liable for any damages caused. 
@@ -46,6 +46,11 @@ In the end, I spent about 6 days on this mini-project so you can expect some bug
 4. If you feel unsafe providing your passwords to this program, you can proceed as a guest. However, you might not be able to download posts that requires a membership.
 5. Passwords provided will be encrypted and stored in a config.json file. However, please do not share any data with anyone as they will still be able to decrypt the encrypted password if you have shared the key file as well.
 6. If the website design has been changed, you can expect this program to break if it is not maintained/updated.
+
+## FAQ
+1. Why didn't you make a fantia_manual_login program?
+     * Well... The thing is that I did make the program. However, it was a failure as despite retrieving the login cookie session from fantia, I was still unable to login.
+     * Therefore, there is only the pixiv_manual_login program.  
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
