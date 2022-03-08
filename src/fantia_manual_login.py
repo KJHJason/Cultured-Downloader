@@ -1,4 +1,4 @@
-version = "1.01"
+version = "1.00"
 
 # Import Third-party Libraries
 import dill
@@ -149,20 +149,19 @@ def get_driver(browserType):
 
     return driver
 
-def pixiv_login():
-    driver.get("https://www.fanbox.cc/login")
-    if driver.current_url == "https://www.fanbox.cc/": return True
+def fantia_login():
+    driver.get("https://fantia.jp/sessions/signin")
 
     print_in_both_en_jp(
-        en=(f"{F.LIGHTYELLOW_EX}A new browser should have opened.{END}", f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to Pixiv manually.{END}"),
-        jp=(f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。{END}", f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動でPixivにログインしてください。{END}")
+        en=(f"{F.LIGHTYELLOW_EX}A new browser should have opened.{END}", f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to Fantia manually.{END}"),
+        jp=(f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。{END}", f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動でFantiaにログインしてください。{END}")
     )
 
     if lang == "en": input("Press any key to continue after logging in...")
     else: input("ログイン後に何かキーを押してください...")
 
     try:
-        driver.get("https://www.fanbox.cc/creators/supporting")
+        driver.get("https://fantia.jp/mypage/users/plans")
         sleep(3)
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.XPATH, "/html/head/title"))
@@ -174,7 +173,7 @@ def pixiv_login():
         )
         return False
 
-    if driver.current_url != "https://www.fanbox.cc/creators/supporting": return False
+    if driver.current_url != "https://fantia.jp/mypage/users/plans": return False
     else: return True
 
 def main():
@@ -183,7 +182,7 @@ def main():
     global appPath
 
     appPath = get_saved_config_data_folder()
-    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+    fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
     
     print(f"{F.YELLOW}Select a language/言語を選択してください{END}")
     lang = get_input_from_user(prompt="(en/jp) or/または (\"X\" to shutdown/\"X\"でキャンセル） : ", command=("en", "jp", "x"))
@@ -193,28 +192,33 @@ def main():
     browserType = get_user_browser_preference()
     driver = get_driver(browserType)
 
-    pixivLoggedIn = False
+    fantiaLoggedIn = False
     while True:
-        pixivLoggedIn = pixiv_login()
-        if pixivLoggedIn: break
+        fantiaLoggedIn = fantia_login()
+        if fantiaLoggedIn: break
         else:
             print_in_both_en_jp(
-                en=(f"{F.RED}Error: Pixiv login failed.{END}"),
-                jp=(f"{F.RED}エラー： Pixivのログインに失敗しました。{END}")
+                en=(f"{F.RED}Error: Fantia login failed.{END}"),
+                jp=(f"{F.RED}エラー： Fantiaのログインに失敗しました。{END}")
             )
             if lang == "en": retryInput = get_input_from_user(prompt="Would you like to retry logging in manually? (y/n): ", command=("y", "n"))
             else: retryInput = get_input_from_user(prompt="もう一度手動でログインし直しますか？(y/n)： ", command=("y", "n"))
             if retryInput == "n": break
 
-    if pixivLoggedIn:
-        if driver.current_url != "https://www.fanbox.cc/": driver.get("https://www.fanbox.cc/")
+    if fantiaLoggedIn:
+        if driver.current_url != "https://fantia.jp/": driver.get("https://fantia.jp/")
         configFolder = appPath.joinpath("configs")
         if not configFolder.is_dir(): configFolder.mkdir(parents=True)
-        with open(pixivCookiePath, 'wb') as f:
-            dill.dump(driver.get_cookies(), f)
+        with open(fantiaCookiePath, 'wb') as f:
+            Fantiacookies = driver.get_cookies()
+            for cookie in reversed(Fantiacookies): # reversed since most of the time the _session_id cookie is at the bottom of the list of cookies
+                if cookie["name"] == "_session_id":
+                    dill.dump(cookie, f)
+                    break
+
         print_in_both_en_jp(
-            en=(f"{F.GREEN}The cookie saved to {pixivCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
-            jp=(f"{F.GREEN}{pixivCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
+            en=(f"{F.GREEN}The cookie saved to {fantiaCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
+            jp=(f"{F.GREEN}{fantiaCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
         )
     
     driver.close()
@@ -226,21 +230,21 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     introMenu = f"""
-====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's PIXIV MANUAL LOGIN v{version}{END} ======================
+====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's FANTIA MANUAL LOGIN v{version}{END} ======================
 ========================== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} =========================
 ============================== {F.LIGHTBLUE_EX}Author/開発者: KJHJason, aka Dratornic{END} ==============================
 {F.LIGHTYELLOW_EX}
-Purpose/目的: Allows you to login to Pixiv manually and save the cookie for faster login in the main program, Cultured Downloader.
-              Pixivに手動でログインし、メインプログラムのCultured Downloaderでより速くログインするためのクッキーを保存できるようにします。
+Purpose/目的: Allows you to login to Fantia manually and save the cookie for faster login in the main program, Cultured Downloader.
+              Fantiaに手動でログインし、メインプログラムのCultured Downloaderでより速くログインするためのクッキーを保存できるようにします。
 
 Note/注意: This program is not affiliated with Pixiv or Fantia.
            このプログラムはPixivやFantiaとは関係ありません。{END}
 
 {F.RED}Disclaimer/免責条項: 
-1. This program, Cultured Downloader's Pixiv Manual Login, is not liable for any damages caused. 
-   This program is meant for personal use and to save time from logging into pixiv on the main program, Cultured Downloader.
-   本プログラム「Cultured Downloader's Pixiv Manual Login」は、発生した損害について一切の責任を負いません。
-   このプログラムは、個人的な使用を目的とし、メインプログラムであるCultured Downloaderでpixivにログインする時間を短縮するためのものです。
+1. This program, Cultured Downloader's Fantia Manual Login, is not liable for any damages caused. 
+   This program is meant for personal use and to save time from logging into Fantia on the main program, Cultured Downloader.
+   本プログラム「Cultured Downloader's Fantia Manual Login」は、発生した損害について一切の責任を負いません。
+   このプログラムは、個人的な使用を目的とし、メインプログラムであるCultured DownloaderでFantiaにログインする時間を短縮するためのものです。
 
 2. As a user of this program, you must never share any data such as config.json to other people.
    If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable but the user(s) involved will be.

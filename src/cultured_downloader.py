@@ -1,4 +1,4 @@
-version = "1.00"
+version = "1.01"
 
 # Import Third-party Libraries
 import requests, dill
@@ -439,7 +439,7 @@ def get_user_account(website):
                     config.update(data)
                     with open(jsonPath, "w") as f:
                         json.dump(config, f, indent=4)
-                    return None, None, None, None
+                    return None, None
                 else:
                     print_in_both_en_jp(
                         en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
@@ -512,6 +512,123 @@ def get_user_account(website):
                     json.dump(config, f, indent=4)
 
                 return fantiaEmail, fantiaPassword
+    elif website == "pixiv":
+        try:
+            pixivEmail = config["Accounts"]["Pixiv"]["User"]
+            pixivPassword = config["Accounts"]["Pixiv"]["Password"]
+            if pixivEmail == "" or pixivPassword == "":
+                raise Exception("Fantia account details had empty values.")
+            
+            try: pixivPassword = decrypt_string(pixivPassword)
+            except: raise SystemExit
+
+            return pixivEmail, pixivPassword
+        except SystemExit:
+            config["Accounts"]["Pixiv"]["Password"] = ""
+            with open(jsonPath, "w") as f:
+                json.dump(config, f, indent=4)
+            raise SystemExit
+        except Exception or KeyError:
+            print_in_both_en_jp(
+                en=(f"{F.RED}Error: config.json does not have all the necessary account details.{END}"),
+                jp=(f"{F.RED}エラー: config.jsonに必要なアカウントの詳細がありません。{END}")
+            )
+
+            if "Accounts" not in config:
+                data = {"Accounts": {
+                            "Fantia": {
+                                "User": "",
+                                "Password": ""
+                                },
+                            "Pixiv": {
+                                "User": "",
+                                "Password": ""
+                                }
+                            }
+                        }
+                configInput = get_input_from_user(prompt="Would you like to save your account details now? (y/n): ", command=("y", "n"))
+            
+                if configInput == "n": 
+                    print_in_both_en_jp(
+                        en=(f"{F.RED}Warning: Since you have not added your account details yet,\nyou will not be able to download any images that requires a membership.\nFret not, you can add your account details later.{END}"),
+                        jp=(f"{F.RED}ご注意： まだアカウント情報を追加していないため、\n会員登録が必要な画像をダウンロードすることはできません。\n後でアカウント情報を追加することができますので、ご安心ください。{END}")
+                    )
+
+                    config.update(data)
+                    with open(jsonPath, "w") as f:
+                        json.dump(config, f, indent=4)
+                    return None, None
+                else:
+                    print_in_both_en_jp(
+                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv...{END}"),
+                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
+                    )
+
+                    while True:
+                        if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
+                        else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
+                        if pixivUsername != "":
+                            data["Accounts"]["Pixiv"]["User"] = pixivUsername
+                            break
+                    
+                    while True:
+                        if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                        else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
+                        if fantiaPassword != "":
+                            data["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
+                            break
+
+                    with open(jsonPath, "w") as f:
+                        config.update(data)
+                        json.dump(config, f, indent=4)
+
+                    print_in_both_en_jp(
+                        en=(f"{F.GREEN}Pixiv Account successfully added!{END}"),
+                        jp=(f"{F.GREEN}Pixivのアカウント情報を追加しました！{END}")
+                    )
+                    
+                    return pixivUsername, pixivPassword
+            else: 
+                pixivData = config["Accounts"]["Pixiv"]
+                if pixivData["User"] == "":
+                    print_in_both_en_jp(
+                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv...{END}"),
+                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
+                    )
+
+                    while True:
+                        if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
+                        else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
+                        if pixivUsername != "":
+                            pixivData["User"] = pixivUsername
+                            break
+
+                    print_in_both_en_jp(
+                        en=(f"{F.GREEN}Pixiv ID successfully added!{END}"),
+                        jp=(f"{F.GREEN}PixivアカウントのID追加に成功しました！{END}")
+                    )
+                if pixivData["Password"] == "":
+                    print_in_both_en_jp(
+                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv fanbox...{END}"),
+                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
+                    )
+
+                    while True:
+                        if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
+                        else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
+                        if pixivPassword != "":
+                            pixivData["Password"] = encrypt_string(pixivPassword)
+                            break
+
+                    print_in_both_en_jp(
+                        en=(f"{F.GREEN}Password for Pixiv Account successfully added!{END}"),
+                        jp=(f"{F.GREEN}Pixivアカウントのパスワード追加に成功しました！{END}")
+                    )
+                
+                with open(jsonPath, "w") as f:
+                    json.dump(config, f, indent=4)
+
+                return pixivUsername, pixivPassword
 
 def change_account_details(typeToChange, **credToUpdate):
     credentialsToChangeList = credToUpdate.get("cred")
@@ -946,6 +1063,8 @@ def get_default_download_directory():
 
 """--------------------------- End of Config Codes ---------------------------"""
 
+"""--------------------------- Start of Functions Codes ---------------------------"""
+
 def check_if_input_is_url(inputString):
     if type(inputString) != list:
         try:
@@ -991,8 +1110,10 @@ def randomise_delay():
 
 def save_pixiv_cookie():
     driver.get("https://www.fanbox.cc/")
-    sleep(1)
-    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+    sleep(5)
+    pixivCookieDirPath = appPath.joinpath("configs")
+    pixivCookieDirPath.mkdir(parents=True, exist_ok=True)
+    pixivCookiePath = pixivCookieDirPath.joinpath("pixiv_cookies")
     with open(pixivCookiePath, 'wb') as f:
         dill.dump(driver.get_cookies(), f)
     print_in_both_en_jp(
@@ -1005,13 +1126,35 @@ def save_pixiv_cookie():
         )
     )
 
+def save_fantia_cookie():
+    driver.get("https://fantia.jp/")
+    sleep(5)
+    fantiaCookieDirPath = appPath.joinpath("configs")
+    fantiaCookieDirPath.mkdir(parents=True, exist_ok=True)
+    fantiaCookiePath = fantiaCookieDirPath.joinpath("fantia_cookies")
+    with open(fantiaCookiePath, 'wb') as f:
+        Fantiacookies = driver.get_cookies()
+        for cookie in reversed(Fantiacookies): # reversed since most of the time the _session_id cookie is at the bottom of the list of cookies
+            if cookie["name"] == "_session_id":
+                dill.dump(cookie, f)
+                break
+
+    print_in_both_en_jp(
+        en=(
+            f"{F.GREEN}The cookie saved to {fantiaCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}", f"{F.RED}Warning: Please do not share the cookie with anyone as they will be able to gain access to your pixiv account!{END}"
+        ),
+        jp=(
+            f"{F.GREEN}{fantiaCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}", 
+            f"{F.RED}警告： このクッキーを誰かと共有すると、あなたのpixivアカウントにアクセスできてしまうので、共有しないでください！"
+        )
+    )
+
 def load_pixiv_cookie():
     cookiePath = appPath.joinpath("configs", "pixiv_cookies")
 
-    driver.get("https://www.fanbox.cc/")
-    
-    sleep(5)
     if cookiePath.is_file():
+        driver.get("https://www.fanbox.cc/")
+        sleep(5)
         with open(cookiePath, 'rb') as f:
             cookies = dill.load(f)
         for cookie in cookies:
@@ -1020,6 +1163,28 @@ def load_pixiv_cookie():
         driver.get("https://www.fanbox.cc/messages")
         sleep(5)
         if driver.current_url == "https://www.fanbox.cc/messages": 
+            print_in_both_en_jp(
+                en=(f"{F.GREEN}Pixiv Fanbox cookied loaded successfully!{END}"),
+                jp=(f"{F.GREEN}Pixivファンボックスのcookieが正常に読み込まれました！{END}")
+            )
+            return True
+        else: return False
+    else: return False
+
+def load_fantia_cookie():
+    cookiePath = appPath.joinpath("configs", "fantia_cookies")
+
+    if cookiePath.is_file():
+        driver.get("https://fantia.jp/")
+        sleep(5)
+        with open(cookiePath, 'rb') as f:
+            cookie = dill.load(f)
+            driver.delete_all_cookies()
+            driver.add_cookie(cookie)
+
+        driver.get("https://fantia.jp/mypage/users/plans")
+        sleep(5)
+        if driver.current_url == "https://fantia.jp/mypage/users/plans": 
             print_in_both_en_jp(
                 en=(f"{F.GREEN}Pixiv Fanbox cookied loaded successfully!{END}"),
                 jp=(f"{F.GREEN}Pixivファンボックスのcookieが正常に読み込まれました！{END}")
@@ -1050,6 +1215,16 @@ def fantia_login(fantiaEmail, fantiaPassword):
             en=(f"{F.GREEN}Successfully logged in to Fantia!{END}"),
             jp=(f"{F.GREEN}Fantiaへのログインに成功しました!{END}")
         )
+        if lang == "en": pixivCookiePrompt = "Would you like to save your Fantia session cookie for a faster login next time? (y/n): "
+        else: pixivCookiePrompt = "Fantiaのセッションクッキーを保存して、次回のログインを早くしたいですか？ (y/n): "
+        savePixivCookieCondition = get_input_from_user(prompt=pixivCookiePrompt, command=("y", "n"))
+        if savePixivCookieCondition == "y": 
+            save_fantia_cookie()
+        else:
+            print_in_both_en_jp(
+                en=(f"{F.RED}Saving of Fantia cookie will be aborted as per user's request.{END}"),
+                jp=(f"{F.RED}FantiaのセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
+            )
         return True
     except Exception or TimeoutException:
         print_in_both_en_jp(
@@ -1406,9 +1581,9 @@ def create_subfolder():
             )
 
 def print_menu():
-    if "Fantia" in loggedIn: emailFantia = loggedIn["Fantia"]["email"]
+    if "Fantia" in loggedIn: emailFantia = loggedIn["Fantia"]["user"]
     else: emailFantia = "Guest (Not logged in)"
-    if "Pixiv" in loggedIn: usernamePixiv = loggedIn["Pixiv"]["username"]
+    if "Pixiv" in loggedIn: usernamePixiv = loggedIn["Pixiv"]["user"]
     else: usernamePixiv = "Guest (Not logged in)"
 
     if lang == "jp": 
@@ -1439,7 +1614,7 @@ def print_menu():
 
         menuFooterStart = f"""
 -------------------------- {F.LIGHTYELLOW_EX}他のオプション{END} ---------------------------"""
-        if pixivCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. 保存されたpixivのクッキーを削除する{END}"""
+        if pixivCookieLoaded or fantiaCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. 保存されたクッキーを削除する{END}"""
         else: menuFooterAdditionalOptions = ""
 
         menuFooterEnd = f"""
@@ -1471,7 +1646,7 @@ def print_menu():
 
         menuFooterStart = f"""
 ---------------------- {F.LIGHTYELLOW_EX}Other Options{END} ----------------------"""
-    if pixivCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. Delete saved pixiv cookie{END}"""
+    if pixivCookieLoaded or fantiaCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. Delete saved cookies{END}"""
     else: menuFooterAdditionalOptions = ""
 
     menuFooterEnd = f"""
@@ -1481,6 +1656,10 @@ def print_menu():
  """
         
     print("".join([menuHead, menuAdditionalOptions, menuFooterStart, menuFooterAdditionalOptions, menuFooterEnd]))
+
+"""--------------------------- End of Functions Codes ---------------------------"""
+
+"""--------------------------- Start of Main Codes ---------------------------"""
 
 def main():
     pythonMainVer = sys.version_info[0]
@@ -1499,6 +1678,7 @@ def main():
     global fantiaDownloadLocation
     global pixivDownloadLocation
     global pixivCookieLoaded
+    global fantiaCookieLoaded
 
     appPath = get_saved_config_data_folder()
     jsonPath = appPath.joinpath("configs", "config.json")
@@ -1545,18 +1725,25 @@ def main():
 
     # retrieve cookie if exists
     pixivCookieLoaded = load_pixiv_cookie()
+    fantiaCookieLoaded = load_fantia_cookie()
 
     # gets account details for Fantia and Pixiv for downloading images that requires a membership
-    if pixivCookieLoaded != True: fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
+    if not pixivCookieLoaded and not fantiaCookieLoaded: fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
     else: 
-        fantiaEmail, fantiaPassword = get_user_account("fantia")
+        if not pixivCookieLoaded: pixivUsername, pixivPassword = get_user_account("pixiv")
+        if not fantiaCookieLoaded: fantiaEmail, fantiaPassword = get_user_account("fantia")
+
+    if pixivCookieLoaded:
         if lang == "en": pixivUsername = pixivPassword = "User account loaded from cookie"
         else: pixivUsername = pixivPassword = "クッキーから読み込まれるユーザーアカウント"
+        loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
+    if fantiaCookieLoaded:
+        if lang == "en": fantiaEmail = fantiaPassword = "User account loaded from cookie"
+        else: fantiaEmail = fantiaPassword = "クッキーから読み込まれるユーザーアカウント"
+        loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
 
-    
-    if pixivCookieLoaded: loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
     while True:
-        if pixivCookieLoaded != True:
+        if not pixivCookieLoaded and not fantiaCookieLoaded:
 
             if lang == "en": loginPrompt = "Would you like to login to Fantia and Pixiv? (y/n) or (\"X\" to shutdown): "
             else: loginPrompt = "FantiaとPixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
@@ -1577,7 +1764,7 @@ def main():
 
                 if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
                     fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-                    if not pixivCookieLoaded: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
+                    pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
 
                 if fantiaSuccess and pixivSuccess:
                     print_in_both_en_jp(
@@ -1590,8 +1777,8 @@ def main():
                     jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
                 )
 
-                if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-                if pixivSuccess: loggedIn["Pixiv"] = {"username": pixivUsername, "password": pixivPassword}
+                if fantiaSuccess: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
+                if pixivSuccess: loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
                 break
             else:
                 print_in_both_en_jp(
@@ -1600,27 +1787,44 @@ def main():
                 )
                 break
         else:
-            if lang == "en": loginPrompt = "Would you like to login to Fantia (y/n) or (\"X\" to shutdown): "
-            else: loginPrompt = "Fantiaにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
+            if pixivCookieLoaded and not fantiaCookieLoaded:
+                if lang == "en": loginPrompt = "Would you like to login to Fantia (y/n) or (\"X\" to shutdown): "
+                else: loginPrompt = "Fantiaにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
+            elif not pixivCookieLoaded and fantiaCookieLoaded:
+                if lang == "en": loginPrompt = "Would you like to login to Pixiv (y/n) or (\"X\" to shutdown): "
+                else: loginPrompt = "Pixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
 
             userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
             if userLoginCmd == "x": shutdown()
             elif userLoginCmd == "y":
-                print_in_both_en_jp(
-                    en=(
-                        f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia...{END}", 
-                        f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                    ),
-                    jp=(
-                        f"\n{F.LIGHTYELLOW_EX}Fantiaにログイン中...{END}",
-                        f"{F.LIGHTRED_EX}注意：このプログラムは、Fantiaに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                if pixivCookieLoaded and not fantiaCookieLoaded:
+                    print_in_both_en_jp(
+                        en=(
+                            f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia...{END}", 
+                            f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
+                        ),
+                        jp=(
+                            f"\n{F.LIGHTYELLOW_EX}Fantiaにログイン中...{END}",
+                            f"{F.LIGHTRED_EX}注意：このプログラムは、Fantiaに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                        )
                     )
-                )
+                elif not pixivCookieLoaded and fantiaCookieLoaded:
+                    print_in_both_en_jp(
+                        en=(
+                            f"\n{F.LIGHTYELLOW_EX}Logging in to pixiv...{END}", 
+                            f"{F.LIGHTRED_EX}Note: This program will automatically log you in to pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
+                        ),
+                        jp=(
+                            f"\n{F.LIGHTYELLOW_EX}pixivにログイン中...{END}",
+                            f"{F.LIGHTRED_EX}注意：このプログラムは、pixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                        )
+                    )
 
-                if fantiaEmail != None and fantiaPassword != None: 
-                    fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+                if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
+                    if not fantiaCookieLoaded: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+                    if not pixivCookieLoaded: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
 
-                if fantiaSuccess:
+                if fantiaSuccess or pixivSuccess:
                     print_in_both_en_jp(
                         en=(f"{F.GREEN}Logins were successful!{END}"),
                         jp=(f"{F.GREEN}ログインに成功しました！{END}")
@@ -1631,7 +1835,8 @@ def main():
                     jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
                 )
 
-                if fantiaSuccess: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
+                if fantiaSuccess: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
+                if pixivSuccess: loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
                 break
             else:
                 print_in_both_en_jp(
@@ -2013,9 +2218,11 @@ def main():
 
         elif cmdInput == "7":
             lang = update_lang()
+
         elif cmdInput == "8" and not check_if_user_is_logged_in():
-            if (fantiaEmail != None or fantiaPassword != None) and (pixivUsername != None or pixivPassword != None) and (pixivCookieLoaded != True): fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
-            else: fantiaEmail, fantiaPassword = get_user_account("fantia")
+            if (fantiaEmail != None or fantiaPassword != None) and (pixivUsername != None or pixivPassword != None) and (pixivCookieLoaded != True and fantiaCookieLoaded != True): fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
+            elif not fantiaCookieLoaded: fantiaEmail, fantiaPassword = get_user_account("fantia")
+            elif not pixivCookieLoaded: pixivUsername, pixivPassword = get_user_account("pixiv")
 
             if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None:
                 fantiaSuccessful = False
@@ -2026,8 +2233,8 @@ def main():
                     if "Pixiv" not in loggedIn: pixivSuccessful = pixiv_login(pixivUsername, pixivPassword)
                     else: pixivSuccessful = True
                     
-                    if fantiaSuccessful and "Fantia" not in loggedIn: loggedIn["Fantia"] = {"email": fantiaEmail, "password": fantiaPassword}
-                    if pixivSuccessful and "Pixiv" not in loggedIn: loggedIn["Pixiv"] = {"username": pixivUsername, "password": fantiaPassword}
+                    if fantiaSuccessful and "Fantia" not in loggedIn: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
+                    if pixivSuccessful and "Pixiv" not in loggedIn: loggedIn["Pixiv"] = {"user": pixivUsername, "password": fantiaPassword}
                     
                     if pixivSuccessful != True or fantiaSuccessful != True:
                         if lang == "en": 
@@ -2064,28 +2271,50 @@ def main():
                     jp=(f"{F.RED}エラー： {appPath} に削除するものはありません。{END}")
                 )
                 
-        elif cmdInput == "dc" and pixivCookieLoaded:
-            pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
-            print_in_both_en_jp(
-                en=(f"{F.LIGHTYELLOW_EX}Deleting Pixiv Fanbox cookies...{END}"),
-                jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーを削除します...{END}")
-            )
-            if pixivCookiePath.exists(appPath):
-                if pixivCookiePath.is_file():
-                    pixivCookiePath.unlink()
-                    print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
-                        jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
-                    )
-                else: raise Exception("Pixiv cookie is a directory and not a file...")
-            else:
+        elif cmdInput == "dc" and (pixivCookieLoaded or fantiaCookieLoaded):
+            if pixivCookieLoaded:
+                pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
                 print_in_both_en_jp(
-                    en=(f"{F.RED}Error: Pixiv Fanbox cookie not found.{END}"),
-                    jp=(f"{F.RED}エラー： pixivファンボックスのクッキーが見つかりません。{END}")
+                    en=(f"{F.LIGHTYELLOW_EX}Deleting Pixiv Fanbox cookies...{END}"),
+                    jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーを削除します...{END}")
                 )
+                if pixivCookiePath.exists():
+                    if pixivCookiePath.is_file():
+                        pixivCookiePath.unlink()
+                        print_in_both_en_jp(
+                            en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
+                        )
+                    else: raise Exception("Pixiv cookie is a directory and not a file...")
+                else:
+                    print_in_both_en_jp(
+                        en=(f"{F.RED}Error: Pixiv Fanbox cookie not found.{END}"),
+                        jp=(f"{F.RED}エラー： pixivファンボックスのクッキーが見つかりません。{END}")
+                    )
+            if fantiaCookieLoaded:
+                fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
+                print_in_both_en_jp(
+                    en=(f"{F.LIGHTYELLOW_EX}Deleting Fantia cookies...{END}"),
+                    jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーを削除します...{END}")
+                )
+                if fantiaCookiePath.exists():
+                    if fantiaCookiePath.is_file():
+                        fantiaCookiePath.unlink()
+                        print_in_both_en_jp(
+                            en=(f"{F.LIGHTYELLOW_EX}Deleted Fantia cookies{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーが削除されました。{END}")
+                        )
+                    else: raise Exception("Fantia cookie is a directory and not a file...")
+                else:
+                    print_in_both_en_jp(
+                        en=(f"{F.RED}Error: Fantia cookie not found.{END}"),
+                        jp=(f"{F.RED}エラー： Fantiaのクッキーが見つかりません。{END}")
+                    )
 
         elif cmdInput == "y": webbrowser.open("https://github.com/KJHJason/Cultured-Downloader/issues", new=2)
         elif cmdInput == "x": driver.close()
+
+"""--------------------------- End of Main Codes ---------------------------"""
 
 if __name__ == "__main__":
     coloramaInit(autoreset=False, convert=True)
@@ -2121,12 +2350,17 @@ Note/注意: Requires the user to provide his/her credentials for images that re
 Known Issues/既知のバグについて: 
 1. Frequent logins to Pixiv per day will show a captcha which will render the program useless...
    To resolve this, please go to pixiv manually and try to login again and clear the captcha.
-   You could also run the pixiv_manual_login.exe to save the cookies needed for the login session.
    Pixivに1日に何度もログインすると、キャプチャが表示され、プログラムが使えなくなる...
    解決するには、手動でpixivにアクセスし、再度ログインしてキャプチャをクリアしてみてください。
-   pixiv_manual_login.exeを実行して、ログインセッションに必要なCookieを保存しておくことも可能です。
 
-2. Sometimes the program does not shutdown automatically. In this case, please close the program manually or press CTRL + C to terminate the program.
+2. Logins are slow or the logins always fails.
+   To resolve this, please run pixiv_manual_login.exe and fantia_manual_login.exe to save the cookies needed for your login sessions.
+   However, please do not share your cookies as it is the same as sharing your accounts with others.
+   ログインに時間がかかる、または常にログインに失敗する。
+   これを解決するには、pixiv_manual_login.exe と fantia_manual_login.exe を実行し、ログインセッションに必要なクッキーを保存してください。
+   ただし、Cookieを共有することは、他の人とアカウントを共有することと同じですので、絶対にやめてください。
+
+3. Sometimes the program does not shutdown automatically. In this case, please close the program manually or press CTRL + C to terminate the program.
    プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください{END}
 """
     print(introMenu)
