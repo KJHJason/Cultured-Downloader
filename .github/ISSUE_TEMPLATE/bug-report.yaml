@@ -1,5 +1,5 @@
 name: Bug Report
-description: File a bug report
+description: File a bug report here
 title: "[Bug]: (Enter a short summary of the bug here)"
 labels: ["bug"]
 assignees: 
@@ -15,12 +15,14 @@ body:
     id: programName
     attributes:
       label: Which program are you seeing this problem on?
-      multiple: false
+      multiple: true
       options:
-        - cultured_downloader.exe
-        - cultured_downloader.py
-        - pixiv_manual_login.exe
-        - pixiv_manual_login.py
+        - Cultured Downloader (exe)
+        - Cultured Downloader (py)
+        - Pixiv Manual Login (exe)
+        - Pixiv Manual Login (py)
+        - Fantia Manual Login (exe)
+        - Fantia Manual Login (py)
     validations:
       required: true
 

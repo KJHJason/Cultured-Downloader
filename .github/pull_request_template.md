@@ -9,10 +9,11 @@
 ## Program Infomation
 
 <!-- Which program did you add on to? -->
-- [ ] cultured_downloader.exe
-- [ ] pixiv_manual_login.exe
+- [ ] Cultured Downloader
+- [ ] Pixiv Manual Login
+- [ ] Fantia Manual Login
 
-Version: Add in the release version of the program that you have added on...
+Version: <!-- 1.10 or my latest commit before you forked it [dfd198b](https://github.com/KJHJason/Cultured-Downloader/commit/dfd198b11845b14ec8b3a0f09dc97a0595e0ecde) -->
 
 ## Summary of changes:
 
