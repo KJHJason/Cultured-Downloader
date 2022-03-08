@@ -30,7 +30,7 @@ Please add your summary here...
 - [ ] Any dependent changes have been merged and published in downstream modules
 - [ ] I have checked my code and corrected any spelling mistakes
 
-# Screenshots (if any):
+## Screenshots (if any):
 
 <!-- This is used for comparing any changes via screenshots -->
 | Original            | Updated            |
