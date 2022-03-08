@@ -12,17 +12,17 @@ body:
         Thanks for taking the time to fill out this bug report!
       
   - type: dropdown
-      id: programName
-      attributes:
-        label: Which program are you seeing this problem on?
-        multiple: false
-        options:
-          - cultured_downloader.exe
-          - cultured_downloader.py
-          - pixiv_manual_login.exe
-          - pixiv_manual_login.py
-      validations:
-        required: true
+    id: programName
+    attributes:
+      label: Which program are you seeing this problem on?
+      multiple: false
+      options:
+        - cultured_downloader.exe
+        - cultured_downloader.py
+        - pixiv_manual_login.exe
+        - pixiv_manual_login.py
+    validations:
+      required: true
 
   - type: dropdown
     id: browser
@@ -82,7 +82,6 @@ body:
     attributes:
       label: Relevant log output
       description: Please copy and paste the text in the error log text files (found in your AppData LocalLow folder) and paste it here.
-      render: shell
     validations:
       required: true
 
