@@ -81,7 +81,7 @@ body:
     id: errorLogText
     attributes:
       label: Relevant log output
-      description: Please copy and paste the text in the error log text files (found in your AppData LocalLow folder) and paste it here.
+      description: Please copy and paste the text in the error log text files (found in your AppData LocalLow folder) or copy and paste any tracebacks, aka any error message text that appeared during a program crash.
     validations:
       required: true
 
