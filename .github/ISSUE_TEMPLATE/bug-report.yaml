@@ -42,18 +42,7 @@ body:
       description: What version of the program are you using? (Can be found when running the program)
     validations:
       required: true
-
-  - type: dropdown
-    id: platform
-    attributes:
-      label: Platform
-      multiple: false
-      options:
-        - Windows
-        - Linux
-    validations:
-      required: true
-
+      
   - type: textarea
     id: stepsToReproduce
     attributes:

@@ -48,9 +48,12 @@ In the end, I spent about 6 days on this mini-project so you can expect some bug
 6. If the website design has been changed, you can expect this program to break if it is not maintained/updated.
 
 ## FAQ
-1. Why didn't you make a fantia_manual_login program?
-     * Well... The thing is that I did make the program. However, it was a failure as despite retrieving the login session cookies from fantia, I was still unable to login.
-     * Therefore, there is only the pixiv_manual_login program for now.  
+1. Does this work on other OS platforms such as macOS and Linux?
+    * This program has only been tested on Windows.
+    * Hence, this program is not guaranteed to work for other platforms.
+2. Why didn't you make a fantia_manual_login program?
+    * Well... The thing is that I did make the program. However, it was a failure as despite retrieving the login session cookies from Fantia, I was still unable to login.
+    * Therefore, there is only the pixiv_manual_login program for now.  
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
