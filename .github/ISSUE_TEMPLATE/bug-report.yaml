@@ -1,11 +1,16 @@
 name: Bug Report
 about: Thanks for taking the time to fill out this bug report!
-title: 'Bug Report'
-labels: bug
+title: "[Bug]: (Enter a short summary of the bug here)"
+labels: ["bug"]
 assignees: 
   - KJHJason
 
 body:
+  - type: markdown
+  attributes:
+    value: |
+      Thanks for taking the time to fill out this bug report!
+      
   - type: dropdown
       id: programName
       attributes:
@@ -35,6 +40,8 @@ body:
       attributes:
         label: Program Version
         description: What version of the program are you using? (Can be found when running the program)
+      validations:
+        required: true
 
     - type: dropdown
       id: platform
@@ -74,11 +81,13 @@ body:
       id: errorLogText
       attributes:
         label: Relevant log output
-        description: If applicable, please copy and paste the text in the error log text files (found in your AppData's LocalLow folder) and paste it here.
+        description: Please copy and paste the text in the error log text files (found in your AppData LocalLow folder) and paste it here.
         render: shell
+      validations:
+        required: true
 
     - type: textarea
       id: screenshots
       attributes:
-        label: Screenshots
+        label: Screenshots (Optional)
         description: Screenshots can be uploaded by simply dragging an image file into this box
