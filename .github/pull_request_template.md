@@ -14,6 +14,8 @@ Please delete options that are not relevant.
 - [ ] cultured_downloader.exe
 - [ ] pixiv_manual_login.exe
 
+Version: Add in the release version of the program that you have added on...
+
 ## Summary of changes:
 
 Please add your summary here...
