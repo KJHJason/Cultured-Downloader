@@ -1,11 +1,13 @@
 ---
 name: Bug Report
 about: Thanks for taking the time to fill out this bug report!
-title: ''
+title: 'Bug Report'
 labels: bug
 assignees: KJHJason
 
 ---
+body:
+  - type: markdown
 
 - type: dropdown
     id: programName
