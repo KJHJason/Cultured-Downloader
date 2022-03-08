@@ -16,17 +16,21 @@ Cultured Downloader
   </a>
 </div>
 
-This program allows you to download pixiv images from a pixiv Fanbox or Fantia post automatically without you doing the hassle of downloading them yourself.
+This program allows you to download images from a pixiv Fanbox or Fantia post automatically without you doing the hassle of downloading them yourself.
 
 I did this mini-project as I was tired of downloading images manually as some artists do not provide zip files...
 
-Hence, I coded this program to automate the process of downloading images from a post.
+Hence, I coded this program to automate the process of downloading images from a post via web scraping.
+
+In the end, I spent about 6 days on this mini-project so you can expect some bugs
 
 ## Disclaimers
 1. This program, Cultured Downloader, is not liable for any damages caused. 
    This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
-2. As a user of this program, you must never share any data such as config.json to other people.
+2. This program requires the user to login upon running this program and if the user is not logged in, he/she will not be able to download any images that requires a membership as to support the artist.
+3. As a user of this program, you must never share any data such as config.json to other people.
    If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable but the user(s) involved will be.
+4. Although the program has Japanese language support, most of them are translated by [DeepL](https://www.deepl.com/translator). Hence, feel free to correct any mistranslation/grammatical errors by forking it and make a pull request after correcting the translation.
 
 ## Features
 * **Allow multiple URLs input**
@@ -41,6 +45,7 @@ Hence, I coded this program to automate the process of downloading images from a
 3. Despite testing the program, the logins have a high failure rate, so please be patient and try again if you are unable to login.
 4. If you feel unsafe providing your passwords to this program, you can proceed as a guest. However, you might not be able to download posts that requires a membership.
 5. Passwords provided will be encrypted and stored in a config.json file. However, please do not share any data with anyone as they will still be able to decrypt the encrypted password if you have shared the key file as well.
+6. If the website design has been changed, you can expect this program to break if it is not maintained/updated.
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.

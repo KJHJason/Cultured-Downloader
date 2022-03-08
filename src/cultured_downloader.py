@@ -1166,10 +1166,26 @@ def print_download_completion_message(totalImage, website):
     elif website == "pixiv": downloadPath = pixivDownloadLocation
 
     if totalImage > 0:
-        print_in_both_en_jp(
-            en=f"\n{F.GREEN}Successfully downloaded {totalImage} images at\n{downloadPath}!{END}",
-            jp=f"\n{F.GREEN}{downloadPath} に{totalImage}枚の画像をダウンロードしました!{END}"
-        )
+        if website == "pixiv":
+            print_in_both_en_jp(
+                en=(
+                    f"\n{F.GREEN}Successfully downloaded {totalImage} images at\n{downloadPath}!{END}",
+                    f"\n{F.LIGHTRED_EX}However, please do not close/shutdown the program as the browser might still be downloading the images!{END}"
+                ),
+                jp=(
+                    f"\n{F.GREEN}{downloadPath} に{totalImage}枚の画像をダウンロードしました!{END}", 
+                    f"{F.LIGHTRED_EX}ただし、ブラウザがまだ画像をダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください{END}"
+                )
+            )
+        elif website == "fantia":
+            print_in_both_en_jp(
+                en=(
+                    f"\n{F.GREEN}Successfully downloaded {totalImage} images at\n{downloadPath}!{END}",
+                ),
+                jp=(
+                    f"\n{F.GREEN}{downloadPath} に{totalImage}枚の画像をダウンロードしました!{END}", 
+                )
+            )
     else:
         print_in_both_en_jp(
             en=(f"\n{F.RED}Error: No images to download.{END}"),
