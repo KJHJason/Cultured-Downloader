@@ -213,8 +213,8 @@ def main():
         with open(pixivCookiePath, 'wb') as f:
             dill.dump(driver.get_cookies(), f)
         print_in_both_en_jp(
-            en=(f"{F.GREEN}The cookie saved to {pixivCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader!{END}"),
-            jp=(f"{F.GREEN}{pixivCookiePath} に保存されたCookieは、次回からCultured Downloaderで自動的に読み込まれるようになります!{END}")
+            en=(f"{F.GREEN}The cookie saved to {pixivCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
+            jp=(f"{F.GREEN}{pixivCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
         )
     
     driver.close()
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     introMenu = f"""
-====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's PIXIV MANUAL LOGIN PROGRAM v{version}{END} ======================
+====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's PIXIV MANUAL LOGIN v{version}{END} ======================
 ========================== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} =========================
 ============================== {F.LIGHTBLUE_EX}Author/開発者: KJHJason, aka Dratornic{END} ==============================
 {F.LIGHTYELLOW_EX}
@@ -235,11 +235,23 @@ Purpose/目的: Allows you to login to Pixiv manually and save the cookie for fa
 
 Note/注意: This program is not affiliated with Pixiv or Fantia.
            このプログラムはPixivやFantiaとは関係ありません。{END}
-{F.LIGHTRED_EX}
+
+{F.RED}Disclaimer/免責条項: 
+1. This program, Cultured Downloader's Pixiv Manual Login, is not liable for any damages caused. 
+   This program is meant for personal use and to save time from logging into pixiv on the main program, Cultured Downloader.
+   本プログラム「Cultured Downloader's Pixiv Manual Login」は、発生した損害について一切の責任を負いません。
+   このプログラムは、個人的な使用を目的とし、メインプログラムであるCultured Downloaderでpixivにログインする時間を短縮するためのものです。
+
+2. As a user of this program, you must never share any data such as config.json to other people.
+   If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable but the user(s) involved will be.
+   本プログラムのユーザーとして、config.jsonなどのデータは絶対に他人と共有しないでください。
+   もし、あなたのデータを共有したり、他人のデータを使用していることが判明した場合、このプログラムおよび開発者は責任を負いませんが、関係するユーザーは責任を負うことになります。
+
+   (In an event of mistranslation, the English version will take priority and will be used/誤訳があった場合は、英語版を優先して使用します。)
+{END}{F.LIGHTRED_EX}
 Known Issues/既知のバグについて: 
 1. Sometimes the program does not shutdown automatically. In this case, please close the program manually or press CTRL + C to terminate the program.
-   プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください
-{END}
+   プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください{END}
 """
     print(introMenu)
 

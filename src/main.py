@@ -990,8 +990,20 @@ def randomise_delay():
     sleep(round(uniform(0.2, 0.6), 2))
 
 def save_pixiv_cookie():
-    with open(appPath.joinpath("configs", "pixiv_cookies"), 'wb') as f:
+    driver.get("https://www.fanbox.cc/")
+    sleep(1)
+    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+    with open(pixivCookiePath, 'wb') as f:
         dill.dump(driver.get_cookies(), f)
+    print_in_both_en_jp(
+        en=(
+            f"{F.GREEN}The cookie saved to {pixivCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}", f"{F.RED}Warning: Please do not share the cookie with anyone as they will be able to gain access to your pixiv account!{END}"
+        ),
+        jp=(
+            f"{F.GREEN}{pixivCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}", 
+            f"{F.RED}警告： このクッキーを誰かと共有すると、あなたのpixivアカウントにアクセスできてしまうので、共有しないでください！"
+        )
+    )
 
 def load_pixiv_cookie():
     cookiePath = appPath.joinpath("configs", "pixiv_cookies")
@@ -1083,8 +1095,17 @@ def pixiv_login(pixivUsername, pixivPassword):
             en=(f"{F.GREEN}Successfully logged in to Pixiv!{END}"),
             jp=(f"{F.GREEN}Pixivへのログインに成功しました!{END}")
         )
-        save_pixiv_cookie()
-        sleep(3)
+
+        if lang == "en": pixivCookiePrompt = "Would you like to save your pixiv session cookie for a faster login next time? (y/n): "
+        else: pixivCookiePrompt = "pixivのセッションクッキーを保存して、次回のログインを早くしたいですか？ (y/n): "
+        savePixivCookieCondition = get_input_from_user(prompt=pixivCookiePrompt, command=("y", "n"))
+        if savePixivCookieCondition == "y": 
+            save_pixiv_cookie()
+        else:
+            print_in_both_en_jp(
+                en=(f"{F.RED}Saving of pixiv cookie will be aborted as per user's request.{END}"),
+                jp=(f"{F.RED}pixivのセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
+            )
         return True
     except Exception or TimeoutException:
         print_in_both_en_jp(
@@ -1400,12 +1421,16 @@ def print_menu():
         else:
             menuAdditionalOptions = ""
 
-        menuFooter = f"""
--------------------------- {F.LIGHTYELLOW_EX}他のオプション{END} ---------------------------
-      {F.LIGHTRED_EX}D. Cultured Downloaderで作成されたデータをすべて削除します。{END}
-      {F.LIGHTRED_EX}Y. バグを報告する{END}
-      {F.RED}X. プログラムを終了する{END}
-"""
+        menuFooterStart = f"""
+-------------------------- {F.LIGHTYELLOW_EX}他のオプション{END} ---------------------------"""
+        if pixivCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. 保存されたpixivのクッキーを削除する{END}"""
+        else: menuFooterAdditionalOptions = ""
+
+        menuFooterEnd = f"""
+        {F.RED}D. Cultured Downloaderで作成されたデータをすべて削除します。{END}
+        {F.LIGHTRED_EX}Y. バグを報告する{END}
+        {F.RED}X. プログラムを終了する{END}
+ """
     else:
         menuHead = f"""{F.LIGHTYELLOW_EX}
 > You are currently logged in as...
@@ -1428,14 +1453,18 @@ def print_menu():
         else:
             menuAdditionalOptions = ""
 
-        menuFooter = f"""
----------------------- {F.LIGHTYELLOW_EX}Other Options{END} ----------------------
-      {F.LIGHTRED_EX}D. Delete all data created by Cultured Downloader{END}
+        menuFooterStart = f"""
+---------------------- {F.LIGHTYELLOW_EX}Other Options{END} ----------------------"""
+    if pixivCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. Delete saved pixiv cookie{END}"""
+    else: menuFooterAdditionalOptions = ""
+
+    menuFooterEnd = f"""
+      {F.RED}D. Delete all data created by Cultured Downloader{END}
       {F.LIGHTRED_EX}Y. Report a bug{END}
       {F.RED}X. Shutdown the program{END}
  """
         
-    print("".join([menuHead, menuAdditionalOptions, menuFooter]))
+    print("".join([menuHead, menuAdditionalOptions, menuFooterStart, menuFooterAdditionalOptions, menuFooterEnd]))
 
 def main():
     pythonMainVer = sys.version_info[0]
@@ -1596,7 +1625,7 @@ def main():
                 break
 
     cmdInput = ""
-    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "x", "y")
+    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "dc", "x", "y")
     while cmdInput != "x":
         print_menu()
         if lang == "en":
@@ -2018,6 +2047,26 @@ def main():
                     en=(f"{F.RED}Error: Nothing to delete in {appPath}{END}"),
                     jp=(f"{F.RED}エラー： {appPath} に削除するものはありません。{END}")
                 )
+                
+        elif cmdInput == "dc" and pixivCookieLoaded:
+            pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+            print_in_both_en_jp(
+                en=(f"{F.LIGHTYELLOW_EX}Deleting Pixiv Fanbox cookies...{END}"),
+                jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーを削除します...{END}")
+            )
+            if pixivCookiePath.exists(appPath):
+                if pixivCookiePath.is_file():
+                    pixivCookiePath.unlink()
+                    print_in_both_en_jp(
+                        en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
+                        jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
+                    )
+                else: raise Exception("Pixiv cookie is a directory and not a file...")
+            else:
+                print_in_both_en_jp(
+                    en=(f"{F.RED}Error: Pixiv Fanbox cookie not found.{END}"),
+                    jp=(f"{F.RED}エラー： pixivファンボックスのクッキーが見つかりません。{END}")
+                )
 
         elif cmdInput == "y": webbrowser.open("https://github.com/KJHJason/Cultured-Downloader/issues", new=2)
         elif cmdInput == "x": driver.close()
@@ -2039,7 +2088,20 @@ Note/注意: Requires the user to provide his/her credentials for images that re
            This program is not affiliated with Pixiv or Fantia.
            会員登録が必要な画像には、ユーザーの認証情報の提供が必要です。
            このプログラムはPixivやFantiaとは関係ありません。{END}
-{F.LIGHTRED_EX}
+
+{F.RED}Disclaimer/免責条項: 
+1. This program, Cultured Downloader, is not liable for any damages caused. 
+   This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
+   本プログラム「Cultured Downloader」は、発生した損害について一切の責任を負いかねます。
+   このプログラムは、個人的な使用と、pixiv FanboxとFantiaから画像を手動でダウンロードする時間を節約するためのものです。
+
+2. As a user of this program, you must never share any data such as config.json to other people.
+   If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable but the user(s) involved will be.
+   本プログラムのユーザーとして、config.jsonなどのデータは絶対に他人と共有しないでください。
+   もし、あなたのデータを共有したり、他人のデータを使用していることが判明した場合、このプログラムおよび開発者は責任を負いませんが、関係するユーザーは責任を負うことになります。
+
+   (In an event of mistranslation, the English version will take priority and will be used/誤訳があった場合は、英語版を優先して使用します。)
+{END}{F.LIGHTRED_EX}
 Known Issues/既知のバグについて: 
 1. Frequent logins to Pixiv per day will show a captcha which will render the program useless...
    To resolve this, please go to pixiv manually and try to login again and clear the captcha.
@@ -2049,8 +2111,7 @@ Known Issues/既知のバグについて:
    pixiv_manual_login.exeを実行して、ログインセッションに必要なCookieを保存しておくことも可能です。
 
 2. Sometimes the program does not shutdown automatically. In this case, please close the program manually or press CTRL + C to terminate the program.
-   プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください
-{END}
+   プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください{END}
 """
     print(introMenu)
     try:
