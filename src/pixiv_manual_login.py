@@ -1,4 +1,4 @@
-version = "1.01"
+version = "1.10"
 
 # Import Third-party Libraries
 import dill

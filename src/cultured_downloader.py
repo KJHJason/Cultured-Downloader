@@ -1,4 +1,4 @@
-version = "1.01"
+version = "1.10"
 
 # Import Third-party Libraries
 import requests, dill
@@ -1165,7 +1165,7 @@ def load_pixiv_cookie():
         if driver.current_url == "https://www.fanbox.cc/messages": 
             print_in_both_en_jp(
                 en=(f"{F.GREEN}Pixiv Fanbox cookied loaded successfully!{END}"),
-                jp=(f"{F.GREEN}Pixivファンボックスのcookieが正常に読み込まれました！{END}")
+                jp=(f"{F.GREEN}Pixivファンボックスのクッキーが正常に読み込まれました！{END}")
             )
             return True
         else: return False
@@ -1186,8 +1186,8 @@ def load_fantia_cookie():
         sleep(5)
         if driver.current_url == "https://fantia.jp/mypage/users/plans": 
             print_in_both_en_jp(
-                en=(f"{F.GREEN}Pixiv Fanbox cookied loaded successfully!{END}"),
-                jp=(f"{F.GREEN}Pixivファンボックスのcookieが正常に読み込まれました！{END}")
+                en=(f"{F.GREEN}Fantia cookied loaded successfully!{END}"),
+                jp=(f"{F.GREEN}Fantiaのクッキーが正常に読み込まれました！{END}")
             )
             return True
         else: return False
@@ -1787,63 +1787,65 @@ def main():
                 )
                 break
         else:
-            if pixivCookieLoaded and not fantiaCookieLoaded:
-                if lang == "en": loginPrompt = "Would you like to login to Fantia (y/n) or (\"X\" to shutdown): "
-                else: loginPrompt = "Fantiaにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
-            elif not pixivCookieLoaded and fantiaCookieLoaded:
-                if lang == "en": loginPrompt = "Would you like to login to Pixiv (y/n) or (\"X\" to shutdown): "
-                else: loginPrompt = "Pixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
-
-            userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
-            if userLoginCmd == "x": shutdown()
-            elif userLoginCmd == "y":
+            if not pixivCookieLoaded or not fantiaCookieLoaded:
                 if pixivCookieLoaded and not fantiaCookieLoaded:
-                    print_in_both_en_jp(
-                        en=(
-                            f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia...{END}", 
-                            f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                        ),
-                        jp=(
-                            f"\n{F.LIGHTYELLOW_EX}Fantiaにログイン中...{END}",
-                            f"{F.LIGHTRED_EX}注意：このプログラムは、Fantiaに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
-                        )
-                    )
+                    if lang == "en": loginPrompt = "Would you like to login to Fantia (y/n) or (\"X\" to shutdown): "
+                    else: loginPrompt = "Fantiaにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
                 elif not pixivCookieLoaded and fantiaCookieLoaded:
-                    print_in_both_en_jp(
-                        en=(
-                            f"\n{F.LIGHTYELLOW_EX}Logging in to pixiv...{END}", 
-                            f"{F.LIGHTRED_EX}Note: This program will automatically log you in to pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                        ),
-                        jp=(
-                            f"\n{F.LIGHTYELLOW_EX}pixivにログイン中...{END}",
-                            f"{F.LIGHTRED_EX}注意：このプログラムは、pixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                    if lang == "en": loginPrompt = "Would you like to login to Pixiv (y/n) or (\"X\" to shutdown): "
+                    else: loginPrompt = "Pixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
+
+                userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
+                if userLoginCmd == "x": shutdown()
+                elif userLoginCmd == "y":
+                    if pixivCookieLoaded and not fantiaCookieLoaded:
+                        print_in_both_en_jp(
+                            en=(
+                                f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia...{END}", 
+                                f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
+                            ),
+                            jp=(
+                                f"\n{F.LIGHTYELLOW_EX}Fantiaにログイン中...{END}",
+                                f"{F.LIGHTRED_EX}注意：このプログラムは、Fantiaに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                            )
                         )
+                    elif not pixivCookieLoaded and fantiaCookieLoaded:
+                        print_in_both_en_jp(
+                            en=(
+                                f"\n{F.LIGHTYELLOW_EX}Logging in to pixiv...{END}", 
+                                f"{F.LIGHTRED_EX}Note: This program will automatically log you in to pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
+                            ),
+                            jp=(
+                                f"\n{F.LIGHTYELLOW_EX}pixivにログイン中...{END}",
+                                f"{F.LIGHTRED_EX}注意：このプログラムは、pixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
+                            )
+                        )
+
+                    if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
+                        if not fantiaCookieLoaded: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
+                        if not pixivCookieLoaded: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
+
+                    if fantiaSuccess or pixivSuccess:
+                        print_in_both_en_jp(
+                            en=(f"{F.GREEN}Logins were successful!{END}"),
+                            jp=(f"{F.GREEN}ログインに成功しました！{END}")
+                        )
+                    else:
+                        print_in_both_en_jp(
+                        en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
+                        jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
                     )
 
-                if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
-                    if not fantiaCookieLoaded: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-                    if not pixivCookieLoaded: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
-
-                if fantiaSuccess or pixivSuccess:
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Logins were successful!{END}"),
-                        jp=(f"{F.GREEN}ログインに成功しました！{END}")
-                    )
+                    if fantiaSuccess: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
+                    if pixivSuccess: loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
+                    break
                 else:
                     print_in_both_en_jp(
-                    en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-                    jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-                )
-
-                if fantiaSuccess: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
-                if pixivSuccess: loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
-                break
-            else:
-                print_in_both_en_jp(
-                    en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-                    jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-                )
-                break
+                        en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
+                        jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
+                    )
+                    break
+            else: break
 
     cmdInput = ""
     cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "dc", "x", "y")
