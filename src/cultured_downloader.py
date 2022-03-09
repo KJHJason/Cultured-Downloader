@@ -1,4 +1,8 @@
-version = "1.11"
+__author__ = "KJHJason"
+__copyright__ = "Copyright 2022 KJHJason"
+__credits__ = ["KJHJason"]
+__license__ = "MIT License"
+__version__ = "1.11"
 
 # Import Third-party Libraries
 import requests, dill
@@ -55,12 +59,12 @@ def log_error():
     filePath = get_saved_config_data_folder().joinpath("logs")
     if not filePath.is_dir(): filePath.mkdir(parents=True)
 
-    fileName = "".join([f"cultured-downloader-v{version}-error-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
+    fileName = "".join([f"cultured-downloader-v{__version__ }-error-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
     fullFilePath = filePath.joinpath(fileName)
     
     if not fullFilePath.is_file():
         with open(fullFilePath, "w") as f:
-            f.write(f"Cultured Downloader v{version} Error Logs\n\n")
+            f.write(f"Cultured Downloader v{__version__ } Error Logs\n\n")
     else:
         with open(fullFilePath, "a") as f:
             f.write(f"\n")
@@ -2492,7 +2496,7 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     introMenu = f"""
-====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{version}{END} ======================
+====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ======================
 =========== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} ===========
 ================ {F.LIGHTBLUE_EX}Author/開発者: KJHJason, aka Dratornic{END} ================
 {F.LIGHTYELLOW_EX}

@@ -1,3 +1,9 @@
+__author__ = "KJHJason"
+__copyright__ = "Copyright 2022 KJHJason"
+__credits__ = ["KJHJason"]
+__license__ = "MIT License"
+__version__ = "1.00"
+
 from cryptography.fernet import Fernet
 
 class Key:

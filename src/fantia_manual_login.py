@@ -1,4 +1,8 @@
-version = "1.10"
+__author__ = "KJHJason"
+__copyright__ = "Copyright 2022 KJHJason"
+__credits__ = ["KJHJason"]
+__license__ = "MIT License"
+__version__ = "1.10"
 
 # Import Third-party Libraries
 import dill
@@ -38,12 +42,12 @@ def log_error():
     filePath = get_saved_config_data_folder().joinpath("logs")
     if not filePath.is_dir(): filePath.mkdir(parents=True)
 
-    fileName = "".join([f"pixiv-manual-login-error-v{version}-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
+    fileName = "".join([f"pixiv-manual-login-error-v{__version__ }-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
     fullFilePath = filePath.joinpath(fileName)
     
     if not fullFilePath.is_file():
         with open(fullFilePath, "w") as f:
-            f.write(f"Cultured Downloader Pixiv Manual Login v{version} Error Logs\n\n")
+            f.write(f"Cultured Downloader Pixiv Manual Login v{__version__ } Error Logs\n\n")
     else:
         with open(fullFilePath, "a") as f:
             f.write(f"\n")
@@ -230,7 +234,7 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     introMenu = f"""
-====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's FANTIA MANUAL LOGIN v{version}{END} ======================
+====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER's FANTIA MANUAL LOGIN v{__version__ }{END} ======================
 ========================== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} =========================
 ============================== {F.LIGHTBLUE_EX}Author/開発者: KJHJason, aka Dratornic{END} ==============================
 {F.LIGHTYELLOW_EX}
@@ -262,6 +266,7 @@ Known Issues/既知のバグについて:
     try:
         main()
     except SystemExit:
+        print("\n")
         print_in_both_en_jp(
             en=(f"{F.LIGHTYELLOW_EX}Thank you, this program will now exit...{END}"),
             jp=(f"{F.LIGHTYELLOW_EX}ありがとうございました、このプログラムは終了します...{END}")
