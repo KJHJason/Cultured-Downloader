@@ -2200,8 +2200,8 @@ def main():
 
                     if (urlInput == "") or (check_if_input_is_url(urlInput) == False):
                         print_in_both_en_jp(
-                            en=(f"{F.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
-                            jp=(f"{F.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
+                            en=(f"{F.RED}Error: No URL entered.{END}", f"{F.RED}Please enter a valid URL.{END}"),
+                            jp=(f"{F.RED}エラー： URLが入力されていません。{END}", f"{F.RED}URLを入力してください。{END}")
                         )
                     else: break
 
@@ -2271,8 +2271,8 @@ def main():
 
                     if (urlInput == "") or (check_if_input_is_url(urlInput) == False): 
                         print_in_both_en_jp(
-                            en=(f"{F.RED}Error: No URL entered.{END}", "Please enter a valid URL."),
-                            jp=(f"{F.RED}エラー： URLが入力されていません。{END}", "URLを入力してください。")
+                            en=(f"{F.RED}Error: No URL entered.{END}", f"{F.RED}Please enter a valid URL.{END}"),
+                            jp=(f"{F.RED}エラー： URLが入力されていません。{END}", f"{F.RED}URLを入力してください。{END}")
                         )
                     else: break
 
