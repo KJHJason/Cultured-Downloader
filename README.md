@@ -22,15 +22,14 @@ I did this mini-project as I was tired of downloading images manually as some ar
 
 Hence, I coded this program to automate the process of downloading images from a post via web scraping.
 
-In the end, I spent about 6 days on this mini-project so you can expect some bugs...
+In the end, I spent about 8 days on this mini-project so you can expect some bugs...
 
-## Disclaimers
-1. This program, Cultured Downloader, is not liable for any damages caused. 
-   This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
-2. This program requires the user to login upon running this program and if the user is not logged in, he/she will not be able to download any images that requires a membership as to support the artist.
-3. As a user of this program, you must never share any data such as config.json to other people.
-   If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable but the user(s) involved will be.
-4. Although the program has Japanese language support, most of them are translated by [DeepL](https://www.deepl.com/translator). Hence, feel free to correct any mistranslation/grammatical errors by forking it and make a pull request after correcting the translation.
+Although the program has Japanese language support, most of them are translated by [DeepL](https://www.deepl.com/translator). Hence, feel free to correct any mistranslation/grammatical errors by forking it and make a pull request after correcting the translation.
+
+## Terms of Use
+1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
+2. As a user of this program, please do not use this program to  break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.
+3. As a user of this program, you must never share any data such as your fantia_cookies file to other people. This is not permissible as it will cause damages to the artists that you are downloading from. If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable for the damages caused but the user(s) involved will be.
 
 ## Features
 * **Allow multiple URLs input**
@@ -41,20 +40,15 @@ In the end, I spent about 6 days on this mini-project so you can expect some bug
     * Downloading all the images in a Fanbox post based on a URL such as "https://www.fanbox.cc/@creator/posts/1234567"
 
 ## Usage Notes
-1. Frequent logins to pixiv may render the program useless as they have a bot detection algorithm. In this case, please use run the pixiv_manual_login program to save the cookie needed for the login session, it will also speed up the login process.
-2. By saving the cookie needed for pixiv login session, you must not share the cookie with anyone as they can gain access to your pixiv account without needing your pixiv account credentials.
-3. Despite testing the program, the logins have a high failure rate, so please be patient and try again if you are unable to login.
-4. If you feel unsafe providing your passwords to this program, you can proceed as a guest. However, you might not be able to download posts that requires a membership.
-5. Passwords provided will be encrypted and stored in a config.json file. However, please do not share any data with anyone as they will still be able to decrypt the encrypted password if you have shared the key file as well.
-6. If the website design has been changed, you can expect this program to break if it is not maintained/updated.
+1. **This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually. Please do not use this program and break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.**
+2. If you feel unsafe providing your passwords to this program, you can proceed as a guest. However, you might not be able to download posts that requires a membership.
+3. Cookies saved will be encrypted and stored in the configs folder found in your AppData LocalLow folder. However, please do not share any data with anyone as they will still be able to decrypt the encrypted cookies if you have shared the key file as well.
+4. If the website design has been changed, you can expect this program to break if it is not maintained/updated.
 
 ## FAQ
 1. Does this work on other OS platforms such as macOS and Linux?
     * This program has only been tested on Windows.
-    * Hence, this program is not guaranteed to work for other platforms.
-2. Cultured Downloader always alerts me that the logins have failed... How can I login then?
-    * You can use the manual login programs (Fantia/Pixiv Manual Login) to save the cookies needed for the login session for a 100% login success rate (based on my testings).
-    * Of course, you should not share the cookie files with anyone as anyone who have your cookie files will be able to login to your account with needing your credentials.
+    * Hence, this program is unlikely to work for other platforms.
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.

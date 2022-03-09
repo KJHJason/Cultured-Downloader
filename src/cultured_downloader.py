@@ -2,14 +2,13 @@ __author__ = "KJHJason"
 __copyright__ = "Copyright 2022 KJHJason"
 __credits__ = ["KJHJason"]
 __license__ = "MIT License"
-__version__ = "1.11"
+__version__ = "2.0.0"
 
 # Import Third-party Libraries
 import requests, dill
 from colorama import init as coloramaInit
 from colorama import Style
 from colorama import Fore as F
-from cryptography.fernet import Fernet
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -22,22 +21,41 @@ from selenium.webdriver.chrome.options import Options as chromeOptions
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from selenium.webdriver.edge.service import Service as edgeService
 from selenium.webdriver.edge.options import Options as edgeOptions
+from Crypto.Cipher import ChaCha20_Poly1305 as Cha
+from Crypto.Random import get_random_bytes
 
 # Import Standard Libraries
 import pathlib, json, sys, logging, webbrowser
 from urllib.parse import urlparse
 from json.decoder import JSONDecodeError
-from random import uniform
 from time import sleep
 from datetime import datetime
 from shutil import rmtree, copyfileobj
+from base64 import b64encode, b64decode
 
-# Importing Custom Python Files as Modules
-from Key import Key
+# Importing my Python Files as Modules
+from ChaChaData import ChaChaData
 
 """--------------------------- Config Codes ---------------------------"""
 
+class DecryptError(Exception):
+    """
+    Raised when the program is unable to decrypt an encrypted value.
+    """
+    pass
+
+class EncryptionKeyError(Exception):
+    """
+    Raised when the program is unable to set the key for the cipher variable.
+
+    Usually this happens when the key is not 32 bytes long.
+    """
+    pass
+
 def shutdown():
+    """
+    Shutdown the program via sys.exit() and closes any webdriver session.
+    """
     if lang == "en":
         print(f"{F.LIGHTYELLOW_EX}Thank you for using Cultured Downloader.{END}")
         input("Please enter any key to exit...")
@@ -49,6 +67,9 @@ def shutdown():
     sys.exit()
 
 def print_error_log_notification():
+    """
+    Used for alerting the user of where the log file is located at and to report this bug to the developer.
+    """
     logFolderPath = get_saved_config_data_folder().joinpath("logs")
     print(f"\n{F.RED}Unknown Error Occurred/不明なエラーが発生した{END}")
     print(f"{F.RED}Please provide the developer with a error text file generated in {logFolderPath}\n{logFolderPath}に生成されたエラーテキストファイルを開発者に提供してください。\n{END}")
@@ -56,10 +77,13 @@ def print_error_log_notification():
     except: pass
 
 def log_error():
+    """
+    Used for writing the error to a log file usually located in the Cultured Downloader folder in the AppData LocalLow folder.
+    """
     filePath = get_saved_config_data_folder().joinpath("logs")
     if not filePath.is_dir(): filePath.mkdir(parents=True)
 
-    fileName = "".join([f"cultured-downloader-v{__version__ }-error-", datetime.now().strftime("%d-%m-%Y"), ".txt"])
+    fileName = "".join([f"error-", datetime.now().strftime("%d-%m-%Y"), ".log"])
     fullFilePath = filePath.joinpath(fileName)
     
     if not fullFilePath.is_file():
@@ -73,6 +97,13 @@ def log_error():
     logging.error("Error Details: ", exc_info=True)
 
 def error_shutdown(**errorMessages):
+    """
+    Param:
+    - en for English error messages
+    - jp for Japanese error messages
+
+    Used for shutting down the program when an error occurs.
+    """
     if "en" in errorMessages and lang == "en":
         enErrorMessages = errorMessages.get("en")
         if type(enErrorMessages) == tuple:
@@ -97,6 +128,15 @@ def error_shutdown(**errorMessages):
     raise SystemExit
 
 def print_in_both_en_jp(**message):
+    """
+    Used for printing either English or Japanese messages.
+
+    Param:
+    - en for English message
+    - jp for Japanese message
+
+    If the global variable lang is not defined, it will print both English and Japanese messages.
+    """
     enMessages = message.get("en")
     jpMessages = message.get("jp")
 
@@ -121,9 +161,30 @@ def print_in_both_en_jp(**message):
         else: print(jpMessages)
 
 def get_input_from_user(**kwargs):
+    """
+    Returns user's input based on the defined command paramater without 
+    letting the user enter anything else besides the defined command parameter.
+
+    Param:
+    - prompt: The prompt to be displayed to the user.
+    - prints: The message to be printed to the user.
+    - command: The input to be accepted by the program.
+    - warning: Used for displaying a custom error message.
+
+    Defaults:
+    - command: None but must be defined at all time as it will raise a ValueError if not defined
+    - prompt: "", an input without any prompt
+    - prints: None, will not print out any messages
+    - warning: None, will not display any error messages
+    """
     prints = kwargs.get("prints")
+
     prompt = kwargs.get("prompt")
+    if prompt == None: prompt = ""
+
     commands = kwargs.get("command")
+    if commands == None: raise ValueError("command parameter must be defined in the function, get_input_from_user")
+
     warning = kwargs.get("warning")
 
     if prints != None:
@@ -158,6 +219,13 @@ def get_input_from_user(**kwargs):
                     print(f"{F.RED}エラー: 不正な入力です。{commandToPrintJp}を入力してください。{END}")
 
 def check_if_json_file_exists():
+    """
+    Checks if the json files exist in the Cultured Downloader folder in the AppData LocalLow folder.
+
+    If it exist, it will try to load it and if there is a JSONDecodeError, it will dump an empty dictionary as a placeholder.
+
+    Otherwise, it will create a new config.json file and dump an empty dictionary as a placeholder.
+    """
     jsonFolderPath = appPath.joinpath("configs")
     if not jsonFolderPath.is_dir(): jsonFolderPath.mkdir(parents=True)
     if not jsonPath.is_file():
@@ -182,623 +250,42 @@ def check_if_json_file_exists():
         print(f"{F.LIGHTYELLOW_EX}config.jsonから設定を読み込みます...{END}")
 
 def get_saved_config_data_folder():
+    """
+    Returns a pathlib Path object of the saved config data folder which is in the AppData LocalLow folder.
+    """
     dataDirectory = pathlib.Path.home().joinpath("AppData", "LocalLow", "Cultured Downloader")
     if not dataDirectory.is_dir(): dataDirectory.mkdir(parents=True)
     return dataDirectory
 
-def encrypt_string(inputString):
-    return decKey.encrypt(inputString.encode()).decode()
+def get_driver(browserType, **additionalOptions):
+    """
+    Requires one argument to be defined:: 
+    - "chrome"
+    - "edge"
 
-def decrypt_string(inputString):
-    try:
-        return decKey.decrypt(inputString.encode()).decode()
-    except:
-        print_in_both_en_jp(
-            en=(f"{F.RED}Fatal Error: Could not decrypt string.{END}", f"{F.RED}Resetting Key and encrypted values in config.json...{END}"),
-            jp=(f"{F.RED}致命的なエラー: 文字列を復号化できませんでした。{END}", f"{F.RED}config.jsonのキーと暗号化された値をリセットしています...{END}")
-        )
-        keyPath = appPath.joinpath("configs", "key")
-        if keyPath.is_file():
-            keyPath.unlink()
-        
-        with open(jsonPath, "r") as f:
-            config = json.load(f)
-        
-        config["Accounts"]["Fantia"]["Password"] = ""
-        config["Accounts"]["Pixiv"]["Password"] = ""
-        
-        with open(jsonPath, "w") as f:
-            json.dump(config, f, indent=4)
-            
-        error_shutdown(en=("Please restart the program."), jp=("このプログラムを再起動してください。"))
+    Optional param:
+    - headless --> True or False
+    - blockImg --> a number
 
-def get_user_account(website):
-    with open(jsonPath, "r") as f:
-        config = json.load(f)
-    if website == "all":
-        try:
-            fantiaEmail = config["Accounts"]["Fantia"]["User"]
-            fantiaPassword = config["Accounts"]["Fantia"]["Password"]
-            pixivUsername = config["Accounts"]["Pixiv"]["User"]
-            pixivPassword = config["Accounts"]["Pixiv"]["Password"]
-            if fantiaEmail == "" or fantiaPassword == "" or pixivUsername == "" or pixivPassword == "":
-                raise Exception("Account details had empty values.")
-            
-            try: fantiaPassword = decrypt_string(fantiaPassword)
-            except: raise SystemExit
+    For numbers, use the definition below:
+    - 0 is default
+    - 1 is to allow
+    - 2 is to block
+    """
+    headlessOption = additionalOptions.get("headless")
+    if headlessOption == None: headlessOption = True # set to True by default
 
-            try: pixivPassword = decrypt_string(pixivPassword)
-            except: raise SystemExit
+    blockImages = additionalOptions.get("blockImg")
+    if blockImages == None: blockImages = 2 # set to 2 by default to block all images
 
-            return fantiaEmail, fantiaPassword, pixivUsername, pixivPassword
-        except SystemExit:
-            config["Accounts"]["Fantia"]["Password"] = ""
-            config["Accounts"]["Pixiv"]["Password"] = ""
-            with open(jsonPath, "w") as f:
-                json.dump(config, f, indent=4)
-            raise SystemExit
-        except Exception or KeyError:
-            print_in_both_en_jp(
-                en=(f"{F.RED}Error: config.json does not have all the necessary account details.{END}"),
-                jp=(f"{F.RED}エラー: config.jsonに必要なアカウントの詳細がありません。{END}")
-            )
-
-            if "Accounts" not in config:
-                data = {"Accounts": {
-                            "Fantia": {
-                                "User": "",
-                                "Password": ""
-                                },
-                            "Pixiv": {
-                                "User": "",
-                                "Password": ""
-                                }
-                            }
-                        }
-                configInput = get_input_from_user(prompt="Would you like to save your account details now? (y/n): ", command=("y", "n"))
-            
-                if configInput == "n": 
-                    print_in_both_en_jp(
-                        en=(f"{F.RED}Warning: Since you have not added your account details yet,\nyou will not be able to download any images that requires a membership.\nFret not, you can add your account details later.{END}"),
-                        jp=(f"{F.RED}ご注意： まだアカウント情報を追加していないため、\n会員登録が必要な画像をダウンロードすることはできません。\n後でアカウント情報を追加することができますので、ご安心ください。{END}")
-                    )
-
-                    config.update(data)
-                    with open(jsonPath, "w") as f:
-                        json.dump(config, f, indent=4)
-                    return None, None, None, None
-                else:
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaのアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
-                        else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
-                        if fantiaEmail != "":
-                            data["Accounts"]["Fantia"]["User"] = fantiaEmail
-                            break
-                    
-                    while True:
-                        if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
-                        else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
-                        if fantiaPassword != "":
-                            data["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Fantia Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Fantiaのアカウント情報を追加しました！{END}")
-                    )
-
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
-                        else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
-                        if pixivUsername != "":
-                            data["Accounts"]["Pixiv"]["User"] = pixivUsername
-                            break
-                    
-                    while True:
-                        if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                        else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
-                        if fantiaPassword != "":
-                            data["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
-                            break
-
-                    with open(jsonPath, "w") as f:
-                        config.update(data)
-                        json.dump(config, f, indent=4)
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Pixiv Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Pixivのアカウント情報を追加しました！{END}")
-                    )
-                    
-                    return fantiaEmail, fantiaPassword, pixivUsername, pixivPassword
-            else: 
-                fantiaData = config["Accounts"]["Fantia"]
-                pixivData = config["Accounts"]["Pixiv"]
-
-                if fantiaData["User"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaのアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
-                        else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
-                        if fantiaEmail != "":
-                            fantiaData["User"] = fantiaEmail
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Email for Fantia Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}FantiaアカウントのEメール追加に成功しました！{END}")
-                    )
-                if fantiaData["Password"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaのアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
-                        else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
-                        if fantiaPassword != "":
-                            fantiaData["Password"] = encrypt_string(fantiaPassword)
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Password for Fantia Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Fantiaアカウントのパスワード追加に成功しました！{END}")
-                    )
-                if pixivData["User"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
-                        else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
-                        if pixivUsername != "":
-                            pixivData["User"] = pixivUsername
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Pixiv ID successfully added!{END}"),
-                        jp=(f"{F.GREEN}PixivアカウントのID追加に成功しました！{END}")
-                    )
-                if pixivData["Password"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv fanbox...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                        else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
-                        if pixivPassword != "":
-                            pixivData["Password"] = encrypt_string(pixivPassword)
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Password for Pixiv Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Pixivアカウントのパスワード追加に成功しました！{END}")
-                    )
-                
-                with open(jsonPath, "w") as f:
-                    json.dump(config, f, indent=4)
-
-                return fantiaEmail, fantiaPassword, pixivUsername, pixivPassword
-    elif website == "fantia":
-        try:
-            fantiaEmail = config["Accounts"]["Fantia"]["User"]
-            fantiaPassword = config["Accounts"]["Fantia"]["Password"]
-            if fantiaEmail == "" or fantiaPassword == "":
-                raise Exception("Fantia account details had empty values.")
-            
-            try: fantiaPassword = decrypt_string(fantiaPassword)
-            except: raise SystemExit
-
-            return fantiaEmail, fantiaPassword
-        except SystemExit:
-            config["Accounts"]["Fantia"]["Password"] = ""
-            with open(jsonPath, "w") as f:
-                json.dump(config, f, indent=4)
-            raise SystemExit
-        except Exception or KeyError:
-            print_in_both_en_jp(
-                en=(f"{F.RED}Error: config.json does not have all the necessary account details.{END}"),
-                jp=(f"{F.RED}エラー: config.jsonに必要なアカウントの詳細がありません。{END}")
-            )
-
-            if "Accounts" not in config:
-                data = {"Accounts": {
-                            "Fantia": {
-                                "User": "",
-                                "Password": ""
-                                },
-                            "Pixiv": {
-                                "User": "",
-                                "Password": ""
-                                }
-                            }
-                        }
-                configInput = get_input_from_user(prompt="Would you like to save your account details now? (y/n): ", command=("y", "n"))
-            
-                if configInput == "n": 
-                    print_in_both_en_jp(
-                        en=(f"{F.RED}Warning: Since you have not added your account details yet,\nyou will not be able to download any images that requires a membership.\nFret not, you can add your account details later.{END}"),
-                        jp=(f"{F.RED}ご注意： まだアカウント情報を追加していないため、\n会員登録が必要な画像をダウンロードすることはできません。\n後でアカウント情報を追加することができますので、ご安心ください。{END}")
-                    )
-
-                    config.update(data)
-                    with open(jsonPath, "w") as f:
-                        json.dump(config, f, indent=4)
-                    return None, None
-                else:
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaのアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
-                        else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
-                        if fantiaEmail != "":
-                            data["Accounts"]["Fantia"]["User"] = fantiaEmail
-                            break
-                    
-                    while True:
-                        if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
-                        else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
-                        if fantiaPassword != "":
-                            data["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Fantia Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Fantiaのアカウント情報を追加しました！{END}")
-                    )
-
-                    with open(jsonPath, "w") as f:
-                        config.update(data)
-                        json.dump(config, f, indent=4)
-
-                    return fantiaEmail, fantiaPassword
-            else: 
-                fantiaData = config["Accounts"]["Fantia"]
-
-                if fantiaData["User"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaのアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": fantiaEmail = input("Enter your email address for Fantia: ").lower().strip()
-                        else: fantiaEmail = input("FantiaアカウントのEメールを入力してください： ").lower().strip()
-                        if fantiaEmail != "":
-                            fantiaData["User"] = fantiaEmail
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Email for Fantia Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}FantiaアカウントのEメール追加に成功しました！{END}")
-                    )
-                if fantiaData["Password"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Fantia...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaのアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": fantiaPassword = input("Enter your password for Fantia: ")
-                        else: fantiaPassword = input("Fantiaアカウントのパスワードを入力してください： ")
-                        if fantiaPassword != "":
-                            fantiaData["Password"] = encrypt_string(fantiaPassword)
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Password for Fantia Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Fantiaアカウントのパスワード追加に成功しました！{END}")
-                    )
-                
-                with open(jsonPath, "w") as f:
-                    json.dump(config, f, indent=4)
-
-                return fantiaEmail, fantiaPassword
-    elif website == "pixiv":
-        try:
-            pixivEmail = config["Accounts"]["Pixiv"]["User"]
-            pixivPassword = config["Accounts"]["Pixiv"]["Password"]
-            if pixivEmail == "" or pixivPassword == "":
-                raise Exception("Fantia account details had empty values.")
-            
-            try: pixivPassword = decrypt_string(pixivPassword)
-            except: raise SystemExit
-
-            return pixivEmail, pixivPassword
-        except SystemExit:
-            config["Accounts"]["Pixiv"]["Password"] = ""
-            with open(jsonPath, "w") as f:
-                json.dump(config, f, indent=4)
-            raise SystemExit
-        except Exception or KeyError:
-            print_in_both_en_jp(
-                en=(f"{F.RED}Error: config.json does not have all the necessary account details.{END}"),
-                jp=(f"{F.RED}エラー: config.jsonに必要なアカウントの詳細がありません。{END}")
-            )
-
-            if "Accounts" not in config:
-                data = {"Accounts": {
-                            "Fantia": {
-                                "User": "",
-                                "Password": ""
-                                },
-                            "Pixiv": {
-                                "User": "",
-                                "Password": ""
-                                }
-                            }
-                        }
-                configInput = get_input_from_user(prompt="Would you like to save your account details now? (y/n): ", command=("y", "n"))
-            
-                if configInput == "n": 
-                    print_in_both_en_jp(
-                        en=(f"{F.RED}Warning: Since you have not added your account details yet,\nyou will not be able to download any images that requires a membership.\nFret not, you can add your account details later.{END}"),
-                        jp=(f"{F.RED}ご注意： まだアカウント情報を追加していないため、\n会員登録が必要な画像をダウンロードすることはできません。\n後でアカウント情報を追加することができますので、ご安心ください。{END}")
-                    )
-
-                    config.update(data)
-                    with open(jsonPath, "w") as f:
-                        json.dump(config, f, indent=4)
-                    return None, None
-                else:
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
-                        else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
-                        if pixivUsername != "":
-                            data["Accounts"]["Pixiv"]["User"] = pixivUsername
-                            break
-                    
-                    while True:
-                        if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                        else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
-                        if fantiaPassword != "":
-                            data["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
-                            break
-
-                    with open(jsonPath, "w") as f:
-                        config.update(data)
-                        json.dump(config, f, indent=4)
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Pixiv Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Pixivのアカウント情報を追加しました！{END}")
-                    )
-                    
-                    return pixivUsername, pixivPassword
-            else: 
-                pixivData = config["Accounts"]["Pixiv"]
-                if pixivData["User"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": pixivUsername = input("Enter your Pixiv ID: ").strip()
-                        else: pixivUsername = input("PixivアカウントのIDを入力してください： ").strip()
-                        if pixivUsername != "":
-                            pixivData["User"] = pixivUsername
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Pixiv ID successfully added!{END}"),
-                        jp=(f"{F.GREEN}PixivアカウントのID追加に成功しました！{END}")
-                    )
-                if pixivData["Password"] == "":
-                    print_in_both_en_jp(
-                        en=(f"\n{F.LIGHTYELLOW_EX}Adding account details for Pixiv fanbox...{END}"),
-                        jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を追加しています...{END}")
-                    )
-
-                    while True:
-                        if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                        else: pixivPassword = input("Pixivアカウントのパスワードを入力してください： ")
-                        if pixivPassword != "":
-                            pixivData["Password"] = encrypt_string(pixivPassword)
-                            break
-
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Password for Pixiv Account successfully added!{END}"),
-                        jp=(f"{F.GREEN}Pixivアカウントのパスワード追加に成功しました！{END}")
-                    )
-                
-                with open(jsonPath, "w") as f:
-                    json.dump(config, f, indent=4)
-
-                return pixivUsername, pixivPassword
-
-def change_account_details(typeToChange, **credToUpdate):
-    credentialsToChangeList = credToUpdate.get("cred")
-    with open(jsonPath, "r") as f:
-        config = json.load(f)
-    try:
-        if typeToChange == "fantia":
-            print_in_both_en_jp(
-                en=(f"\n{F.LIGHTYELLOW_EX}Changing account details for Fantia...{END}"),
-                jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaアカウント情報を変更する...{END}")
-            )
-
-            if "username" in credentialsToChangeList:
-                while True:
-                    if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
-                    else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
-                    if fantiaEmail.upper() != "X" and fantiaEmail != "": 
-                        config["Accounts"]["Fantia"]["User"] = fantiaEmail
-                        break
-                    elif fantiaEmail.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-
-            if "password" in credentialsToChangeList:
-                while True:
-                    if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
-                    else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                    if fantiaPassword.upper() != "X" and fantiaPassword != "": 
-                        config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
-                        break
-                    elif fantiaPassword.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-
-        elif typeToChange == "pixiv":
-            print_in_both_en_jp(
-                en=(f"\n{F.LIGHTYELLOW_EX}Changing Pixiv Account Details...{END}"),
-                jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を変更する...{END}")
-            )
-
-            if "username" in credentialsToChangeList:
-                while True:
-                    if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
-                    else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
-                    if pixivUsername.upper() != "X" and pixivUsername != "": 
-                        config["Accounts"]["Pixiv"]["User"] = pixivUsername
-                        break
-                    elif pixivUsername.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-
-            if "password" in credentialsToChangeList:
-                while True:
-                    if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                    else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                    if pixivPassword.upper() != "X" and pixivPassword != "": 
-                        config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
-                        break
-                    elif pixivPassword.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-                
-        elif typeToChange == "all":
-            print_in_both_en_jp(
-                en=(f"\n{F.LIGHTYELLOW_EX}Changing account details for Fantia...{END}"),
-                jp=(f"\n{F.LIGHTYELLOW_EX}Fantiaアカウント情報を変更する...{END}")
-            )
-
-            if "username" in credentialsToChangeList:
-                while True:
-                    if lang == "en": fantiaEmail = input("Enter your new email address for Fantia (X to cancel): ").lower().strip()
-                    else: fantiaEmail = input("新しいFantiaアカウントのEメールを入力してください（\"X\"でキャンセル）： ").lower().strip()
-                    if fantiaEmail.upper() != "X" and fantiaEmail != "": 
-                        config["Accounts"]["Fantia"]["User"] = fantiaEmail
-                        break
-                    elif fantiaEmail.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-            
-            if "password" in credentialsToChangeList:
-                while True:
-                    if lang == "en": fantiaPassword = input("Enter your password for Fantia (X to cancel): ")
-                    else: fantiaPassword = input("新しいFantiaアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                    if fantiaPassword.upper() != "X" and fantiaPassword != "": 
-                        config["Accounts"]["Fantia"]["Password"] = encrypt_string(fantiaPassword)
-                        break
-                    elif fantiaPassword.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-
-            print_in_both_en_jp(
-                en=(f"\n{F.LIGHTYELLOW_EX}Changing Pixiv Account Details...{END}"),
-                jp=(f"\n{F.LIGHTYELLOW_EX}Pixivアカウント情報を変更する...{END}")
-            )
-
-            if "username" in credentialsToChangeList:
-                while True:
-                    if lang == "en": pixivUsername = input("Enter your Pixiv ID (X to cancel): ").strip()
-                    else: pixivUsername = input("新しいPixivアカウントのIDを入力してください（\"X\"でキャンセル）： ").strip()
-                    if pixivUsername.upper() != "X" and pixivUsername != "": 
-                        config["Accounts"]["Pixiv"]["User"] = pixivUsername
-                        break
-                    elif pixivUsername.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-
-            if "password" in credentialsToChangeList:
-                while True:
-                    if lang == "en": pixivPassword = input("Enter your password for Pixiv: ")
-                    else: pixivPassword = input("新しいPixivアカウントのパスワードを入力してください（\"X\"でキャンセル）： ")
-                    if pixivPassword.upper() != "X" and pixivPassword != "": 
-                        config["Accounts"]["Pixiv"]["Password"] = encrypt_string(pixivPassword)
-                        break
-                    elif pixivPassword.upper() == "X":
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}No changes made!{END}"),
-                            jp=(f"{F.GREEN}変更は行われませんでした！{END}")
-                        )
-                        break
-        else:
-            error_shutdown(
-                en=("Unexpected Error: Error when trying to change account details.", 
-                    "Please report this error to the developer."),
-                jap=("予期せぬエラー： アカウントの詳細を変更しようとしたときにエラーが発生しました。", "このエラーを開発者に報告してください。")
-            )
-
-        with open(jsonPath, "w") as f:
-            json.dump(config, f, indent=4)
-
-    except KeyError:
-        error_shutdown(
-            en=("Error: Encountered a KeyError when trying to change account details.", "Please report this error to the developer."),
-            jap=("エラー： アカウントの詳細を変更しようとすると、KeyErrorが発生しました。", "このエラーを開発者に報告してください。")
-        )
-    except:
-        error_shutdown(
-            en=("Unexpected Error: Error when trying to change account details.", "Please report this error to the developer."),
-            jap=("予期せぬエラー： アカウントの詳細を変更しようとすると、エラーが発生します。", "このエラーを開発者に報告してください。")
-        )
-
-def get_driver(browserType):
+    print_in_both_en_jp(
+        en=(f"\n{F.LIGHTYELLOW_EX}Initialising Browser...{END}"),
+        jp=(f"\n{F.LIGHTYELLOW_EX}ブラウザの初期化中です...{END}")
+    )
     if browserType == "chrome":
         #minimise the browser window and hides unnecessary text output
         cOptions = chromeOptions()
-        cOptions.headless = True
+        cOptions.headless = headlessOption
         cOptions.add_argument("--log-level=3")
         cOptions.add_argument("--disable-gpu")
         cOptions.add_argument("--disable-dev-shm-usage") # from https://stackoverflow.com/questions/62898801/selenium-headless-chrome-runs-much-slower
@@ -810,7 +297,7 @@ def get_driver(browserType):
         # change default download location
         cOptions.add_experimental_option("prefs", {
             "download.default_directory": str(pixivDownloadLocation),
-            "profile.managed_default_content_settings.images": 2
+            "profile.managed_default_content_settings.images": blockImages
         })
 
         # auto downloads chromedriver.exe
@@ -821,7 +308,7 @@ def get_driver(browserType):
     elif browserType == "edge":
         # minimise the browser window and hides unnecessary text output
         eOptions = edgeOptions()
-        eOptions.headless = True
+        eOptions.headless = headlessOption
         eOptions.use_chromium = True
         eOptions.add_argument("--log-level=3")
         eOptions.add_argument("--disable-gpu")
@@ -834,7 +321,7 @@ def get_driver(browserType):
         # change default download location
         eOptions.add_experimental_option("prefs", {
             "download.default_directory": str(pixivDownloadLocation),
-            "profile.managed_default_content_settings.images": 2
+            "profile.managed_default_content_settings.images": blockImages
         })
 
         # auto downloads msedgedriver.exe
@@ -858,14 +345,14 @@ def get_driver(browserType):
     # driver.minimize_window()
     return driver
 
-def get_user_browser_preference():
-    if lang == "en":
-        selectedBrowser = get_input_from_user(prompt="Select a browser from the available options: ", command=("chrome", "edge"), prints=("What browser would you like to use?", "Available browsers: Chrome, Edge."), warning="Invalid browser, please enter a browser from the available browsers.")
-    else:
-        selectedBrowser = get_input_from_user(prompt="利用可能なオプションからブラウザを選択します： ", command=("chrome", "edge"), prints=("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge。"), warning="不正なブラウザです。使用可能なブラウザから選んでください。")
-    return selectedBrowser
-
 def check_browser_config():
+    """
+    Checks if config.json has the necessary information for loading in the user's selected default browser.
+
+    If it doesn not have the necessary information, it will return None.
+
+    Otherwise, it will return the browser type which will usually be either "chrome" or "edge".
+    """
     with open(jsonPath, "r") as f:
         config = json.load(f)
     try:
@@ -884,7 +371,59 @@ def check_browser_config():
             jap=("予期せぬエラー： ブラウザの設定を確認しようとするとエラーになる。", "このエラーを開発者に報告してください。")
         )
 
+def get_user_browser_preference():
+    """
+    To get the user's preferred browser which will either return "chrome" or "edge"
+    """
+    if lang == "en":
+        inputPrompt = "Select a browser from the available options: "
+        printsPrompt = ("What browser would you like to use?", "Available browsers: Chrome, Edge.")
+        warningPrompt = "Invalid browser, please enter a browser from the available browsers."
+    else:
+        inputPrompt = "利用可能なオプションからブラウザを選択します： "
+        printsPrompt = ("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge。")
+        warningPrompt = "不正なブラウザです。使用可能なブラウザから選んでください。"
+
+    selectedBrowser = get_input_from_user(prompt=inputPrompt, command=("chrome", "edge"), prints=printsPrompt, warning=warningPrompt)
+    return selectedBrowser
+
+def get_browser_preferences():
+    """
+    To get the user's default browser in the config.json...
+    
+    This function will check the config.json file if the user has defined their preferred browser in the json file by calling the function check_browser_config.
+
+    Hence, in any event that the function check_browser_config() returns a string and not None and if the returned string from check_browser_config() is not "chrome" or "edge", the user might have entered manually to config.json.
+
+    However, the function get_driver(browserType) will do the necessary checks and change the config.json file browser data to an empty string if it's not "chrome" or "edge".
+
+    Otherwise, if the user has not set a default browser, it will ask the user to select a browser and prompt them 
+    if they want to save their preferred browser type to config.json for future runs.
+
+    This function will return the browser type which will usually be either "chrome" or "edge".
+    """
+    loadBrowser = check_browser_config()
+    if loadBrowser == None:
+        selectedBrowser = get_user_browser_preference()
+
+        if lang == "en": browserPrompt = "Would you like to automatically use this browser upon running this program again? (y/n): "
+        else: browserPrompt = "本プログラムの再実行時に、自動的にこのブラウザを使用しますか？ (y/n)： "
+
+        saveBrowser = get_input_from_user(prompt=browserPrompt, command=("y", "n"))
+        
+        if saveBrowser == "y": save_browser_config(selectedBrowser)
+
+        return selectedBrowser
+    else: 
+        return loadBrowser
+
 def save_browser_config(selectedBrowser):
+    """
+    To save the user's preferred browser to config.json.
+
+    Requires one argument to be defined:
+    - the browser type which will usually be either "chrome" or "edge".
+    """
     with open(jsonPath, "r") as f:
         config = json.load(f)
     config["Browser"] = selectedBrowser
@@ -895,19 +434,15 @@ def save_browser_config(selectedBrowser):
         jp=(f"{F.GREEN}{selectedBrowser.title()}は次回起動時に自動的にロードされます！{END}")
     )
 
-def get_key():
-    keyPath = appPath.joinpath("configs", "key")
-    if keyPath.is_file():
-        with open(keyPath, "rb") as f:
-            keyObject = dill.load(f)
-    else:
-        keyObject = Key()
-        with open(keyPath, "wb") as f:
-            dill.dump(keyObject, f)
-
-    return keyObject.get_decKey()
-
 def set_lang(config):
+    """
+    Saves the user's preferred language to config.json
+
+    This function will ask the user to enter either "en" or "jp" and will then save that into config.json
+
+    Requires one argument to be defined:
+    - the config dictionary obtained from reading config.json
+    """
     try:
         print_in_both_en_jp(
             en=(f"\n{F.RED}Error: Language is not defined in the config.json file.{END}"),
@@ -937,6 +472,11 @@ def set_lang(config):
     return langInput
 
 def get_lang():
+    """
+    For loading the user's preferred language from config.json
+
+    If the user has not set a preferred language in config.json, this function will call another function, set_lang, to ask the user to select a language and then save it to config.json for future runs.
+    """
     with open(jsonPath, "r") as f:
         config = json.load(f)
     try:
@@ -951,6 +491,19 @@ def get_lang():
         return set_lang(config)
 
 def update_lang():
+    """
+    To update the user's preferred language choice into config.json
+
+    It will prompt the user if they really want to change the language.
+
+    If the user entered "n" for no, it will return either "en" or "jp" based on the config.json defined language.
+
+    Otherwise, it will update the language in the config.json by inverting the values.
+
+    E.g. if the config.json has "en" as the language, it will update the config.json to "jp" and vice versa.
+
+    Afterwards, it will then return the updated language which is either "en" or "jp".
+    """
     with open(jsonPath, "r") as f:
         config = json.load(f)
 
@@ -979,15 +532,24 @@ def update_lang():
         return set_lang(config)
 
 def check_if_user_is_logged_in():
+    """
+    Checks the global variables, fantiaCookieLoaded and pixivCookieLoaded if they both are True in which it will return True, Otherwise it will return False.
+    """
     fantiaLoggedIn = pixivLoggedIn = False
 
-    if "Fantia" in loggedIn: fantiaLoggedIn = True
-    if "Pixiv" in loggedIn: pixivLoggedIn = True
+    if fantiaCookieLoaded: fantiaLoggedIn = True
+    if pixivCookieLoaded: pixivLoggedIn = True
 
     if fantiaLoggedIn and pixivLoggedIn: return True
     else: return False
 
 def set_default_download_directory_to_desktop(jsonConfig):
+    """
+    To set the user's default download directory to the desktop and save it to config.json
+
+    Requires one argument to be defined:
+    - the config dictionary obtained from reading config.json
+    """
     defaultDownloadFolderPath = pathlib.Path.home().joinpath("Desktop", "Cultured Downloader")
     jsonConfig["Download_Directory"] = str(defaultDownloadFolderPath)
     with open(jsonPath, "w") as f:
@@ -1006,6 +568,12 @@ def set_default_download_directory_to_desktop(jsonConfig):
     return defaultDownloadFolderPath
 
 def set_default_download_directory(jsonConfig):
+    """
+    To set the user's default download directory by prompting to enter the full path on their pc and save it to config.json
+
+    Requires one argument to be defined:
+    - the config dictionary obtained from reading config.json
+    """
     if lang == "en": 
         downloadFolderPrompt = "Would you like to change the default download location? (y/n): "
         downloadFolderChangePrompt = "Enter the FULL path of the download folder (X to cancel): "
@@ -1048,6 +616,11 @@ def set_default_download_directory(jsonConfig):
             )
 
 def get_default_download_directory():
+    """
+    To read config.json and retrieves the default download directory.
+
+    If there is a JSONDecodeError, it will write an empty dictionary to config.json
+    """
     with open(jsonPath, "r") as f:
         config = json.load(f)
     try:
@@ -1064,12 +637,107 @@ def get_default_download_directory():
     except:
         return set_default_download_directory(config)
 
+def get_key():
+    """
+    To get the key for encryption and decryption which will return a 32 bytes string
+    """
+    keyPath = appPath.joinpath("configs", "key")
+    if keyPath.is_file():
+        with open(keyPath, "rb") as f:
+            key = dill.load(f)
+    else:
+        key = get_random_bytes(32)
+        with open(keyPath, "wb") as f:
+            dill.dump(key, f)
+
+    return key
+
+def delete_encrypted_data():
+    """
+    Used when the function encrypt_data or decrypt_data has encountered issues decrypting the encrypted cookies
+
+    This function will delete the files, key, pixiv_cookies, or fantia_cookies (if any are found) in the "configs" folder.
+    """
+    print("\n")
+    print_in_both_en_jp(
+        en=(f"{F.RED}Fatal Error: Could not decrypt cookie.{END}", 
+        f"{F.RED}Resetting Key and deleting encrypted cookies...{END}"),
+        jp=(f"{F.RED}致命的なエラー: クッキーを復号化できませんでした。{END}", 
+        f"{F.RED}鍵のリセットと暗号化されたクッキーを削除します...{END}")
+    )
+
+    keyPath = appPath.joinpath("configs", "key")
+    if keyPath.is_file(): keyPath.unlink()
+    
+    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+    if pixivCookiePath.is_file(): pixivCookiePath.unlink()
+
+    fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
+    if fantiaCookiePath.is_file(): fantiaCookiePath.unlink()
+
+    print_in_both_en_jp(
+        en=(f"{F.RED}Please restart the program.{END}"), 
+        jp=(f"{F.RED}このプログラムを再起動してください。{END}")
+    )
+
+def encrypt_data(data):
+    """
+    To encrypt the data using the global variable ChaChaKey obtained from the function get_key as the encryption key
+
+    Requires one argument to be defined:
+    - A dictionary containing the data to be encrypted
+    """
+    header = b"Cultured_Downloader" # converts string to bytes string
+    if type(data) == dict:
+        data = json.dumps(data) # converts the dict to a string
+
+        try:
+            cipher = Cha.new(key=ChaChaKey)
+        except TypeError:
+            raise EncryptionKeyError
+
+        cipher.update(header)
+        cipherText, tag = cipher.encrypt_and_digest(data.encode())
+
+        dictKeys = ["nonce", "header", "cipherText", "tag"]
+        valuesList = [b64encode(x).decode() for x in (cipher.nonce, header, cipherText, tag)] # b64encodes the values and decode it to a string
+
+        encryptedData = json.dumps(dict(zip(dictKeys, valuesList))) # converts both lists to a dictionary then serialises it to a string
+
+        return ChaChaData(encryptedData)
+    else:
+        raise Exception("Data to be encrypted is not a dictionary...")
+
+def decrypt_data(encryptedData):
+    """
+    To decrypt the data using the global variable ChaChaKey obtained from the function get_key as the encryption key
+
+    Requires one argument to be defined:
+    - A dictionary containing the encrypted values
+    """
+    try:
+        b64encodedDict = json.loads(encryptedData.get_encrypted_data()) # a dictionary of b64encoded values
+        b64decodedDict = {key:b64decode(b64encodedDict[key]) for key in b64encodedDict.keys()}
+
+        cipher = Cha.new(key=ChaChaKey, nonce=b64decodedDict["nonce"])
+        cipher.update(b64decodedDict["header"])
+
+        plaintext = cipher.decrypt_and_verify(b64decodedDict["cipherText"], b64decodedDict["tag"])
+        return json.loads(plaintext.decode())
+    except (ValueError, KeyError, TypeError):
+        raise DecryptError
 
 """--------------------------- End of Config Codes ---------------------------"""
 
 """--------------------------- Start of Functions Codes ---------------------------"""
 
 def check_if_input_is_url(inputString):
+    """
+    Validates if the user's inputs is a valid URL
+
+    Requires one argument to be defined:
+    - A string or a list
+    """
     if type(inputString) != list:
         try:
             result = urlparse(inputString)
@@ -1086,6 +754,12 @@ def check_if_input_is_url(inputString):
         return True
 
 def split_inputs_to_possible_multiple_inputs(userInput):
+    """
+    Removes all whitespaces including Japanese whitespaces and splits the user's inputs into a list of possible inputs based on the delimiters, "," or "、".
+
+    Requires one argument to be defined:
+    - A string
+    """
     userInput = userInput.replace(" ", "")
     userInput = userInput.replace("　", "")
     if "," in userInput: userInput = userInput.split(",")
@@ -1094,6 +768,16 @@ def split_inputs_to_possible_multiple_inputs(userInput):
 
 # function below from https://stackoverflow.com/questions/5799228/how-to-get-status-code-by-using-selenium-py-python-code
 def get_status(logs):
+    """
+    Function to get the status code of a webpage
+
+    Used for auto detecting the number of images to download for Fantia (option 1 on the menu)
+
+    Credits to Jarad: https://stackoverflow.com/questions/5799228/how-to-get-status-code-by-using-selenium-py-python-code
+
+    Requires one argument to be defined:
+    - A log obtained from webdriver.get_log("performance")
+    """
     for log in logs:
         if log["message"]:
             d = json.loads(log["message"])
@@ -1106,86 +790,34 @@ def get_status(logs):
                 pass
 
 def check_if_directory_has_files(dirPath):
+    """
+    Returns True if there is any files or folders in the argument given.
+
+    Otherwise, it will return False.
+
+    Requires one argument to be defined:
+    - A pathlib Path object
+    """
     hasFiles = any(dirPath.iterdir())
     return hasFiles
 
-def randomise_delay():
-    sleep(round(uniform(0.2, 0.6), 2))
-
-def save_pixiv_cookie():
-    driver.get("https://www.fanbox.cc/")
-    sleep(5)
-    pixivCookieDirPath = appPath.joinpath("configs")
-    pixivCookieDirPath.mkdir(parents=True, exist_ok=True)
-    pixivCookiePath = pixivCookieDirPath.joinpath("pixiv_cookies")
-    with open(pixivCookiePath, 'wb') as f:
-        dill.dump(driver.get_cookies(), f)
-    print_in_both_en_jp(
-        en=(
-            f"{F.GREEN}The cookie saved to {pixivCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}", f"{F.RED}Warning: Please do not share the cookie with anyone as they will be able to gain access to your pixiv account!{END}"
-        ),
-        jp=(
-            f"{F.GREEN}{pixivCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}", 
-            f"{F.RED}警告： このクッキーを誰かと共有すると、あなたのpixivアカウントにアクセスできてしまうので、共有しないでください！"
-        )
-    )
-
-def save_fantia_cookie():
-    driver.get("https://fantia.jp/")
-    sleep(5)
-    fantiaCookieDirPath = appPath.joinpath("configs")
-    fantiaCookieDirPath.mkdir(parents=True, exist_ok=True)
-    fantiaCookiePath = fantiaCookieDirPath.joinpath("fantia_cookies")
-    with open(fantiaCookiePath, 'wb') as f:
-        Fantiacookies = driver.get_cookies()
-        for cookie in reversed(Fantiacookies): # reversed since most of the time the _session_id cookie is at the bottom of the list of cookies
-            if cookie["name"] == "_session_id":
-                dill.dump(cookie, f)
-                break
-
-    print_in_both_en_jp(
-        en=(
-            f"{F.GREEN}The cookie saved to {fantiaCookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}", f"{F.RED}Warning: Please do not share the cookie with anyone as they will be able to gain access to your pixiv account!{END}"
-        ),
-        jp=(
-            f"{F.GREEN}{fantiaCookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}", 
-            f"{F.RED}警告： このクッキーを誰かと共有すると、あなたのpixivアカウントにアクセスできてしまうので、共有しないでください！"
-        )
-    )
-
-def load_pixiv_cookie():
-    cookiePath = appPath.joinpath("configs", "pixiv_cookies")
-
-    if cookiePath.is_file():
-        driver.get("https://www.fanbox.cc/")
-        sleep(5)
-        with open(cookiePath, 'rb') as f:
-            pixivCookies = dill.load(f)
-        for cookie in pixivCookies:
-            driver.add_cookie(cookie)
-
-        driver.get("https://www.fanbox.cc/messages")
-        sleep(5)
-        if driver.current_url == "https://www.fanbox.cc/messages": 
-            print_in_both_en_jp(
-                en=(f"{F.GREEN}Pixiv Fanbox cookied loaded successfully!{END}"),
-                jp=(f"{F.GREEN}Pixivファンボックスのクッキーが正常に読み込まれました！{END}")
-            )
-            return True
-        else: return False
-    else: return False
-
+# function for requests library cookie session
 def get_pixiv_cookie():
+    """
+    For Pixiv, it will return the cookie of the pixiv account needed for the login session used for the download of the images via the requests library.
+
+    Will return a requests session object with the pixiv cookie data if the cookie file exists.
+
+    Otherwise, it will return an empty string, "".
+    """
     cookiePath = appPath.joinpath("configs", "pixiv_cookies")
 
     if cookiePath.is_file():
         pixivSessionID = ""
         with open(cookiePath, 'rb') as f:
-            pixivCookies = dill.load(f)
-            for cookie in pixivCookies:
-                if cookie["name"] == "FANBOXSESSID":
-                    pixivSessionID = cookie["value"]
-                    break
+            pixivCookie = decrypt_data(dill.load(f))
+            if pixivCookie["name"] == "FANBOXSESSID":
+                pixivSessionID = pixivCookie["value"]
         
         if pixivSessionID != "":
             pixivSessionObject = requests.session()
@@ -1195,130 +827,52 @@ def get_pixiv_cookie():
         else: return ""
     else: return ""
 
-def load_fantia_cookie():
-    cookiePath = appPath.joinpath("configs", "fantia_cookies")
+def load_cookie(website):
+    """
+    For adding Fantia cookie into the webdriver.
+
+    Will return True or False depending on whether the cookie has been loaded successfully or not.
+
+    Requires one argument to be defined:
+    - The website which is either "pixiv" or "fantia" (string)
+    """
+    cookiePath = appPath.joinpath("configs", f"{website}_cookies")
 
     if cookiePath.is_file():
-        driver.get("https://fantia.jp/")
-        sleep(5)
-        with open(cookiePath, 'rb') as f:
-            cookie = dill.load(f)
-            driver.delete_all_cookies()
-            driver.add_cookie(cookie)
+        if website == "fantia": driver.get("https://fantia.jp/")
+        elif website == "pixiv": driver.get("https://www.fanbox.cc/")
+        else: raise Exception("Invalid website argument in load_cookie function...")
 
-        driver.get("https://fantia.jp/mypage/users/plans")
         sleep(5)
-        if driver.current_url == "https://fantia.jp/mypage/users/plans": 
+
+        with open(cookiePath, 'rb') as f:
+            cookie = decrypt_data(dill.load(f))
+
+        driver.delete_all_cookies()
+        driver.add_cookie(cookie)
+
+        if website == "fantia": websiteURL = "https://fantia.jp/mypage/users/plans"
+        else: websiteURL = "https://www.fanbox.cc/messages"
+
+        driver.get(websiteURL)
+        sleep(5)
+        if driver.current_url == websiteURL: 
             print_in_both_en_jp(
-                en=(f"{F.GREEN}Fantia cookied loaded successfully!{END}"),
-                jp=(f"{F.GREEN}Fantiaのクッキーが正常に読み込まれました！{END}")
+                en=(f"{F.GREEN}{website.title()} cookied loaded successfully!{END}"),
+                jp=(f"{F.GREEN}{website.title()}のクッキーが正常に読み込まれました！{END}")
             )
             return True
         else: return False
     else: return False
 
-def fantia_login(fantiaEmail, fantiaPassword):
-    # a bunch of sleep delays to prevent being detected for being a bot
-    driver.get("https://fantia.jp/sessions/signin")
-    sleep(4)
-    driver.find_element(by=By.ID, value="user_email").send_keys(fantiaEmail)
-    sleep(3)
-    driver.find_element(by=By.ID, value="user_password").send_keys(fantiaPassword)
-    sleep(3)
-    driver.find_element(by=By.XPATH, value="//button[@class='btn btn-primary btn-block mb-10 p-15']").click()
-
-    # checks if the user is authenticated
-    try:
-        sleep(15)
-        driver.get("https://fantia.jp/mypage/cart")
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-        )
-        if driver.current_url != "https://fantia.jp/mypage/cart": raise Exception("Fantia login failed.")
-        print_in_both_en_jp(
-            en=(f"{F.GREEN}Successfully logged in to Fantia!{END}"),
-            jp=(f"{F.GREEN}Fantiaへのログインに成功しました!{END}")
-        )
-        if lang == "en": pixivCookiePrompt = "Would you like to save your Fantia session cookie for a faster login next time? (y/n): "
-        else: pixivCookiePrompt = "Fantiaのセッションクッキーを保存して、次回のログインを早くしたいですか？ (y/n): "
-        savePixivCookieCondition = get_input_from_user(prompt=pixivCookiePrompt, command=("y", "n"))
-        if savePixivCookieCondition == "y": 
-            save_fantia_cookie()
-        else:
-            print_in_both_en_jp(
-                en=(f"{F.RED}Saving of Fantia cookie will be aborted as per user's request.{END}"),
-                jp=(f"{F.RED}FantiaのセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
-            )
-        return True
-    except Exception or TimeoutException:
-        print_in_both_en_jp(
-            en=(f"{F.RED}Error: Fantia login failed.{END}"),
-            jp=(f"{F.RED}エラー： Fantiaのログインに失敗しました。{END}")
-        )
-        return False
-    except:
-        error_shutdown(
-            en=("Unexpected Error: Error when trying to login to Fantia.", "Please report this error to the developer."),
-            jap=("予期せぬエラー： Fantiaにログインしようとするとエラーが発生します。", "このエラーを開発者に報告してください。")
-        )
-
-def pixiv_login(pixivUsername, pixivPassword):
-    # a bunch of sleep delays to prevent being detected for being a bot
-    driver.get("https://www.fanbox.cc/login")
-    if driver.current_url == "https://www.fanbox.cc/": return True
-    driver.execute_script("window.scroll({top: 250, left: 0, behavior: 'smooth'});")
-    sleep(5)
-    for char in pixivUsername:
-        driver.find_element(by=By.XPATH, value="//input[@placeholder='E-mail address / pixiv ID']").send_keys(char)
-        randomise_delay()
-
-    sleep(2)
-    for char in pixivPassword:
-        driver.find_element(by=By.XPATH, value="//input[@placeholder='password']").send_keys(char)
-        randomise_delay()
-
-    sleep(2)
-    driver.find_element(by=By.XPATH, value="//button[@class='signup-form__submit']").click()
-    sleep(3)
-
-    # checks if the user is authenticated
-    try:
-        sleep(15)
-        driver.get("https://www.fanbox.cc/creators/supporting")
-        WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-        )
-        if driver.current_url != "https://www.fanbox.cc/creators/supporting": raise Exception("Pixiv login failed.")
-
-        print_in_both_en_jp(
-            en=(f"{F.GREEN}Successfully logged in to Pixiv!{END}"),
-            jp=(f"{F.GREEN}Pixivへのログインに成功しました!{END}")
-        )
-
-        if lang == "en": pixivCookiePrompt = "Would you like to save your pixiv session cookie for a faster login next time? (y/n): "
-        else: pixivCookiePrompt = "pixivのセッションクッキーを保存して、次回のログインを早くしたいですか？ (y/n): "
-        savePixivCookieCondition = get_input_from_user(prompt=pixivCookiePrompt, command=("y", "n"))
-        if savePixivCookieCondition == "y": 
-            save_pixiv_cookie()
-        else:
-            print_in_both_en_jp(
-                en=(f"{F.RED}Saving of pixiv cookie will be aborted as per user's request.{END}"),
-                jp=(f"{F.RED}pixivのセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
-            )
-        return True
-    except Exception or TimeoutException:
-        print_in_both_en_jp(
-            en=(f"{F.RED}Error: Pixiv login failed.{END}"),
-            jp=(f"{F.RED}エラー： Pixivのログインに失敗しました。{END}")
-        )
-        return False
-    except:
-        error_shutdown(
-            en=("Unexpected Error: Error when trying to login to Pixiv.", "Please report this error to the developer."),
-            jap=("予期せぬエラー： Pixivにログインしようとするとエラーが発生します。", "このエラーを開発者に報告してください。")
-        )
-
 def get_image_name(imageURL, website):
+    """
+    Returns the image file name based on the URL given.
+
+    Requires two arguments to be defined:
+    - The image's URL (string)
+    - The website name (string)
+    """
     if website == "Fantia":
         try: return imageURL.split("/")[-1].split("?")[0]
         except: error_shutdown(
@@ -1336,19 +890,35 @@ def get_image_name(imageURL, website):
             jap=("エラー： 不明なウェブサイト。", "このエラーを開発者に報告してください。")
         )
 
-def get_pixiv_image_full_res_url(imageURL):
-    try:
-        if imageURL.split(".")[-1] == "gif": return imageURL
-        else:
-            urlArray = []
-            for urlParts in imageURL.split("/"):
-                if urlParts == "w" or urlParts == "1200": pass
-                else: urlArray.append(urlParts)
-            return "/".join(urlArray)
-    except AttributeError:
-        raise AttributeError
+# def get_pixiv_image_full_res_url(imageURL):
+#     """
+#     Returns the url without the height and width limit defined by pixiv
+
+#     Requires one argument to be defined:
+#     - The image's URL (string)
+#     """
+#     try:
+#         if imageURL.split(".")[-1] == "gif": return imageURL
+#         else:
+#             urlArray = []
+#             for urlParts in imageURL.split("/"):
+#                 if urlParts == "w" or urlParts == "1200": pass
+#                 else: urlArray.append(urlParts)
+#             return "/".join(urlArray)
+#     except AttributeError:
+#         raise AttributeError
 
 def save_image(imageURL, pathToSave, **requestSession):
+    """
+    Downloads the image using the requests library.
+
+    Requires two arguments to be defined:
+    - The image's URL (string)
+    - The path to save the image (pathlib Path object)
+
+    Optional param:
+    - session (requests session object)
+    """
     if "session" in requestSession:
         session = requestSession["session"]
         with session.get(imageURL, stream=True) as r:
@@ -1360,6 +930,16 @@ def save_image(imageURL, pathToSave, **requestSession):
                 copyfileobj(r.raw, f)
 
 def print_progress_bar(prog, totalEl, caption):
+    """
+    For printing a progress bar such as the one below.
+
+    [============] 100% Downloading 2 out of 2 images...
+
+    Requires three arguments to be defined:
+    - The current progress (int)
+    - The max progress or max number of elements (int)
+    - A caption such as "Downloading 2 out of 2 images..." (string)
+    """
     barLength = 20 #size of progress bar
     currentProg = prog / totalEl
     sys.stdout.write("\r")
@@ -1367,6 +947,13 @@ def print_progress_bar(prog, totalEl, caption):
     sys.stdout.flush()
 
 def print_download_completion_message(totalImage, subFolderPath):
+    """
+    For printing the completion message to alert the user that all the images have been downloaded.
+
+    Requires two arguments to be defined:
+    - The total number of images (int)
+    - The path to the folder where the images are saved (pathlib Path object or a string)
+    """
     if totalImage > 0:
         print_in_both_en_jp(
             en=(
@@ -1385,14 +972,27 @@ def print_download_completion_message(totalImage, subFolderPath):
         print("\n")
 
 def open_new_tab():
+    """
+    For executing a javascript code on the browser to open a new tab.
+    """
     driver.execute_script("window.open('_blank');")
     driver.switch_to.window(driver.window_handles[-1])
 
 def close_new_tab():
+    """
+    For executing a javascript code on the browser to close the new tab.
+    """
     driver.execute_script("window.close();")
     driver.switch_to.window(driver.window_handles[0])
 
 def get_latest_post_num_from_file_name():
+    """
+    To retrieve the latest/highest post_num from all the files in the pixiv_downloads folder.
+
+    This is used when the requests session object is not defined and is equal to "".
+
+    Returns the latest/highest post_num (int)
+    """
     postNumList = []
     try:
         for filePath in pixivDownloadLocation.iterdir():
@@ -1403,7 +1003,15 @@ def get_latest_post_num_from_file_name():
     except:
         return 0
 
+# a failsafe function if pixivSession is equal to ""
 def download_image_javascript(imageSrcURL, imageName):
+    """
+    Returns a javascript code to be executed for downloading pixiv images on the webdriver browser.
+
+    Requires two arguments to be defined:
+    - The image's URL (string)
+    - The image's name (string)
+    """
     downloadImageHeaderJS = """function download(imageURL) {"""
     downloadImageFooterJS = f"""
     const fileName = "{imageName}"  + imageURL.split('/').pop();
@@ -1419,6 +1027,14 @@ def download_image_javascript(imageSrcURL, imageName):
     return "".join([downloadImageHeaderJS, downloadImageFooterJS, "}\n", downloadImageExecuteFn])
 
 def download(urlInput, website, subFolderPath):
+    """
+    To download images from Fantia or pixiv Fanbox.
+
+    Requires three arguments to be defined:
+    - The url of the Fantia/pixiv posts or the Fantia image url (string)
+    - The website which is either "FantiaImageURL", "FantiaPost", or "Pixiv" (string)
+    - The path to the folder where the images are saved or a string which will be the latest post num for pixiv downloads (pathlib Path object or a string)
+    """
     driver.get(urlInput)
 
     if website == "FantiaImageURL":
@@ -1608,19 +1224,35 @@ def download(urlInput, website, subFolderPath):
 
         if pixivSession == "": print_download_completion_message(totalImages, pixivDownloadLocation)
         else: print_download_completion_message(totalImages, subFolderPath)
+    else: raise Exception("Invalid website argument in download function...")
 
-def check_if_path_contains_illegal_char(userPathInput):
-    # checks if the user's input path is valid
+def check_if_folder_name_contains_illegal_char(userFolderNameInput):
+    """
+    Returns True if the user's input path has illegal characters such as ":" or "*", etc.
+
+    Requires one argument to be defined:
+    - A folder name entered by the user (string)
+
+    More information on illegal characters in a file/folder name: https://docs.microsoft.com/en-gb/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN
+    """
     illegalChars = '<>:"/\\|?*' # based on https://docs.microsoft.com/en-gb/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN
-    if any(char in illegalChars for char in userPathInput): return True
+    if any(char in illegalChars for char in userFolderNameInput): return True
     else: return False
 
 def create_subfolder(website):
+    """
+    Asks the user for a folder name to save all the images to be downloaded into (The user can enter "X" to cancel this process).
+
+    Afterwards, it creates a folder with the name the user entered and returns a pathlib Path object to the user's defined folder to that folder.
+
+    Requires one argument to be defined:
+    - The website the user is downloading images from, either "fantia" or "pixiv" (string)
+    """
     while True:
         if lang == "en": folderName = input("Enter the name of the folder you want to save the images (X to cancel): ").strip()
         else: folderName = input("画像を保存するフォルダーの名前を入力してください (\"X\"でキャンセル): ").strip()
 
-        if not check_if_path_contains_illegal_char(folderName):
+        if not check_if_folder_name_contains_illegal_char(folderName):
             if folderName.upper() == "X": return "X"
             if folderName != "":
                 # subfolder
@@ -1650,15 +1282,149 @@ def create_subfolder(website):
             )
             print("\n")
 
-def print_menu():
-    if "Fantia" in loggedIn: emailFantia = loggedIn["Fantia"]["user"]
-    else: emailFantia = "Guest (Not logged in)"
-    if "Pixiv" in loggedIn: usernamePixiv = loggedIn["Pixiv"]["user"]
-    else: usernamePixiv = "Guest (Not logged in)"
+def login(currentDriver, website):
+    """
+    Used to verify if the loaded cookie is valid and allows the webdriver to be logged in.
 
-    if lang == "jp": 
-        emailFantia = "ゲスト（ログインしていない）"
-        usernamePixiv = "ゲスト（ログインしていない）"
+    Returns True if the cookie is valid, False otherwise.
+
+    Requires two arguments to be defined:
+    - The current driver (WebDriver)
+    - The website the user is downloading images from, either "fantia" or "pixiv" (string)
+    """
+    if website == "fantia":
+        loginURL = "https://fantia.jp/sessions/signin"
+        urlVerifier = "https://fantia.jp/mypage/users/plans"
+    elif website == "pixiv":
+        loginURL = "https://www.fanbox.cc/login"
+        urlVerifier = "https://www.fanbox.cc/creators/supporting"
+    else:
+        raise Exception("Invalid website in login function...")
+
+    currentDriver.get(loginURL)
+
+    print_in_both_en_jp(
+        en=(
+            f"{F.LIGHTYELLOW_EX}A new browser should have opened.{END}",
+            f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to {website.title()} manually.{END}",
+        ),
+        jp=(
+            f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。{END}", 
+            f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動で{website.title()}にログインしてください。{END}",
+        )
+    )
+
+    if lang == "en": input("Press any key to continue after logging in...")
+    else: input("ログイン後に何かキーを押してください...")
+
+    try:
+        currentDriver.get(urlVerifier)
+        sleep(1)
+        # waiting until the browser loads the page
+        WebDriverWait(currentDriver, 30).until(
+            EC.presence_of_element_located((By.XPATH, "/html/head/title"))
+        )
+    except TimeoutException:
+        print_in_both_en_jp(
+            en=(f"{F.RED}Error: TimeoutException. Please try again.{END}"),
+            jp=(f"{F.RED}エラー: タイムアウトエラー。再度実行してください。{END}")
+        )
+        return False
+
+    if currentDriver.current_url != urlVerifier: return False
+    else: return True
+
+def save_and_load_cookie(originalDriver, website):
+    """
+    To save the cookie needed for the login session into the configs folder and encrypts the cookie data.
+
+    Returns True if user is successfully logged in but does not necessarily mean that 
+    the cookie is saved into the configs folder as the user can choose to save it or not.
+
+    Requires two arguments to be defined:
+    - The current driver (WebDriver)
+    - The website the user is downloading images from, either "fantia" or "pixiv" (string)
+    """
+    newDriver = get_driver(selectedBrowser, headless=False, blockImg=1)
+    if website == "fantia":
+        cookieName = "_session_id"
+        websiteURL = "https://fantia.jp/"
+    elif website == "pixiv":
+        cookieName = "FANBOXSESSID"
+        websiteURL = "https://www.fanbox.cc/"
+    else:
+        raise Exception("Invalid website in save_and_load_cookie function...")
+
+    cookiePath = appPath.joinpath("configs", f"{website}_cookies")
+    loggedIn = False
+    while True:
+        loggedIn = login(newDriver, website)
+        if loggedIn: break
+        else:
+            print_in_both_en_jp(
+                en=(f"{F.RED}Error: {website.title()} login failed.{END}"),
+                jp=(f"{F.RED}エラー： Fantiaのログインに失敗しました。{END}")
+            )
+            if lang == "en": retryInput = get_input_from_user(prompt="Would you like to retry logging in manually? (y/n): ", command=("y", "n"))
+            else: retryInput = get_input_from_user(prompt="もう一度手動でログインし直しますか？(y/n)： ", command=("y", "n"))
+            if retryInput == "n": break
+
+    if loggedIn:
+        if newDriver.current_url != websiteURL: newDriver.get(websiteURL)
+
+        if lang == "en": cookiePrompt = f"Would you like to save your {website.title()} session cookie for a faster login next time? (y/n): "
+        else: cookiePrompt = f"{website.title()}のセッションクッキーを保存して、次回のログインを早くしたいですか？ (y/n): "
+        saveCookieCondition = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
+
+        configFolder = appPath.joinpath("configs")
+        if not configFolder.is_dir(): configFolder.mkdir(parents=True)
+        with open(cookiePath, 'wb') as f:
+            cookies = newDriver.get_cookies()
+            for cookie in cookies:
+                if cookie["name"] == cookieName:
+                    if saveCookieCondition == "y":
+                        dill.dump(encrypt_data(cookie), f)
+                        print_in_both_en_jp(
+                            en=(f"{F.GREEN}The cookie saved to {cookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
+                            jp=(f"{F.GREEN}{cookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
+                        )
+                    else:
+                        print_in_both_en_jp(
+                            en=(f"{F.RED}Saving of {website.title()} cookie will be aborted as per user's request.{END}"),
+                            jp=(f"{F.RED}{website.title()}のセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
+                        )
+
+                    if originalDriver.current_url != websiteURL: 
+                        originalDriver.get(websiteURL)
+                        sleep(3)
+                    originalDriver.delete_all_cookies()
+                    originalDriver.add_cookie(cookie)
+                    break
+
+        newDriver.close()
+        return True
+    else: 
+        newDriver.close()
+        return False
+
+
+def print_menu():
+    """
+    To print out the menu which will reflects any changes based on certain conditions such as whether the user is logged in, etc.
+    """
+    if not fantiaCookieLoaded: 
+        if lang == "en": emailFantia = "Guest (Not logged in)"
+        elif lang == "jp": emailFantia = "ゲスト（ログインしていない）"
+    else:
+        if lang == "en": emailFantia = "Logged in via cookies"
+        elif lang == "jp": emailFantia = "クッキーでログイン"
+        
+    if not pixivCookieLoaded: 
+        if lang == "en": usernamePixiv = "Guest (Not logged in)"
+        elif lang == "jp": usernamePixiv = "ゲスト（ログインしていない）"
+    else:
+        if lang == "en": usernamePixiv = "Logged in via cookies"
+        elif lang == "jp": usernamePixiv = "クッキーでログイン"
 
     if lang == "jp": 
         menuHead = f"""{F.LIGHTYELLOW_EX}
@@ -1673,12 +1439,11 @@ def print_menu():
 
 ---------------------- {F.LIGHTYELLOW_EX}コンフィグのオプション{END} ----------------------
       {F.LIGHTBLUE_EX}4. デフォルトのダウンロードフォルダを変更する{END}
-      {F.LIGHTBLUE_EX}5. アカウント情報を更新する{END}
-      {F.LIGHTBLUE_EX}6. ブラウザを変更する{END}
-      {F.LIGHTBLUE_EX}7. 言語を変更する{END}
+      {F.LIGHTBLUE_EX}5. ブラウザを変更する{END}
+      {F.LIGHTBLUE_EX}6. 言語を変更する{END}
 """
         if emailFantia == "ゲスト（ログインしていない）" or usernamePixiv == "ゲスト（ログインしていない）":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}8. ログインする{END}\n"""
+            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}7. ログインする{END}\n"""
         else:
             menuAdditionalOptions = ""
 
@@ -1705,12 +1470,11 @@ def print_menu():
 
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{END} ----------------------
       {F.LIGHTBLUE_EX}4. Change Default Download Folder{END}
-      {F.LIGHTBLUE_EX}5. Update Account Details{END}
-      {F.LIGHTBLUE_EX}6. Change Default Browser{END}
-      {F.LIGHTBLUE_EX}7. Change Language{END}
+      {F.LIGHTBLUE_EX}5. Change Default Browser{END}
+      {F.LIGHTBLUE_EX}6. Change Language{END}
 """
         if emailFantia == "Guest (Not logged in)" or usernamePixiv == "Guest (Not logged in)":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}8. Login{END}\n"""
+            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}7. Login{END}\n"""
         else:
             menuAdditionalOptions = ""
 
@@ -1732,6 +1496,9 @@ def print_menu():
 """--------------------------- Start of Main Codes ---------------------------"""
 
 def main():
+    """
+    The main code of the program.
+    """
     pythonMainVer = sys.version_info[0]
     pythonSubVer = sys.version_info[1]
     if pythonMainVer < 3 or pythonSubVer < 8:
@@ -1744,20 +1511,22 @@ def main():
     global decKey
     global driver
     global lang
-    global loggedIn
     global fantiaDownloadLocation
     global pixivDownloadLocation
     global pixivCookieLoaded
     global fantiaCookieLoaded
     global pixivSession
+    global selectedBrowser
+    global ChaChaKey
 
     appPath = get_saved_config_data_folder()
     jsonPath = appPath.joinpath("configs", "config.json")
 
+    ChaChaKey = get_key()
+
     # checks if config.json exists and the necessary configs are defined
     check_if_json_file_exists()
 
-    loggedIn = {}
     lang = get_lang()
     print_in_both_en_jp(
         en=(f"{F.LIGHTYELLOW_EX}Running program...{END}"),
@@ -1772,27 +1541,14 @@ def main():
     pixivDownloadLocation = directoryPath.joinpath("pixiv_downloads")
     if not pixivDownloadLocation.is_dir(): pixivDownloadLocation.mkdir(parents=True)
 
-    # generate a key for the encryption of passwords so that it won't be stored in plaintext
-    try: decKey = Fernet(get_key())
-    except: error_shutdown(
-                en=("Fatal Error: Unable to retrieve key for decryption!", "Please report this error to the developer."),
-                jp=("致命的なエラー： 復号化のためのキーを取得することができません!", "開発者にこのエラーを報告してください。")
-            )
-
     # get the preferred browser
     loadBrowser = check_browser_config()
     if loadBrowser == None:
-        selectedBrowser = get_user_browser_preference()
-
+        selectedBrowser = get_browser_preferences()
         driver = get_driver(selectedBrowser)
-
-        if lang == "en": browserPrompt = "Would you like to automatically use this browser upon running this program again? (y/n): "
-        else: browserPrompt = "本プログラムの再実行時に、自動的にこのブラウザを使用しますか？ (y/n)： "
-        saveBrowser = get_input_from_user(prompt=browserPrompt, command=("y", "n"))
-        
-        if saveBrowser == "y":
-            save_browser_config(selectedBrowser)
-    else: driver = get_driver(loadBrowser)
+    else: 
+        selectedBrowser = loadBrowser
+        driver = get_driver(loadBrowser)
 
     # retrieve cookie if exists
     pixivCookieLoaded = fantiaCookieLoaded = False
@@ -1800,143 +1556,38 @@ def main():
     fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
     pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
 
-    if fantiaCookiePath.is_file() or fantiaCookiePath.is_file():    
-        if lang == "en": cookiePrompt = "Would you like to load your cookies? (y/n): "
-        else: cookiePrompt = "クッキーをロードしますか？ (y/n)： "
+    fantiaCookieExist = fantiaCookiePath.is_file()
+    pixivCookieExist = pixivCookiePath.is_file()
+
+    if fantiaCookieExist or pixivCookieExist:    
+        if lang == "en": cookiePrompt = "Would you like to load in your existing cookies? (y/n): "
+        else: cookiePrompt = "保存されたクッキーを読み込みますか？ (y/n)： "
         userCookieInput = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
         if userCookieInput == "y":
-            pixivCookieLoaded = load_pixiv_cookie()
-            fantiaCookieLoaded = load_fantia_cookie()
+            if pixivCookieExist: pixivCookieLoaded = load_cookie("pixiv")
+            if fantiaCookieExist: fantiaCookieLoaded = load_cookie("fantia")
         else:
             print_in_both_en_jp(
-                en=(f"{F.YELLOW}Cookies will not be loaded into the webdriver...{END}"),
-                jp=(f"{F.YELLOW}その場合、クッキーは読み込まれません...{END}")
+                en=(f"{F.YELLOW}Saved cookies will not be loaded into the webdriver...{END}"),
+                jp=(f"{F.YELLOW}その場合、保存されたクッキーは読み込まれません...{END}")
             )
+    if not fantiaCookieLoaded or not pixivCookieLoaded:
+        print("\n")
+        if lang == "en": loginPrompt = "Would you like to login? (y/n): "
+        else: loginPrompt = "ログインしますか？ (y/n)： "
+        loginInput = get_input_from_user(prompt=loginPrompt, command=("y", "n"))
+        if loginInput == "y":
+            # gets account details for Fantia and Pixiv for downloading images that requires a membership
+            if not pixivCookieLoaded:
+                if save_and_load_cookie(driver, "pixiv"): 
+                    pixivCookieLoaded = True
+            if not fantiaCookieLoaded:
+                fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
 
     if pixivCookieLoaded: pixivSession = get_pixiv_cookie()
 
-    # gets account details for Fantia and Pixiv for downloading images that requires a membership
-    if not pixivCookieLoaded and not fantiaCookieLoaded: fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
-    else: 
-        if not pixivCookieLoaded: pixivUsername, pixivPassword = get_user_account("pixiv")
-        if not fantiaCookieLoaded: fantiaEmail, fantiaPassword = get_user_account("fantia")
-
-    if pixivCookieLoaded:
-        if lang == "en": pixivUsername = pixivPassword = "User account loaded from cookie"
-        else: pixivUsername = pixivPassword = "クッキーから読み込まれるユーザーアカウント"
-        loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
-    if fantiaCookieLoaded:
-        if lang == "en": fantiaEmail = fantiaPassword = "User account loaded from cookie"
-        else: fantiaEmail = fantiaPassword = "クッキーから読み込まれるユーザーアカウント"
-        loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
-
-    while True:
-        if not pixivCookieLoaded and not fantiaCookieLoaded:
-
-            if lang == "en": loginPrompt = "Would you like to login to Fantia and Pixiv? (y/n) or (\"X\" to shutdown): "
-            else: loginPrompt = "FantiaとPixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
-
-            userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
-            if userLoginCmd == "x": shutdown()
-            elif userLoginCmd == "y":
-                print_in_both_en_jp(
-                    en=(
-                        f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia and Pixiv (may take quite a while)...{END}", 
-                        f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                    ),
-                    jp=(
-                        f"\n{F.LIGHTYELLOW_EX}FantiaとPixivにログイン中（ログインにかなり時間がかか）...{END}",
-                        f"{F.LIGHTRED_EX}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
-                    )
-                )
-
-                if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
-                    fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-                    pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
-
-                if fantiaSuccess and pixivSuccess:
-                    print_in_both_en_jp(
-                        en=(f"{F.GREEN}Logins were successful!{END}"),
-                        jp=(f"{F.GREEN}ログインに成功しました！{END}")
-                    )
-                else:
-                    print_in_both_en_jp(
-                    en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-                    jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-                )
-
-                if fantiaSuccess: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
-                if pixivSuccess: loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
-                break
-            else:
-                print_in_both_en_jp(
-                    en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-                    jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-                )
-                break
-        else:
-            if not pixivCookieLoaded or not fantiaCookieLoaded:
-                if pixivCookieLoaded and not fantiaCookieLoaded:
-                    if lang == "en": loginPrompt = "Would you like to login to Fantia (y/n) or (\"X\" to shutdown): "
-                    else: loginPrompt = "Fantiaにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
-                elif not pixivCookieLoaded and fantiaCookieLoaded:
-                    if lang == "en": loginPrompt = "Would you like to login to Pixiv (y/n) or (\"X\" to shutdown): "
-                    else: loginPrompt = "Pixivにログインしませんか？ (y/n)または(\"X\"でシャットダウン): "
-
-                userLoginCmd = get_input_from_user(prompt=loginPrompt, command=("y", "n", "x"))
-                if userLoginCmd == "x": shutdown()
-                elif userLoginCmd == "y":
-                    if pixivCookieLoaded and not fantiaCookieLoaded:
-                        print_in_both_en_jp(
-                            en=(
-                                f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia...{END}", 
-                                f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                            ),
-                            jp=(
-                                f"\n{F.LIGHTYELLOW_EX}Fantiaにログイン中...{END}",
-                                f"{F.LIGHTRED_EX}注意：このプログラムは、Fantiaに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
-                            )
-                        )
-                    elif not pixivCookieLoaded and fantiaCookieLoaded:
-                        print_in_both_en_jp(
-                            en=(
-                                f"\n{F.LIGHTYELLOW_EX}Logging in to pixiv...{END}", 
-                                f"{F.LIGHTRED_EX}Note: This program will automatically log you in to pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                            ),
-                            jp=(
-                                f"\n{F.LIGHTYELLOW_EX}pixivにログイン中...{END}",
-                                f"{F.LIGHTRED_EX}注意：このプログラムは、pixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
-                            )
-                        )
-
-                    if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None: 
-                        if not fantiaCookieLoaded: fantiaSuccess = fantia_login(fantiaEmail, fantiaPassword)
-                        if not pixivCookieLoaded: pixivSuccess = pixiv_login(pixivUsername, pixivPassword)
-
-                    if fantiaSuccess or pixivSuccess:
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}Logins were successful!{END}"),
-                            jp=(f"{F.GREEN}ログインに成功しました！{END}")
-                        )
-                    else:
-                        print_in_both_en_jp(
-                        en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-                        jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-                    )
-
-                    if fantiaSuccess: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
-                    if pixivSuccess: loggedIn["Pixiv"] = {"user": pixivUsername, "password": pixivPassword}
-                    break
-                else:
-                    print_in_both_en_jp(
-                        en=(f"{F.RED}Warning: Since you might have not logged in to both Fantia and Pixiv,\nyou will not be able to download any images that requires a membership.{END}"), 
-                        jap=(f"{F.RED}ご注意：ファンティアとピクシブの両方にログインしていない可能性があるので、会員登録が必要な画像はダウンロードできません。{END}")
-                    )
-                    break
-            else: break
-
     cmdInput = ""
-    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "dc", "x", "y")
+    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "d", "dc", "x", "y")
     while cmdInput != "x":
         print_menu()
         if lang == "en":
@@ -2334,25 +1985,8 @@ def main():
                 config = json.load(f)
 
             set_default_download_directory(config)
-
-
-        elif cmdInput == "5":
-            if lang == "en": webPrompt = "Which accounts would you like to update for? (Fantia/Pixiv/X to cancel): "
-            else: webPrompt = "どのアカウントを更新しますか？（Fantia/Pixiv/All/Xでキャンセル）： "
-
-            if lang == "en": credPrompt = "Enter the credentials to change (Username/Password/All/X to cancel): "
-            else: credPrompt = "変更する資格情報を入力してください（Username/Password/All/Xでキャンセル）: "
-
-            website = get_input_from_user(prompt=webPrompt, command=("fantia", "pixiv", "all", "x"))
-            if website != "x":
-                credentialsToChange = get_input_from_user(prompt=credPrompt, command=("username", "password", "all", "x"))
-
-                if credentialsToChange != "x":
-                    if credentialsToChange == "all": credentialsToChange = ["username", "password"]
-                    else: credentialsToChange = [credentialsToChange] # convert to list
-                    change_account_details(website, cred=credentialsToChange)
             
-        elif cmdInput == "6":
+        elif cmdInput == "5":
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
                 newDefaultBrowser = get_user_browser_preference()
@@ -2371,60 +2005,25 @@ def main():
                     newDefaultBrowser = get_user_browser_preference()
                     save_browser_config(newDefaultBrowser)
                 else: print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}Note: Default Browser is unchanged.{END}"),
-                        jp=(f"{F.LIGHTYELLOW_EX}注意： デフォルトブラウザは変更なし。{END}")
+                        en=(f"{F.LIGHTRED_EX}Note: Default Browser is empty in config.json{END}"),
+                        jp=(f"{F.LIGHTRED_EX}注意： config.jsonのデフォルトブラウザが空です。{END}")
                     )
 
-        elif cmdInput == "7":
+        elif cmdInput == "6":
             lang = update_lang()
 
-        elif cmdInput == "8" and not check_if_user_is_logged_in():
-            if (fantiaEmail != None or fantiaPassword != None) and (pixivUsername != None or pixivPassword != None) and (pixivCookieLoaded != True and fantiaCookieLoaded != True): 
-                fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
-            elif not fantiaCookieLoaded: 
-                fantiaEmail, fantiaPassword = get_user_account("fantia")
-            elif not pixivCookieLoaded: 
-                pixivUsername, pixivPassword = get_user_account("pixiv")
-            else: 
-                fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
-
-            if fantiaEmail != None and fantiaPassword != None and pixivUsername != None and pixivPassword != None:
+        elif cmdInput == "7":
+            if not check_if_user_is_logged_in():
+                if not pixivCookieLoaded:
+                    if save_and_load_cookie(driver, "pixiv"): 
+                        pixivCookieLoaded = True
+                if not fantiaCookieLoaded:
+                    fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
+            else:
                 print_in_both_en_jp(
-                    en=(
-                        f"\n{F.LIGHTYELLOW_EX}Logging in to Fantia and Pixiv (may take quite a while)...{END}", 
-                        f"{F.LIGHTRED_EX}Note: This program will automatically log you in to Fantia and Pixiv.\nHowever, it might fail to login due to possible slow internet speed...\nHence, do not be surprised if there's a login error and your credentials are correct, you can re-attempt to login later.{END}\n"
-                    ),
-                    jp=(
-                        f"\n{F.LIGHTYELLOW_EX}FantiaとPixivにログイン中（ログインにかなり時間がかか）...{END}",
-                        f"{F.LIGHTRED_EX}注意：このプログラムは、FantiaとPixivに自動的にログインします。\nしかし、インターネットの速度が遅い可能性があるため、ログインに失敗する可能性があります...\nしたがって、ログインエラーが発生しても驚かず、あなたの認証情報が正しい場合は、後でログインを再試行できます。{END}\n"
-                    )
+                    en=(f"{F.RED}Invalid command input, please enter a valid command from the menu above.{END}"),
+                    jp=(f"{F.RED}不正なコマンド入力です。上のメニューから正しいコマンドを入力してください。{END}")
                 )
-                fantiaSuccessful = False
-                pixivSuccessful = False
-                while True:
-                    if "Fantia" not in loggedIn: fantiaSuccessful = fantia_login(fantiaEmail, fantiaPassword)
-                    else: fantiaSuccessful = True
-                    if "Pixiv" not in loggedIn: pixivSuccessful = pixiv_login(pixivUsername, pixivPassword)
-                    else: pixivSuccessful = True
-                    
-                    if fantiaSuccessful and "Fantia" not in loggedIn: loggedIn["Fantia"] = {"user": fantiaEmail, "password": fantiaPassword}
-                    if pixivSuccessful and "Pixiv" not in loggedIn: loggedIn["Pixiv"] = {"user": pixivUsername, "password": fantiaPassword}
-                    
-                    if pixivSuccessful != True or fantiaSuccessful != True:
-                        if lang == "en": 
-                            loginPrints = ("\nWould you like to retry or change all your account details and login again?", "Available commands:\n\"y\" to change account details\n\"n\" to abort logging in\n\"r\" to re-attempt to login.")
-                            loginPrompts = "Please enter \"y\" or \"n\" or \"r\" to continue: "
-                        else: 
-                            loginPrints = ("\n再試行またはアカウント情報をすべて変更し、再度ログインしますか？", "使用できるコマンド：\n\"y\" アカウント情報を変更する。\n\"n\" ログインを中止します。\n\"r\" ログインを再試行する。") 
-                            loginPrompts = "続行するには、\"y\"または\"n\"または\"r\"を入力してください： "
-
-                        continueLoggingIn = get_input_from_user(prints=loginPrints, prompt=loginPrompts, command=("y", "n", "r"))
-                        if continueLoggingIn == "y": 
-                            change_account_details("all", cred=["username", "password"])
-                            fantiaEmail, fantiaPassword, pixivUsername, pixivPassword = get_user_account("all")
-                        elif continueLoggingIn == "r": continue
-                        else: break
-                    else: break
 
         elif cmdInput == "d":
             print_in_both_en_jp(
@@ -2445,45 +2044,51 @@ def main():
                     jp=(f"{F.RED}エラー： {appPath} に削除するものはありません。{END}")
                 )
                 
-        elif cmdInput == "dc" and (pixivCookieLoaded or fantiaCookieLoaded):
-            if pixivCookieLoaded:
-                pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
-                print_in_both_en_jp(
-                    en=(f"{F.LIGHTYELLOW_EX}Deleting Pixiv Fanbox cookies...{END}"),
-                    jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーを削除します...{END}")
-                )
-                if pixivCookiePath.exists():
-                    if pixivCookiePath.is_file():
-                        pixivCookiePath.unlink()
-                        print_in_both_en_jp(
-                            en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
-                            jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
-                        )
-                    else: raise Exception("Pixiv cookie is a directory and not a file...")
-                else:
+        elif cmdInput == "dc":
+            if pixivCookieLoaded or fantiaCookieLoaded:
+                if pixivCookieLoaded:
+                    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
                     print_in_both_en_jp(
-                        en=(f"{F.RED}Error: Pixiv Fanbox cookie not found.{END}"),
-                        jp=(f"{F.RED}エラー： pixivファンボックスのクッキーが見つかりません。{END}")
+                        en=(f"{F.LIGHTYELLOW_EX}Deleting Pixiv Fanbox cookies...{END}"),
+                        jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーを削除します...{END}")
                     )
-            if fantiaCookieLoaded:
-                fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
-                print_in_both_en_jp(
-                    en=(f"{F.LIGHTYELLOW_EX}Deleting Fantia cookies...{END}"),
-                    jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーを削除します...{END}")
-                )
-                if fantiaCookiePath.exists():
-                    if fantiaCookiePath.is_file():
-                        fantiaCookiePath.unlink()
+                    if pixivCookiePath.exists():
+                        if pixivCookiePath.is_file():
+                            pixivCookiePath.unlink()
+                            print_in_both_en_jp(
+                                en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
+                                jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
+                            )
+                        else: raise Exception("Pixiv cookie is a directory and not a file...")
+                    else:
                         print_in_both_en_jp(
-                            en=(f"{F.LIGHTYELLOW_EX}Deleted Fantia cookies{END}"),
-                            jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーが削除されました。{END}")
+                            en=(f"{F.RED}Error: Pixiv Fanbox cookie not found.{END}"),
+                            jp=(f"{F.RED}エラー： pixivファンボックスのクッキーが見つかりません。{END}")
                         )
-                    else: raise Exception("Fantia cookie is a directory and not a file...")
-                else:
+                if fantiaCookieLoaded:
+                    fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
                     print_in_both_en_jp(
-                        en=(f"{F.RED}Error: Fantia cookie not found.{END}"),
-                        jp=(f"{F.RED}エラー： Fantiaのクッキーが見つかりません。{END}")
+                        en=(f"{F.LIGHTYELLOW_EX}Deleting Fantia cookies...{END}"),
+                        jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーを削除します...{END}")
                     )
+                    if fantiaCookiePath.exists():
+                        if fantiaCookiePath.is_file():
+                            fantiaCookiePath.unlink()
+                            print_in_both_en_jp(
+                                en=(f"{F.LIGHTYELLOW_EX}Deleted Fantia cookies{END}"),
+                                jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーが削除されました。{END}")
+                            )
+                        else: raise Exception("Fantia cookie is a directory and not a file...")
+                    else:
+                        print_in_both_en_jp(
+                            en=(f"{F.RED}Error: Fantia cookie not found.{END}"),
+                            jp=(f"{F.RED}エラー： Fantiaのクッキーが見つかりません。{END}")
+                        )
+            else:
+                print_in_both_en_jp(
+                    en=(f"{F.RED}Invalid command input, please enter a valid command from the menu above.{END}"),
+                    jp=(f"{F.RED}不正なコマンド入力です。上のメニューから正しいコマンドを入力してください。{END}")
+                )
 
         elif cmdInput == "y": webbrowser.open("https://github.com/KJHJason/Cultured-Downloader/issues", new=2)
         elif cmdInput == "x": driver.close()
@@ -2498,44 +2103,43 @@ if __name__ == "__main__":
     introMenu = f"""
 ====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ======================
 =========== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} ===========
-================ {F.LIGHTBLUE_EX}Author/開発者: KJHJason, aka Dratornic{END} ================
+================ {F.LIGHTBLUE_EX}Author/開発者: {__author__}, aka Dratornic{END} ================
 {F.LIGHTYELLOW_EX}
 Purpose/目的: Allows you to download multiple images from Fantia or Pixiv Fanbox automatically.
               FantiaやPixivファンボックスから複数の画像を自動でダウンロードできるようにします。
 
-Note/注意: Requires the user to provide his/her credentials for images that requires a membership.
+Note/注意: Requires the user to login via this program for images that requires a membership.
            This program is not affiliated with Pixiv or Fantia.
-           会員登録が必要な画像には、ユーザーの認証情報の提供が必要です。
+           会員登録が必要な画像は、本プログラムによるログインが必要です。
            このプログラムはPixivやFantiaとは関係ありません。{END}
 
-{F.RED}Disclaimer/免責条項: 
+{F.RED}Terms of Use/利用規約: 
 1. This program, Cultured Downloader, is not liable for any damages caused. 
    This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
    本プログラム「Cultured Downloader」は、発生した損害について一切の責任を負いかねます。
    このプログラムは、個人的な使用と、pixiv FanboxとFantiaから画像を手動でダウンロードする時間を節約するためのものです。
 
-2. As a user of this program, you must never share any data such as config.json to other people.
-   If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable but the user(s) involved will be.
-   本プログラムのユーザーとして、config.jsonなどのデータは絶対に他人と共有しないでください。
-   もし、あなたのデータを共有したり、他人のデータを使用していることが判明した場合、このプログラムおよび開発者は責任を負いませんが、関係するユーザーは責任を負うことになります。
+2. As a user of this program, please do not use this program to 
+   break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.
+   本プログラムの利用者として、Fantiaおよびpixivファンボックスの利用規約を破るような利用はしないでください。
 
-   (In an event of mistranslation, the English version will take priority and will be used/誤訳があった場合は、英語版を優先して使用します。)
+3. As a user of this program, you must never share any data such as your fantia_cookies file to other people.
+   This is not permissible as it will cause damages to the artists that you are downloading from.
+   If you have been found to be sharing YOUR data or using OTHER people's data, 
+   this program and the developer(s) will not be liable for the damages caused but the user(s) involved will be.
+   本プログラムのユーザーとして、fantia_cookiesファイルなどのデータは絶対に他人と共有しないでください。
+   クッキーを共有することは、ダウンロード先のアーティストに損害を与えることになりますので、おやめください。
+   自分のデータを共有したり、他人のデータを使用していることが判明した場合。
+   このプログラムおよび開発者は損害賠償の責任を負いませんが、関係するユーザーは責任を負うものとします。
+
+   (In an event of mistranslation, the English version will take priority and will be used/
+   誤訳があった場合は、英語版を優先して使用します。)
 {END}{F.LIGHTRED_EX}
 Known Issues/既知のバグについて: 
-1. Frequent logins to Pixiv per day will show a captcha which will render the program useless...
-   To resolve this, please go to pixiv manually and try to login again and clear the captcha.
-   Pixivに1日に何度もログインすると、キャプチャが表示され、プログラムが使えなくなる...
-   解決するには、手動でpixivにアクセスし、再度ログインしてキャプチャをクリアしてみてください。
-
-2. Logins are slow or the logins always fails.
-   To resolve this, please run pixiv_manual_login.exe and fantia_manual_login.exe to save the cookies needed for your login sessions.
-   However, please do not share your cookies as it is the same as sharing your accounts with others.
-   ログインに時間がかかる、または常にログインに失敗する。
-   これを解決するには、pixiv_manual_login.exe と fantia_manual_login.exe を実行し、ログインセッションに必要なクッキーを保存してください。
-   ただし、Cookieを共有することは、他の人とアカウントを共有することと同じですので、絶対にやめてください。
-
-3. Sometimes the program does not shutdown automatically. In this case, please close the program manually or press CTRL + C to terminate the program.
-   プログラムが自動的にシャットダウンしないことがあります。この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください{END}
+1. Sometimes the program does not shutdown automatically. 
+   In this case, please close the program manually or press CTRL + C to terminate the program.
+   プログラムが自動的にシャットダウンしないことがあります。
+   この場合、手動でプログラムを終了させるか、CTRL + Cキーを押してプログラムを終了させてください{END}
 """
     print(introMenu)
     try:
@@ -2546,6 +2150,10 @@ Known Issues/既知のバグについて:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
         sleep(1)
         sys.exit()
+    except (EncryptionKeyError, DecryptError):
+        driver.quit()
+        delete_encrypted_data()
+        sys.exit(1)
     except:
         print_error_log_notification()
         log_error()
