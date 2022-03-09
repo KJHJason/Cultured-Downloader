@@ -1,3 +1,8 @@
+__author__ = "KJHJason"
+__copyright__ = "Copyright 2022 KJHJason"
+__license__ = "MIT License"
+__version__ = "2.0.0"
+
 class ChaChaData:
     """
     Used for data encapsulation.
