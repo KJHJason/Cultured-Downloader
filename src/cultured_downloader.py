@@ -2101,9 +2101,9 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     introMenu = f"""
-====================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ======================
-=========== {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} ===========
-================ {F.LIGHTBLUE_EX}Author/開発者: {__author__}, aka Dratornic{END} ================
+=========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
+================================ {F.LIGHTBLUE_EX}https://github.com/KJHJason/Cultured-Downloader{END} =================================
+===================================== {F.LIGHTBLUE_EX}Author/開発者: {__author__}, aka Dratornic{END} =====================================
 {F.LIGHTYELLOW_EX}
 Purpose/目的: Allows you to download multiple images from Fantia or Pixiv Fanbox automatically.
               FantiaやPixivファンボックスから複数の画像を自動でダウンロードできるようにします。
