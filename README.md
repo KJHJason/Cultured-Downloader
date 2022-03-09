@@ -36,6 +36,7 @@ In the end, I spent about 6 days on this mini-project so you can expect some bug
 * **Allow multiple URLs input**
 * **3 Download Options**
     * Downloading a Fantia image url such as "https://fantia.jp/posts/1234567/post_content_photo/1234567"
+      (with a simple auto detection system to detect the numbers of images to download based on the url if the user opted for it)
     * Downloading all the images in a Fantia post based on a URL such as "https://fantia.jp/posts/1234567"
     * Downloading all the images in a Fanbox post based on a URL such as "https://www.fanbox.cc/@creator/posts/1234567"
 
@@ -51,6 +52,9 @@ In the end, I spent about 6 days on this mini-project so you can expect some bug
 1. Does this work on other OS platforms such as macOS and Linux?
     * This program has only been tested on Windows.
     * Hence, this program is not guaranteed to work for other platforms.
+2. Cultured Downloader always alerts me that the logins have failed... How can I login then?
+    * You can use the manual login programs (Fantia/Pixiv Manual Login) to save the cookies needed for the login session for a 100% login success rate (based on my testings).
+    * Of course, you should not share the cookie files with anyone as anyone who have your cookie files will be able to login to your account with needing your credentials.
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
