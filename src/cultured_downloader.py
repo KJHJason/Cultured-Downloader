@@ -1440,8 +1440,8 @@ def download(urlInput, website, subFolderPath):
             downloadFolder.mkdir(parents=True, exist_ok=True)
         else:
             print_in_both_en_jp(
-                en=(f"{F.LIGHTYELLOW_EX}Skipping stage 1...{END}"),
-                jp=(f"{F.LIGHTYELLOW_EX}ステージ1をスキップします...{END}")
+                en=(f"{F.LIGHTYELLOW_EX}\nSkipping stage 1...{END}"),
+                jp=(f"{F.LIGHTYELLOW_EX}\nステージ1をスキップします...{END}")
             )
 
         fullyDisplayedImageContainerArray = []
@@ -1487,8 +1487,8 @@ def download(urlInput, website, subFolderPath):
             downloadFolder.mkdir(parents=True, exist_ok=True)
         else:
             print_in_both_en_jp(
-                en=(f"{F.LIGHTYELLOW_EX}Skipping stage 2...{END}"),
-                jp=(f"{F.LIGHTYELLOW_EX}ステージ2をスキップします...{END}")
+                en=(f"{F.LIGHTYELLOW_EX}\nSkipping stage 2...{END}"),
+                jp=(f"{F.LIGHTYELLOW_EX}\nステージ2をスキップします...{END}")
             )
 
         # downloading Fantia blog images that are may be locked by default due to membership restrictions
@@ -1531,8 +1531,8 @@ def download(urlInput, website, subFolderPath):
             downloadFolder.mkdir(parents=True, exist_ok=True)
         else:
             print_in_both_en_jp(
-                en=(f"{F.LIGHTYELLOW_EX}Skipping stage 3...{END}"),
-                jp=(f"{F.LIGHTYELLOW_EX}ステージ3をスキップします...{END}")
+                en=(f"{F.LIGHTYELLOW_EX}\nSkipping stage 3...{END}"),
+                jp=(f"{F.LIGHTYELLOW_EX}\nステージ3をスキップします...{END}")
             )
         
         paidImageContainerArray = []
