@@ -36,4 +36,4 @@ class EncryptedData:
 
     @staticmethod
     def get_random_number():
-        return randint(80, 150)
+        return randint(100000, 1000000)

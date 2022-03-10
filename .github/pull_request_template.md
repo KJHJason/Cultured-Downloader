@@ -6,14 +6,7 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Translation Fix (non-breaking change which fixes a translation issue)
 
-## Program Infomation
-
-<!-- Which program did you add on to? -->
-- [ ] Cultured Downloader
-- [ ] Pixiv Manual Login
-- [ ] Fantia Manual Login
-
-Version: <!-- 1.10 or my latest commit before you forked it [dfd198b](https://github.com/KJHJason/Cultured-Downloader/commit/dfd198b11845b14ec8b3a0f09dc97a0595e0ecde) -->
+Version: <!-- 2.0.1 or based on my latest commit [dfd198b](https://github.com/KJHJason/Cultured-Downloader/commit/dfd198b11845b14ec8b3a0f09dc97a0595e0ecde) -->
 
 ## Summary of changes:
 
@@ -21,6 +14,7 @@ Please add your summary here...
 
 ## Checklist (Tick those that applies):
 
+- [ ] I have read the [contribution guidelines](https://github.com/KJHJason/Cultured-Downloader/blob/main/CONTRIBUTING.md) and have adhered to it
 - [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas

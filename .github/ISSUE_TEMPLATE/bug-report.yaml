@@ -19,10 +19,6 @@ body:
       options:
         - Cultured Downloader (exe)
         - Cultured Downloader (py)
-        - Pixiv Manual Login (exe)
-        - Pixiv Manual Login (py)
-        - Fantia Manual Login (exe)
-        - Fantia Manual Login (py)
     validations:
       required: true
 
@@ -72,7 +68,7 @@ body:
     id: errorLogText
     attributes:
       label: Relevant log output (If any)
-      description: Please copy and paste the text in the error log text files (found in your AppData LocalLow folder) or copy and paste any tracebacks, aka any error message text that appeared during a program crash.
+      description: Please copy and paste the text in the error log (found in your AppData LocalLow folder) or copy and paste any tracebacks or any error message text that appeared during a program crash.
     validations:
       required: false
 

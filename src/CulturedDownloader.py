@@ -35,7 +35,7 @@ from base64 import b64encode, b64decode
 # Importing my Python Files as Modules
 from EncryptedData import EncryptedData
 
-"""--------------------------- Config Codes ---------------------------"""
+"""--------------------------- Custom Errors ---------------------------"""
 
 class DecryptError(Exception):
     """
@@ -50,6 +50,10 @@ class EncryptionKeyError(Exception):
     Usually this happens when the key is not 32 bytes long.
     """
     pass
+
+"""--------------------------- End of Custom Errors ---------------------------"""
+
+"""--------------------------- Config Codes ---------------------------"""
 
 def shutdown():
     """
@@ -82,7 +86,7 @@ def log_error():
     filePath = get_saved_config_data_folder().joinpath("logs")
     if not filePath.is_dir(): filePath.mkdir(parents=True)
 
-    fileName = "".join([f"error-", datetime.now().strftime("%d-%m-%Y"), ".log"])
+    fileName = "".join([f"error-v{__version__}-", datetime.now().strftime("%d-%m-%Y"), ".log"])
     fullFilePath = filePath.joinpath(fileName)
     
     if not fullFilePath.is_file():
@@ -90,7 +94,7 @@ def log_error():
             f.write(f"Cultured Downloader v{__version__ } Error Logs\n\n")
     else:
         with open(fullFilePath, "a") as f:
-            f.write(f"\n")
+            f.write("\n")
 
     logging.basicConfig(filename=fullFilePath, filemode="a", format="%(asctime)s - %(message)s")
     logging.error("Error Details: ", exc_info=True)
