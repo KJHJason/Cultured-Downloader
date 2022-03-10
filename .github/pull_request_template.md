@@ -6,6 +6,8 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Translation Fix (non-breaking change which fixes a translation issue)
 
+## Program Version
+
 Version: <!-- 2.0.1 or based on my latest commit [dfd198b](https://github.com/KJHJason/Cultured-Downloader/commit/dfd198b11845b14ec8b3a0f09dc97a0595e0ecde) -->
 
 ## Summary of changes:
