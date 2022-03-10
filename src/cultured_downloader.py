@@ -1,7 +1,7 @@
 __author__ = "KJHJason"
 __copyright__ = "Copyright 2022 KJHJason"
 __license__ = "MIT License"
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 # Import Third-party Libraries
 import requests, dill
@@ -33,7 +33,7 @@ from shutil import rmtree, copyfileobj
 from base64 import b64encode, b64decode
 
 # Importing my Python Files as Modules
-from ChaChaData import ChaChaData
+from EncryptedData import EncryptedData
 
 """--------------------------- Config Codes ---------------------------"""
 
@@ -97,11 +97,11 @@ def log_error():
 
 def error_shutdown(**errorMessages):
     """
-    Param:
+    Params:
     - en for English error messages
     - jp for Japanese error messages
 
-    Used for shutting down the program when an error occurs.
+    Used for printing out error messages defined in the params before shutting down the program when an error occurs.
     """
     if "en" in errorMessages and lang == "en":
         enErrorMessages = errorMessages.get("en")
@@ -121,7 +121,8 @@ def error_shutdown(**errorMessages):
         input("何か入力すると終了します。。。")
         print("ご理解頂き誠にありがとうございます。")
 
-    driver.close()
+    try: driver.close()
+    except: pass
     log_error()
     sleep(2)
     raise SystemExit
@@ -130,7 +131,7 @@ def print_in_both_en_jp(**message):
     """
     Used for printing either English or Japanese messages.
 
-    Param:
+    Params:
     - en for English message
     - jp for Japanese message
 
@@ -164,14 +165,14 @@ def get_input_from_user(**kwargs):
     Returns user's input based on the defined command paramater without 
     letting the user enter anything else besides the defined command parameter.
 
-    Param:
+    Params:
     - prompt: The prompt to be displayed to the user.
     - prints: The message to be printed to the user.
     - command: The input to be accepted by the program.
     - warning: Used for displaying a custom error message.
 
     Defaults:
-    - command: None but must be defined at all time as it will raise a ValueError if not defined
+    - command: None but must be defined at all time as it will raise an Exception if not defined
     - prompt: "", an input without any prompt
     - prints: None, will not print out any messages
     - warning: None, will not display any error messages
@@ -182,7 +183,7 @@ def get_input_from_user(**kwargs):
     if prompt == None: prompt = ""
 
     commands = kwargs.get("command")
-    if commands == None: raise ValueError("command parameter must be defined in the function, get_input_from_user")
+    if commands == None: raise Exception("command parameter must be defined in the function, get_input_from_user")
 
     warning = kwargs.get("warning")
 
@@ -262,7 +263,7 @@ def get_driver(browserType, **additionalOptions):
     - "chrome"
     - "edge"
 
-    Optional param:
+    Optional params:
     - headless --> True or False
     - blockImg --> a number
 
@@ -640,7 +641,7 @@ def get_key():
     """
     To get the key for encryption and decryption which will return a 32 bytes string
     """
-    keyPath = appPath.joinpath("configs", "key")
+    keyPath = get_saved_config_data_folder().joinpath("configs", "key")
     if keyPath.is_file():
         with open(keyPath, "rb") as f:
             key = dill.load(f)
@@ -678,6 +679,8 @@ def delete_encrypted_data():
         en=(f"{F.RED}Please restart the program.{END}"), 
         jp=(f"{F.RED}このプログラムを再起動してください。{END}")
     )
+    if lang == "en": input("Please enter any key to exit...")
+    elif lang == "jp": input("何か入力すると終了します...")
 
 def encrypt_data(data):
     """
@@ -701,9 +704,9 @@ def encrypt_data(data):
         dictKeys = ["nonce", "header", "cipherText", "tag"]
         valuesList = [b64encode(x).decode() for x in (cipher.nonce, header, cipherText, tag)] # b64encodes the values and decode it to a string
 
-        encryptedData = json.dumps(dict(zip(dictKeys, valuesList))) # converts both lists to a dictionary then serialises it to a string
+        encryptedData = dict(zip(dictKeys, valuesList)) # converts both lists to a dictionary
 
-        return ChaChaData(encryptedData)
+        return EncryptedData(encryptedData)
     else:
         raise Exception("Data to be encrypted is not a dictionary...")
 
@@ -715,14 +718,14 @@ def decrypt_data(encryptedData):
     - A dictionary containing the encrypted values
     """
     try:
-        b64encodedDict = json.loads(encryptedData.get_encrypted_data()) # a dictionary of b64encoded values
+        b64encodedDict = encryptedData.get_encrypted_data() # a dictionary of b64encoded values
         b64decodedDict = {key:b64decode(b64encodedDict[key]) for key in b64encodedDict.keys()}
 
         cipher = Cha.new(key=ChaChaKey, nonce=b64decodedDict["nonce"])
         cipher.update(b64decodedDict["header"])
 
         plaintext = cipher.decrypt_and_verify(b64decodedDict["cipherText"], b64decodedDict["tag"])
-        return json.loads(plaintext.decode())
+        return json.loads(plaintext.decode()) # since the value of the cookie is a string, json.loads to deserialise it to a dictionary
     except (ValueError, KeyError, TypeError):
         raise DecryptError
 
@@ -1384,7 +1387,7 @@ def save_and_load_cookie(originalDriver, website):
                     if saveCookieCondition == "y":
                         dill.dump(encrypt_data(cookie), f)
                         print_in_both_en_jp(
-                            en=(f"{F.GREEN}The cookie saved to {cookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
+                            en=(f"{F.GREEN}The cookie has been saved to {cookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
                             jp=(f"{F.GREEN}{cookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
                         )
                     else:
