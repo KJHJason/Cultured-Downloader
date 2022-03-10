@@ -17,12 +17,14 @@ Cultured Downloader
 </div>
 
 <div align="center">
-  <a href="#English">English</a>
-  <a href="#Japanese">日本語</a>
+  <a href="#introduction">English</a>
+  <a href="#イントロダクション">日本語</a>
 </div>
 
 ---
-<div name="English"></div>
+
+## Introduction
+
 This program allows you to download images from a pixiv Fanbox or Fantia post automatically without you doing the hassle of downloading them yourself.
 
 I did this mini-project as I was tired of downloading images manually as some artists do not provide zip files...
@@ -64,7 +66,9 @@ Although the program has Japanese language support, most of them are translated 
 4. Though, I may or may not maintain this program depending on the workload I have as a student.
 
 ---
-<div name="Japanese"></div>
+
+## イントロダクション
+
 pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードする手間を省いて、自動的に画像をダウンロードできるプログラムです。
 
 アーティストによってはzipファイルを提供してくれないので、手動で画像をダウンロードするのに疲れてしまったので、このミニプロジェクトを行いました...
