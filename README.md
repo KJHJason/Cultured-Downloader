@@ -43,10 +43,10 @@ Although the program has Japanese language support, most of them are translated 
 ## Features
 * **Allow multiple URLs input**
 * **3 Download Options**
-    * Downloading a Fantia image url such as "<https://fantia.jp/posts/1234567/post_content_photo/1234567>"
+    * Downloading a Fantia image url such as "https://fantia.jp/posts/1234567/post_content_photo/1234567"
       (with a simple auto detection system to detect the numbers of images to download based on the url if the user opted for it)
-    * Downloading all the images in a Fantia post based on a URL such as "<https://fantia.jp/posts/1234567>"
-    * Downloading all the images in a pixiv Fanbox post based on a URL such as "<https://www.fanbox.cc/@creator_name/posts/1234567>"
+    * Downloading all the images in a Fantia post based on a URL such as "https://fantia.jp/posts/1234567"
+    * Downloading all the images in a pixiv Fanbox post based on a URL such as "https://www.fanbox.cc/@creator_name/posts/1234567"
 
 ## Usage Notes
 1. **This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually. Please do not use this program and break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.**
@@ -88,10 +88,10 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 ## 特徴
 * **複数URLの入力を許可する**
 * **3 ダウンロードオプション**
-    * "<https://fantia.jp/posts/1234567/post_content_photo/1234567>" のようなFantiaの画像urlをダウンロードする。
+    * "https://fantia.jp/posts/1234567/post_content_photo/1234567" のようなFantiaの画像urlをダウンロードする。
       (ユーザーが選択した場合、URLに基づいてダウンロードする画像の数を検出するための簡単な自動検出システム付き)
-    * "<https://fantia.jp/posts/1234567>" などのURLをもとに、Fantiaの投稿に含まれるすべての画像をダウンロードする。
-    * "<https://www.fanbox.cc/@creator_name/posts/1234567>" などのURLをもとに、pixivファンボックスの投稿内の画像をすべてダウンロードする。
+    * "https://fantia.jp/posts/1234567" などのURLをもとに、Fantiaの投稿に含まれるすべての画像をダウンロードする。
+    * "https://www.fanbox.cc/@creator_name/posts/1234567" などのURLをもとに、pixivファンボックスの投稿内の画像をすべてダウンロードする。
 
 ## 使用上の注意
 1. **このプログラムは、個人的な利用を目的とし、pixiv FanboxおよびFantiaから画像を手動でダウンロードする時間を短縮するためのものです。このプログラムを使用して、Fantiaまたはpixiv Fanboxの利用規約を破らないようにしてください。**
