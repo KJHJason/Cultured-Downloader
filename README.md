@@ -61,6 +61,7 @@ Although the program has Japanese language support, most of them are translated 
 
 ## Features
 * **Allow multiple URLs input**
+* **Allow downloads of attachments such as videos, psd, etc.**
 * **3 Download Options**
     * Downloading a Fantia image url such as "https://fantia.jp/posts/1234567/post_content_photo/1234567"
       (with a simple auto detection system to detect the numbers of images to download based on the url if the user opted for it)
@@ -106,7 +107,8 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 3. 本プログラムのユーザーとして、fantia_cookiesファイルなどのデータは絶対に他人と共有しないでください。クッキーを共有することは、ダウンロード先のアーティストに損害を与えることになりますので、おやめください。自分のデータを共有したり、他人のデータを使用していることが判明した場合。このプログラムおよび開発者は損害賠償の責任を負いませんが、関係するユーザーは責任を負うものとします。
 
 ## 特徴
-* **複数URLの入力を許可する**
+* **複数URLの入力ができます**
+* **ビデオ、psdなどの添付ファイルのダウンロードができます**
 * **3 ダウンロードオプション**
     * "https://fantia.jp/posts/1234567/post_content_photo/1234567" のようなFantiaの画像urlをダウンロードする。
       (ユーザーが選択した場合、URLに基づいてダウンロードする画像の数を検出するための簡単な自動検出システム付き)
