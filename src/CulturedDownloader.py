@@ -1723,8 +1723,12 @@ def main():
 
                         if (urlInput == "") or (check_if_input_is_url(urlInput, "fantiaImage") == False): 
                             print_in_both_en_jp(
-                                en=(f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}", f"{F.RED}Please enter a valid URL.{END}"),
-                                jp=(f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}", f"{F.RED}URLを入力してください。{END}")
+                                en=(
+                                    f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
+                                ),
+                                jp=(
+                                    f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
+                                )
                             )
                         else: break
 
@@ -1945,8 +1949,12 @@ def main():
 
                     if (urlInput == "") or (check_if_input_is_url(urlInput, "fantiaPost") == False):
                         print_in_both_en_jp(
-                            en=(f"{F.RED}Error: No URL entered.{END}", f"{F.RED}Please enter a valid URL.{END}"),
-                            jp=(f"{F.RED}エラー： URLが入力されていません。{END}", f"{F.RED}URLを入力してください。{END}")
+                            en=(
+                                f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
+                            )
                         )
                     else: break
 
@@ -2022,8 +2030,12 @@ def main():
 
                     if (urlInput == "") or (check_if_input_is_url(urlInput, "pixivFanbox") == False): 
                         print_in_both_en_jp(
-                            en=(f"{F.RED}Error: No URL entered.{END}", f"{F.RED}Please enter a valid URL.{END}"),
-                            jp=(f"{F.RED}エラー： URLが入力されていません。{END}", f"{F.RED}URLを入力してください。{END}")
+                            en=(
+                                f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
+                            )
                         )
                     else: break
 
@@ -2195,9 +2207,9 @@ if __name__ == "__main__":
     global fantiaImageURLRegex
     global pixivFanboxPostRegex
 
-    fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d{7}")
-    fantiaImageURLRegex = re.compile(r"(https://fantia.jp/posts/)\d{7}(/post_content_photo/)\d{7}")
-    pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)\w*(/posts/)\d{7}")
+    fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d*")
+    fantiaImageURLRegex = re.compile(r"(https://fantia.jp/posts/)\d*(/post_content_photo/)\d*")
+    pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)\w*(/posts/)\d*")
 
     introMenu = f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
