@@ -1,7 +1,7 @@
 __author__ = "KJHJason"
 __copyright__ = "Copyright 2022 KJHJason"
 __license__ = "MIT License"
-__version__ = "2.5.0"
+__version__ = "2.5.1"
 
 # Import Third-party Libraries
 import requests, dill
@@ -94,7 +94,7 @@ def log_error():
     Used for writing the error to a log file usually located in the Cultured Downloader folder in the AppData LocalLow folder.
     """
     filePath = get_saved_config_data_folder().joinpath("logs")
-    if not filePath.is_dir(): filePath.mkdir(parents=True)
+    filePath.mkdir(parents=True, exist_ok=True)
 
     fileName = "".join([f"error-v{__version__}-", datetime.now().strftime("%d-%m-%Y"), ".log"])
     fullFilePath = filePath.joinpath(fileName)
@@ -241,7 +241,7 @@ def check_if_json_file_exists():
     Otherwise, it will create a new config.json file and dump an empty dictionary as a placeholder.
     """
     jsonFolderPath = appPath.joinpath("configs")
-    if not jsonFolderPath.is_dir(): jsonFolderPath.mkdir(parents=True)
+    jsonFolderPath.mkdir(parents=True, exist_ok=True)
     if not jsonPath.is_file():
         print(f"{F.RED}Error: config.json does not exist.{END}", f"{F.LIGHTYELLOW_EX}Creating config.json file...{END}"),
         print(f"{F.RED}エラー: config.jsonが存在しません。{END}", f"{F.LIGHTYELLOW_EX}config.jsonファイルを作成しています...{END}")
@@ -268,7 +268,7 @@ def get_saved_config_data_folder():
     Returns a pathlib Path object of the saved config data folder which is in the AppData LocalLow folder.
     """
     dataDirectory = pathlib.Path.home().joinpath("AppData", "LocalLow", "Cultured Downloader")
-    if not dataDirectory.is_dir(): dataDirectory.mkdir(parents=True)
+    dataDirectory.mkdir(parents=True, exist_ok=True)
     return dataDirectory
 
 def get_driver(browserType, **additionalOptions):
@@ -843,7 +843,7 @@ def check_if_directory_has_files(dirPath):
     return hasFiles
 
 # function for requests library cookie session
-def get_cookie_for_session(website):
+def get_cookie_for_session(website, **options):
     """
     Return the cookie for pixiv or Fantia account needed for the login session used for the download of the images via the requests library.
 
@@ -853,7 +853,12 @@ def get_cookie_for_session(website):
 
     Requires one argument to be defined:
     - The website name which is either "pixiv" or "fantia" (string) 
+
+    Optional param:
+    - sessionID, a value of a cookie (string) --> if defined, it will not load the cookie values from the configs folder but will load based on the defined session ID.
     """
+    definedSessionID = options.get("sessionID")
+
     cookiePath = appPath.joinpath("configs", f"{website}_cookies")
 
     if website == "pixiv":
@@ -865,20 +870,27 @@ def get_cookie_for_session(website):
     else:
         raise Exception("Invalid website in get_cookie_for_session function...")
 
-    if cookiePath.is_file():
+
+    if cookiePath.is_file() and not definedSessionID:
         sessionID = ""
-        with open(cookiePath, 'rb') as f:
+        with open(cookiePath, "rb") as f:
             cookie = decrypt_data(dill.load(f))
             if cookie["name"] == cookieName:
                 sessionID = cookie["value"]
         
         if sessionID != "":
             sessionObject = requests.session()
-            pixivSessionIDCookie = requests.cookies.create_cookie(domain=domain, name=cookieName, value=sessionID)
-            sessionObject.cookies.set_cookie(pixivSessionIDCookie)
+            sessionIDCookie = requests.cookies.create_cookie(domain=domain, name=cookieName, value=sessionID)
+            sessionObject.cookies.set_cookie(sessionIDCookie)
             return sessionObject
         else: return ""
-    else: return ""
+    else:
+        if definedSessionID:
+            sessionObject = requests.session()
+            sessionIDCookie = requests.cookies.create_cookie(domain=domain, name=cookieName, value=definedSessionID)
+            sessionObject.cookies.set_cookie(sessionIDCookie)
+            return sessionObject
+        else: return ""
 
 def load_cookie(website):
     """
@@ -1109,13 +1121,19 @@ def check_for_incomplete_download():
 
         if not hasIncompleteDownloads: break
 
-def remove_any_files_in_browser_downloads():
+def remove_any_files_in_directory(pathToDelete):
     """
-    Remove any files in the webdriver's default download location
+    Remove any files in the given directory defined by the first argument.
+
+    Requires one argument to be defined:
+    - The path to the directory to be deleted (pathlib Path object)
     """
-    for file in browserDownloadLocation.iterdir():
-        if file.is_file():
-            file.unlink()
+    if pathToDelete.is_dir():
+        for file in pathToDelete.iterdir():
+            if file.is_file():
+                file.unlink()
+    else:
+        raise Exception("The given path is not a directory...")
 
 def download(urlInput, website, subFolderPath, **options):
     """
@@ -1190,7 +1208,7 @@ def download(urlInput, website, subFolderPath, **options):
 
             totalImages = len(imagesURLToDownloadArray) + len(attachmentURLs)
 
-            remove_any_files_in_browser_downloads()
+            remove_any_files_in_directory(browserDownloadLocation)
             for attachmentURL in attachmentURLs:
                 if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
                 elif lang == "jp": downloadMessage = f"画像や添付ファイル {totalImageProgress} / {totalImages} をダウンロード中"
@@ -1343,7 +1361,7 @@ def create_subfolder(website):
                 elif website == "pixiv": imagePath = pixivDownloadLocation.joinpath(folderName)
                 else: raise Exception("Invalid website for create_subfolder function...")
 
-                if not imagePath.is_dir(): imagePath.mkdir(parents=True)
+                imagePath.mkdir(parents=True, exist_ok=True)
 
                 if check_if_directory_has_files(imagePath): 
                     print_in_both_en_jp(
@@ -1417,7 +1435,7 @@ def login(currentDriver, website):
     if currentDriver.current_url != urlVerifier: return False
     else: return True
 
-def save_and_load_cookie(originalDriver, website):
+def save_and_load_cookie(originalDriver, website, **options):
     """
     To save the cookie needed for the login session into the configs folder and encrypts the cookie data.
 
@@ -1427,7 +1445,13 @@ def save_and_load_cookie(originalDriver, website):
     Requires two arguments to be defined:
     - The current driver (WebDriver)
     - The website the user is downloading images from, either "fantia" or "pixiv" (string)
+
+    Optional param:
+    - getID to retrieve the cookie session ID (bool)
     """
+
+    getSessionID = options.get("getID")
+
     newDriver = get_driver(selectedBrowser, headless=False, blockImg=1)
     if website == "fantia":
         cookieName = "_session_id"
@@ -1453,42 +1477,48 @@ def save_and_load_cookie(originalDriver, website):
             if retryInput == "n": break
 
     if loggedIn:
-        if newDriver.current_url != websiteURL: newDriver.get(websiteURL)
-
         if lang == "en": cookiePrompt = f"Would you like to save your {website.title()} session cookie for a faster login next time? (y/n): "
         else: cookiePrompt = f"{website.title()}のセッションクッキーを保存して、次回のログインを早くしたいですか？ (y/n): "
         saveCookieCondition = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
 
-        configFolder = appPath.joinpath("configs")
-        if not configFolder.is_dir(): configFolder.mkdir(parents=True)
-        with open(cookiePath, 'wb') as f:
-            cookies = newDriver.get_cookies()
-            for cookie in cookies:
-                if cookie["name"] == cookieName:
-                    if saveCookieCondition == "y":
-                        dill.dump(encrypt_data(cookie), f)
-                        print_in_both_en_jp(
-                            en=(f"{F.GREEN}The cookie has been saved to {cookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
-                            jp=(f"{F.GREEN}{cookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
-                        )
-                    else:
-                        print_in_both_en_jp(
-                            en=(f"{F.RED}Saving of {website.title()} cookie will be aborted as per user's request.{END}"),
-                            jp=(f"{F.RED}{website.title()}のセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
-                        )
+        if newDriver.current_url != websiteURL: newDriver.get(websiteURL)
+        cookies = newDriver.get_cookies()
 
-                    if originalDriver.current_url != websiteURL: 
-                        originalDriver.get(websiteURL)
-                        sleep(3)
-                    originalDriver.delete_all_cookies()
-                    originalDriver.add_cookie(cookie)
-                    break
+        cookieToSave = ""
+        for cookie in cookies:
+            if cookie["name"] == cookieName:
+                cookieToSave = cookie
+        
+        if saveCookieCondition == "y":
+            configFolder = appPath.joinpath("configs")
+            configFolder.mkdir(parents=True, exist_ok=True)
+            with open(cookiePath, "wb") as f:
+                dill.dump(encrypt_data(cookieToSave), f)
+
+            print_in_both_en_jp(
+                en=(f"{F.GREEN}The cookie has been saved to {cookiePath}\nThe cookie will be automatically loaded in next time in Cultured Downloader for a faster login process!{END}"),
+                jp=(f"{F.GREEN}{cookiePath} に保存されたクッキーは、次回からCultured Downloaderで自動的に読み込まれ、ログイン処理が速くなります!{END}")
+            )
+        else:
+            print_in_both_en_jp(
+                en=(f"{F.RED}Saving of {website.title()} cookie will be aborted as per user's request.{END}"),
+                jp=(f"{F.RED}{website.title()}のセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
+            )
+
+        if originalDriver.current_url != websiteURL: 
+            originalDriver.get(websiteURL)
+            sleep(3)
+
+        originalDriver.delete_all_cookies()
+        originalDriver.add_cookie(cookie)
 
         newDriver.quit()
-        return True
+        if getSessionID: return True, cookieToSave["value"]
+        else: return True
     else: 
         newDriver.quit()
-        return False
+        if getSessionID: return False, None
+        else: return False
 
 
 def print_menu():
@@ -1604,7 +1634,6 @@ def main():
     global pixivCookieLoaded
     global fantiaCookieLoaded
     global pixivSession
-    global fantiaSession
 
     appPath = get_saved_config_data_folder()
     jsonPath = appPath.joinpath("configs", "config.json")
@@ -1669,17 +1698,14 @@ def main():
         if loginInput == "y":
             # gets account details for Fantia and Pixiv for downloading images that requires a membership
             if not pixivCookieLoaded:
-                if save_and_load_cookie(driver, "pixiv"): 
-                    pixivCookieLoaded = True
+                pixivCookieLoaded, pixivSessionID = save_and_load_cookie(driver, "pixiv", getID=True)
             if not fantiaCookieLoaded:
                 fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
 
-    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv")
-    else: pixivSession = None
-    if fantiaCookieLoaded: fantiaSession = get_cookie_for_session("fantia")
-    else: fantiaSession = None
+    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
+    else: pixivSession = None # None instead of "" so that it won't raise a SessionError
 
-    if pixivSession == "" or fantiaSession == "": raise SessionError
+    if pixivSession == "": raise SessionError
 
     cmdInput = ""
     cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "d", "dc", "x", "y")
@@ -2118,8 +2144,8 @@ def main():
         elif cmdInput == "7":
             if not check_if_user_is_logged_in():
                 if not pixivCookieLoaded:
-                    if save_and_load_cookie(driver, "pixiv"): 
-                        pixivCookieLoaded = True
+                    pixivCookieLoaded, pixivSessionID = save_and_load_cookie(driver, "pixiv", getID=True)
+                    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
                 if not fantiaCookieLoaded:
                     fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
             else:
@@ -2241,22 +2267,15 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         driver.quit()
         delete_encrypted_data()
         osExit(1)
-    except SessionError:
+    except (SessionError, EOFError):
         driver.quit()
 
-        # deletes any cookie saved on the user's PC
-        pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
-        if pixivCookiePath.exists():
-            if pixivCookiePath.is_file():
-                pixivCookiePath.unlink()
-        fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
-        if fantiaCookiePath.exists():
-            if fantiaCookiePath.is_file():
-                fantiaCookiePath.unlink()
+        # deletes any saved files created by this program
+        remove_any_files_in_directory(get_saved_config_data_folder().joinpath("configs"))
 
         print_in_both_en_jp(
-            en=(f"{F.RED}Error: Unable to retrieve session ID from cookies...{END}", f"Please restart this program.{END}", "Please enter any key to exit..."),
-            jap=(f"{F.RED}エラー： クッキーからセッションIDを取得できない...{END}", "このプログラムを再起動してください。{END}", "何か入力すると終了します...")
+            en=(f"{F.RED}Error: Unable to read saved files...{END}", f"Please restart this program.{END}", "Please enter any key to exit..."),
+            jap=(f"{F.RED}エラー：  保存したファイルを読み込めない...{END}", "このプログラムを再起動してください。{END}", "何か入力すると終了します...")
         )
         input()
         osExit(1)
