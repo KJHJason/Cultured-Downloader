@@ -1,7 +1,7 @@
 __author__ = "KJHJason"
 __copyright__ = "Copyright 2022 KJHJason"
 __license__ = "MIT License"
-__version__ = "2.5.1"
+__version__ = "2.5.2"
 
 # Import Third-party Libraries
 import requests, dill
@@ -72,11 +72,16 @@ def shutdown():
     if lang == "en":
         print(f"{F.LIGHTYELLOW_EX}Thank you for using Cultured Downloader.{END}")
         input("Please enter any key to exit...")
-    else:
+    elif lang == "jp":
         print(f"{F.LIGHTYELLOW_EX}Cultured Downloaderをご利用いただきありがとうございます。{END}")
         input("何か入力すると終了します。。。")
+    
+    if lang == "en": print(f"{F.RED}Exiting...{END}")
+    elif lang == "jp": print(f"{F.RED}終了しています...{END}")
+
     try: driver.quit()
     except: pass
+
     osExit(0)
 
 def print_error_log_notification():
@@ -1526,24 +1531,24 @@ def print_menu():
     To print out the menu which will reflects any changes based on certain conditions such as whether the user is logged in, etc.
     """
     if not fantiaCookieLoaded: 
-        if lang == "en": emailFantia = "Guest (Not logged in)"
-        elif lang == "jp": emailFantia = "ゲスト（ログインしていない）"
+        if lang == "en": fantiaStatus = "Guest (Not logged in)"
+        elif lang == "jp": fantiaStatus = "ゲスト（ログインしていない）"
     else:
-        if lang == "en": emailFantia = "Logged in via cookies"
-        elif lang == "jp": emailFantia = "クッキーでログイン"
+        if lang == "en": fantiaStatus = "Logged in via cookies"
+        elif lang == "jp": fantiaStatus = "クッキーでログインしました"
         
     if not pixivCookieLoaded: 
-        if lang == "en": usernamePixiv = "Guest (Not logged in)"
-        elif lang == "jp": usernamePixiv = "ゲスト（ログインしていない）"
+        if lang == "en": pixivStatus = "Guest (Not logged in)"
+        elif lang == "jp": pixivStatus = "ゲスト（ログインしていない）"
     else:
-        if lang == "en": usernamePixiv = "Logged in via cookies"
-        elif lang == "jp": usernamePixiv = "クッキーでログイン"
+        if lang == "en": pixivStatus = "Logged in via cookies"
+        elif lang == "jp": pixivStatus = "クッキーでログインしました"
 
     if lang == "jp": 
         menuHead = f"""{F.LIGHTYELLOW_EX}
-> あなたのログイン情報...
-> FantiaEメール: {emailFantia}
-> Pixiv ID: {usernamePixiv}
+> ログイン・ステータス...
+> Fantia: {fantiaStatus}
+> Pixiv: {pixivStatus}
 {END}
 --------------------- {F.LIGHTYELLOW_EX}ダウンロードのオプション{END} ---------------------
       {F.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
@@ -1555,7 +1560,7 @@ def print_menu():
       {F.LIGHTBLUE_EX}5. ブラウザを変更する{END}
       {F.LIGHTBLUE_EX}6. 言語を変更する{END}
 """
-        if emailFantia == "ゲスト（ログインしていない）" or usernamePixiv == "ゲスト（ログインしていない）":
+        if fantiaStatus == "ゲスト（ログインしていない）" or pixivStatus == "ゲスト（ログインしていない）":
             menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}7. ログインする{END}\n"""
         else:
             menuAdditionalOptions = ""
@@ -1572,9 +1577,9 @@ def print_menu():
  """
     else:
         menuHead = f"""{F.LIGHTYELLOW_EX}
-> You are currently logged in as...
-> Fantia Email: {emailFantia}
-> Pixiv ID: {usernamePixiv}
+> Login Status...
+> Fantia: {fantiaStatus}
+> Pixiv: {pixivStatus}
 {END}
 --------------------- {F.LIGHTYELLOW_EX}Download Options{END} --------------------
       {F.GREEN}1. Download images from Fantia using an image URL{END}
@@ -1586,7 +1591,7 @@ def print_menu():
       {F.LIGHTBLUE_EX}5. Change Default Browser{END}
       {F.LIGHTBLUE_EX}6. Change Language{END}
 """
-        if emailFantia == "Guest (Not logged in)" or usernamePixiv == "Guest (Not logged in)":
+        if fantiaStatus == "Guest (Not logged in)" or pixivStatus == "Guest (Not logged in)":
             menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}7. Login{END}\n"""
         else:
             menuAdditionalOptions = ""
@@ -1702,7 +1707,8 @@ def main():
             if not fantiaCookieLoaded:
                 fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
 
-    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
+    if pixivCookieLoaded and pixivCookieExist: pixivSession = get_cookie_for_session("pixiv")
+    elif pixivCookieLoaded and not pixivCookieExist: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
     else: pixivSession = None # None instead of "" so that it won't raise a SessionError
 
     if pixivSession == "": raise SessionError
@@ -2143,9 +2149,14 @@ def main():
 
         elif cmdInput == "7":
             if not check_if_user_is_logged_in():
-                if not pixivCookieLoaded:
+                pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
+                if not pixivCookieLoaded and not pixivCookieExist:
                     pixivCookieLoaded, pixivSessionID = save_and_load_cookie(driver, "pixiv", getID=True)
                     if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
+                elif not pixivCookieLoaded and pixivCookieExist:
+                    pixivCookieLoaded = save_and_load_cookie(driver, "pixiv")
+                    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv")
+
                 if not fantiaCookieLoaded:
                     fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
             else:
@@ -2261,7 +2272,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         osExit(1)
     except KeyboardInterrupt:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
-        sleep(1)
+        sleep(2)
         osExit(0)
     except (EncryptionKeyError, DecryptError):
         driver.quit()
