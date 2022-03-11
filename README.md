@@ -23,6 +23,25 @@ Cultured Downloader
 
 ---
 
+## Table of Contents/目次
+[English](#introduction)
+  - [Introduction](#introduction)
+  - [Terms of Use](#terms-of-use)
+  - [Features](#features)
+  - [Usage Notes](#usage-notes)
+  - [FAQ](#faq)
+  - [Final Notes](#final-notes)
+
+[日本語](#イントロダクション)
+  - [イントロダクション](#イントロダクション)
+  - [利用規約](#利用規約)
+  - [特徴](#特徴)
+  - [使用上の注意](#使用上の注意)
+  - [よくある質問](#よくある質問)
+  - [最終ノート](#最終ノート)
+
+---
+
 ## Introduction
 
 This program allows you to download images from a pixiv Fanbox or Fantia post automatically without you doing the hassle of downloading them yourself.
@@ -79,8 +98,9 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 
 日本語に対応していますが、そのほとんどは[DeepL](https://www.deepl.com/translator)が翻訳しています。したがって、誤訳・文法的な間違いはフォークして自由に修正し、翻訳を修正した後にプルリクエストを作成してください。
 
-## 利用規約 (誤訳があった場合は、英語版を優先して使用します。)
+## 利用規約 
 
+(誤訳があった場合は、英語版を優先して使用します。)
 1. 本プログラム「Cultured Downloader」は、発生した損害について一切の責任を負いかねます。このプログラムは、個人的な使用と、pixiv FanboxとFantiaから画像を手動でダウンロードする時間を節約するためのものです。
 2. 本プログラムの利用者として、Fantiaおよびpixivファンボックスの利用規約を破るような利用はしないでください。
 3. 本プログラムのユーザーとして、fantia_cookiesファイルなどのデータは絶対に他人と共有しないでください。クッキーを共有することは、ダウンロード先のアーティストに損害を与えることになりますので、おやめください。自分のデータを共有したり、他人のデータを使用していることが判明した場合。このプログラムおよび開発者は損害賠償の責任を負いませんが、関係するユーザーは責任を負うものとします。
