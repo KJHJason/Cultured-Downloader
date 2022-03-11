@@ -1,7 +1,8 @@
-__author__ = "KJHJason"
-__copyright__ = "Copyright 2022 KJHJason"
-__license__ = "MIT License"
-__version__ = "2.5.2"
+import Header
+__author__ = Header.__author__
+__copyright__ = Header.__copyright__
+__license__ = Header.__license__
+__version__ = Header.__version__
 
 # Import Third-party Libraries
 import requests, dill
@@ -1567,13 +1568,18 @@ def print_menu():
 
         menuFooterStart = f"""
 -------------------------- {F.LIGHTYELLOW_EX}他のオプション{END} ---------------------------"""
-        if pixivCookieLoaded or fantiaCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. 保存されたクッキーを削除する{END}"""
-        else: menuFooterAdditionalOptions = ""
+        if appPath.joinpath("configs", "pixiv_cookies").is_file() or appPath.joinpath("configs", "fantia_cookies").is_file(): 
+            menuDeleteCookieOption = f"""\n      {F.LIGHTRED_EX}DC. 保存されたクッキーを削除する{END}"""
+        else: 
+            menuDeleteCookieOption = ""
 
-        menuFooterEnd = f"""
-        {F.RED}D. Cultured Downloaderで作成されたデータをすべて削除します。{END}
-        {F.LIGHTRED_EX}Y. バグを報告する{END}
-        {F.RED}X. プログラムを終了する{END}
+        if check_if_directory_has_files(appPath.joinpath("configs")): 
+            menuDeleteDataOption = f"""\n      {F.RED}D. Cultured Downloaderで作成されたデータをすべて削除します。{END}\n"""
+        else: 
+            menuDeleteDataOption = "\n"
+
+        menuFooterEnd = f"""      {F.LIGHTRED_EX}Y. バグを報告する{END}
+      {F.RED}X. プログラムを終了する{END}
  """
     else:
         menuHead = f"""{F.LIGHTYELLOW_EX}
@@ -1598,16 +1604,21 @@ def print_menu():
 
         menuFooterStart = f"""
 ---------------------- {F.LIGHTYELLOW_EX}Other Options{END} ----------------------"""
-    if pixivCookieLoaded or fantiaCookieLoaded: menuFooterAdditionalOptions = f"""\n      {F.LIGHTRED_EX}DC. Delete saved cookies{END}"""
-    else: menuFooterAdditionalOptions = ""
+        if appPath.joinpath("configs", "pixiv_cookies").is_file() or appPath.joinpath("configs", "fantia_cookies").is_file(): 
+            menuDeleteCookieOption = f"""\n      {F.LIGHTRED_EX}DC. Delete saved cookies{END}"""
+        else:
+            menuDeleteCookieOption = ""
 
-    menuFooterEnd = f"""
-      {F.RED}D. Delete all data created by Cultured Downloader{END}
-      {F.LIGHTRED_EX}Y. Report a bug{END}
+        if check_if_directory_has_files(appPath.joinpath("configs")): 
+            menuDeleteDataOption = f"""\n      {F.RED}D. Delete all data created by Cultured Downloader{END}\n"""
+        else: 
+            menuDeleteDataOption = "\n"
+
+        menuFooterEnd = f"""      {F.LIGHTRED_EX}Y. Report a bug{END}
       {F.RED}X. Shutdown the program{END}
  """
         
-    print("".join([menuHead, menuAdditionalOptions, menuFooterStart, menuFooterAdditionalOptions, menuFooterEnd]))
+    print("".join([menuHead, menuAdditionalOptions, menuFooterStart, menuDeleteCookieOption, menuDeleteDataOption, menuFooterEnd]))
 
 """--------------------------- End of Functions Codes ---------------------------"""
 
@@ -2166,11 +2177,7 @@ def main():
                 )
 
         elif cmdInput == "d":
-            print_in_both_en_jp(
-                en=(f"{F.LIGHTYELLOW_EX}Deleting folders in {appPath}...{END}"),
-                jp=(f"{F.LIGHTYELLOW_EX}{appPath} 内のフォルダーを削除します...{END}")
-            )
-            if check_if_directory_has_files(appPath):
+            if check_if_directory_has_files(appPath.joinpath("configs")):
                 for folderPath in appPath.iterdir():
                     if folderPath.is_dir():
                         rmtree(folderPath)
@@ -2180,50 +2187,28 @@ def main():
                 )
             else:
                 print_in_both_en_jp(
-                    en=(f"{F.RED}Error: Nothing to delete in {appPath}{END}"),
-                    jp=(f"{F.RED}エラー： {appPath} に削除するものはありません。{END}")
+                    en=(f"{F.RED}Invalid command input, please enter a valid command from the menu above.{END}"),
+                    jp=(f"{F.RED}不正なコマンド入力です。上のメニューから正しいコマンドを入力してください。{END}")
                 )
                 
         elif cmdInput == "dc":
-            if pixivCookieLoaded or fantiaCookieLoaded:
-                if pixivCookieLoaded:
-                    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+            if pixivCookiePath.exists() or fantiaCookiePath.exists():
+                pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
+                if pixivCookiePath.is_file():
+                    pixivCookiePath.unlink()
                     print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}Deleting Pixiv Fanbox cookies...{END}"),
-                        jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーを削除します...{END}")
+                        en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
+                        jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
                     )
-                    if pixivCookiePath.exists():
-                        if pixivCookiePath.is_file():
-                            pixivCookiePath.unlink()
-                            print_in_both_en_jp(
-                                en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
-                                jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
-                            )
-                        else: raise Exception("Pixiv cookie is a directory and not a file...")
-                    else:
-                        print_in_both_en_jp(
-                            en=(f"{F.RED}Error: Pixiv Fanbox cookie not found.{END}"),
-                            jp=(f"{F.RED}エラー： pixivファンボックスのクッキーが見つかりません。{END}")
-                        )
-                if fantiaCookieLoaded:
-                    fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
+                
+                fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
+                if fantiaCookiePath.is_file():
+                    fantiaCookiePath.unlink()
                     print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}Deleting Fantia cookies...{END}"),
-                        jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーを削除します...{END}")
+                        en=(f"{F.LIGHTYELLOW_EX}Deleted Fantia cookies{END}"),
+                        jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーが削除されました。{END}")
                     )
-                    if fantiaCookiePath.exists():
-                        if fantiaCookiePath.is_file():
-                            fantiaCookiePath.unlink()
-                            print_in_both_en_jp(
-                                en=(f"{F.LIGHTYELLOW_EX}Deleted Fantia cookies{END}"),
-                                jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーが削除されました。{END}")
-                            )
-                        else: raise Exception("Fantia cookie is a directory and not a file...")
-                    else:
-                        print_in_both_en_jp(
-                            en=(f"{F.RED}Error: Fantia cookie not found.{END}"),
-                            jp=(f"{F.RED}エラー： Fantiaのクッキーが見つかりません。{END}")
-                        )
+    
             else:
                 print_in_both_en_jp(
                     en=(f"{F.RED}Invalid command input, please enter a valid command from the menu above.{END}"),

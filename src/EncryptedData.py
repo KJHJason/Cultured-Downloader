@@ -1,7 +1,8 @@
-__author__ = "KJHJason"
-__copyright__ = "Copyright 2022 KJHJason"
-__license__ = "MIT License"
-__version__ = "2.0.1"
+import Header
+__author__ = Header.__author__
+__copyright__ = Header.__copyright__
+__license__ = Header.__license__
+__version__ = Header.__version__
 
 # Import Third-party Libraries
 from Crypto.Random import get_random_bytes
