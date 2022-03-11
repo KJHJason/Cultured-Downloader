@@ -2243,9 +2243,10 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                 fantiaCookiePath.unlink()
 
         print_in_both_en_jp(
-            en=(f"{F.RED}Error: Unable to retrieve session ID from cookies...{END}", f"Please restart this program.{END}"),
-            jap=(f"{F.RED}エラー： クッキーからセッションIDを取得できない...{END}", "このプログラムを再起動してください。{END}")
+            en=(f"{F.RED}Error: Unable to retrieve session ID from cookies...{END}", f"Please restart this program.{END}", "Please enter any key to exit..."),
+            jap=(f"{F.RED}エラー： クッキーからセッションIDを取得できない...{END}", "このプログラムを再起動してください。{END}", "何か入力すると終了します...")
         )
+        input()
         osExit(1)
     except:
         print_error_log_notification()

@@ -1,7 +1,6 @@
-dep/*
-test.py
-src/__pycache__/*
-src/build/*
-src/dist/*
-src/*.spec
+*.txt
+*.pyc
+*.exe
+*.spec
 set_exe_info.py
+test.py
