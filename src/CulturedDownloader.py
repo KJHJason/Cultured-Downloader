@@ -272,8 +272,8 @@ def check_if_json_file_exists():
     jsonFolderPath = appPath.joinpath("configs")
     jsonFolderPath.mkdir(parents=True, exist_ok=True)
     if not jsonPath.is_file():
-        print(f"{F.RED}Error: config.json does not exist.{END}", f"{F.LIGHTYELLOW_EX}Creating config.json file...{END}"),
-        print(f"{F.RED}エラー: config.jsonが存在しません。{END}", f"{F.LIGHTYELLOW_EX}config.jsonファイルを作成しています...{END}")
+        print(f"{F.RED}Error: config.json does not exist.{END}", f"\n{F.LIGHTYELLOW_EX}Creating config.json file...{END}"),
+        print(f"{F.RED}エラー: config.jsonが存在しません。{END}", f"\n{F.LIGHTYELLOW_EX}config.jsonファイルを作成しています...{END}")
         
         with open(jsonPath, "w") as f:
             json.dump({}, f)
@@ -2701,6 +2701,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
     except:
         print_error_log_notification()
         log_error()
+        input("Please enter any key to exit/何か入力すると終了します...")
         osExit(1)
 
     shutdown()
