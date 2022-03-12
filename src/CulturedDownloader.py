@@ -1741,7 +1741,7 @@ def print_menu():
       {F.GREEN}1. Download images from Fantia using an image URL{END}
       {F.GREEN}2. Download images from a Fantia post URL{END}
       {F.GREEN}3. Download all Fantia posts from an all posts preview page URL{END}
-      {F.CYAN}4. Download images from a Pixiv Fanbox post URL{END}
+      {F.CYAN}4. Download images from a pixiv Fanbox post URL{END}
       {F.CYAN}5. Download all pixiv Fanbox posts from an all posts preview page URL{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{END} ----------------------
@@ -2668,6 +2668,10 @@ Note/注意: Requires the user to login via this program for images that require
            This program is not affiliated with Pixiv or Fantia.
            会員登録が必要な画像は、本プログラムによるログインが必要です。
            このプログラムはPixivやFantiaとは関係ありません。{END}
+{F.LIGHTRED_EX}
+For English-speaking users:
+If you have noticed the weird "?" text, it means that your PC do not have Japanese language support.
+You can simply ignore it or install the Japanese language pack via Settings on your PC.{END}
 {F.RED}
 Warning/警告:
 Please read the term of use at https://github.com/KJHJason/Cultured-Downloader before using this program.
