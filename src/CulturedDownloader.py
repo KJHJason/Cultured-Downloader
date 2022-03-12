@@ -1265,13 +1265,13 @@ def download(urlInput, website, subFolderPath, **options):
         # Retrieving attachment url if the user chose to download attachment as well as an addon to this program and start printing the progress bar
         totalImageProgress = 0
         if downloadAttachmentFlag:
-            try: attachmentURLs = driver.find_elements(by=By.XPATH, value="//a[@class='btn btn-success btn-very-lg']")
-            except: attachmentURLs = []
+            try: attachmentAnchors = driver.find_elements(by=By.XPATH, value="//a[@class='btn btn-success btn-very-lg']")
+            except: attachmentAnchors = []
 
-            totalImages = len(imagesURLToDownloadArray) + len(attachmentURLs)
+            totalImages = len(imagesURLToDownloadArray) + len(attachmentAnchors)
 
             remove_any_files_in_directory(browserDownloadLocation)
-            for attachmentURL in attachmentURLs:
+            for anchor in attachmentAnchors:
                 if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
                 elif lang == "jp": downloadMessage = f"画像や添付ファイル {totalImageProgress} / {totalImages} をダウンロード中"
 
@@ -1279,7 +1279,7 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(totalImageProgress, totalImages, downloadMessage)
                     totalImageProgress += 1
 
-                driver.get(attachmentURL.get_attribute("href")) # instead of clicking since for some reasons, it doesn't always work
+                driver.get(anchor.get_attribute("href")) # instead of clicking since for some reasons, it doesn't always work
 
                 sleep(3) # for the browser to download the attachment
                 
@@ -1289,7 +1289,7 @@ def download(urlInput, website, subFolderPath, **options):
                 print_progress_bar(totalImageProgress, totalImages, downloadMessage)
                 totalImageProgress += 1
             
-            if attachmentURLs:
+            if attachmentAnchors:
                 check_for_incomplete_download()
                 # moves all the files to the corresponding folder based on the user's input.
                 attachmentFolderPath = subFolderPath.joinpath("attachments")
@@ -1297,7 +1297,7 @@ def download(urlInput, website, subFolderPath, **options):
                     attachmentFolderPath.mkdir(parents=True, exist_ok=True)
                     move(file, attachmentFolderPath.joinpath(file.name)) 
             else:
-                totalImageProgress += 1
+                totalImageProgress += 1 # since the for loop won't be executed, plus one for the next loop
         else:
             totalImages = len(imagesURLToDownloadArray)
 
@@ -1352,28 +1352,50 @@ def download(urlInput, website, subFolderPath, **options):
         for anchor in imagesAnchors:
             urlToDownloadArray.append(anchor.get_attribute("href"))
 
-        # download any attachments such as videos, gifs, etc. if requested by the user
-        if downloadAttachmentFlag:
-            try: attachmentURLs = driver.find_elements(by=By.XPATH, value="//a[@class='sc-gw5z20-7 bGOrSj']")
-            except: attachmentURLs = []
-
-            for attachmentURL in attachmentURLs:
-                urlToDownloadArray.append(attachmentURL.get_attribute("href"))
-
+        # for attachment, get anchor url and go to that url to download it, similar to Fantia's process
+        # Chose this approach since large files will take a while and the remote connection may close after a certain period of time
         progress = 0
-        totalImages = len(urlToDownloadArray)
-        for url in urlToDownloadArray:
-            subFolderPath.mkdir(parents=True, exist_ok=True)
+        if downloadAttachmentFlag:
+            try: attachmentAnchors = driver.find_elements(by=By.XPATH, value="//a[@class='sc-gw5z20-7 bGOrSj']")
+            except: attachmentAnchors = []
 
-            if progress == 0:
-                if downloadAttachmentFlag:
-                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
-                    elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
-                else:
-                    if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalImages}{END}"
-                    elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalImages} をダウンロード中"
+            totalImages = len(urlToDownloadArray) + len(attachmentAnchors)
+            remove_any_files_in_directory(browserDownloadLocation)
+            for anchor in attachmentAnchors:
+                if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
+                elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
+
+                if progress == 0:
+                    print_progress_bar(progress, totalImages, downloadMessage)
+                    progress += 1
+
+                driver.get(anchor.get_attribute("href")) # instead of clicking since for some reasons, it doesn't always work
+
+                sleep(3) # for the browser to download the attachment
+
+                if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
+                elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
+
                 print_progress_bar(progress, totalImages, downloadMessage)
                 progress += 1
+
+            if attachmentAnchors:
+                check_for_incomplete_download()
+                # moves all the files to the corresponding folder based on the user's input.
+                for file in browserDownloadLocation.iterdir():
+                    subFolderPath.mkdir(parents=True, exist_ok=True)
+                    move(file, subFolderPath.joinpath(file.name)) 
+            else:
+                progress += 1 # since the for loop won't be executed, plus one for the next loop
+        else:
+            totalImages = len(urlToDownloadArray)
+            if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalImages}{END}"
+            elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalImages} をダウンロード中"
+            print_progress_bar(progress, totalImages, downloadMessage)
+            progress += 1
+        
+        for url in urlToDownloadArray:
+            subFolderPath.mkdir(parents=True, exist_ok=True)
             
             save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")), session=pixivSession)
 
@@ -2064,11 +2086,13 @@ def main():
                             print_in_both_en_jp(
                                 en=(
                                     f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
-                                    f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
+                                    f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}",
+                                    f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
                                 ),
                                 jp=(
                                     f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                                    f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
+                                    f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}",
+                                    f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
                                 )
                             )
                             print("\n")
@@ -2103,18 +2127,6 @@ def main():
                                     progress += 1
 
                             print_download_completion_message(totalImages, imagePath)
-
-                            print("\n")
-                            print_in_both_en_jp(
-                            en=(
-                                f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
-                                f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
-                            ),
-                            jp=(
-                                f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                                f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
-                                )
-                        )
 
         elif cmdInput == "2":
             imagePath = create_subfolder("fantia")
@@ -2168,11 +2180,13 @@ def main():
                     print_in_both_en_jp(
                         en=(
                             f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
-                            f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
+                            f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}",
+                            f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
                         ),
                         jp=(
                             f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}",
+                            f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
                         )
                     )
                     print("\n")
@@ -2185,18 +2199,6 @@ def main():
                             counter += 1
                     else: download(urlInput, "FantiaPost", imagePath, attachments=downloadAttachmentFlag)
 
-                    print("\n")
-                    print_in_both_en_jp(
-                        en=(
-                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
-                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
-                        ),
-                        jp=(
-                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
-                            )
-                    )
-        
         elif cmdInput == "3":
             imagePath = create_subfolder("fantia")
             if imagePath != "X":
@@ -2284,11 +2286,13 @@ def main():
                     print_in_both_en_jp(
                         en=(
                             f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
-                            f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}"
+                            f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}",
+                            f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
                         ),
                         jp=(
                             f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                            f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}",
+                            f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
                         )
                     )
                     print("\n")
@@ -2317,18 +2321,6 @@ def main():
                                 f"{F.RED}エラー： 指定されたURLに投稿が見つかりませんでした。{END}"
                             )
                         )
-                    
-                    print("\n")
-                    print_in_both_en_jp(
-                        en=(
-                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
-                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
-                        ),
-                        jp=(
-                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
-                            )
-                    )
 
         elif cmdInput == "4":
             imagePath = ""
@@ -2383,11 +2375,13 @@ def main():
                     print_in_both_en_jp(
                         en=(
                             f"{F.YELLOW}Please wait as auto downloading files from pixiv can take quite a while if the file size is large...{END}",
-                            f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
+                            f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}",
+                            f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
                         ),
                         jp=(
                             f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}",
+                            f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
                         )
                     )
                     print("\n")
@@ -2399,18 +2393,6 @@ def main():
                             counter += 1
                     else:
                         download(urlInput, "Pixiv", imagePath, attachments=downloadAttachmentFlag)
-                    
-                    print("\n")
-                    print_in_both_en_jp(
-                        en=(
-                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
-                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
-                        ),
-                        jp=(
-                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
-                            )
-                    )
         
         elif cmdInput == "5":
             imagePath = create_subfolder("pixiv")
@@ -2498,11 +2480,13 @@ def main():
                     print_in_both_en_jp(
                         en=(
                             f"{F.YELLOW}Please wait as auto downloading files from pixiv can take quite a while if the file size is large...{END}",
-                            f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}"
+                            f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}",
+                            f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
                         ),
                         jp=(
                             f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                            f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}",
+                            f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
                         )
                     )
                     print("\n")
@@ -2531,18 +2515,6 @@ def main():
                                 f"{F.RED}エラー： 指定されたURLに投稿が見つかりませんでした。{END}"
                             )
                         )
-                    
-                    print("\n")
-                    print_in_both_en_jp(
-                        en=(
-                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
-                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
-                        ),
-                        jp=(
-                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
-                            )
-                    )
 
         elif cmdInput == "6":
             get_default_download_directory()
@@ -2689,6 +2661,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         osExit(1)
     except KeyboardInterrupt:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
+        print(f"{F.RED}Exiting/終了しています...{END}")
         try: driver.quit()
         except: pass
         
