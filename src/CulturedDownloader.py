@@ -2257,9 +2257,8 @@ def main():
                             for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
                                 fantiaPostPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
                     elif type(pageInput) == list and type(urlInput) == list:
+                        arrayPointer = 0
                         for pageNumInput in pageInput:
-                            arrayPointer = 0
-                            
                             try:
                                 pageNum = int(pageNumInput)
                                 fantiaPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(pageNum)]))
@@ -2451,9 +2450,8 @@ def main():
                             for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
                                 pixivPostPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
                     elif type(pageInput) == list and type(urlInput) == list:
+                        arrayPointer = 0
                         for pageNumInput in pageInput:
-                            arrayPointer = 0
-                            
                             try:
                                 pageNum = int(pageNumInput)
                                 pixivPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(pageNum)]))
