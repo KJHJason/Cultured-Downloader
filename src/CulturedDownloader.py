@@ -362,7 +362,7 @@ def get_driver(browserType, **additionalOptions):
             jap=("エラー： config.jsonに不明なブラウザタイプがある。", "このプログラムを再起動してください。")
         )
 
-    # driver.minimize_window()
+    driver.set_window_size(1280, 720)
     return driver
 
 def check_browser_config():
@@ -759,7 +759,7 @@ def check_if_input_is_url(inputString, website):
 
     Requires two arguments to be defined:
     - User's input (string or list)
-    - The website, either "fantiaPost", "fantiaImage" or "pixivFanbox" (string)
+    - The website, either "fantiaPost", "fantiaImage", "pixivFanbox", "fantiaPostPage", or "pixivFanboxPostPage" (string)
     """
     if type(inputString) != list:
         try:
@@ -780,6 +780,16 @@ def check_if_input_is_url(inputString, website):
                         return True
                     else:
                         return False
+                elif website == "fantiaPostPage":
+                    if re.fullmatch(fantiaPostPageRegex, inputString):
+                        return True
+                    else:
+                        return False
+                elif website == "pixivFanboxPostPage":
+                    if re.fullmatch(pixivFanboxPostPageRegex, inputString):
+                        return True
+                    else:
+                        return False
             else: return False
         except:
             return False
@@ -795,6 +805,10 @@ def check_if_input_is_url(inputString, website):
                     if not re.fullmatch(fantiaImageURLRegex, url): return False
                 elif website == "pixivFanbox":
                     if not re.match(pixivFanboxPostRegex, url): return False
+                elif website == "fantiaPostPage":
+                    if not re.fullmatch(fantiaPostPageRegex, url): return False
+                elif website == "pixivFanboxPostPage":
+                    if not re.fullmatch(pixivFanboxPostPageRegex, url): return False
             except:
                 return False
 
@@ -1010,7 +1024,11 @@ def print_progress_bar(prog, totalEl, caption):
     - A caption such as "Downloading 2 out of 2 images..." (string)
     """
     barLength = 20 #size of progress bar
-    currentProg = prog / totalEl
+    try:
+        currentProg = prog / totalEl
+    except ZeroDivisionError:
+        return
+
     sys.stdout.write("\r")
     sys.stdout.write(f"{F.LIGHTYELLOW_EX}[{'=' * int(barLength * currentProg):{barLength}s}] {int(100 * currentProg)}% {caption}{END}")
     sys.stdout.flush()
@@ -1168,6 +1186,16 @@ def download(urlInput, website, subFolderPath, **options):
 
     elif website == "FantiaPost":
         sleep(3)
+        try: thumbnailSrc = driver.find_element(by=By.XPATH, value="//img[contains(@class, 'img-default')]").get_attribute("src")
+        except: thumbnailSrc = None
+
+        if thumbnailSrc:
+            thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
+            thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
+            imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailSrc, "Fantia"))
+            # no session needed since it's displayed regardless of membership status
+            save_image(thumbnailSrc, imagePath) 
+        
         imagesURLToDownloadArray = []
 
         fantiaImageClassOffset = 0
@@ -1232,13 +1260,16 @@ def download(urlInput, website, subFolderPath, **options):
 
                 print_progress_bar(totalImageProgress, totalImages, downloadMessage)
                 totalImageProgress += 1
-                
-            check_for_incomplete_download()
-            # moves all the files to the corresponding folder based on the user's input.
-            attachmentFolderPath = subFolderPath.joinpath("attachments")
-            for file in browserDownloadLocation.iterdir():
-                attachmentFolderPath.mkdir(parents=True, exist_ok=True)
-                move(file, attachmentFolderPath.joinpath(file.name)) 
+            
+            if attachmentURLs:
+                check_for_incomplete_download()
+                # moves all the files to the corresponding folder based on the user's input.
+                attachmentFolderPath = subFolderPath.joinpath("attachments")
+                for file in browserDownloadLocation.iterdir():
+                    attachmentFolderPath.mkdir(parents=True, exist_ok=True)
+                    move(file, attachmentFolderPath.joinpath(file.name)) 
+            else:
+                totalImageProgress += 1
         else:
             totalImages = len(imagesURLToDownloadArray)
 
@@ -1294,13 +1325,13 @@ def download(urlInput, website, subFolderPath, **options):
         for anchor in imagesAnchors:
             urlToDownloadArray.append(anchor.get_attribute("href"))
 
-        # download videos if requested by the user
+        # download any attachments such as videos, gifs, etc. if requested by the user
         if downloadAttachmentFlag:
-            try: videos = driver.find_elements(by=By.TAG_NAME, value="video")
-            except: videos = []
+            try: attachmentURLs = driver.find_elements(by=By.XPATH, value="//a[@class='sc-gw5z20-7 bGOrSj']")
+            except: attachmentURLs = []
 
-            for video in videos:
-                urlToDownloadArray.append(video.get_attribute("src"))
+            for attachmentURL in attachmentURLs:
+                urlToDownloadArray.append(attachmentURLs.get_attribute("href"))
 
         progress = 0
         totalImages = len(urlToDownloadArray)
@@ -1526,6 +1557,95 @@ def save_and_load_cookie(originalDriver, website, **options):
         if getSessionID: return False, None
         else: return False
 
+def get_page_num(userURLInput):
+    """
+    Used for retreiving the number of pages to go through for option 3 and 5 for downloading all posts in an all post preview page.
+
+    Requires one argument to be defined:
+    - The user's URL input (string or list)
+    """
+    print("\n")
+    while True:
+        print_in_both_en_jp(
+            en=(f"{F.YELLOW}Note: If you have entered multiple urls previously, please enter in this format, \"1-3, 5, 2-10\"{END}"),
+            jp=(f"{F.YELLOW}注意： 以前に複数のURLを入力したことがある場合は、このフォーマットで入力してください。\"1-3、5、2-10\"{END}")
+        )
+        if lang == "en": pageInput = split_inputs_to_possible_multiple_inputs(input("Enter the number of pages (X to cancel): "))
+        else: pageInput = split_inputs_to_possible_multiple_inputs(input("ページ数を入力します (Xでキャンセル)： "))
+
+        if pageInput == "x" or pageInput == "X": 
+            return False
+            
+        if (pageInput == ""):
+            print_in_both_en_jp(
+                en=(
+                    f"{F.RED}Error: No URL entered or URL entered.{END}"
+                ),
+                jp=(
+                    f"{F.RED}エラー： URLが入力されていない。{END}"
+                )
+            )
+        else: 
+            if type(pageInput) == list:
+                validPageNumInputs = True
+                for pageNum in pageInput:
+                    if re.fullmatch(pageNumRegex, pageNum) == None:
+                        validPageNumInputs = False
+                if validPageNumInputs:
+                    if type(userURLInput) == list:
+                        if len(userURLInput) == len(pageInput):
+                            return pageInput
+                        else:
+                            print_in_both_en_jp(
+                                en=(
+                                    f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
+                                ),
+                                jp=(
+                                    f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
+                                )
+                            )
+                    else:
+                        print_in_both_en_jp(
+                                en=(
+                                    f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
+                                ),
+                                jp=(
+                                    f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
+                                )
+                            )
+                else:
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.RED}Error: Invalid format.{END}"
+                        ),
+                        jp=(
+                            f"{F.RED}エラー： ページ数が無効である。{END}"
+                        )
+                    )
+            elif type(pageInput) == str:
+                if re.fullmatch(pageNumRegex, pageInput) == None:
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.RED}Error: Invalid format.{END}"
+                        ),
+                        jp=(
+                            f"{F.RED}エラー： ページ数が無効である。{END}"
+                        )
+                    )
+                else:
+                    if type(userURLInput) == str:
+                        return pageInput
+                    else:
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
+                            )
+                        )
+            else:
+                raise Exception("pageInput variable for downloading fantia posts is not a list or string...")
 
 def print_menu():
     """
@@ -1554,15 +1674,17 @@ def print_menu():
 --------------------- {F.LIGHTYELLOW_EX}ダウンロードのオプション{END} ---------------------
       {F.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
       {F.GREEN}2. Fantia投稿URLから画像をダウンロードする{END}
-      {F.CYAN}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
+      {F.GREEN}3. 全投稿プレビューページのURLからFantiaの全投稿をダウンロードする。{END}
+      {F.CYAN}4. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
+      {F.CYAN}5. 全投稿プレビューページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}コンフィグのオプション{END} ----------------------
-      {F.LIGHTBLUE_EX}4. デフォルトのダウンロードフォルダを変更する{END}
-      {F.LIGHTBLUE_EX}5. ブラウザを変更する{END}
-      {F.LIGHTBLUE_EX}6. 言語を変更する{END}
+      {F.LIGHTBLUE_EX}6. デフォルトのダウンロードフォルダを変更する{END}
+      {F.LIGHTBLUE_EX}7. ブラウザを変更する{END}
+      {F.LIGHTBLUE_EX}8. 言語を変更する{END}
 """
         if fantiaStatus == "ゲスト（ログインしていない）" or pixivStatus == "ゲスト（ログインしていない）":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}7. ログインする{END}\n"""
+            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}9. ログインする{END}\n"""
         else:
             menuAdditionalOptions = ""
 
@@ -1590,15 +1712,17 @@ def print_menu():
 --------------------- {F.LIGHTYELLOW_EX}Download Options{END} --------------------
       {F.GREEN}1. Download images from Fantia using an image URL{END}
       {F.GREEN}2. Download images from a Fantia post URL{END}
-      {F.CYAN}3. Download images from a Pixiv Fanbox post URL{END}
+      {F.GREEN}3. Download all Fantia posts from an all posts preview page URL{END}
+      {F.CYAN}4. Download images from a Pixiv Fanbox post URL{END}
+      {F.CYAN}5. Download all pixiv Fanbox posts from an all posts preview page URL{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{END} ----------------------
-      {F.LIGHTBLUE_EX}4. Change Default Download Folder{END}
-      {F.LIGHTBLUE_EX}5. Change Default Browser{END}
-      {F.LIGHTBLUE_EX}6. Change Language{END}
+      {F.LIGHTBLUE_EX}6. Change Default Download Folder{END}
+      {F.LIGHTBLUE_EX}7. Change Default Browser{END}
+      {F.LIGHTBLUE_EX}8. Change Language{END}
 """
         if fantiaStatus == "Guest (Not logged in)" or pixivStatus == "Guest (Not logged in)":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}7. Login{END}\n"""
+            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}9. Login{END}\n"""
         else:
             menuAdditionalOptions = ""
 
@@ -1725,7 +1849,7 @@ def main():
     if pixivSession == "": raise SessionError
 
     cmdInput = ""
-    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "d", "dc", "x", "y")
+    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "9" "d", "dc", "x", "y")
     while cmdInput != "x":
         print_menu()
         if lang == "en":
@@ -1912,14 +2036,15 @@ def main():
                             print("\n")
                             print_in_both_en_jp(
                                 en=(
-                                    f"{F.YELLOW}Please wait as auto downloading images from Fantia can take quite a while if the image size is large...{END}",
-                                    f"{F.YELLOW}The program will automatically download {totalImages} images.{END}"
+                                    f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
+                                    f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
                                 ),
                                 jp=(
-                                    f"{F.YELLOW}Fantiaからの画像の自動ダウンロードは、画像サイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
-                                    f"{F.YELLOW}プログラムが自動的に{totalImages}枚の画像をダウンロードします。{END}"
+                                    f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                                    f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
                                 )
                             )
+                            print("\n")
                             if totalImages != 0:
                                 imageCounter = 0
                                 arrayPointer = 0
@@ -1934,7 +2059,6 @@ def main():
                                             print_progress_bar(progress, totalImages, f"画像 {progress} / {totalImages} をダウンロード中")
                                         progress += 1
 
-                                    imageFolderPath.mkdir(parents=True, exist_ok=True)
                                     imageCounter += 1
 
                                     download(url, "FantiaImageURL", imageFolderPath)
@@ -1952,16 +2076,18 @@ def main():
                                     progress += 1
 
                             print_download_completion_message(totalImages, imagePath)
+
+                            print("\n")
                             print_in_both_en_jp(
-                                en=(
-                                    f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the images!{END}",
-                                    f"{F.LIGHTRED_EX}After checking that all the images has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
-                                ),
-                                jp=(
-                                    f"{F.LIGHTRED_EX}ただし、プログラムがまだ画像をダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                                    f"{F.LIGHTRED_EX}その後、すべての画像が正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
-                                    )
-                            )
+                            en=(
+                                f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
+                                f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
+                            ),
+                            jp=(
+                                f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
+                                f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
+                                )
+                        )
 
         elif cmdInput == "2":
             imagePath = create_subfolder("fantia")
@@ -2014,36 +2140,168 @@ def main():
                     print("\n")
                     print_in_both_en_jp(
                         en=(
-                            f"{F.YELLOW}Please wait as auto downloading images from Fantia can take quite a while if the image size is large...{END}",
-                            f"{F.YELLOW}The program will automatically download images from {numOfPosts} posts.{END}"
+                            f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
+                            f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
                         ),
                         jp=(
-                            f"{F.YELLOW}Fantiaからの画像の自動ダウンロードは、画像サイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
-                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中から画像を自動的にダウンロードします。{END}"
+                            f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
                         )
                     )
+                    print("\n")
                     
                     if type(urlInput) == list:
                         counter = 0
                         for url in urlInput: 
                             downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
-                            downloadDirectoryFolder.mkdir(parents=True, exist_ok=True)
                             download(url, "FantiaPost", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
                     else: download(urlInput, "FantiaPost", imagePath, attachments=downloadAttachmentFlag)
 
+                    print("\n")
                     print_in_both_en_jp(
                         en=(
-                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the images!{END}",
-                            f"{F.LIGHTRED_EX}After checking that all the images has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
+                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
+                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
                         ),
                         jp=(
-                            f"{F.LIGHTRED_EX}ただし、プログラムがまだ画像をダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                            f"{F.LIGHTRED_EX}その後、すべての画像が正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
+                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
+                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
                             )
                     )
         
         elif cmdInput == "3":
+            imagePath = create_subfolder("fantia")
+            if imagePath != "X":
+                startDownloadingFlag = True
+                print("\n")
+                print_in_both_en_jp(
+                    en=(f"{F.LIGHTYELLOW_EX}This option is for URL such as https://fantia.jp/fanclubs/5744/posts?page=1{END}"), 
+                    jp=(f"{F.LIGHTYELLOW_EX}このオプションは、https://fantia.jp/fanclubs/5744/posts?page=1 のようなURLのためのものです。{END}")
+                )
+                while True:
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.LIGHTYELLOW_EX}However, please enter the base URL first! (e.g. https://fantia.jp/fanclubs/5744/posts){END}",
+                            f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls. (e.g. https://fantia.jp/fanclubs/5744/posts, https://fantia.jp/fanclubs/14935/posts){END}"
+                            f"{F.LIGHTYELLOW_EX}Afterwards, you will be prompted to enter the number of pages in this format, \"1-5\" or \"5\" to indicate page 1 to 5 or page 5 respectively.{END}"
+                        ), 
+                        jp=(
+                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://fantia.jp/fanclubs/5744/posts)。{END}"
+                            f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。 (例: https://fantia.jp/fanclubs/5744/posts、https://fantia.jp/fanclubs/14935/posts)。{END}"
+                            f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
+                        )
+                    )
+                    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of the Fantia post preview page (X to cancel): "))
+                    else: urlInput = split_inputs_to_possible_multiple_inputs(input("Fantiaの投稿プレビューページのURLを入力下さい (Xでキャンセル)： "))
+
+                    if urlInput == "x" or urlInput == "X": 
+                        startDownloadingFlag = False
+                        break
+
+                    if (urlInput == "") or (check_if_input_is_url(urlInput, "fantiaPostPage") == False):
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
+                            )
+                        )
+                    else: break
+                
+                # asking the user for the number of pages to download
+                if startDownloadingFlag:
+                    pageInput = get_page_num(urlInput)
+                    if not pageInput: startDownloadingFlag = False
+
+                if startDownloadingFlag:
+                    fantiaPostPreviewURLArray = []
+                    if type(pageInput) == str and type(urlInput) == str:
+                        try:
+                            pageNum = int(pageInput)
+                            fantiaPostPreviewURLArray.append("".join([urlInput, "?page=", str(pageNum)]))
+                        except:
+                            pageNumList = pageInput.split("-")
+                            pageNumList.sort()
+                            for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
+                                fantiaPostPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
+                    elif type(pageInput) == list and type(urlInput) == list:
+                        for pageNumInput in pageInput:
+                            arrayPointer = 0
+                            
+                            try:
+                                pageNum = int(pageNumInput)
+                                fantiaPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(pageNum)]))
+                            except:
+                                pageNumList = pageNumInput.split("-")
+                                pageNumList.sort()
+                                for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
+                                    fantiaPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(i)]))
+                            
+                            arrayPointer += 1
+                    else:
+                        raise Exception("Fantia posts download's variables are not in correct format...")
+
+                    if lang == "en": attachmentPrompt = "Would you like to download attachments such as psd files, videos, gifs (if found)? (y/n): "
+                    else: attachmentPrompt = "psdファイルや動画ファイルやgifファイルをダウンロードしますか (見つかった場合)？ (y/n): "
+                    downloadAttachmentFlag = get_input_from_user(prompt=attachmentPrompt, command=("y", "n"))
+
+                    if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
+                    else: downloadAttachmentFlag = False
+
+                    if type(urlInput) == list: numOfPostPage = len(urlInput)
+                    else: numOfPostPage = 1
+                    print("\n")
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
+                            f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}"
+                        ),
+                        jp=(
+                            f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}"
+                        )
+                    )
+                    print("\n")
+                    postURLToDownloadArray = []
+                    for postURL in fantiaPostPreviewURLArray: 
+                        driver.get(postURL)
+                        try: posts = driver.find_elements(by=By.XPATH, value="//a[@class='link-block']")
+                        except: posts = []
+
+                        for postAnchorEl in posts:
+                            postURLToDownloadArray.append(postAnchorEl.get_attribute("href"))
+
+                    if postURLToDownloadArray:
+                        counter = 0
+                        for postURL in postURLToDownloadArray:
+                            downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
+                            download(postURL, "FantiaPost", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
+                            counter += 1
+                    else:
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: No posts found on the given URL.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： 指定されたURLに投稿が見つかりませんでした。{END}"
+                            )
+                        )
+                    
+                    print("\n")
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
+                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
+                        ),
+                        jp=(
+                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
+                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
+                            )
+                    )
+
+        elif cmdInput == "4":
             imagePath = ""
             if pixivSession != "": imagePath = create_subfolder("pixiv")
             if imagePath != "X":
@@ -2083,8 +2341,8 @@ def main():
                     else: break
 
                 if startDownloadingFlag:
-                    if lang == "en": attachmentPrompt = "Would you like to download videos (if found) as well? (y/n): "
-                    else: attachmentPrompt = "動画もダウンロードしますか (見つかった場合)？(y/n): "
+                    if lang == "en": attachmentPrompt = "Would you like to download attachments such as psd files, videos, gifs (if found)? (y/n): "
+                    else: attachmentPrompt = "psdファイルや動画ファイルやgifファイルをダウンロードしますか (見つかった場合)？ (y/n): "
                     downloadAttachmentFlag = get_input_from_user(prompt=attachmentPrompt, command=("y", "n"))
 
                     if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
@@ -2095,44 +2353,175 @@ def main():
                     print("\n")
                     print_in_both_en_jp(
                         en=(
-                            f"{F.YELLOW}Please wait as auto downloading images from pixiv can take quite a while if the image size is large...{END}",
-                            f"{F.YELLOW}The program will automatically download images from {numOfPosts} posts.{END}"
+                            f"{F.YELLOW}Please wait as auto downloading files from pixiv can take quite a while if the file size is large...{END}",
+                            f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
                         ),
                         jp=(
-                            f"{F.YELLOW}pixivからの画像の自動ダウンロードは、画像サイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
-                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中から画像を自動的にダウンロードします。{END}"
+                            f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
                         )
                     )
-
+                    print("\n")
                     if type(urlInput) == list:
                         counter = 1
                         for url in urlInput:
                             downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
-                            downloadDirectoryFolder.mkdir(parents=True, exist_ok=True)
                             download(url, "Pixiv", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
                     else:
                         download(urlInput, "Pixiv", imagePath, attachments=downloadAttachmentFlag)
                     
+                    print("\n")
                     print_in_both_en_jp(
                         en=(
-                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the images!{END}",
-                            f"{F.LIGHTRED_EX}After checking that all the images has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
+                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
+                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
                         ),
                         jp=(
-                            f"{F.LIGHTRED_EX}ただし、プログラムがまだ画像をダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
-                            f"{F.LIGHTRED_EX}その後、すべての画像が正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
+                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
+                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
+                            )
+                    )
+        
+        elif cmdInput == "5":
+            imagePath = create_subfolder("pixiv")
+            if imagePath != "X":
+                startDownloadingFlag = True
+                print("\n")
+                print_in_both_en_jp(
+                    en=(f"{F.LIGHTYELLOW_EX}This option is for URL such as https://www.fanbox.cc/@creator_name/posts{END}"), 
+                    jp=(f"{F.LIGHTYELLOW_EX}このオプションは、https://www.fanbox.cc/@creator_name/posts のようなURLのためのものです。{END}")
+                )
+                while True:
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.LIGHTYELLOW_EX}However, please enter the base URL first! (e.g. https://www.fanbox.cc/@creator_name/posts){END}",
+                            f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls. (e.g. https://www.fanbox.cc/@creator_name_one/posts, https://www.fanbox.cc/@creator_name_two/posts){END}"
+                            f"{F.LIGHTYELLOW_EX}Afterwards, you will be prompted to enter the number of pages in this format, \"1-5\" or \"5\" to indicate page 1 to 5 or page 5 respectively.{END}"
+                        ), 
+                        jp=(
+                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://www.fanbox.cc/@creator_name/posts)。{END}"
+                            f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。 (例: https://www.fanbox.cc/@creator_name_one/posts、https://www.fanbox.cc/@creator_name_two/posts)。{END}"
+                            f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
+                        )
+                    )
+                    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of the pixiv Fanbox post preview page (X to cancel): "))
+                    else: urlInput = split_inputs_to_possible_multiple_inputs(input("pixivファンボックスの投稿プレビューページのURLを入力下さい (Xでキャンセル)： "))
+
+                    if urlInput == "x" or urlInput == "X": 
+                        startDownloadingFlag = False
+                        break
+
+                    if (urlInput == "") or (check_if_input_is_url(urlInput, "pixivFanboxPostPage") == False):
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
+                            )
+                        )
+                    else: break
+                
+                # asking the user for the number of pages to download
+                if startDownloadingFlag:
+                    pageInput = get_page_num(urlInput)
+                    if not pageInput: startDownloadingFlag = False
+
+                if startDownloadingFlag:
+                    pixivPostPreviewURLArray = []
+                    if type(pageInput) == str and type(urlInput) == str:
+                        try:
+                            pageNum = int(pageInput)
+                            pixivPostPreviewURLArray.append("".join([urlInput, "?page=", str(pageNum)]))
+                        except:
+                            pageNumList = pageInput.split("-")
+                            pageNumList.sort()
+                            for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
+                                pixivPostPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
+                    elif type(pageInput) == list and type(urlInput) == list:
+                        for pageNumInput in pageInput:
+                            arrayPointer = 0
+                            
+                            try:
+                                pageNum = int(pageNumInput)
+                                pixivPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(pageNum)]))
+                            except:
+                                pageNumList = pageNumInput.split("-")
+                                pageNumList.sort()
+                                for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
+                                    pixivPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(i)]))
+                            
+                            arrayPointer += 1
+                    else:
+                        raise Exception("pixiv Fanbox posts download's variables are not in correct format...")
+
+                    if lang == "en": attachmentPrompt = "Would you like to download attachments such as psd files, videos, gifs (if found)? (y/n): "
+                    else: attachmentPrompt = "psdファイルや動画ファイルやgifファイルをダウンロードしますか (見つかった場合)？ (y/n): "
+                    downloadAttachmentFlag = get_input_from_user(prompt=attachmentPrompt, command=("y", "n"))
+
+                    if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
+                    else: downloadAttachmentFlag = False
+
+                    if type(urlInput) == list: numOfPostPage = len(urlInput)
+                    else: numOfPostPage = 1
+                    print("\n")
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.YELLOW}Please wait as auto downloading files from pixiv can take quite a while if the file size is large...{END}",
+                            f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}"
+                        ),
+                        jp=(
+                            f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}"
+                        )
+                    )
+                    print("\n")
+                    postURLToDownloadArray = []
+                    for postURL in pixivPostPreviewURLArray: 
+                        driver.get(postURL)
+                        try: posts = driver.find_elements(by=By.XPATH, value="//a[@class='sc-1bjj922-0 gwbPAH']")
+                        except: posts = []
+
+                        for postAnchorEl in posts:
+                            postURLToDownloadArray.append(postAnchorEl.get_attribute("href"))
+
+                    if postURLToDownloadArray:
+                        counter = 0
+                        for postURL in postURLToDownloadArray:
+                            downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
+                            download(postURL, "FantiaPost", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
+                            counter += 1
+                    else:
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: No posts found on the given URL.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： 指定されたURLに投稿が見つかりませんでした。{END}"
+                            )
+                        )
+                    
+                    print("\n")
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.LIGHTRED_EX}However, please do not close/shutdown the program as the program might still be downloading the files!{END}",
+                            f"{F.LIGHTRED_EX}After checking that all the files has been successfully downloaded, you can then choose to shutdown/close the program.{END}"
+                        ),
+                        jp=(
+                            f"{F.LIGHTRED_EX}ただし、プログラムがまだファイルをダウンロードしている可能性がありますので、プログラムを終了/シャットダウンしないでください。{END}",
+                            f"{F.LIGHTRED_EX}その後、すべてのファイルが正常にダウンロードされたことを確認してから、プログラムを終了/シャットダウンができます。{END}"
                             )
                     )
 
-        elif cmdInput == "4":
+        elif cmdInput == "6":
             get_default_download_directory()
             with open(jsonPath, "r") as f:
                 config = json.load(f)
 
             set_default_download_directory(config)
             
-        elif cmdInput == "5":
+        elif cmdInput == "7":
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
                 newDefaultBrowser = get_user_browser_preference()
@@ -2155,10 +2544,10 @@ def main():
                         jp=(f"{F.LIGHTRED_EX}注意： config.jsonのデフォルトブラウザが空です。{END}")
                     )
 
-        elif cmdInput == "6":
+        elif cmdInput == "8":
             lang = update_lang()
 
-        elif cmdInput == "7":
+        elif cmdInput == "9":
             if not check_if_user_is_logged_in():
                 pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
                 if not pixivCookieLoaded and not pixivCookieExist:
@@ -2227,11 +2616,17 @@ if __name__ == "__main__":
 
     global fantiaPostRegex
     global fantiaImageURLRegex
+    global fantiaPostPageRegex
     global pixivFanboxPostRegex
+    global pixivFanboxPostPageRegex
+    global pageNumRegex
 
-    fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d*")
-    fantiaImageURLRegex = re.compile(r"(https://fantia.jp/posts/)\d*(/post_content_photo/)\d*")
-    pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)\w*(/posts/)\d*")
+    fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d{1,}")
+    fantiaImageURLRegex = re.compile(r"(https://fantia.jp/posts/)\d{1,}(/post_content_photo/)\d{1,}")
+    fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d{1,}(/posts)")
+    pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)\w{1,}(/posts/)\d{1,}")
+    pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)\w{1,}(/posts)") 
+    pageNumRegex = re.compile(r"\d{1,}(-)\d{1,}|\d{1,}")
 
     introMenu = f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
