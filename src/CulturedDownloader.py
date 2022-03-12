@@ -1359,7 +1359,7 @@ def download(urlInput, website, subFolderPath, **options):
             except: attachmentURLs = []
 
             for attachmentURL in attachmentURLs:
-                urlToDownloadArray.append(attachmentURLs.get_attribute("href"))
+                urlToDownloadArray.append(attachmentURL.get_attribute("href"))
 
         progress = 0
         totalImages = len(urlToDownloadArray)
