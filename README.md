@@ -69,7 +69,7 @@ Although the program has Japanese language support, most of them are translated 
     * Downloading all the images or attachment files (videos, psd, etc.) in a pixiv Fanbox post based on a URL such as "https://www.fanbox.cc/@creator_name/posts/1234567"
     * Downloading images or attachment files (videos, psd, etc.) from Fantia's all posts page URL such as "https://fantia.jp/fanclubs/1234/posts"
     * Downloading images or attachment files (videos, psd, etc.) from pixiv Fanbox's all posts page URL such as "https://www.fanbox.cc/@creator_name/posts"<br>
-      (Allows the user to specify the page num by entering 1-2 or 3 to indicate page 1 to page 2 or page 3 respectively)
+      (The user will then be asked to specify the page number. For example, "1-3" to specify page 1 to 3. In another instance, the user can enter "4" to specify page 4 only.)
 
 ## Usage Notes
 1. **This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually. Please do not use this program and break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.**
@@ -119,7 +119,7 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
     * "https://www.fanbox.cc/@creator_name/posts/1234567" などのURLをもとに、pixivファンボックスの投稿内の画像や添付ファイルをすべてダウンロードする。
     * Fantiaの全投稿ページURLの "https://fantia.jp/fanclubs/1234/posts" などから画像や添付ファイルをダウンロードすることができます。
     * pixivファンボックスの全投稿ページURLの "https://www.fanbox.cc/@creator_name/posts" などから画像や添付ファイルをダウンロードすることができます。<br>
-      (ページ番号を指定ができます。1～2 を入力すると 1 ページ目から 2 ページ目まで、3 を入力するとページ 3 目まで表示されます。)
+      (次に、ページ番号を指定するように指示されます。例えば、"1-3 "と入力すると1ページから3ページが指定され、"4 "と入力すると4ページだけが指定されます。)
 
 ## 使用上の注意
 1. **このプログラムは、個人的な利用を目的とし、pixiv FanboxおよびFantiaから画像を手動でダウンロードする時間を短縮するためのものです。このプログラムを使用して、Fantiaまたはpixiv Fanboxの利用規約を破らないようにしてください。**
