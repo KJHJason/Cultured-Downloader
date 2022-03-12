@@ -63,12 +63,12 @@ Although the program has Japanese language support, most of them are translated 
 * **Allow multiple URLs input**
 * **Allow downloads of attachments such as videos, psd, etc.**
 * **5 Download Options**
-    * Downloading a Fantia image url such as "https://fantia.jp/posts/1234567/post_content_photo/1234567"
+    * Downloading a Fantia image url such as "https://fantia.jp/posts/1234567/post_content_photo/1234567"<br>
       (with a simple auto detection system to detect the numbers of images to download based on the url if the user opted for it)
     * Downloading all the images or attachment files (videos, psd, etc.) in a Fantia post based on a URL such as "https://fantia.jp/posts/1234567"
     * Downloading all the images or attachment files (videos, psd, etc.) in a pixiv Fanbox post based on a URL such as "https://www.fanbox.cc/@creator_name/posts/1234567"
     * Downloading images or attachment files (videos, psd, etc.) from Fantia's all posts page URL such as "https://fantia.jp/fanclubs/1234/posts"
-    * Downloading images or attachment files (videos, psd, etc.) from pixiv Fanbox's all posts page URL such as "https://www.fanbox.cc/@creator_name/posts"
+    * Downloading images or attachment files (videos, psd, etc.) from pixiv Fanbox's all posts page URL such as "https://www.fanbox.cc/@creator_name/posts"<br>
       (Allows the user to specify the page num by entering 1-2 or 3 to indicate page 1 to page 2 or page 3 respectively)
 
 ## Usage Notes
@@ -113,12 +113,12 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 * **複数URLの入力ができます**
 * **ビデオ、psdなどの添付ファイルのダウンロードができます**
 * **5 ダウンロードオプション**
-    * "https://fantia.jp/posts/1234567/post_content_photo/1234567" のようなFantiaの画像urlをダウンロードする。
+    * "https://fantia.jp/posts/1234567/post_content_photo/1234567" のようなFantiaの画像urlをダウンロードする。<br>
       (ユーザーが選択した場合、URLに基づいてダウンロードする画像の数を検出するための簡単な自動検出システム付き)
     * "https://fantia.jp/posts/1234567" などのURLをもとに、Fantiaの投稿に含まれるすべての画像や添付ファイルをダウンロードする。
     * "https://www.fanbox.cc/@creator_name/posts/1234567" などのURLをもとに、pixivファンボックスの投稿内の画像や添付ファイルをすべてダウンロードする。
     * Fantiaの全投稿ページURLの "https://fantia.jp/fanclubs/1234/posts" などから画像や添付ファイルをダウンロードすることができます。
-    * pixivファンボックスの全投稿ページURLの "https://www.fanbox.cc/@creator_name/posts" などから画像や添付ファイルをダウンロードすることができます。
+    * pixivファンボックスの全投稿ページURLの "https://www.fanbox.cc/@creator_name/posts" などから画像や添付ファイルをダウンロードすることができます。<br>
       (ページ番号を指定ができます。1～2 を入力すると 1 ページ目から 2 ページ目まで、3 を入力するとページ 3 目まで表示されます。)
 
 ## 使用上の注意
