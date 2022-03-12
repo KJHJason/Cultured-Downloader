@@ -2296,6 +2296,7 @@ def main():
                     postURLToDownloadArray = []
                     for postURL in fantiaPostPreviewURLArray: 
                         driver.get(postURL)
+                        sleep(3)
                         try: posts = driver.find_elements(by=By.XPATH, value="//a[@class='link-block']")
                         except: posts = []
 
@@ -2509,6 +2510,7 @@ def main():
                     postURLToDownloadArray = []
                     for postURL in pixivPostPreviewURLArray: 
                         driver.get(postURL)
+                        sleep(3)
                         try: posts = driver.find_elements(by=By.XPATH, value="//a[@class='sc-1bjj922-0 gwbPAH']")
                         except: posts = []
 
@@ -2519,7 +2521,7 @@ def main():
                         counter = 0
                         for postURL in postURLToDownloadArray:
                             downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
-                            download(postURL, "FantiaPost", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
+                            download(postURL, "Pixiv", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
                     else:
                         print_in_both_en_jp(
