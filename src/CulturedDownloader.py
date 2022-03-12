@@ -1905,7 +1905,7 @@ def main():
                                 f"{F.LIGHTYELLOW_EX}For example,\n\"https://fantia.jp/posts/1234567/post_content_photo/1234567, https://fantia.jp/posts/1147606/post_content_photo/7194106\"{END}"
                             ), 
                             jp=(
-                                f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}"
+                                f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}",
                                 f"{F.LIGHTYELLOW_EX}例えば、\n\"https://fantia.jp/posts/1234567/post_content_photo/1234567, https://fantia.jp/posts/1147606/post_content_photo/7194106\"{END}"
                             )
                         )
@@ -2068,7 +2068,7 @@ def main():
                                     f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
                                 ),
                                 jp=(
-                                    f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                                    f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
                                     f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
                                 )
                             )
@@ -2133,7 +2133,7 @@ def main():
                             f"{F.LIGHTYELLOW_EX}For example,\n\"https://fantia.jp/posts/1147606, https://fantia.jp/posts/1086639\"{END}"
                         ), 
                         jp=(
-                            f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}"
+                            f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}",
                             f"{F.LIGHTYELLOW_EX}例えば、\n\"https://fantia.jp/posts/1147606, https://fantia.jp/posts/1086639\"{END}"
                         )
                     )
@@ -2172,7 +2172,7 @@ def main():
                             f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
                         ),
                         jp=(
-                            f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
                             f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
                         )
                     )
@@ -2204,19 +2204,20 @@ def main():
                 startDownloadingFlag = True
                 print("\n")
                 print_in_both_en_jp(
-                    en=(f"{F.LIGHTYELLOW_EX}This option is for URL such as https://fantia.jp/fanclubs/5744/posts?page=1{END}"), 
-                    jp=(f"{F.LIGHTYELLOW_EX}このオプションは、https://fantia.jp/fanclubs/5744/posts?page=1 のようなURLのためのものです。{END}")
+                    en=(f"{F.LIGHTYELLOW_EX}This option is for URL such as https://fantia.jp/fanclubs/5744/posts{END}"), 
+                    jp=(f"{F.LIGHTYELLOW_EX}このオプションは、https://fantia.jp/fanclubs/5744/posts のようなURLのためのものです。{END}")
                 )
                 while True:
+                    print("\n")
                     print_in_both_en_jp(
                         en=(
                             f"{F.LIGHTYELLOW_EX}However, please enter the base URL first! (e.g. https://fantia.jp/fanclubs/5744/posts){END}",
-                            f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls. (e.g. https://fantia.jp/fanclubs/5744/posts, https://fantia.jp/fanclubs/14935/posts){END}"
+                            f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls.\n(e.g. https://fantia.jp/fanclubs/5744/posts, https://fantia.jp/fanclubs/14935/posts){END}",
                             f"{F.LIGHTYELLOW_EX}Afterwards, you will be prompted to enter the number of pages in this format, \"1-5\" or \"5\" to indicate page 1 to 5 or page 5 respectively.{END}"
                         ), 
                         jp=(
-                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://fantia.jp/fanclubs/5744/posts)。{END}"
-                            f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。 (例: https://fantia.jp/fanclubs/5744/posts、https://fantia.jp/fanclubs/14935/posts)。{END}"
+                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://fantia.jp/fanclubs/5744/posts)。{END}",
+                            f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。\n(例: https://fantia.jp/fanclubs/5744/posts、https://fantia.jp/fanclubs/14935/posts)。{END}",
                             f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
                         )
                     )
@@ -2287,7 +2288,7 @@ def main():
                             f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}"
                         ),
                         jp=(
-                            f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
                             f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}"
                         )
                     )
@@ -2346,7 +2347,7 @@ def main():
                             f"{F.LIGHTYELLOW_EX}For example,\n\"https://www.fanbox.cc/@gmkj0324/posts/3103384, https://www.fanbox.cc/@gmkj0324/posts/3072263\"{END}"
                         ), 
                         jp=(
-                            f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}"
+                            f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}",
                             f"{F.LIGHTYELLOW_EX}例えば、\n\"https://www.fanbox.cc/@gmkj0324/posts/3103384, https://www.fanbox.cc/@gmkj0324/posts/3072263\"{END}"
                         )
                     )
@@ -2385,7 +2386,7 @@ def main():
                             f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}"
                         ),
                         jp=(
-                            f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
                             f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}"
                         )
                     )
@@ -2424,12 +2425,12 @@ def main():
                     print_in_both_en_jp(
                         en=(
                             f"{F.LIGHTYELLOW_EX}However, please enter the base URL first! (e.g. https://www.fanbox.cc/@creator_name/posts){END}",
-                            f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls. (e.g. https://www.fanbox.cc/@creator_name_one/posts, https://www.fanbox.cc/@creator_name_two/posts){END}"
+                            f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls.\n(e.g. https://www.fanbox.cc/@creator_name_one/posts, https://www.fanbox.cc/@creator_name_two/posts){END}",
                             f"{F.LIGHTYELLOW_EX}Afterwards, you will be prompted to enter the number of pages in this format, \"1-5\" or \"5\" to indicate page 1 to 5 or page 5 respectively.{END}"
                         ), 
                         jp=(
-                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://www.fanbox.cc/@creator_name/posts)。{END}"
-                            f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。 (例: https://www.fanbox.cc/@creator_name_one/posts、https://www.fanbox.cc/@creator_name_two/posts)。{END}"
+                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://www.fanbox.cc/@creator_name/posts)。{END}",
+                            f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。\n(例: https://www.fanbox.cc/@creator_name_one/posts、https://www.fanbox.cc/@creator_name_two/posts)。{END}",
                             f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
                         )
                     )
@@ -2500,7 +2501,7 @@ def main():
                             f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}"
                         ),
                         jp=(
-                            f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}"
+                            f"{F.YELLOW}pixivからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
                             f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}"
                         )
                     )
