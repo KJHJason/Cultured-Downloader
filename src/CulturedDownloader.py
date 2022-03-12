@@ -1337,7 +1337,6 @@ def download(urlInput, website, subFolderPath, **options):
                     downloadFolder = subFolderPath.joinpath("downloaded_images")
 
             print_progress_bar(totalImageProgress, totalImages, downloadMessage)
-  
             totalImageProgress += 1
 
         print_download_completion_message(totalImages, subFolderPath, attachment=downloadAttachmentFlag)
@@ -1385,9 +1384,9 @@ def download(urlInput, website, subFolderPath, **options):
                 if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalImages}{END}"
                 elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalImages} をダウンロード中"
 
-            progress += 1
             print_progress_bar(progress, totalImages, downloadMessage)
-
+            progress += 1
+            
         print_download_completion_message(totalImages, subFolderPath, attachment=downloadAttachmentFlag)
 
     else: raise Exception("Invalid website argument in download function...")
