@@ -1,41 +1,64 @@
-import Header
-__author__ = Header.__author__
-__copyright__ = Header.__copyright__
-__license__ = Header.__license__
-__version__ = Header.__version__
-
-# Import Third-party Libraries
-import requests, dill
-from colorama import init as coloramaInit
-from colorama import Style
-from colorama import Fore as F
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service as chromeService
-from selenium.webdriver.chrome.options import Options as chromeOptions
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-from selenium.webdriver.edge.service import Service as edgeService
-from selenium.webdriver.edge.options import Options as edgeOptions
-from Crypto.Cipher import ChaCha20_Poly1305 as Cha
-from Crypto.Random import get_random_bytes
-
-# Import Standard Libraries
-import pathlib, json, sys, logging, webbrowser, re
-from urllib.parse import urlparse
-from json.decoder import JSONDecodeError
-from time import sleep
-from datetime import datetime
-from shutil import rmtree, copyfileobj, move
-from base64 import b64encode, b64decode
+# Import Standard Library, os, to close the program
 from os import _exit as osExit
 
+try:
+    import Header
+    __author__ = Header.__author__
+    __copyright__ = Header.__copyright__
+    __license__ = Header.__license__
+    __version__ = Header.__version__
+except ImportError:
+    print("Could not import Header module/Header モジュールのインポートに失敗しました...")
+    input("Please enter any key to exit/何か入力すると終了します...")
+    osExit()
+
+# Import Third-party Libraries
+try:
+    import requests, dill
+    from colorama import init as coloramaInit
+    from colorama import Style
+    from colorama import Fore as F
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException
+    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+    from webdriver_manager.chrome import ChromeDriverManager
+    from selenium.webdriver.chrome.service import Service as chromeService
+    from selenium.webdriver.chrome.options import Options as chromeOptions
+    from webdriver_manager.microsoft import EdgeChromiumDriverManager
+    from selenium.webdriver.edge.service import Service as edgeService
+    from selenium.webdriver.edge.options import Options as edgeOptions
+    from Crypto.Cipher import ChaCha20_Poly1305 as Cha
+    from Crypto.Random import get_random_bytes
+except (ImportError, ModuleNotFoundError):
+    print("Failed to import third-party libraries/サードパーティーライブラリのインポートに失敗しました...")
+    input("Please enter any key to exit/何か入力すると終了します...")
+    osExit()
+
+# Import Standard Libraries
+try:
+    import pathlib, json, sys, logging, webbrowser, re
+    from urllib.parse import urlparse
+    from json.decoder import JSONDecodeError
+    from time import sleep
+    from datetime import datetime
+    from shutil import rmtree, copyfileobj, move
+    from base64 import b64encode, b64decode
+except (ImportError, ModuleNotFoundError):
+    print("Failed to import standard libraries/標準ライブラリのインポートに失敗しました...")
+    print("Please use Python 3.8.X and above/Python 3.8.X以降をご使用ください。")
+    input("Please enter any key to exit/何か入力すると終了します...")
+    osExit()
+
 # Importing my Python Files as Modules
-from EncryptedData import EncryptedData
+try:
+    from EncryptedData import EncryptedData
+except (ImportError, ModuleNotFoundError):
+    print("Failed to import EncryptedData module/EncryptedData モジュールのインポートに失敗しました...")
+    input("Please enter any key to exit/何か入力すると終了します...")
+    osExit()
 
 """--------------------------- Custom Errors ---------------------------"""
 
