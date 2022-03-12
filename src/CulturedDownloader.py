@@ -683,8 +683,13 @@ def get_default_download_directory():
 def get_key():
     """
     To get the key for encryption and decryption which will return a 32 bytes string
+
+    Note: it will create the configs folder if the configs has not been created yet.
     """
-    keyPath = get_saved_config_data_folder().joinpath("configs", "key")
+    configFolder = get_saved_config_data_folder().joinpath("configs")
+    configFolder.mkdir(parents=True, exist_ok=True)
+
+    keyPath = configFolder.joinpath("key")
     if keyPath.is_file():
         with open(keyPath, "rb") as f:
             key = dill.load(f)
