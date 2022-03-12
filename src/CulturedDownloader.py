@@ -2681,17 +2681,26 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
     try:
         main()
     except SystemExit:
+        try: driver.quit()
+        except: pass
+
         osExit(1)
     except KeyboardInterrupt:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
-        sleep(2)
+        try: driver.quit()
+        except: pass
+        
+        sleep(1)
         osExit(0)
     except (EncryptionKeyError, DecryptError):
-        driver.quit()
+        try: driver.quit()
+        except: pass
+        
         delete_encrypted_data()
         osExit(1)
     except (SessionError, EOFError):
-        driver.quit()
+        try: driver.quit()
+        except: pass
 
         # deletes any saved files created by this program
         remove_any_files_in_directory(get_saved_config_data_folder().joinpath("configs"))
@@ -2703,8 +2712,12 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         input()
         osExit(1)
     except:
+        try: driver.quit()
+        except: pass
+
         print_error_log_notification()
         log_error()
+
         input("Please enter any key to exit/何か入力すると終了します...")
         osExit(1)
 
