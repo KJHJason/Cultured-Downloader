@@ -1471,11 +1471,11 @@ def login(currentDriver, website):
 
     print_in_both_en_jp(
         en=(
-            f"{F.LIGHTYELLOW_EX}A new browser should have opened.{END}",
+            f"{F.LIGHTYELLOW_EX}A new browser should have opened. However, please do not close it at all times!{END}",
             f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to {website.title()} manually.{END}",
         ),
         jp=(
-            f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。{END}", 
+            f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。ただし、常に閉じないようにしてください！{END}", 
             f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動で{website.title()}にログインしてください。{END}",
         )
     )
