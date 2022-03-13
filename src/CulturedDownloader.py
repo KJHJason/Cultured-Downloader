@@ -1934,9 +1934,8 @@ def main():
         driver = get_driver(loadBrowser)
 
     # retrieve cookie if exists
-    pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
-
     pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
+    pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
             
     if not fantiaCookieLoaded or not pixivCookieLoaded:
         print("\n")
@@ -1952,7 +1951,7 @@ def main():
 
     if pixivCookieLoaded and pixivCookieExist: pixivSession = get_cookie_for_session("pixiv")
     elif pixivCookieLoaded and not pixivCookieExist: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
-    else: pixivSession = None # None instead of "" so that it won't raise a SessionError
+    else: pixivSession = None # None instead of "" so that it won't raise a SessionError since the user might not have chosen to login
 
     if pixivSession == "": raise SessionError
 
