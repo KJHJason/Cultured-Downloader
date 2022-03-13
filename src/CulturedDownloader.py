@@ -837,11 +837,6 @@ def check_if_input_is_url(inputString, website):
                         return True
                     else:
                         return False
-                elif website == "fantiaImage":
-                    if re.fullmatch(fantiaImageURLRegex, inputString):
-                        return True
-                    else:
-                        return False
                 elif website == "pixivFanbox":
                     if re.match(pixivFanboxPostRegex, inputString):
                         return True
@@ -868,8 +863,6 @@ def check_if_input_is_url(inputString, website):
 
                 if website == "fantiaPost":
                     if not re.fullmatch(fantiaPostRegex, url): return False
-                elif website == "fantiaImage":
-                    if not re.fullmatch(fantiaImageURLRegex, url): return False
                 elif website == "pixivFanbox":
                     if not re.match(pixivFanboxPostRegex, url): return False
                 elif website == "fantiaPostPage":
@@ -2438,14 +2431,12 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     global fantiaPostRegex
-    global fantiaImageURLRegex
     global fantiaPostPageRegex
     global pixivFanboxPostRegex
     global pixivFanboxPostPageRegex
     global pageNumRegex
 
     fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d{1,}")
-    fantiaImageURLRegex = re.compile(r"(https://fantia.jp/posts/)\d{1,}(/post_content_photo/)\d{1,}")
     fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d{1,}(/posts)")
     pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)\w{1,}(/posts/)\d{1,}")
     pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)\w{1,}(/posts)") 
