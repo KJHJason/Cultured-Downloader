@@ -39,7 +39,7 @@ except (ImportError, ModuleNotFoundError):
 
 # Import Standard Libraries
 try:
-    import pathlib, json, sys, logging, webbrowser, re
+    import pathlib, json, sys, logging, webbrowser, re, platform
     from urllib.parse import urlparse
     from json.decoder import JSONDecodeError
     from time import sleep
@@ -294,9 +294,23 @@ def check_if_json_file_exists():
 
 def get_saved_config_data_folder():
     """
-    Returns a pathlib Path object of the saved config data folder which is in the AppData LocalLow folder.
+    Returns a pathlib Path object of the saved config data folder according to the OS platform.
+
+    Supported OS: Windows, Linux, macOS
     """
-    dataDirectory = pathlib.Path.home().joinpath("AppData", "LocalLow", "Cultured Downloader")
+    osPlatform = platform.system()
+    if osPlatform == "Windows":
+        dataDirectory = pathlib.Path.home().joinpath("AppData/Roaming/CulturedDownloader")
+    elif osPlatform == "Linux":
+        dataDirectory = pathlib.Path.home().joinpath(".config/CulturedDownloader")
+    elif osPlatform == "Darwin": # macOS
+        dataDirectory = pathlib.Path.home().joinpath("Library/Preferences/CulturedDownloader")
+    else:
+        print(f"{F.RED}Your OS is not supported/お使いのOSはサポートされていません...{END}")
+        print(f"{F.RED}Supported OS/サポートされているOS: Windows, Linux, macOS...{END}")
+        input("Please enter any key to exit/何か入力すると終了します...")
+        osExit(1)
+
     dataDirectory.mkdir(parents=True, exist_ok=True)
     return dataDirectory
 
@@ -520,9 +534,11 @@ def get_lang():
 
     If the user has not set a preferred language in config.json, this function will call another function, set_lang, to ask the user to select a language and then save it to config.json for future runs.
     """
-    with open(jsonPath, "r") as f:
-        config = json.load(f)
+    config = {}
     try:
+        with open(jsonPath, "r") as f:
+            config = json.load(f)
+
         prefLang = config["Language"]
         if prefLang == "": raise Exception("Key is empty.")
         return prefLang
@@ -593,7 +609,7 @@ def set_default_download_directory_to_desktop(jsonConfig):
     Requires one argument to be defined:
     - the config dictionary obtained from reading config.json
     """
-    defaultDownloadFolderPath = pathlib.Path.home().joinpath("Desktop", "Cultured Downloader")
+    defaultDownloadFolderPath = pathlib.Path.home().joinpath("Desktop", "CulturedDownloader")
     jsonConfig["Download_Directory"] = str(defaultDownloadFolderPath)
     with open(jsonPath, "w") as f:
         json.dump(jsonConfig, f, indent=4)
@@ -610,25 +626,36 @@ def set_default_download_directory_to_desktop(jsonConfig):
     )
     return defaultDownloadFolderPath
 
-def set_default_download_directory(jsonConfig):
+def set_default_download_directory(jsonConfig, **options):
     """
     To set the user's default download directory by prompting to enter the full path on their pc and save it to config.json
 
     Requires one argument to be defined:
     - the config dictionary obtained from reading config.json
+
+    Optional arguments:
+    - setDefaultLocationUponCancellation (bool): If False, it NOT will set the default download directory to the desktop if user do not want to change the default download directory.
+    --> Default: True
     """
+    setDefaultLocationCondition = options.get("setDefaultLocationUponCancellation")
+    if setDefaultLocationCondition == None: setDefaultLocationCondition = True
+
     if lang == "en": 
         downloadFolderPrompt = "Would you like to change the default download location? (y/n): "
         downloadFolderChangePrompt = "Enter the FULL path of the download folder (X to cancel): "
     elif lang == "jp": 
         downloadFolderPrompt = "デフォルトのダウンロード場所を変更しますか？(y/n)： "
         downloadFolderChangePrompt = "ダウンロードフォルダのフルパスを入力してください (\"X\"でキャンセル)： "
-
-    else: downloadFolderPrompt = "Would you like to change the default download location?/デフォルトのダウンロード場所を変更しますか？ (y/n):"
+    else: 
+        downloadFolderPrompt = "Would you like to change the default download location?/デフォルトのダウンロード場所を変更しますか？ (y/n):"
+        downloadFolderChangePrompt = "Enter the FULL path of the download folder (X to cancel)/\nダウンロードフォルダのフルパスを入力してください (\"X\"でキャンセル)： "
 
     downloadFolderChangeInput = get_input_from_user(prompt=downloadFolderPrompt, command=("y", "n"))
 
-    if downloadFolderChangeInput == "n": return set_default_download_directory_to_desktop(jsonConfig)
+    if downloadFolderChangeInput == "n": 
+        if setDefaultLocationCondition: return set_default_download_directory_to_desktop(jsonConfig)
+        else: return
+
     while True:
         downloadPath = input(downloadFolderChangePrompt).strip()
         if downloadPath == "x" or downloadPath == "X": return set_default_download_directory_to_desktop(jsonConfig)
@@ -664,9 +691,11 @@ def get_default_download_directory():
 
     If there is a JSONDecodeError, it will write an empty dictionary to config.json
     """
-    with open(jsonPath, "r") as f:
-        config = json.load(f)
+    config = {}
     try:
+        with open(jsonPath, "r") as f:
+            config = json.load(f)
+
         prefDownloadDirectory = config["Download_Directory"]
         if prefDownloadDirectory == "": raise Exception("Key is empty.")
 
@@ -1608,7 +1637,9 @@ def save_and_load_cookie(originalDriver, website, **options):
 
 def get_page_num(userURLInput):
     """
-    Used for retreiving the number of pages to go through for option 3 and 5 for downloading all posts in an all post preview page.
+    Used for retreiving the number of pages to go through from the user's input.
+
+    Note: It uses the compiled regex to check for input validity such as "1-2", or "1".
 
     Requires one argument to be defined:
     - The user's URL input (string or list)
@@ -1721,19 +1752,18 @@ def print_menu():
 > Pixiv: {pixivStatus}
 {END}
 --------------------- {F.LIGHTYELLOW_EX}ダウンロードのオプション{END} ---------------------
-      {F.GREEN}1. 画像URLでFantiaから画像をダウンロードする{END}
-      {F.GREEN}2. Fantia投稿URLから画像をダウンロードする{END}
-      {F.GREEN}3. 全投稿プレビューページのURLからFantiaの全投稿をダウンロードする。{END}
-      {F.CYAN}4. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
-      {F.CYAN}5. 全投稿プレビューページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
+      {F.GREEN}1. Fantia投稿URLから画像をダウンロードする{END}
+      {F.GREEN}2. 全投稿ページのURLからFantiaの全投稿をダウンロードする。{END}
+      {F.CYAN}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
+      {F.CYAN}4. 全投稿ページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}コンフィグのオプション{END} ----------------------
-      {F.LIGHTBLUE_EX}6. デフォルトのダウンロードフォルダを変更する{END}
-      {F.LIGHTBLUE_EX}7. ブラウザを変更する{END}
-      {F.LIGHTBLUE_EX}8. 言語を変更する{END}
+      {F.LIGHTBLUE_EX}5. デフォルトのダウンロードフォルダを変更する{END}
+      {F.LIGHTBLUE_EX}6. ブラウザを変更する{END}
+      {F.LIGHTBLUE_EX}7. 言語を変更する{END}
 """
         if fantiaStatus == "ゲスト（ログインしていない）" or pixivStatus == "ゲスト（ログインしていない）":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}9. ログインする{END}\n"""
+            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}8. ログインする{END}\n"""
         else:
             menuAdditionalOptions = ""
 
@@ -1759,19 +1789,18 @@ def print_menu():
 > Pixiv: {pixivStatus}
 {END}
 --------------------- {F.LIGHTYELLOW_EX}Download Options{END} --------------------
-      {F.GREEN}1. Download images from Fantia using an image URL{END}
-      {F.GREEN}2. Download images from a Fantia post URL{END}
-      {F.GREEN}3. Download all Fantia posts from an all posts preview page URL{END}
-      {F.CYAN}4. Download images from a pixiv Fanbox post URL{END}
-      {F.CYAN}5. Download all pixiv Fanbox posts from an all posts preview page URL{END}
+      {F.GREEN}1. Download images from a Fantia post URL{END}
+      {F.GREEN}2. Download all Fantia posts from an all posts page URL{END}
+      {F.CYAN}3. Download images from a pixiv Fanbox post URL{END}
+      {F.CYAN}4. Download all pixiv Fanbox posts from an all posts page URL{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{END} ----------------------
-      {F.LIGHTBLUE_EX}6. Change Default Download Folder{END}
-      {F.LIGHTBLUE_EX}7. Change Default Browser{END}
-      {F.LIGHTBLUE_EX}8. Change Language{END}
+      {F.LIGHTBLUE_EX}5. Change Default Download Folder{END}
+      {F.LIGHTBLUE_EX}6. Change Default Browser{END}
+      {F.LIGHTBLUE_EX}7. Change Language{END}
 """
         if fantiaStatus == "Guest (Not logged in)" or pixivStatus == "Guest (Not logged in)":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}9. Login{END}\n"""
+            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}8. Login{END}\n"""
         else:
             menuAdditionalOptions = ""
 
@@ -1806,6 +1835,8 @@ def main():
     if pythonMainVer < 3 or pythonSubVer < 8:
         print(f"{F.RED}Fatal Error: This program requires running Python 3.8 or higher!", f"You are running Python {pythonMainVer}.{pythonSubVer}{F.RESET}"),
         print("{F.RED}致命的なエラー： このプログラムにはPython 3.8以上が必要です。", f"あなたはPython {pythonMainVer}.{pythonSubVer}を実行しています。{F.RESET}")
+        input("Please enter any key to exit/何か入力すると終了します...")
+        raise SystemExit
 
     # declare global variables
     global appPath
@@ -1898,237 +1929,15 @@ def main():
     if pixivSession == "": raise SessionError
 
     cmdInput = ""
-    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "9" "d", "dc", "x", "y")
+    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "dc", "x", "y")
     while cmdInput != "x":
         print_menu()
         if lang == "en":
             cmdInput = get_input_from_user(prompt="Enter command: ", command=cmdCommands, warning="Invalid command input, please enter a valid command from the menu above.")
         else:
             cmdInput = get_input_from_user(prompt="コマンドを入力してください： ", command=cmdCommands, warning="不正なコマンド入力です。上のメニューから正しいコマンドを入力してください。")
+
         if cmdInput == "1":
-            imagePath = create_subfolder("fantia")
-            if imagePath != "X":
-                startDownloadingFlag = True
-                if lang == "en": autoDetectPrompt = "Would you like to automatically detect the number of images to download? (y/n/X to cancel): """
-                else: autoDetectPrompt = "ダウンロードする画像の枚数を自動的に検出しますか？ (y/n/Xでキャンセル): "
-                autoDetectNumOfImages = get_input_from_user(prompt=autoDetectPrompt, command=("y", "n", "x"))
-
-                if autoDetectNumOfImages != "x":
-                    print("\n")
-                    print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}This option is for URL such as\nhttps://fantia.jp/posts/1234567/post_content_photo/1234567{END}"), 
-                        jp=(f"{F.LIGHTYELLOW_EX}このオプションは、\nhttps://fantia.jp/posts/1234567/post_content_photo/1234567 のようなURLのためのものです。{END}")
-                    )
-                    while True:
-                        print_in_both_en_jp(
-                            en=(
-                                f"{F.LIGHTYELLOW_EX}You can put multiple urls as well by entering a comma in between each urls...{END}",
-                                f"{F.LIGHTYELLOW_EX}For example,\n\"https://fantia.jp/posts/1234567/post_content_photo/1234567, https://fantia.jp/posts/1147606/post_content_photo/7194106\"{END}"
-                            ), 
-                            jp=(
-                                f"{F.LIGHTYELLOW_EX}各URLの間にカンマを入力することで、複数のURLを入れることも可能です...{END}",
-                                f"{F.LIGHTYELLOW_EX}例えば、\n\"https://fantia.jp/posts/1234567/post_content_photo/1234567, https://fantia.jp/posts/1147606/post_content_photo/7194106\"{END}"
-                            )
-                        )
-                        if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of the first image (X to cancel): "))
-                        else: urlInput = split_inputs_to_possible_multiple_inputs(input("最初の画像のURLを入力してください (Xでキャンセル)： "))
-
-                        if urlInput == "x" or urlInput == "X":
-                            startDownloadingFlag = False
-                            break
-
-                        if (urlInput == "") or (check_if_input_is_url(urlInput, "fantiaImage") == False): 
-                            print_in_both_en_jp(
-                                en=(
-                                    f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
-                                ),
-                                jp=(
-                                    f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
-                                )
-                            )
-                        else: break
-
-                    if startDownloadingFlag:
-                        allValidNum = True
-                        urlArray = []
-                        numOfImagesToDownload = []
-                        if autoDetectNumOfImages == "y":
-                            if type(urlInput) == list:
-                                for url in urlInput:
-                                    imageCounter = 0
-                                    while True:
-                                        driver.get(url)
-                                        logs = driver.get_log("performance")
-                                        if get_status(logs) != 200: break
-
-                                        imageCounter += 1
-                                        urlArray.append(url)
-
-                                        # increment the url by one to retrieve the next image
-                                        splitURL = url.split("/")
-                                        urlNum = str(int(splitURL[-1]) + 1)
-                                        urlPartsArray = splitURL[0:-1]
-                                        urlPartsArray.append(urlNum)
-                                        url = "/".join(urlPartsArray)
-                                        del urlPartsArray
-                                    numOfImagesToDownload.append(imageCounter)
-                            else:
-                                while True:
-                                    driver.get(urlInput)
-                                    logs = driver.get_log("performance")
-                                    if get_status(logs) != 200: break
-
-                                    urlArray.append(urlInput)
-
-                                    # increment the urlInput by one to retrieve the next image
-                                    splitURL = urlInput.split("/")
-                                    urlNum = str(int(splitURL[-1]) + 1)
-                                    urlPartsArray = splitURL[0:-1]
-                                    urlPartsArray.append(urlNum)
-                                    urlInput = "/".join(urlPartsArray)
-                                    del urlPartsArray
-                                numOfImagesToDownload.append(len(urlArray))
-                        else:
-                            while True:
-                                print_in_both_en_jp(
-                                    en=(f"{F.YELLOW}Note: If you have entered multiple urls previously, please enter in this format, \"1, 2, 30, 1\"{END}"),
-                                    jp=(f"{F.YELLOW}注意： 以前に複数のURLを入力したことがある場合は、このフォーマットで入力してください。\"1、2、30、1\"{END}")
-                                )
-                                if lang == "en":
-                                    numOfImagesToDownloadInput = split_inputs_to_possible_multiple_inputs(input("Enter the number of images to download (X to cancel): "))
-                                else:
-                                    numOfImagesToDownloadInput = split_inputs_to_possible_multiple_inputs(input("ダウンロードする画像の枚数を入力してください (Xでキャンセル)： "))
-                                if numOfImagesToDownloadInput == "x" or numOfImagesToDownloadInput == "X": 
-                                    allValidNum = False
-                                    break
-
-                                if type(numOfImagesToDownloadInput) == list:
-                                    for number in numOfImagesToDownloadInput:
-                                        try: int(number)
-                                        except: 
-                                            allValidNum = False
-                                            break
-                                else:
-                                    try: 
-                                        int(numOfImagesToDownloadInput)
-                                        numOfImagesToDownload.append(numOfImagesToDownloadInput)
-                                    except: allValidNum = False
-                                
-                                if allValidNum: 
-                                    addToArray = True
-                                    if type(urlInput) == list and type(numOfImagesToDownloadInput) == list:
-                                        if len(numOfImagesToDownloadInput) != len(urlInput):
-                                            print_in_both_en_jp(
-                                                en=(f"{F.RED}Error: The number of images to download is not the same as the number of urls entered previously.{END}"),
-                                                jp=(f"{F.RED}エラー： ダウンロードする画像の枚数が、以前に入力したURLの枚数と異なります。{END}")
-                                            )
-                                            addToArray = False
-                                    else:
-                                        if type(urlInput) == list and type(numOfImagesToDownloadInput) != list: 
-                                            print_in_both_en_jp(
-                                                en=(f"{F.RED}Error: The number of images to download is not the same as the number of urls entered previously.{END}"),
-                                                jp=(f"{F.RED}エラー： ダウンロードする画像の枚数が、以前に入力したURLの枚数と異なります。{END}")
-                                            )
-                                            addToArray = False
-                                        elif type(urlInput) != list and type(numOfImagesToDownloadInput) == list: 
-                                            print_in_both_en_jp(
-                                                en=(f"{F.RED}Error: The number of images to download is not the same as the number of urls entered previously.{END}"),
-                                                jp=(f"{F.RED}エラー： ダウンロードする画像の枚数が、以前に入力したURLの枚数と異なります。{END}")
-                                            )
-                                            addToArray = False
-
-                                    if addToArray:
-                                        if type(urlInput) == list:
-                                            arrayPointer = 0
-                                            for url in urlInput:
-                                                imageCounter = 0
-                                                for i in range(int(numOfImagesToDownload[arrayPointer])):
-                                                    driver.get(url)
-                                        
-                                                    imageCounter += 1
-                                                    urlArray.append(url)
-
-                                                    # increment the url by one to retrieve the next image
-                                                    splitURL = url.split("/")
-                                                    urlNum = str(int(splitURL[-1]) + 1)
-                                                    urlPartsArray = splitURL[0:-1]
-                                                    urlPartsArray.append(urlNum)
-                                                    url = "/".join(urlPartsArray)
-                                                    del urlPartsArray
-                                                        
-                                                arrayPointer += 1
-                                        else:
-                                            for i in range(int(numOfImagesToDownload[0])):
-                                                driver.get(urlInput)
-                            
-                                                urlArray.append(urlInput)
-
-                                                # increment the urlInput by one to retrieve the next image
-                                                splitURL = urlInput.split("/")
-                                                urlNum = str(int(splitURL[-1]) + 1)
-                                                urlPartsArray = splitURL[0:-1]
-                                                urlPartsArray.append(urlNum)
-                                                urlInput = "/".join(urlPartsArray)
-                                                del urlPartsArray
-
-                                            numOfImagesToDownload.append(len(urlArray))
-
-                                        break
-                                else:
-                                    print_in_both_en_jp(
-                                        en=(f"{F.RED}Error: The number of images to download is not valid.{END}"),
-                                        jp=(f"{F.RED}エラー： ダウンロードする画像の枚数が無効です。{END}")
-                                    )
-
-                        if allValidNum:
-                            totalImages = len(urlArray)
-                            print("\n")
-                            print_in_both_en_jp(
-                                en=(
-                                    f"{F.YELLOW}Please wait as auto downloading files from Fantia can take quite a while if the file size is large...{END}",
-                                    f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}",
-                                    f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
-                                ),
-                                jp=(
-                                    f"{F.YELLOW}Fantiaからのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                                    f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}",
-                                    f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
-                                )
-                            )
-                            print("\n")
-                            if totalImages != 0:
-                                imageCounter = 0
-                                arrayPointer = 0
-                                progress = 0
-                                
-                                imageFolderPath = imagePath.joinpath(str(arrayPointer))
-                                for url in urlArray:
-                                    if progress == 0:
-                                        if lang == "en":
-                                            print_progress_bar(progress, totalImages, f"{F.LIGHTYELLOW_EX}Downloading image no.{progress} out of {totalImages}{END}")
-                                        else:
-                                            print_progress_bar(progress, totalImages, f"画像 {progress} / {totalImages} をダウンロード中")
-                                        progress += 1
-
-                                    imageCounter += 1
-
-                                    download(url, "FantiaImageURL", imageFolderPath)
-
-                                    if imageCounter == int(numOfImagesToDownload[arrayPointer]):
-                                        arrayPointer += 1
-                                        imageFolderPath = imagePath.joinpath(str(arrayPointer))
-                                        imageCounter = 0
-
-                                    if lang == "en":
-                                        print_progress_bar(progress, totalImages, f"{F.LIGHTYELLOW_EX}Downloading image no.{progress} out of {totalImages}{END}")
-                                    else:
-                                        print_progress_bar(progress, totalImages, f"画像 {progress} / {totalImages} をダウンロード中")
-                                    
-                                    progress += 1
-
-                            print_download_completion_message(totalImages, imagePath)
-
-        elif cmdInput == "2":
             imagePath = create_subfolder("fantia")
             if imagePath != "X":
                 startDownloadingFlag = True
@@ -2199,7 +2008,7 @@ def main():
                             counter += 1
                     else: download(urlInput, "FantiaPost", imagePath, attachments=downloadAttachmentFlag)
 
-        elif cmdInput == "3":
+        elif cmdInput == "2":
             imagePath = create_subfolder("fantia")
             if imagePath != "X":
                 startDownloadingFlag = True
@@ -2222,8 +2031,8 @@ def main():
                             f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
                         )
                     )
-                    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of the Fantia post preview page (X to cancel): "))
-                    else: urlInput = split_inputs_to_possible_multiple_inputs(input("Fantiaの投稿プレビューページのURLを入力下さい (Xでキャンセル)： "))
+                    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of Fantia's all posts page (X to cancel): "))
+                    else: urlInput = split_inputs_to_possible_multiple_inputs(input("Fantiaの全投稿ページのURLを入力下さい (Xでキャンセル)： "))
 
                     if urlInput == "x" or urlInput == "X": 
                         startDownloadingFlag = False
@@ -2321,7 +2130,7 @@ def main():
                             )
                         )
 
-        elif cmdInput == "4":
+        elif cmdInput == "3":
             imagePath = ""
             if pixivSession != "": imagePath = create_subfolder("pixiv")
             if imagePath != "X":
@@ -2393,7 +2202,7 @@ def main():
                     else:
                         download(urlInput, "Pixiv", imagePath, attachments=downloadAttachmentFlag)
         
-        elif cmdInput == "5":
+        elif cmdInput == "4":
             imagePath = create_subfolder("pixiv")
             if imagePath != "X":
                 startDownloadingFlag = True
@@ -2415,8 +2224,8 @@ def main():
                             f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
                         )
                     )
-                    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of the pixiv Fanbox post preview page (X to cancel): "))
-                    else: urlInput = split_inputs_to_possible_multiple_inputs(input("pixivファンボックスの投稿プレビューページのURLを入力下さい (Xでキャンセル)： "))
+                    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input("Enter the URL of the pixiv Fanbox all posts page (X to cancel): "))
+                    else: urlInput = split_inputs_to_possible_multiple_inputs(input("pixivファンボックスの全投稿ページのURLを入力下さい (Xでキャンセル)： "))
 
                     if urlInput == "x" or urlInput == "X": 
                         startDownloadingFlag = False
@@ -2514,14 +2323,13 @@ def main():
                             )
                         )
 
-        elif cmdInput == "6":
-            get_default_download_directory()
+        elif cmdInput == "5":
             with open(jsonPath, "r") as f:
                 config = json.load(f)
 
-            set_default_download_directory(config)
+            set_default_download_directory(config, setDefaultLocationUponCancellation=False)
             
-        elif cmdInput == "7":
+        elif cmdInput == "6":
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
                 newDefaultBrowser = get_user_browser_preference()
@@ -2544,10 +2352,10 @@ def main():
                         jp=(f"{F.LIGHTRED_EX}注意： config.jsonのデフォルトブラウザが空です。{END}")
                     )
 
-        elif cmdInput == "8":
+        elif cmdInput == "7":
             lang = update_lang()
 
-        elif cmdInput == "9":
+        elif cmdInput == "8":
             if not check_if_user_is_logged_in():
                 pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
                 if not pixivCookieLoaded and not pixivCookieExist:
@@ -2655,7 +2463,8 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
     except SystemExit:
         try: driver.quit()
         except: pass
-
+        
+        print(f"{F.RED}Exiting/終了しています...{END}")
         osExit(1)
     except KeyboardInterrupt:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")

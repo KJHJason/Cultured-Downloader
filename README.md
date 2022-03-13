@@ -31,19 +31,20 @@ Cultured Downloader
   - [Usage Notes](#usage-notes)
   - [FAQ](#faq)
   - [Final Notes](#final-notes)
+  - [Screenshots](#screenshots)
 
-[日本語](#イントロダクション)
-  - [イントロダクション](#イントロダクション)
-  - [利用規約](#利用規約)
-  - [特徴](#特徴)
-  - [使用上の注意](#使用上の注意)
-  - [よくある質問](#よくある質問)
-  - [最終ノート](#最終ノート)
+[日本語](#jpIntro)
+  - [イントロダクション](#jpIntro)
+  - [利用規約](#jpTermOfUse)
+  - [特徴](#jpFeatures)
+  - [使用上の注意](#jpUsageNotes)
+  - [よくある質問](#jpFAQ)
+  - [最終ノート](#jpFinalNotes)
+  - [スクリーンショット](#jpScreenshots)
 
 ---
 
 ## Introduction
-
 This program allows you to download images from a pixiv Fanbox or Fantia post automatically without you doing the hassle of downloading them yourself.
 
 I did this mini-project as I was tired of downloading images manually as some artists do not provide zip files...
@@ -62,9 +63,7 @@ Although the program has Japanese language support, most of them are translated 
 ## Features
 * **Allow multiple URLs input**
 * **Allow downloads of attachments such as videos, psd, etc.**
-* **5 Download Options**
-    * Downloading a Fantia image url such as "https://fantia.jp/posts/1234567/post_content_photo/1234567"<br>
-      (with a simple auto detection system to detect the numbers of images to download based on the url if the user opted for it)
+* **4 Download Options**
     * Downloading all the images or attachment files (videos, psd, etc.) in a Fantia post based on a URL such as "https://fantia.jp/posts/1234567"
     * Downloading all the images or attachment files (videos, psd, etc.) in a pixiv Fanbox post based on a URL such as "https://www.fanbox.cc/@creator_name/posts/1234567"
     * Downloading images or attachment files (videos, psd, etc.) from Fantia's all posts page URL such as "https://fantia.jp/fanclubs/1234/posts"
@@ -80,7 +79,7 @@ Although the program has Japanese language support, most of them are translated 
 ## FAQ
 1. Does this work on other OS platforms such as macOS and Linux?
     * This program has only been tested on Windows.
-    * Hence, this program is unlikely to work for other platforms.
+    * However, I have added support for macOS and Linux but have yet to test them as I do not have a Linux or a macOS system.
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
@@ -88,10 +87,20 @@ Although the program has Japanese language support, most of them are translated 
 3. If you would like to improve on this program, you can fork this repository and make your own version and make a pull request.
 4. Though, I may or may not maintain this program depending on the workload I have as a student.
 
+## Screenshots
+<div align="center">
+  <p>Menu:</p>
+  <img width="500px" alt="menu demo" src="/res/en_menu.jpg">
+  <p>Downloading files from a post page URL:</p>
+  <img width="500px" alt="downloading posts demo" src="/res/en_post_download.jpg">
+  <p>Downloading files from multiple posts from an all post page URL:</p>
+  <img width="500px" alt="downloading multiple posts demo" src="/res/en_all_posts_download.jpg">
+</div>
+
 ---
 
 ## イントロダクション
-
+<div name="jpIntro"><div>
 pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードする手間を省いて、自動的に画像をダウンロードできるプログラムです。
 
 アーティストによってはzipファイルを提供してくれないので、手動で画像をダウンロードするのに疲れてしまったので、このミニプロジェクトを行いました...
@@ -103,18 +112,17 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 日本語に対応していますが、そのほとんどは[DeepL](https://www.deepl.com/translator)が翻訳しています。したがって、誤訳・文法的な間違いはフォークして自由に修正し、翻訳を修正した後にプルリクエストを作成してください。
 
 ## 利用規約 
-
+<div name="jpTermOfUse"><div>
 (誤訳があった場合は、英語版を優先して使用します。)
 1. 本プログラム「Cultured Downloader」は、発生した損害について一切の責任を負いかねます。このプログラムは、個人的な使用と、pixiv FanboxとFantiaから画像を手動でダウンロードする時間を節約するためのものです。
 2. 本プログラムの利用者として、Fantiaおよびpixivファンボックスの利用規約を破るような利用はしないでください。
 3. 本プログラムのユーザーとして、fantia_cookiesファイルなどのデータは絶対に他人と共有しないでください。クッキーを共有することは、ダウンロード先のアーティストに損害を与えることになりますので、おやめください。自分のデータを共有したり、他人のデータを使用していることが判明した場合。このプログラムおよび開発者は損害賠償の責任を負いませんが、関係するユーザーは責任を負うものとします。
 
 ## 特徴
+<div name="jpFeatures"><div>
 * **複数URLの入力ができます**
 * **ビデオ、psdなどの添付ファイルのダウンロードができます**
-* **5 ダウンロードオプション**
-    * "https://fantia.jp/posts/1234567/post_content_photo/1234567" のようなFantiaの画像urlをダウンロードする。<br>
-      (ユーザーが選択した場合、URLに基づいてダウンロードする画像の数を検出するための簡単な自動検出システム付き)
+* **4 ダウンロードオプション**
     * "https://fantia.jp/posts/1234567" などのURLをもとに、Fantiaの投稿に含まれるすべての画像や添付ファイルをダウンロードする。
     * "https://www.fanbox.cc/@creator_name/posts/1234567" などのURLをもとに、pixivファンボックスの投稿内の画像や添付ファイルをすべてダウンロードする。
     * Fantiaの全投稿ページURLの "https://fantia.jp/fanclubs/1234/posts" などから画像や添付ファイルをダウンロードすることができます。
@@ -122,18 +130,31 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
       (次に、ページ番号を指定するように指示されます。例えば、"1-3 "と入力すると1ページから3ページが指定され、"4 "と入力すると4ページだけが指定されます。)
 
 ## 使用上の注意
+<div name="jpUsageNotes"><div>
 1. **このプログラムは、個人的な利用を目的とし、pixiv FanboxおよびFantiaから画像を手動でダウンロードする時間を短縮するためのものです。このプログラムを使用して、Fantiaまたはpixiv Fanboxの利用規約を破らないようにしてください。**
 2. このプログラムにパスワードを提供するのが不安な場合は、ゲストとして続行することができます。ただし、会員登録が必要な投稿はダウンロードできない場合があります。
 3. 保存されたクッキーは暗号化され、AppData LocalLowフォルダー内のconfigsフォルダーに保存されます。ただし、鍵ファイルを共有している場合は、暗号化されたCookieを復号化することができますので、データを共有しないようにお願いします。
 4. ウェブサイトのデザインが変更された場合、メンテナンス/更新を行わないと、このプログラムが壊れることが予想されます。
 
 ## よくある質問
+<div name="jpFAQ"><div>
 1. macOSやLinuxなど、他のOSプラットフォームでも動作しますか？
     * 本プログラムはWindows上でのみ動作確認を行っています。
-    * したがって、このプログラムは他のプラットフォームでは動作しない可能性があります。
+    * ただし、macOSとLinuxのサポートを追加しましたが、LinuxやmacOSのシステムを持っていないので、まだテストしていません。
 
 ## 最終ノート
+<div name="jpFinalNotes"><div>
 1. これは個人的な使用を前提としたミニプロジェクトであることを忘れないでください。
 2. 私はまだプログラミングは素人なので、もしバグがあっても直せるかもしれないし、直せないかもしれません。しかし、それでももちろんベストを尽くします。
 3. このプログラムを改良したい場合は、このリポジトリをフォークして独自のバージョンを作成し、プルリクエストを行うことができます。
 4. しかし、学生である私は、仕事の忙しさによってプログラムを維持することもあれば、しないこともあります。
+
+## スクリーンショット
+<div align="center" name="jpScreenshots">
+  <p>メニュー:</p>
+  <img width="500px" alt="メニューデモ" src="/res/jp_menu.jpg">
+  <p>投稿ページのURLからファイルをダウンロードする:</p>
+  <img width="500px" alt="投稿ダウンロードのデモ" src="/res/jp_post_download.jpg">
+  <p>全投稿ページのURLから複数の投稿のファイルをダウンロードする:</p>
+  <img width="500px" alt="複数記事のダウンロードデモ" src="/res/jp_all_posts_download.jpg">
+</div>
