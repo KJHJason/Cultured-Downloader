@@ -22,14 +22,16 @@ try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import TimeoutException
-    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+    from selenium.common.exceptions import TimeoutException, WebDriverException
     from webdriver_manager.chrome import ChromeDriverManager
     from selenium.webdriver.chrome.service import Service as chromeService
     from selenium.webdriver.chrome.options import Options as chromeOptions
     from webdriver_manager.microsoft import EdgeChromiumDriverManager
     from selenium.webdriver.edge.service import Service as edgeService
     from selenium.webdriver.edge.options import Options as edgeOptions
+    from webdriver_manager.firefox import GeckoDriverManager
+    from selenium.webdriver.firefox.service import Service as firefoxService
+    from selenium.webdriver.firefox.options import Options as firefoxOptions
     from Crypto.Cipher import ChaCha20_Poly1305 as Cha
     from Crypto.Random import get_random_bytes
 except (ImportError, ModuleNotFoundError):
@@ -319,10 +321,11 @@ def get_driver(browserType, **additionalOptions):
     Requires one argument to be defined:: 
     - "chrome"
     - "edge"
+    - "firefox"
 
     Optional params:
-    - headless --> True or False
-    - blockImg --> a number
+    - headless --> True or False, defaults to True
+    - blockImg --> a number, defaults to 2
 
     For numbers, use the definition below:
     - 0 is default
@@ -347,21 +350,16 @@ def get_driver(browserType, **additionalOptions):
         cOptions.add_argument("--disable-gpu")
         cOptions.add_argument("--disable-dev-shm-usage") # from https://stackoverflow.com/questions/62898801/selenium-headless-chrome-runs-much-slower
 
-        # for checking response code
-        capabilities = DesiredCapabilities.CHROME.copy()
-        capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
-
         # change default download location
         cOptions.add_experimental_option("prefs", {
             "download.default_directory": str(browserDownloadLocation),
             "profile.managed_default_content_settings.images": blockImages
         })
 
-        # auto downloads chromedriver.exe
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
-        driver = webdriver.Chrome(service=gService, options=cOptions, desired_capabilities=capabilities)
+        driver = webdriver.Chrome(service=gService, options=cOptions)
     elif browserType == "edge":
         # minimise the browser window and hides unnecessary text output
         eOptions = edgeOptions()
@@ -369,11 +367,7 @@ def get_driver(browserType, **additionalOptions):
         eOptions.use_chromium = True
         eOptions.add_argument("--log-level=3")
         eOptions.add_argument("--disable-gpu")
-        eOptions.add_argument("--disable-dev-shm-usage") # from https://stackoverflow.com/questions/62898801/selenium-headless-chrome-runs-much-slower
-
-        # for checking response code
-        capabilities = DesiredCapabilities.EDGE.copy()
-        capabilities["ms:loggingPrefs"] = {"performance": "ALL"}
+        eOptions.add_argument("--disable-dev-shm-usage")
 
         # change default download location
         eOptions.add_experimental_option("prefs", {
@@ -381,11 +375,27 @@ def get_driver(browserType, **additionalOptions):
             "profile.managed_default_content_settings.images": blockImages
         })
 
-        # auto downloads msedgedriver.exe
         eService = edgeService(EdgeChromiumDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
-        driver = webdriver.Edge(service=eService, options=eOptions, capabilities=capabilities)
+        driver = webdriver.Edge(service=eService, options=eOptions)
+    elif browserType == "firefox":
+        # minimise the browser window and hides unnecessary text output
+        fOptions = firefoxOptions()
+        fOptions.headless = headlessOption
+        fOptions.add_argument("--log-level=3")
+        fOptions.add_argument("--disable-gpu")
+        fOptions.add_argument("--disable-dev-shm-usage")
+
+        # change default download location
+        fOptions.set_preference("browser.download.folderList", 2) # 0 means to download to the desktop, 1 means to download to the default "Downloads" directory, 2 means to use the directory below
+        fOptions.set_preference("browser.download.dir", str(browserDownloadLocation))
+        fOptions.set_preference("permissions.default.image", blockImages)
+
+        fService = firefoxService(GeckoDriverManager(log_level=0, print_first_line=False).install())
+
+        # start webdriver
+        driver = webdriver.Firefox(service=fService, options=fOptions)
     else:
         with open(jsonPath, "r") as f:
             config = json.load(f)
@@ -408,7 +418,7 @@ def check_browser_config():
 
     If it doesn not have the necessary information, it will return None.
 
-    Otherwise, it will return the browser type which will usually be either "chrome" or "edge".
+    Otherwise, it will return the browser type which will usually be either "chrome", "firefox" or "edge".
     """
     with open(jsonPath, "r") as f:
         config = json.load(f)
@@ -430,18 +440,18 @@ def check_browser_config():
 
 def get_user_browser_preference():
     """
-    To get the user's preferred browser which will either return "chrome" or "edge"
+    To get the user's preferred browser which will either return "chrome", "firefox" or "edge"
     """
     if lang == "en":
         inputPrompt = "Select a browser from the available options: "
-        printsPrompt = ("What browser would you like to use?", "Available browsers: Chrome, Edge.")
+        printsPrompt = ("What browser would you like to use?", "Available browsers: Chrome, Edge, Firefox.")
         warningPrompt = "Invalid browser, please enter a browser from the available browsers."
     else:
         inputPrompt = "利用可能なオプションからブラウザを選択します： "
-        printsPrompt = ("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge。")
+        printsPrompt = ("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge, Firefox。")
         warningPrompt = "不正なブラウザです。使用可能なブラウザから選んでください。"
 
-    selectedBrowser = get_input_from_user(prompt=inputPrompt, command=("chrome", "edge"), prints=printsPrompt, warning=warningPrompt)
+    selectedBrowser = get_input_from_user(prompt=inputPrompt, command=("chrome", "edge", "firefox"), prints=printsPrompt, warning=warningPrompt)
     return selectedBrowser
 
 def get_browser_preferences():
@@ -450,14 +460,14 @@ def get_browser_preferences():
     
     This function will check the config.json file if the user has defined their preferred browser in the json file by calling the function check_browser_config.
 
-    Hence, in any event that the function check_browser_config() returns a string and not None and if the returned string from check_browser_config() is not "chrome" or "edge", the user might have entered manually to config.json.
+    Hence, in any event that the function check_browser_config() returns a string and not None and if the returned string from check_browser_config() is not "chrome", "firefox" or "edge", the user might have entered manually to config.json.
 
-    However, the function get_driver(browserType) will do the necessary checks and change the config.json file browser data to an empty string if it's not "chrome" or "edge".
+    However, the function get_driver(browserType) will do the necessary checks and change the config.json file browser data to an empty string if it's not "chrome", "firefox" or "edge".
 
     Otherwise, if the user has not set a default browser, it will ask the user to select a browser and prompt them 
     if they want to save their preferred browser type to config.json for future runs.
 
-    This function will return the browser type which will usually be either "chrome" or "edge".
+    This function will return the browser type which will usually be either "chrome", "firefox" or "edge".
     """
     loadBrowser = check_browser_config()
     if loadBrowser == None:
@@ -479,7 +489,7 @@ def save_browser_config(selectedBrowser):
     To save the user's preferred browser to config.json.
 
     Requires one argument to be defined:
-    - the browser type which will usually be either "chrome" or "edge".
+    - the browser type which will usually be either "chrome", "firefox" or "edge".
     """
     with open(jsonPath, "r") as f:
         config = json.load(f)
@@ -487,8 +497,8 @@ def save_browser_config(selectedBrowser):
     with open(jsonPath, "w") as f:
         json.dump(config, f, indent=4)
     print_in_both_en_jp(
-        en=(f"{F.GREEN}{selectedBrowser.title()} will be automatically loaded next time!{END}"),
-        jp=(f"{F.GREEN}{selectedBrowser.title()}は次回起動時に自動的にロードされます！{END}")
+        en=(f"{F.GREEN}{selectedBrowser.title()} has been loaded and will be automatically loaded in future runs!{END}"),
+        jp=(f"{F.GREEN}{selectedBrowser.title()}はロードされており、今後の実行でもロードされます！{END}")
     )
 
 def set_lang(config):
@@ -884,29 +894,6 @@ def split_inputs_to_possible_multiple_inputs(userInput):
     elif "、" in userInput: userInput = userInput.split("、")
     return userInput
 
-# function below from https://stackoverflow.com/questions/5799228/how-to-get-status-code-by-using-selenium-py-python-code
-def get_status(logs):
-    """
-    Function to get the status code of a webpage
-
-    Used for auto detecting the number of images to download for Fantia (option 1 on the menu)
-
-    Credits to Jarad: https://stackoverflow.com/questions/5799228/how-to-get-status-code-by-using-selenium-py-python-code
-
-    Requires one argument to be defined:
-    - A log obtained from webdriver.get_log("performance")
-    """
-    for log in logs:
-        if log["message"]:
-            d = json.loads(log["message"])
-            try:
-                content_type = "text/html" in d["message"]["params"]["response"]["headers"]["content-type"]
-                response_received = d["message"]["method"] == "Network.responseReceived"
-                if content_type and response_received:
-                    return d["message"]["params"]["response"]["status"]
-            except:
-                pass
-
 def check_if_directory_has_files(dirPath):
     """
     Returns True if there is any files or folders in the argument given.
@@ -1126,8 +1113,8 @@ def print_download_completion_message(totalImage, subFolderPath, **options):
             )
     else:
         print_in_both_en_jp(
-            en=(f"\n{F.RED}Error: No images to download.{END}"),
-            jp=(f"\n{F.RED}エラー： ダウンロードする画像がありません。{END}")
+            en=(f"\n{F.RED}Error: No images or attachments to download.{END}"),
+            jp=(f"\n{F.RED}エラー： ダウンロードする画像や添付ファイルがありません。{END}")
         )
 
 def open_new_tab():
@@ -1197,7 +1184,8 @@ def check_for_incomplete_download():
         for filePath in browserDownloadLocation.iterdir():
             if filePath.is_file():
                 fileExtension = str(filePath.name).split(".")[-1]
-                if fileExtension.lower() == "crdownload": # since edge is set to use chromium, hence not checking for .partial files
+                if fileExtension.lower() == "crdownload" or fileExtension.lower() == "part": # crdownload for chrome and edge while part for firefox
+                    # since edge is set to use chromium, hence not checking for .partial files for edge.
                     hasIncompleteDownloads = True
 
         if not hasIncompleteDownloads: break
@@ -1222,27 +1210,19 @@ def download(urlInput, website, subFolderPath, **options):
 
     Requires three arguments to be defined:
     - The url of the Fantia/pixiv posts or the Fantia image url (string)
-    - The website which is either "FantiaImageURL", "FantiaPost", or "Pixiv" (string)
+    - The website which is either "FantiaPost", or "Pixiv" (string)
     - The path to the folder where the images are saved or a string which will be the latest post num for pixiv downloads (pathlib Path object or a string)
 
     Optional param:
     - attachments (boolean). If True, will download any attachments from the given url (default: False if not defined)
     """
     driver.get(urlInput)
+    sleep(4)
 
     downloadAttachmentFlag = options.get("attachments")
     if downloadAttachmentFlag == None: downloadAttachmentFlag = False
 
-    if website == "FantiaImageURL":
-        # downloading nth num of images based on the Fantia image given
-        # e.g. https://fantia.jp/posts/*/post_content_photo/*
-        imageSrc = driver.find_element(by=By.XPATH, value="/html/body/img").get_attribute("src")
-        imagePath = subFolderPath.joinpath(get_file_name(imageSrc, "Fantia"))
-        subFolderPath.mkdir(parents=True, exist_ok=True)
-        save_image(imageSrc, imagePath)
-
-    elif website == "FantiaPost":
-        sleep(3)
+    if website == "FantiaPost":
         try: thumbnailSrc = driver.find_element(by=By.XPATH, value="//img[contains(@class, 'img-default')]").get_attribute("src")
         except: thumbnailSrc = None
 
@@ -1368,10 +1348,9 @@ def download(urlInput, website, subFolderPath, **options):
             print_progress_bar(totalImageProgress, totalImages, downloadMessage)
             totalImageProgress += 1
 
-        print_download_completion_message(totalImages, subFolderPath, attachment=downloadAttachmentFlag)
+        print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag)
 
     elif website == "Pixiv":
-        sleep(3)
         urlToDownloadArray = []
 
         # downloads gifs or static images based on a pixiv post
@@ -1438,7 +1417,7 @@ def download(urlInput, website, subFolderPath, **options):
             print_progress_bar(progress, totalImages, downloadMessage)
             progress += 1
             
-        print_download_completion_message(totalImages, subFolderPath, attachment=downloadAttachmentFlag)
+        print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag)
 
     else: raise Exception("Invalid website argument in download function...")
 
@@ -1519,17 +1498,6 @@ def login(currentDriver, website):
 
     currentDriver.get(loginURL)
 
-    print_in_both_en_jp(
-        en=(
-            f"{F.LIGHTYELLOW_EX}A new browser should have opened. However, please do not close it at all times!{END}",
-            f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to {website.title()} manually.{END}",
-        ),
-        jp=(
-            f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。ただし、常に閉じないようにしてください！{END}", 
-            f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動で{website.title()}にログインしてください。{END}",
-        )
-    )
-
     if lang == "en": input("Press any key to continue after logging in...")
     else: input("ログイン後に何かキーを押してください...")
 
@@ -1567,6 +1535,17 @@ def save_and_load_cookie(originalDriver, website, **options):
 
     getSessionID = options.get("getID")
 
+    print_in_both_en_jp(
+        en=(
+            f"{F.LIGHTYELLOW_EX}A new browser should have opened. However, please do not close it at all times!{END}",
+            f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to {website.title()} manually.{END}",
+        ),
+        jp=(
+            f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。ただし、常に閉じないようにしてください！{END}", 
+            f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動で{website.title()}にログインしてください。{END}",
+        )
+    )
+
     newDriver = get_driver(selectedBrowser, headless=False, blockImg=1)
     if website == "fantia":
         cookieName = "_session_id"
@@ -1580,7 +1559,20 @@ def save_and_load_cookie(originalDriver, website, **options):
     cookiePath = appPath.joinpath("configs", f"{website}_cookies")
     loggedIn = False
     while True:
-        loggedIn = login(newDriver, website)
+        try: 
+            loggedIn = login(newDriver, website)
+        except WebDriverException: 
+            # if the user had accidentally closed the browser by accident, it will open a new browser
+            print_in_both_en_jp(
+                en=(
+                    f"{F.LIGHTRED_EX}Note: Please do not close the browser!{END}"
+                ),
+                jp=(
+                    f"{F.LIGHTRED_EX}注意： ブラウザを閉じないでください!{END}"
+                )
+            )
+            newDriver = get_driver(selectedBrowser, headless=False, blockImg=1)
+
         if loggedIn: break
         else:
             print_in_both_en_jp(
@@ -2324,16 +2316,36 @@ def main():
                         )
 
         elif cmdInput == "5":
-            with open(jsonPath, "r") as f:
-                config = json.load(f)
+            try:
+                with open(jsonPath, "r") as f:
+                    config = json.load(f)
+            except JSONDecodeError:
+                config = {}
+                with open(jsonPath, "w") as f:
+                    json.dump(config, f)
 
             set_default_download_directory(config, setDefaultLocationUponCancellation=False)
+            directoryPath = get_default_download_directory()
+
+            fantiaDownloadLocation = directoryPath.joinpath("fantia_downloads")
+            fantiaDownloadLocation.mkdir(parents=True, exist_ok=True)
+
+            pixivDownloadLocation = directoryPath.joinpath("pixiv_downloads")
+            pixivDownloadLocation.mkdir(parents=True, exist_ok=True)
+
+            browserDownloadLocation = directoryPath.joinpath("browser_downloads")
+            browserDownloadLocation.mkdir(parents=True, exist_ok=True)
+
+            driver.quit()
+            driver = get_driver(selectedBrowser)
             
         elif cmdInput == "6":
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
                 newDefaultBrowser = get_user_browser_preference()
                 save_browser_config(newDefaultBrowser)
+                driver.quit()
+                driver = get_driver(newDefaultBrowser)
             else:
                 print_in_both_en_jp(
                     en=(f"{F.RED}Error: No default browser found.{END}"),
@@ -2347,7 +2359,10 @@ def main():
                 if saveBrowser == "y":
                     newDefaultBrowser = get_user_browser_preference()
                     save_browser_config(newDefaultBrowser)
-                else: print_in_both_en_jp(
+                    driver.quit()
+                    driver = get_driver(newDefaultBrowser)
+                else: 
+                    print_in_both_en_jp(
                         en=(f"{F.LIGHTRED_EX}Note: Default Browser is empty in config.json{END}"),
                         jp=(f"{F.LIGHTRED_EX}注意： config.jsonのデフォルトブラウザが空です。{END}")
                     )
@@ -2374,13 +2389,13 @@ def main():
                 )
 
         elif cmdInput == "d":
-            if check_if_directory_has_files(appPath.joinpath("configs")):
+            if check_if_directory_has_files(appPath):
                 for folderPath in appPath.iterdir():
                     if folderPath.is_dir():
                         rmtree(folderPath)
                 print_in_both_en_jp(
-                    en=(f"{F.LIGHTYELLOW_EX}Deleted folders in {appPath}{END}"),
-                    jp=(f"{F.LIGHTYELLOW_EX}{appPath} 内のフォルダーを削除しました。{END}")
+                    en=(f"{F.LIGHTRED_EX}Deleted folders in {appPath}{END}"),
+                    jp=(f"{F.LIGHTRED_EX}{appPath} 内のフォルダーを削除しました。{END}")
                 )
             else:
                 print_in_both_en_jp(
@@ -2394,16 +2409,16 @@ def main():
                 if pixivCookiePath.is_file():
                     pixivCookiePath.unlink()
                     print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}Deleted Pixiv Fanbox cookies{END}"),
-                        jp=(f"{F.LIGHTYELLOW_EX}Pixivファンボックスのクッキーが削除されました。{END}")
+                        en=(f"{F.LIGHTRED_EX}Deleted Pixiv Fanbox cookies{END}"),
+                        jp=(f"{F.LIGHTRED_EX}Pixivファンボックスのクッキーが削除されました。{END}")
                     )
                 
                 fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
                 if fantiaCookiePath.is_file():
                     fantiaCookiePath.unlink()
                     print_in_both_en_jp(
-                        en=(f"{F.LIGHTYELLOW_EX}Deleted Fantia cookies{END}"),
-                        jp=(f"{F.LIGHTYELLOW_EX}Fantiaのクッキーが削除されました。{END}")
+                        en=(f"{F.LIGHTRED_EX}Deleted Fantia cookies{END}"),
+                        jp=(f"{F.LIGHTRED_EX}Fantiaのクッキーが削除されました。{END}")
                     )
     
             else:
