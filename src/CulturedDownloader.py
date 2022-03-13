@@ -353,7 +353,8 @@ def get_driver(browserType, **additionalOptions):
         # change default download location
         cOptions.add_experimental_option("prefs", {
             "download.default_directory": str(browserDownloadLocation),
-            "profile.managed_default_content_settings.images": blockImages
+            "profile.managed_default_content_settings.images": blockImages,
+            "download.prompt_for_download": False
         })
 
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
@@ -372,7 +373,8 @@ def get_driver(browserType, **additionalOptions):
         # change default download location
         eOptions.add_experimental_option("prefs", {
             "download.default_directory": str(browserDownloadLocation),
-            "profile.managed_default_content_settings.images": blockImages
+            "profile.managed_default_content_settings.images": blockImages,
+            "download.prompt_for_download": False
         })
 
         eService = edgeService(EdgeChromiumDriverManager(log_level=0, print_first_line=False).install())
@@ -391,6 +393,9 @@ def get_driver(browserType, **additionalOptions):
         fOptions.set_preference("browser.download.folderList", 2) # 0 means to download to the desktop, 1 means to download to the default "Downloads" directory, 2 means to use the directory below
         fOptions.set_preference("browser.download.dir", str(browserDownloadLocation))
         fOptions.set_preference("permissions.default.image", blockImages)
+        fOptions.set_preference("browser.helperApps.neverAsk.saveToDisk", "image/png, image/jpeg, image/jpg, image/gif, video/mp4, video/x-msvideo, video/msvideo, video/avi, video/quicktime, audio/flac, audio/wav, audio/mpeg, application/zip, application/pdf, text/plain, image/vnd.adobe.photoshop, application/octet-stream") # https://fanbox.pixiv.help/hc/en-us/articles/360011057793-What-types-of-attachments-can-I-post-
+        fOptions.set_preference("browser.helperApps.alwaysAsk.force", False) # Hide download confirmation dialog
+        fOptions.set_preference("browser.download.manager.showWhenStarting", False) # hide download progress bar
 
         fService = firefoxService(GeckoDriverManager(log_level=0, print_first_line=False).install())
 
@@ -497,8 +502,14 @@ def save_browser_config(selectedBrowser):
     with open(jsonPath, "w") as f:
         json.dump(config, f, indent=4)
     print_in_both_en_jp(
-        en=(f"{F.GREEN}{selectedBrowser.title()} has been loaded and will be automatically loaded in future runs!{END}"),
-        jp=(f"{F.GREEN}{selectedBrowser.title()}はロードされており、今後の実行でもロードされます！{END}")
+        en=(
+            f"{F.GREEN}{selectedBrowser.title()} has been loaded and will be automatically loaded in future runs!{END}",
+            f"{F.LIGHTRED_EX}However, you will have to login again by manually logging in or loading in your cookies.{END}"
+        ),
+        jp=(
+            f"{F.GREEN}{selectedBrowser.title()}はロードされており、今後の実行でもロードされます！{END}",
+            f"{F.LIGHTRED_EX}ただし、手動でログインするか、Cookieを読み込んで再ログインする必要があります。{END}"
+        )
     )
 
 def set_lang(config):
@@ -1270,10 +1281,16 @@ def download(urlInput, website, subFolderPath, **options):
             try: attachmentAnchors = driver.find_elements(by=By.XPATH, value="//a[@class='btn btn-success btn-very-lg']")
             except: attachmentAnchors = []
 
-            totalImages = len(imagesURLToDownloadArray) + len(attachmentAnchors)
+            anchorURLArray = []
+            if attachmentAnchors: 
+                for anchor in attachmentAnchors:
+                    anchorURLArray.append(anchor.get_attribute("href"))
+                del attachmentAnchors
+                open_new_tab()
 
+            totalImages = len(imagesURLToDownloadArray) + len(anchorURLArray)
             remove_any_files_in_directory(browserDownloadLocation)
-            for anchor in attachmentAnchors:
+            for attachmentURL in anchorURLArray:
                 if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
                 elif lang == "jp": downloadMessage = f"画像や添付ファイル {totalImageProgress} / {totalImages} をダウンロード中"
 
@@ -1281,8 +1298,7 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(totalImageProgress, totalImages, downloadMessage)
                     totalImageProgress += 1
 
-                driver.get(anchor.get_attribute("href")) # instead of clicking since for some reasons, it doesn't always work
-
+                driver.get(attachmentURL) # getting the url which in turns downloads the attachments
                 sleep(3) # for the browser to download the attachment
                 
                 if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
@@ -1291,7 +1307,8 @@ def download(urlInput, website, subFolderPath, **options):
                 print_progress_bar(totalImageProgress, totalImages, downloadMessage)
                 totalImageProgress += 1
             
-            if attachmentAnchors:
+            if anchorURLArray:
+                close_new_tab()
                 check_for_incomplete_download()
                 # moves all the files to the corresponding folder based on the user's input.
                 attachmentFolderPath = subFolderPath.joinpath("attachments")
@@ -1360,9 +1377,16 @@ def download(urlInput, website, subFolderPath, **options):
             try: attachmentAnchors = driver.find_elements(by=By.XPATH, value="//a[@class='sc-gw5z20-7 bGOrSj']")
             except: attachmentAnchors = []
 
-            totalImages = len(urlToDownloadArray) + len(attachmentAnchors)
+            anchorURLArray = []
+            if attachmentAnchors: 
+                for anchor in attachmentAnchors:
+                    anchorURLArray.append(anchor.get_attribute("href"))
+                del attachmentAnchors
+                open_new_tab()
+
+            totalImages = len(urlToDownloadArray) + len(anchorURLArray)
             remove_any_files_in_directory(browserDownloadLocation)
-            for anchor in attachmentAnchors:
+            for attachmentURL in anchorURLArray:
                 if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
                 elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
 
@@ -1370,8 +1394,8 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(progress, totalImages, downloadMessage)
                     progress += 1
 
-                driver.get(anchor.get_attribute("href")) # instead of clicking since for some reasons, it doesn't always work
-
+                
+                driver.get(attachmentURL) # getting the url which in turns downloads the attachments
                 sleep(3) # for the browser to download the attachment
 
                 if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
@@ -1380,7 +1404,8 @@ def download(urlInput, website, subFolderPath, **options):
                 print_progress_bar(progress, totalImages, downloadMessage)
                 progress += 1
 
-            if attachmentAnchors:
+            if anchorURLArray:
+                close_new_tab()
                 check_for_incomplete_download()
                 # moves all the files to the corresponding folder based on the user's input.
                 for file in browserDownloadLocation.iterdir():
@@ -2333,6 +2358,10 @@ def main():
             driver = get_driver(selectedBrowser)
             
         elif cmdInput == "6":
+            print_in_both_en_jp(
+                en=(f"{F.LIGHTRED_EX}Note: You will have to re-login again after changing your browser.{END}"),
+                jp=(f"{F.LIGHTRED_EX}注意: ブラウザを変更した後に再度ログインする必要があります。{END}")
+            )
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
                 newDefaultBrowser = get_user_browser_preference()
@@ -2358,6 +2387,23 @@ def main():
                     print_in_both_en_jp(
                         en=(f"{F.LIGHTRED_EX}Note: Default Browser is empty in config.json{END}"),
                         jp=(f"{F.LIGHTRED_EX}注意： config.jsonのデフォルトブラウザが空です。{END}")
+                    )
+            pixivCookieLoaded = fantiaCookieLoaded = False # since the cookie will be gone upon opening a new browser
+
+            fantiaCookieExist = fantiaCookiePath.is_file()
+            pixivCookieExist = pixivCookiePath.is_file()
+
+            if fantiaCookieExist or pixivCookieExist:    
+                if lang == "en": cookiePrompt = "Would you like to load in your existing cookies? (y/n): "
+                else: cookiePrompt = "保存されたクッキーを読み込みますか？ (y/n)： "
+                userCookieInput = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
+                if userCookieInput == "y":
+                    if pixivCookieExist: pixivCookieLoaded = load_cookie("pixiv")
+                    if fantiaCookieExist: fantiaCookieLoaded = load_cookie("fantia")
+                else:
+                    print_in_both_en_jp(
+                        en=(f"{F.YELLOW}Saved cookies will not be loaded into the webdriver...{END}"),
+                        jp=(f"{F.YELLOW}その場合、保存されたクッキーは読み込まれません...{END}")
                     )
 
         elif cmdInput == "7":
