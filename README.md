@@ -26,6 +26,7 @@ Cultured Downloader
 ## Table of Contents/目次
 [English](#introduction)
   - [Introduction](#introduction)
+  - [Running the Python File](#running-the-python-file)
   - [Terms of Use](#terms-of-use)
   - [Features](#features)
   - [Usage Notes](#usage-notes)
@@ -35,6 +36,7 @@ Cultured Downloader
 
 [日本語](#イントロダクション)
   - [イントロダクション](#イントロダクション)
+  - [Pythonファイルの実行](#pythonファイルの実行)
   - [利用規約](#利用規約)
   - [特徴](#特徴)
   - [使用上の注意](#使用上の注意)
@@ -54,6 +56,13 @@ Hence, I coded this program to automate the process of downloading images from a
 In the end, I spent about 8 days on this mini-project so you can expect some bugs...
 
 Although the program has Japanese language support, most of them are translated by [DeepL](https://www.deepl.com/translator). Hence, feel free to correct any mistranslation/grammatical errors by forking it and make a pull request after correcting the translation.
+
+## Running the Python File
+- Install [Python 3.8.X or above](https://www.python.org/downloads/)
+- Install all dependencies by running the command below:
+  ```
+  pip install -r requirements.txt
+  ```
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
@@ -110,8 +119,14 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 
 日本語に対応していますが、そのほとんどは[DeepL](https://www.deepl.com/translator)が翻訳しています。したがって、誤訳・文法的な間違いはフォークして自由に修正し、翻訳を修正した後にプルリクエストを作成してください。
 
-## 利用規約 
+## Pythonファイルの実行
+- [Python 3.8.X](https://www.python.org/downloads/)以上をインストールする
+- 以下のコマンドを実行し、すべての依存関係をインストールします:
+  ```
+  pip install -r requirements.txt
+  ```
 
+## 利用規約 
 (誤訳があった場合は、英語版を優先して使用します。)
 1. 本プログラム「Cultured Downloader」は、発生した損害について一切の責任を負いかねます。このプログラムは、個人的な使用と、pixiv FanboxとFantiaから画像を手動でダウンロードする時間を節約するためのものです。
 2. 本プログラムの利用者として、Fantiaおよびpixivファンボックスの利用規約を破るような利用はしないでください。
