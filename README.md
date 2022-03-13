@@ -40,7 +40,7 @@ Cultured Downloader
   - [使用上の注意](#使用上の注意)
   - [よくある質問](#よくある質問)
   - [最終ノート](#最終ノート)
-  - [スクリーンショット](#jpScreenshots)
+  - [スクリーンショット](#スクリーンショット)
 
 ---
 
@@ -145,7 +145,7 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 4. しかし、学生である私は、仕事の忙しさによってプログラムを維持することもあれば、しないこともあります。
 
 ## スクリーンショット
-<div align="center" name="jpScreenshots">
+<div align="center">
   <p>メニュー</p>
   <p><img width="500px" alt="メニューデモ" src="/res/jp_menu.jpg"></p>
   <p>投稿ページのURLからファイルをダウンロードする</p>
