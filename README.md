@@ -90,11 +90,11 @@ Although the program has Japanese language support, most of them are translated 
 ## Screenshots
 <div align="center">
   <p>Menu:</p>
-  <p><img width="500px" alt="menu demo" src="/res/en_menu.jpg"></p>
+  <p><img width="650px" alt="menu demo" src="/res/en_menu.jpg"></p>
   <p>Downloading files from a post page URL:</p>
-  <p><img width="500px" alt="downloading posts demo" src="/res/en_post_download.jpg"></p>
+  <p><img width="650px" alt="downloading posts demo" src="/res/en_post_download.jpg"></p>
   <p>Downloading files from multiple posts from an all post page URL:</p>
-  <p><img width="500px" alt="downloading multiple posts demo" src="/res/en_all_posts_download.jpg"></p>
+  <p><img width="650px" alt="downloading multiple posts demo" src="/res/en_all_posts_download.jpg"></p>
 </div>
 
 ---
@@ -147,9 +147,9 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 ## スクリーンショット
 <div align="center" name="jpScreenshots">
   <p>メニュー:</p>
-  <p><img width="500px" alt="メニューデモ" src="/res/jp_menu.jpg"></p>
+  <p><img width="650px" alt="メニューデモ" src="/res/jp_menu.jpg"></p>
   <p>投稿ページのURLからファイルをダウンロードする:</p>
-  <p><img width="500px" alt="投稿ダウンロードのデモ" src="/res/jp_post_download.jpg"></p>
+  <p><img width="650px" alt="投稿ダウンロードのデモ" src="/res/jp_post_download.jpg"></p>
   <p>全投稿ページのURLから複数の投稿のファイルをダウンロードする:</p>
-  <p><img width="500px" alt="複数記事のダウンロードデモ" src="/res/jp_all_posts_download.jpg"></p>
+  <p><img width="650px" alt="複数記事のダウンロードデモ" src="/res/jp_all_posts_download.jpg"></p>
 </div>
