@@ -659,10 +659,14 @@ def set_default_download_directory(jsonConfig, **options):
 
     Optional arguments:
     - setDefaultLocationUponCancellation (bool): If False, it NOT will set the default download directory to the desktop if user do not want to change the default download directory.
+    - printSuccessMsg (bool): If True, it will print a success message after setting the default download directory.
     --> Default: True
     """
     setDefaultLocationCondition = options.get("setDefaultLocationUponCancellation")
     if setDefaultLocationCondition == None: setDefaultLocationCondition = True
+
+    printSuccessMsg = options.get("printSuccessMsg")
+    if printSuccessMsg == None: printSuccessMsg = True
 
     if lang == "en": 
         downloadFolderPrompt = "Would you like to change the default download location? (y/n): "
@@ -692,10 +696,11 @@ def set_default_download_directory(jsonConfig, **options):
                 with open(jsonPath, "w") as f:
                     json.dump(jsonConfig, f, indent=4)
 
-                print_in_both_en_jp(
-                    en=(f"{F.GREEN}The default folder has been changed to {downloadPath}{END}"),
-                    jp=(f"{F.GREEN}デフォルトフォルダを {downloadPath} に変更しました。{END}")
-                )
+                if printSuccessMsg:
+                    print_in_both_en_jp(
+                        en=(f"{F.GREEN}The default folder has been changed to {downloadPath}{END}"),
+                        jp=(f"{F.GREEN}デフォルトフォルダを {downloadPath} に変更しました。{END}")
+                    )
     
                 return downloadPath
             else:
@@ -940,7 +945,6 @@ def get_cookie_for_session(website, **options):
         cookieName = "_session_id"
     else:
         raise Exception("Invalid website in get_cookie_for_session function...")
-
 
     if cookiePath.is_file() and not definedSessionID:
         sessionID = ""
@@ -1740,6 +1744,33 @@ def get_page_num(userURLInput):
             else:
                 raise Exception("pageInput variable for downloading fantia posts is not a list or string...")
 
+def load_cookies():
+    """
+    To load in the saved cookies into the webdriver browser session.
+
+    Will return two boolean true or false values:
+    --> First value for pixiv Fanbox and second value for Fantia
+    """
+    pixivCookieLoadedLocal = fantiaCookieLoadedLocal = False
+
+    fantiaCookieExist = appPath.joinpath("configs", "fantia_cookies").is_file()
+    pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
+
+    if fantiaCookieExist or pixivCookieExist:    
+        if lang == "en": cookiePrompt = "Would you like to load in your existing cookies? (y/n): "
+        else: cookiePrompt = "保存されたクッキーを読み込みますか？ (y/n)： "
+        userCookieInput = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
+        if userCookieInput == "y":
+            if pixivCookieExist: pixivCookieLoadedLocal = load_cookie("pixiv")
+            if fantiaCookieExist: fantiaCookieLoadedLocal = load_cookie("fantia")
+        else:
+            print_in_both_en_jp(
+                en=(f"{F.YELLOW}Saved cookies will not be loaded into the webdriver...{END}"),
+                jp=(f"{F.YELLOW}その場合、保存されたクッキーは読み込まれません...{END}")
+            )
+
+    return pixivCookieLoadedLocal, fantiaCookieLoadedLocal
+
 def print_menu():
     """
     To print out the menu which will reflects any changes based on certain conditions such as whether the user is logged in, etc.
@@ -1903,26 +1934,10 @@ def main():
         driver = get_driver(loadBrowser)
 
     # retrieve cookie if exists
-    pixivCookieLoaded = fantiaCookieLoaded = False
+    pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
 
-    fantiaCookiePath = appPath.joinpath("configs", "fantia_cookies")
-    pixivCookiePath = appPath.joinpath("configs", "pixiv_cookies")
-
-    fantiaCookieExist = fantiaCookiePath.is_file()
-    pixivCookieExist = pixivCookiePath.is_file()
-
-    if fantiaCookieExist or pixivCookieExist:    
-        if lang == "en": cookiePrompt = "Would you like to load in your existing cookies? (y/n): "
-        else: cookiePrompt = "保存されたクッキーを読み込みますか？ (y/n)： "
-        userCookieInput = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
-        if userCookieInput == "y":
-            if pixivCookieExist: pixivCookieLoaded = load_cookie("pixiv")
-            if fantiaCookieExist: fantiaCookieLoaded = load_cookie("fantia")
-        else:
-            print_in_both_en_jp(
-                en=(f"{F.YELLOW}Saved cookies will not be loaded into the webdriver...{END}"),
-                jp=(f"{F.YELLOW}その場合、保存されたクッキーは読み込まれません...{END}")
-            )
+    pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
+            
     if not fantiaCookieLoaded or not pixivCookieLoaded:
         print("\n")
         if lang == "en": loginPrompt = "Would you like to login? (y/n): "
@@ -2337,6 +2352,10 @@ def main():
                         )
 
         elif cmdInput == "5":
+            print_in_both_en_jp(
+                en=(f"\n{F.LIGHTRED_EX}Note: You will have to re-login again after changing your default download location.{END}"),
+                jp=(f"\n{F.LIGHTRED_EX}注意: デフォルトのダウンロード先を変更した後は、再度ログインする必要があります。{END}")
+            )
             try:
                 with open(jsonPath, "r") as f:
                     config = json.load(f)
@@ -2345,37 +2364,66 @@ def main():
                 with open(jsonPath, "w") as f:
                     json.dump(config, f)
 
-            set_default_download_directory(config, setDefaultLocationUponCancellation=False)
-            directoryPath = get_default_download_directory()
+            set_default_download_directory(config, setDefaultLocationUponCancellation=False, printSuccessMsg=False)
+            newDirectoryPath = get_default_download_directory()
+            if directoryPath != newDirectoryPath:
+                directoryPath = newDirectoryPath
 
-            fantiaDownloadLocation = directoryPath.joinpath("fantia_downloads")
-            fantiaDownloadLocation.mkdir(parents=True, exist_ok=True)
+                fantiaDownloadLocation = directoryPath.joinpath("fantia_downloads")
+                fantiaDownloadLocation.mkdir(parents=True, exist_ok=True)
 
-            pixivDownloadLocation = directoryPath.joinpath("pixiv_downloads")
-            pixivDownloadLocation.mkdir(parents=True, exist_ok=True)
+                pixivDownloadLocation = directoryPath.joinpath("pixiv_downloads")
+                pixivDownloadLocation.mkdir(parents=True, exist_ok=True)
 
-            browserDownloadLocation = directoryPath.joinpath("browser_downloads")
-            browserDownloadLocation.mkdir(parents=True, exist_ok=True)
+                browserDownloadLocation = directoryPath.joinpath("browser_downloads")
+                browserDownloadLocation.mkdir(parents=True, exist_ok=True)
 
-            driver.quit()
-            driver = get_driver(selectedBrowser)
+                print_in_both_en_jp(
+                    en=(f"{F.GREEN}The default folder has been changed to {newDirectoryPath}{END}"),
+                    jp=(f"{F.GREEN}デフォルトフォルダを {newDirectoryPath} に変更しました。{END}")
+                )
+
+                driver.quit()
+                driver = get_driver(selectedBrowser)
+
+                print_in_both_en_jp(
+                    en=(f"\n{F.LIGHTRED_EX}You will now have to login again by manually logging in or loading in your cookies.{END}"),
+                    jp=(f"\n{F.LIGHTRED_EX}手動でログインするか、Cookieを読み込んで再度ログインする必要があります。{END}")
+                )
+
+                pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
+                pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
+                if pixivCookieLoaded and pixivCookieExist: 
+                    pixivSession = get_cookie_for_session("pixiv")
+                    if pixivSession == "":
+                        pixivCookieLoaded = False
+                else:
+                    pixivCookieLoaded = False
+            else:
+                print_in_both_en_jp(
+                    en=(f"{F.YELLOW}No changes were made to the default download location.{END}"),
+                    jp=(f"{F.YELLOW}デフォルトのダウンロード先は変更されませんでした。{END}")
+                )
             
         elif cmdInput == "6":
             print_in_both_en_jp(
-                en=(f"{F.LIGHTRED_EX}Note: You will have to re-login again after changing your browser.{END}"),
-                jp=(f"{F.LIGHTRED_EX}注意: ブラウザを変更した後に再度ログインする必要があります。{END}")
+                en=(f"\n{F.LIGHTRED_EX}Note: You will have to re-login again after changing your browser.{END}"),
+                jp=(f"\n{F.LIGHTRED_EX}注意: ブラウザを変更した後に再度ログインする必要があります。{END}")
             )
             defaultBrowser = check_browser_config()
             if defaultBrowser != None:
                 newDefaultBrowser = get_user_browser_preference()
-                save_browser_config(newDefaultBrowser)
-                driver.quit()
-                driver = get_driver(newDefaultBrowser)
+                if newDefaultBrowser == defaultBrowser:
+                    print_in_both_en_jp(
+                        en=(f"{F.YELLOW}No changes were made to the default browser.{END}"),
+                        jp=(f"{F.YELLOW}デフォルトブラウザは変更されませんでした。{END}")
+                    )
             else:
                 print_in_both_en_jp(
                     en=(f"{F.RED}Error: No default browser found.{END}"),
                     jp=(f"{F.RED}エラー： デフォルトのブラウザが見つかりませんでした。{END}")
                 )
+                defaultBrowser = selectedBrowser
 
                 if lang == "en": browserPrompt = "Would you like to save a browser as your default browser for this program? (y/n): "
                 else: browserPrompt = "このプログラムのデフォルトのブラウザを保存しますか？ (y/n): "
@@ -2383,32 +2431,34 @@ def main():
 
                 if saveBrowser == "y":
                     newDefaultBrowser = get_user_browser_preference()
-                    save_browser_config(newDefaultBrowser)
-                    driver.quit()
-                    driver = get_driver(newDefaultBrowser)
+                    if newDefaultBrowser == defaultBrowser:
+                        print_in_both_en_jp(
+                            en=(f"{F.YELLOW}No changes were made to the default browser.{END}"),
+                            jp=(f"{F.YELLOW}デフォルトブラウザは変更されませんでした。{END}")
+                        )
                 else: 
                     print_in_both_en_jp(
                         en=(f"{F.LIGHTRED_EX}Note: Default Browser is empty in config.json{END}"),
                         jp=(f"{F.LIGHTRED_EX}注意： config.jsonのデフォルトブラウザが空です。{END}")
                     )
-            pixivCookieLoaded = fantiaCookieLoaded = False # since the cookie will be gone upon opening a new browser
+                    newDefaultBrowser = selectedBrowser
 
-            fantiaCookieExist = fantiaCookiePath.is_file()
-            pixivCookieExist = pixivCookiePath.is_file()
+            if newDefaultBrowser != defaultBrowser: 
+                save_browser_config(newDefaultBrowser)
+                driver.quit()
+                driver = get_driver(newDefaultBrowser)
 
-            if fantiaCookieExist or pixivCookieExist:    
-                if lang == "en": cookiePrompt = "Would you like to load in your existing cookies? (y/n): "
-                else: cookiePrompt = "保存されたクッキーを読み込みますか？ (y/n)： "
-                userCookieInput = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
-                if userCookieInput == "y":
-                    if pixivCookieExist: pixivCookieLoaded = load_cookie("pixiv")
-                    if fantiaCookieExist: fantiaCookieLoaded = load_cookie("fantia")
+                pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
+                pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
+                if pixivCookieLoaded and pixivCookieExist: 
+                    pixivSession = get_cookie_for_session("pixiv")
+                    if pixivSession == "":
+                        pixivCookieLoaded = False
                 else:
-                    print_in_both_en_jp(
-                        en=(f"{F.YELLOW}Saved cookies will not be loaded into the webdriver...{END}"),
-                        jp=(f"{F.YELLOW}その場合、保存されたクッキーは読み込まれません...{END}")
-                    )
+                    pixivCookieLoaded = False
 
+                selectedBrowser = newDefaultBrowser
+            
         elif cmdInput == "7":
             lang = update_lang()
 
@@ -2417,10 +2467,13 @@ def main():
                 pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
                 if not pixivCookieLoaded and not pixivCookieExist:
                     pixivCookieLoaded, pixivSessionID = save_and_load_cookie(driver, "pixiv", getID=True)
-                    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
+                    if pixivCookieLoaded:
+                         pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
+
                 elif not pixivCookieLoaded and pixivCookieExist:
                     pixivCookieLoaded = save_and_load_cookie(driver, "pixiv")
-                    if pixivCookieLoaded: pixivSession = get_cookie_for_session("pixiv")
+                    if pixivCookieLoaded: 
+                        pixivSession = get_cookie_for_session("pixiv")
 
                 if not fantiaCookieLoaded:
                     fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
