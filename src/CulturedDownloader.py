@@ -393,7 +393,10 @@ def get_driver(browserType, **additionalOptions):
         fOptions.set_preference("browser.download.folderList", 2) # 0 means to download to the desktop, 1 means to download to the default "Downloads" directory, 2 means to use the directory below
         fOptions.set_preference("browser.download.dir", str(browserDownloadLocation))
         fOptions.set_preference("permissions.default.image", blockImages)
-        fOptions.set_preference("browser.helperApps.neverAsk.saveToDisk", "image/png, image/jpeg, image/jpg, image/gif, video/mp4, video/x-msvideo, video/msvideo, video/avi, video/quicktime, audio/flac, audio/wav, audio/mpeg, application/zip, application/pdf, text/plain, image/vnd.adobe.photoshop, application/octet-stream") # https://fanbox.pixiv.help/hc/en-us/articles/360011057793-What-types-of-attachments-can-I-post-
+
+        # disabling download prompt for Firefox
+        # Resources: https://fanbox.pixiv.help/hc/en-us/articles/360011057793-What-types-of-attachments-can-I-post- and https://help.fantia.jp/992 and with the help of https://www.digipres.org/formats/sources/tika/formats/
+        fOptions.set_preference("browser.helperApps.neverAsk.saveToDisk", "image/png, image/jpeg, image/jpg, image/gif, video/mp4, video/x-msvideo, video/msvideo, video/avi, video/quicktime, audio/flac, audio/wav, audio/mpeg, application/zip, application/pdf, text/plain, image/vnd.adobe.photoshop, application/octet-stream, application/x-rar-compressed, application/vnd.rar, audio/aac, audio/m4a, audio/ogg, video/ogg, application/ogg, video/mpeg, video/x-flv, application/epub+zip") 
         fOptions.set_preference("browser.helperApps.alwaysAsk.force", False) # Hide download confirmation dialog
         fOptions.set_preference("browser.download.manager.showWhenStarting", False) # hide download progress bar
 
