@@ -302,11 +302,11 @@ def get_saved_config_data_folder():
     """
     osPlatform = platform.system()
     if osPlatform == "Windows":
-        dataDirectory = pathlib.Path.home().joinpath("AppData/Roaming/CulturedDownloader")
+        dataDirectory = pathlib.Path.home().joinpath("AppData/Roaming/Cultured-Downloader")
     elif osPlatform == "Linux":
-        dataDirectory = pathlib.Path.home().joinpath(".config/CulturedDownloader")
+        dataDirectory = pathlib.Path.home().joinpath(".config/Cultured-Downloader")
     elif osPlatform == "Darwin": # macOS
-        dataDirectory = pathlib.Path.home().joinpath("Library/Preferences/CulturedDownloader")
+        dataDirectory = pathlib.Path.home().joinpath("Library/Preferences/Cultured-Downloader")
     else:
         print(f"{F.RED}Your OS is not supported/お使いのOSはサポートされていません...{END}")
         print(f"{F.RED}Supported OS/サポートされているOS: Windows, Linux, macOS...{END}")
@@ -633,7 +633,7 @@ def set_default_download_directory_to_desktop(jsonConfig):
     Requires one argument to be defined:
     - the config dictionary obtained from reading config.json
     """
-    defaultDownloadFolderPath = pathlib.Path.home().joinpath("Desktop", "CulturedDownloader")
+    defaultDownloadFolderPath = pathlib.Path.home().joinpath("Desktop", "Cultured-Downloader")
     jsonConfig["Download_Directory"] = str(defaultDownloadFolderPath)
     with open(jsonPath, "w") as f:
         json.dump(jsonConfig, f, indent=4)
