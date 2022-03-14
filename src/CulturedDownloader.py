@@ -958,14 +958,14 @@ def get_cookie_for_session(website, **options):
             sessionIDCookie = requests.cookies.create_cookie(domain=domain, name=cookieName, value=sessionID)
             sessionObject.cookies.set_cookie(sessionIDCookie)
             return sessionObject
-        else: return ""
+        else: raise SessionError(f"Saved {website} cookies did not have the corresponding value needed for the session object in the function, get_cookie_for_session.")
     else:
         if definedSessionID:
             sessionObject = requests.session()
             sessionIDCookie = requests.cookies.create_cookie(domain=domain, name=cookieName, value=definedSessionID)
             sessionObject.cookies.set_cookie(sessionIDCookie)
             return sessionObject
-        else: return ""
+        else: raise SessionError(f"{website} cookies did not have the corresponding value in the defined session ID needed for the session object in the function, get_cookie_for_session.")
 
 def load_cookie(website):
     """
@@ -1951,9 +1951,7 @@ def main():
 
     if pixivCookieLoaded and pixivCookieExist: pixivSession = get_cookie_for_session("pixiv")
     elif pixivCookieLoaded and not pixivCookieExist: pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
-    else: pixivSession = None # None instead of "" so that it won't raise a SessionError since the user might not have chosen to login
-
-    if pixivSession == "": raise SessionError
+    else: pixivSession = None
 
     cmdInput = ""
     cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "dc", "x", "y")
@@ -2394,8 +2392,6 @@ def main():
                 pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
                 if pixivCookieLoaded and pixivCookieExist: 
                     pixivSession = get_cookie_for_session("pixiv")
-                    if pixivSession == "":
-                        pixivCookieLoaded = False
                 else:
                     pixivCookieLoaded = False
             else:
@@ -2451,8 +2447,6 @@ def main():
                 pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
                 if pixivCookieLoaded and pixivCookieExist: 
                     pixivSession = get_cookie_for_session("pixiv")
-                    if pixivSession == "":
-                        pixivCookieLoaded = False
                 else:
                     pixivCookieLoaded = False
 
