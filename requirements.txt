@@ -1,6 +1,6 @@
 requests>=2.27.1
-selenium==4.1.2
+selenium>=4.1.2
 webdriver-manager==3.5.3
-pycryptodome==3.14.1
+pycryptodome>=3.14.1
 dill>=0.3.4
 colorama>=0.4.4
