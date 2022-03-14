@@ -7,7 +7,7 @@ try:
     __copyright__ = Header.__copyright__
     __license__ = Header.__license__
     __version__ = Header.__version__
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     print("Could not import Header module/Header モジュールのインポートに失敗しました...")
     input("Please enter any key to exit/何か入力すると終了します...")
     osExit()
