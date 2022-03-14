@@ -1077,7 +1077,7 @@ def print_progress_bar(prog, totalEl, caption):
     - The max progress or max number of elements (int)
     - A caption such as "Downloading 2 out of 2 images..." (string)
     """
-    barLength = 20 #size of progress bar
+    barLength = 30 #size of progress bar
     try:
         currentProg = prog / totalEl
     except ZeroDivisionError:
@@ -1097,10 +1097,20 @@ def print_download_completion_message(totalImage, subFolderPath, **options):
 
     Optional param:
     - attachments (bool) if True, will print out the corresponding message instead of just alerting the user that the program have downloaded all the images. 
+    - thumbnailNotice (bool) if True, will print out the corresponding message to alert the user that the thumbnail has been downloaded.
     --> default: False if not defined
     """
     if "attachments" in options: attachments = options["attachments"]
     else: attachments = False
+
+    if "thumbnailNotice" in options: thumbnailNotice = options["thumbnailNotice"]
+    else: thumbnailNotice = False
+    
+    if thumbnailNotice:
+        print_in_both_en_jp(
+            en=(f"\n{F.GREEN}The thumbnail of the post has been downloaded.{END}"),
+            jp=(f"\n{F.GREEN}投稿のサムネイルをダウンロードしました。{END}")
+        )
 
     if totalImage > 0:
         if attachments:
@@ -1123,9 +1133,11 @@ def print_download_completion_message(totalImage, subFolderPath, **options):
             )
     else:
         print_in_both_en_jp(
-            en=(f"\n{F.RED}Error: No images or attachments to download.{END}"),
-            jp=(f"\n{F.RED}エラー： ダウンロードする画像や添付ファイルがありません。{END}")
+            en=(f"\n{F.LIGHTRED_EX}Note: No images or attachments to download.{END}\n"),
+            jp=(f"\n{F.LIGHTRED_EX}注意： ダウンロードする画像や添付ファイルがありません。{END}\n")
         )
+        
+    print("\n")
 
 def open_new_tab():
     """
@@ -1236,12 +1248,14 @@ def download(urlInput, website, subFolderPath, **options):
         try: thumbnailSrc = driver.find_element(by=By.XPATH, value="//img[contains(@class, 'img-default')]").get_attribute("src")
         except: thumbnailSrc = None
 
+        thumbnailDownloadedCondition = False
         if thumbnailSrc:
             thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
             thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
             imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailSrc, "Fantia"))
             # no session needed since it's displayed regardless of membership status
             save_image(thumbnailSrc, imagePath) 
+            thumbnailDownloadedCondition = True
         
         imagesURLToDownloadArray = []
 
@@ -1291,8 +1305,9 @@ def download(urlInput, website, subFolderPath, **options):
             if attachmentAnchors: 
                 for anchor in attachmentAnchors:
                     anchorURLArray.append(anchor.get_attribute("href"))
-                del attachmentAnchors
                 open_new_tab()
+            
+            del attachmentAnchors
 
             totalImages = len(imagesURLToDownloadArray) + len(anchorURLArray)
             remove_any_files_in_directory(browserDownloadLocation)
@@ -1364,7 +1379,7 @@ def download(urlInput, website, subFolderPath, **options):
             print_progress_bar(totalImageProgress, totalImages, downloadMessage)
             totalImageProgress += 1
 
-        print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag)
+        print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition)
 
     elif website == "Pixiv":
         urlToDownloadArray = []
@@ -1387,8 +1402,9 @@ def download(urlInput, website, subFolderPath, **options):
             if attachmentAnchors: 
                 for anchor in attachmentAnchors:
                     anchorURLArray.append(anchor.get_attribute("href"))
-                del attachmentAnchors
                 open_new_tab()
+            
+            del attachmentAnchors
 
             totalImages = len(urlToDownloadArray) + len(anchorURLArray)
             remove_any_files_in_directory(browserDownloadLocation)
@@ -2027,7 +2043,7 @@ def main():
                     if type(urlInput) == list:
                         counter = 0
                         for url in urlInput: 
-                            downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
+                            downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
                             download(url, "FantiaPost", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
                     else: download(urlInput, "FantiaPost", imagePath, attachments=downloadAttachmentFlag)
@@ -2129,6 +2145,7 @@ def main():
                     )
                     print("\n")
                     postURLToDownloadArray = []
+                    if type(urlInput) == list: offSetArr = []
                     for postURL in fantiaPostPreviewURLArray: 
                         driver.get(postURL)
                         sleep(3)
@@ -2137,13 +2154,26 @@ def main():
 
                         for postAnchorEl in posts:
                             postURLToDownloadArray.append(postAnchorEl.get_attribute("href"))
+                        
+                        if type(urlInput) == list: offSetArr.append(len(postURLToDownloadArray))
 
-                    if postURLToDownloadArray:
+                    if postURLToDownloadArray and type(urlInput) == str:
                         counter = 0
                         for postURL in postURLToDownloadArray:
-                            downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
+                            downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
                             download(postURL, "FantiaPost", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
+                    elif postURLToDownloadArray and type(urlInput) == list:
+                        counter = 0
+                        creatorCounter = 0
+                        downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
+                        for postURL in postURLToDownloadArray:
+                            downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{counter}")
+                            download(postURL, "FantiaPost", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag)
+                            counter += 1
+                            if counter == offSetArr[creatorCounter]:
+                                creatorCounter += 1
+                                downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
                     else:
                         print_in_both_en_jp(
                             en=(
@@ -2220,7 +2250,7 @@ def main():
                     if type(urlInput) == list:
                         counter = 1
                         for url in urlInput:
-                            downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
+                            downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
                             download(url, "Pixiv", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
                     else:
@@ -2293,7 +2323,7 @@ def main():
                                 pageNumList.sort()
                                 for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
                                     pixivPostPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(i)]))
-                            
+
                             arrayPointer += 1
                     else:
                         raise Exception("pixiv Fanbox posts download's variables are not in correct format...")
@@ -2322,6 +2352,7 @@ def main():
                     )
                     print("\n")
                     postURLToDownloadArray = []
+                    if type(urlInput) == list: offSetArr = []
                     for postURL in pixivPostPreviewURLArray: 
                         driver.get(postURL)
                         sleep(3)
@@ -2330,13 +2361,26 @@ def main():
 
                         for postAnchorEl in posts:
                             postURLToDownloadArray.append(postAnchorEl.get_attribute("href"))
+                            
+                        if type(urlInput) == list: offSetArr.append(len(postURLToDownloadArray))
 
-                    if postURLToDownloadArray:
+                    if postURLToDownloadArray and type(urlInput) == str:
                         counter = 0
                         for postURL in postURLToDownloadArray:
-                            downloadDirectoryFolder = imagePath.joinpath(f"Post_{counter}")
+                            downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
                             download(postURL, "Pixiv", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
                             counter += 1
+                    elif postURLToDownloadArray and type(urlInput) == list:
+                        counter = 0
+                        creatorCounter = 0
+                        downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
+                        for postURL in postURLToDownloadArray:
+                            downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{counter}")
+                            download(postURL, "Pixiv", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag)
+                            counter += 1
+                            if counter == offSetArr[creatorCounter]:
+                                creatorCounter += 1
+                                downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
                     else:
                         print_in_both_en_jp(
                             en=(
@@ -2530,11 +2574,11 @@ if __name__ == "__main__":
     global pixivFanboxPostPageRegex
     global pageNumRegex
 
-    fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d{1,}")
-    fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d{1,}(/posts)")
-    pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)\w{1,}(/posts/)\d{1,}")
-    pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)\w{1,}(/posts)") 
-    pageNumRegex = re.compile(r"\d{1,}(-)\d{1,}|\d{1,}")
+    fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d+")
+    fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d+(/posts)")
+    pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts/)\d+") # [\w&.-]+ regex from https://stackoverflow.com/questions/13946651/matching-special-characters-and-letters-in-regex
+    pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts)") 
+    pageNumRegex = re.compile(r"\d+(-)\d+|\d+")
 
     introMenu = f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
