@@ -84,7 +84,7 @@ Although the program has Japanese language support, most of them are translated 
 ## Usage Notes
 1. **This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually. Please do not use this program and break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.**
 2. If you feel unsafe providing your passwords to this program, you can proceed as a guest. However, you might not be able to download posts that requires a membership.
-3. Cookies saved will be encrypted and stored in the configs folder found in your AppData LocalLow folder. However, please do not share any data with anyone as they will still be able to decrypt the encrypted cookies if you have shared the key file as well.
+3. Cookies saved will be encrypted and stored in the configs folder found in your AppData Roaming folder. However, please do not share any data with anyone as they will still be able to decrypt the encrypted cookies if you have shared the key file as well.
 4. If the website design has been changed, you can expect this program to break if it is not maintained/updated.
 
 ## FAQ
@@ -149,7 +149,7 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 ## 使用上の注意
 1. **このプログラムは、個人的な利用を目的とし、pixiv FanboxおよびFantiaから画像を手動でダウンロードする時間を短縮するためのものです。このプログラムを使用して、Fantiaまたはpixiv Fanboxの利用規約を破らないようにしてください。**
 2. このプログラムにパスワードを提供するのが不安な場合は、ゲストとして続行することができます。ただし、会員登録が必要な投稿はダウンロードできない場合があります。
-3. 保存されたクッキーは暗号化され、AppData LocalLowフォルダー内のconfigsフォルダーに保存されます。ただし、鍵ファイルを共有している場合は、暗号化されたCookieを復号化することができますので、データを共有しないようにお願いします。
+3. 保存されたクッキーは暗号化され、AppData Roamingフォルダー内のconfigsフォルダーに保存されます。ただし、鍵ファイルを共有している場合は、暗号化されたCookieを復号化することができますので、データを共有しないようにお願いします。
 4. ウェブサイトのデザインが変更された場合、メンテナンス/更新を行わないと、このプログラムが壊れることが予想されます。
 
 ## よくある質問
