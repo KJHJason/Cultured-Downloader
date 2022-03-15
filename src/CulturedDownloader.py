@@ -1197,14 +1197,59 @@ def get_page_num(userURLInput):
                 )
             )
         else: 
-            if type(pageInput) == list:
-                validPageNumInputs = True
-                for pageNum in pageInput:
-                    if re.fullmatch(pageNumRegex, pageNum) == None:
-                        validPageNumInputs = False
-                if validPageNumInputs:
-                    if type(userURLInput) == list:
-                        if len(userURLInput) == len(pageInput):
+            if lang == "en": pageNumConfirmationPrompt = "Are you sure that the number of pages entered are correct? (y/n): "
+            else: pageNumConfirmationPrompt = "入力されたページ数は正しいですか？ (y/n)： "
+
+            pageNumConfirmation = get_input_from_user(prompt=pageNumConfirmationPrompt, command=("y", "n"))
+            if pageNumConfirmation == "y":
+                if type(pageInput) == list:
+                    validPageNumInputs = True
+                    for pageNum in pageInput:
+                        if re.fullmatch(pageNumRegex, pageNum) == None:
+                            validPageNumInputs = False
+                    if validPageNumInputs:
+                        if type(userURLInput) == list:
+                            if len(userURLInput) == len(pageInput):
+                                return pageInput
+                            else:
+                                print_in_both_en_jp(
+                                    en=(
+                                        f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
+                                    ),
+                                    jp=(
+                                        f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
+                                    )
+                                )
+                        else:
+                            print_in_both_en_jp(
+                                    en=(
+                                        f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
+                                    ),
+                                    jp=(
+                                        f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
+                                    )
+                                )
+                    else:
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: Invalid format.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： ページ数が無効である。{END}"
+                            )
+                        )
+                elif type(pageInput) == str:
+                    if re.fullmatch(pageNumRegex, pageInput) == None:
+                        print_in_both_en_jp(
+                            en=(
+                                f"{F.RED}Error: Invalid format.{END}"
+                            ),
+                            jp=(
+                                f"{F.RED}エラー： ページ数が無効である。{END}"
+                            )
+                        )
+                    else:
+                        if type(userURLInput) == str:
                             return pageInput
                         else:
                             print_in_both_en_jp(
@@ -1215,48 +1260,8 @@ def get_page_num(userURLInput):
                                     f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
                                 )
                             )
-                    else:
-                        print_in_both_en_jp(
-                                en=(
-                                    f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
-                                ),
-                                jp=(
-                                    f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
-                                )
-                            )
                 else:
-                    print_in_both_en_jp(
-                        en=(
-                            f"{F.RED}Error: Invalid format.{END}"
-                        ),
-                        jp=(
-                            f"{F.RED}エラー： ページ数が無効である。{END}"
-                        )
-                    )
-            elif type(pageInput) == str:
-                if re.fullmatch(pageNumRegex, pageInput) == None:
-                    print_in_both_en_jp(
-                        en=(
-                            f"{F.RED}Error: Invalid format.{END}"
-                        ),
-                        jp=(
-                            f"{F.RED}エラー： ページ数が無効である。{END}"
-                        )
-                    )
-                else:
-                    if type(userURLInput) == str:
-                        return pageInput
-                    else:
-                        print_in_both_en_jp(
-                            en=(
-                                f"{F.RED}Error: The number of URLs entered is different from the number of pages entered.{END}"
-                            ),
-                            jp=(
-                                f"{F.RED}エラー： URLの個数とページ数の個数が違います。{END}"
-                            )
-                        )
-            else:
-                raise Exception("pageInput variable for downloading fantia posts is not a list or string...")
+                    raise Exception("pageInput variable for downloading fantia posts is not a list or string...")
 
 def get_url_inputs(urlValidationType, promptTuple):
     """
@@ -1313,6 +1318,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                     postPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
         elif type(pageInput) == list and type(urlInput) == list:
             arrayPointer = 0
+            pagePostOffsetArr = []
             for pageNumInput in pageInput:
                 try:
                     pageNum = int(pageNumInput)
@@ -1323,6 +1329,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                     for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
                         postPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(i)]))
 
+                pagePostOffsetArr.append(len(postPreviewURLArray))
                 arrayPointer += 1
         else:
             raise Exception(f"{website} posts download's variables are not in correct format...")
@@ -1333,6 +1340,13 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
 
         if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
         else: downloadAttachmentFlag = False
+
+        if lang == "en": thumbnailPrompt = "Would you like to download the thumbnail for each post? (y/n): "
+        else: thumbnailPrompt = "投稿ごとにサムネイルをダウンロードしますか？ (y/n): "
+        downloadThumbnailFlag = get_input_from_user(prompt=thumbnailPrompt, command=("y", "n"))
+
+        if downloadThumbnailFlag == "y": downloadThumbnailFlag = True
+        else: downloadThumbnailFlag = False
 
         if type(urlInput) == list: numOfPostPage = len(urlInput)
         else: numOfPostPage = 1
@@ -1350,11 +1364,21 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             )
         )
         print("\n")
+        print_in_both_en_jp(
+            en=(f"{F.LIGHTYELLOW_EX}Please wait as the program is retrieving multiple posts...{END}"),
+            jp=(f"{F.LIGHTYELLOW_EX}このプログラムが複数の投稿を取得しているため、しばらくお待ちください...{END}")
+        )
+        print("\n")
         postURLToDownloadArray = []
-        if type(urlInput) == list: offSetArr = []
-
+        
         if website == "fantia": xpathValue = "//a[@class='link-block']"
         elif website == "pixiv": xpathValue = "//a[@class='sc-1bjj922-0 gwbPAH']"
+
+        if type(urlInput) == list: 
+            offSetArr = []
+            postCount = 0
+            pageCount = 0
+            arrayOffsetPointer = 0
 
         for postURL in postPreviewURLArray: 
             driver.get(postURL)
@@ -1364,14 +1388,21 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
 
             for postAnchorEl in posts:
                 postURLToDownloadArray.append(postAnchorEl.get_attribute("href"))
-                
-            if type(urlInput) == list: offSetArr.append(len(postURLToDownloadArray))
 
+                if type(urlInput) == list:
+                    postCount += 1
+
+            if type(urlInput) == list:     
+                pageCount += 1
+                if pageCount == pagePostOffsetArr[arrayOffsetPointer]:
+                    arrayOffsetPointer += 1
+                    offSetArr.append(postCount)
+                
         if postURLToDownloadArray and type(urlInput) == str:
             counter = 0
             for postURL in postURLToDownloadArray:
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
-                download(postURL, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
+                download(postURL, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
                 counter += 1
         elif postURLToDownloadArray and type(urlInput) == list:
             counter = 0
@@ -1379,7 +1410,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
             for postURL in postURLToDownloadArray:
                 downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{counter}")
-                download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag)
+                download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
                 counter += 1
                 if counter == offSetArr[creatorCounter]:
                     creatorCounter += 1
@@ -1401,6 +1432,13 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
         else: downloadAttachmentFlag = False
 
+        if lang == "en": thumbnailPrompt = "Would you like to download the thumbnail for each post? (y/n): "
+        else: thumbnailPrompt = "投稿ごとにサムネイルをダウンロードしますか？ (y/n): "
+        downloadThumbnailFlag = get_input_from_user(prompt=thumbnailPrompt, command=("y", "n"))
+
+        if downloadThumbnailFlag == "y": downloadThumbnailFlag = True
+        else: downloadThumbnailFlag = False
+
         if type(urlInput) == list: numOfPosts = len(urlInput)
         else: numOfPosts = 1
         print("\n")
@@ -1421,9 +1459,9 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             counter = 0
             for url in urlInput: 
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
-                download(url, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag)
+                download(url, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
                 counter += 1
-        else: download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag)
+        else: download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
     else:
         raise Exception(f"Download type given: {downloadType} is not valid!")
 
@@ -1576,23 +1614,30 @@ def print_download_completion_message(totalImage, subFolderPath, **options):
     else: thumbnailNotice = False
 
     completionMsg = "\n"
-    if thumbnailNotice:
-        if lang == "en": completionMsg += f"{F.GREEN}The thumbnail of the post has been downloaded.{END}\n"
-        elif lang == "jp": completionMsg += f"{F.GREEN}投稿のサムネイルがダウンロードされました。{END}\n"
-
 
     if totalImage > 0:
+        if thumbnailNotice:
+            if lang == "en": completionMsg += f"{F.GREEN}The thumbnail of the post has been downloaded.{END}"
+            elif lang == "jp": completionMsg += f"{F.GREEN}投稿のサムネイルがダウンロードされました。{END}"
+            completionMsg += "\n"
+
         if attachments:
             if lang == "en": 
                 completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} images and attachments at\n{subFolderPath}{END}"
             elif lang == "jp": 
-                completionMsg += f"{F.GREEN}{subFolderPath} にある{totalImage}個のイメージと添付ファイルのダウンロードに成功しました。{END}"
+                completionMsg += f"{F.GREEN}{subFolderPath}\nにある{totalImage}個のイメージと添付ファイルのダウンロードに成功しました。{END}"
         else:
             if lang == "en":
                 completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} images at\n{subFolderPath}{END}"
             elif lang == "jp":
-                completionMsg += f"{F.GREEN}{subFolderPath} に{totalImage}枚の画像をダウンロードしました!{END}"
+                completionMsg += f"{F.GREEN}{subFolderPath}\nに{totalImage}枚の画像をダウンロードしました!{END}"
     else:
+        if thumbnailNotice:
+            thumbnailPath = subFolderPath.joinpath("thumbnail")
+            if lang == "en": completionMsg += f"{F.GREEN}The thumbnail of the post has been downloaded to\n{thumbnailPath}{END}"
+            elif lang == "jp": completionMsg += f"{F.GREEN}投稿のサムネイルが\n{thumbnailPath} にダウンロードされました。{END}"
+            completionMsg += "\n"
+
         if lang == "en": completionMsg += f"{F.LIGHTRED_EX}Note: No images or attachments to download from the post.{END}"
         elif lang == "jp": completionMsg += f"{F.LIGHTRED_EX}注意： ポストからダウンロードする画像や添付ファイルはありません。{END}"
     
@@ -1665,6 +1710,7 @@ def download(urlInput, website, subFolderPath, **options):
 
     Optional param:
     - attachments (boolean). If True, will download any attachments from the given url (default: False if not defined)
+    - thumbnails (boolean). If True, will download the thumbnail of the post (default: False if not defined)
     """
     driver.get(urlInput)
     sleep(4)
@@ -1672,18 +1718,22 @@ def download(urlInput, website, subFolderPath, **options):
     downloadAttachmentFlag = options.get("attachments")
     if downloadAttachmentFlag == None: downloadAttachmentFlag = False
 
-    if website == "Fantia":
-        try: thumbnailSrc = driver.find_element(by=By.XPATH, value="//img[contains(@class, 'img-default')]").get_attribute("src")
-        except: thumbnailSrc = None
+    downloadThumbnailFlag = options.get("thumbnails")
+    if downloadThumbnailFlag == None: downloadThumbnailFlag = False
 
+    if website == "Fantia":
         thumbnailDownloadedCondition = False
-        if thumbnailSrc:
-            thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
-            thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
-            imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailSrc, "Fantia"))
-            # no session needed since it's displayed regardless of membership status
-            save_image(thumbnailSrc, imagePath) 
-            thumbnailDownloadedCondition = True
+        if downloadThumbnailFlag:
+            try: thumbnailSrc = driver.find_element(by=By.XPATH, value="//img[contains(@class, 'img-default')]").get_attribute("src")
+            except: thumbnailSrc = None
+
+            if thumbnailSrc:
+                thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
+                thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
+                imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailSrc, "Fantia"))
+                # no session needed since it's displayed regardless of membership status
+                save_image(thumbnailSrc, imagePath) 
+                thumbnailDownloadedCondition = True
         
         imagesURLToDownloadArray = []
 
@@ -1810,20 +1860,20 @@ def download(urlInput, website, subFolderPath, **options):
         print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition)
 
     elif website == "Pixiv":
-        try: 
-            thumbnailURL = driver.find_element(by=By.XPATH, value="//div[contains(@class, 'bWHHJF')]").value_of_css_property("background-image").split('"')[1]
-            # splitting the url by " since the value of the css property will return 'url("https://...")'
-        except: 
-            thumbnailURL = None
-
         thumbnailDownloadedCondition = False
-        if thumbnailURL:
-            thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
-            thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
-            imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailURL, "Pixiv"))
-            # no session needed since it's displayed regardless of membership status
-            save_image(thumbnailURL, imagePath) 
-            thumbnailDownloadedCondition = True
+        if downloadThumbnailFlag:
+            try: 
+                thumbnailURL = driver.find_element(by=By.XPATH, value="//div[contains(@class, 'bWHHJF')]").value_of_css_property("background-image").split('"')[1]
+                # splitting the url by " since the value of the css property will return 'url("https://...")'
+            except: thumbnailURL = None
+            
+            if thumbnailURL:
+                thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
+                thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
+                imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailURL, "Pixiv"))
+                # no session needed since it's displayed regardless of membership status
+                save_image(thumbnailURL, imagePath) 
+                thumbnailDownloadedCondition = True
 
         urlToDownloadArray = []
 
