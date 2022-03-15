@@ -1,0 +1,83 @@
+name: バグレポート
+description: バグレポートはこちら
+title: "[バグ]: （バグレポートにご協力いただき、ありがとうございました！）"
+labels: ["bug"]
+assignees: 
+  - KJHJason
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグレポートにご協力いただき、ありがとうございました！
+        注意：　日本語を勉強中なので、簡単な日本語で書いてください。そうでないと、私が問題を理解し解決することができません。
+      
+  - type: dropdown
+    id: programName
+    attributes:
+      label: どのプログラムでこの問題が発生したのでしょうか？
+      multiple: true
+      options:
+        - Cultured Downloader (exe)
+        - Cultured Downloader (py)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 使用したWebdriver/ブラウザ
+      multiple: false
+      options:
+        - Chrome/クローム
+        - Edge/エッジ
+        - Firefox/ファイアフォックス
+    validations:
+      required: true
+
+  - type: input
+    id: programVersion
+    attributes:
+      label: プログラムバージョン
+      description: ご使用のプログラムのバージョンを教えてください (プログラムを実行したとき、またはexeファイル名から確認できます）。
+    validations:
+      required: true
+      
+  - type: textarea
+    id: stepsToReproduce
+    attributes:
+      label: バグを再現するための手順
+      description: これによって、どこが悪かったのかがわかるようになります。
+      placeholder: 発生したバグを再現するための手順を入力してください...
+      value: |
+              1. 
+              2. 
+              3. 
+              4.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expectedBehaviour
+    attributes:
+      label: プログラムの期待する行動
+      description: 期待したことが明確に、かつ簡潔に書かれていること。
+      placeholder: 代わりに何が起こるべきだったのか、説明してください...。
+    validations:
+      required: true
+
+  - type: textarea
+    id: errorLogText
+    attributes:
+      label: 関連するログ出力（ある場合）
+      description: エラーログのテキストをコピー＆ペーストするか、トレースバックやプログラムクラッシュ時に表示されたエラーメッセージのテキストをコピー＆ペーストしてください。
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: スクリーンショット（任意の）
+      description: スクリーンショットをアップロードするには、このボックスに画像ファイルをドラッグするだけです。
+    validations:
+      required: false

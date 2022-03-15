@@ -1153,18 +1153,39 @@ def check_if_input_is_url(inputString, website):
 
         return True
 
-def split_inputs_to_possible_multiple_inputs(userInput):
+def split_inputs_to_possible_multiple_inputs(userInput, **options):
     """
     Removes all whitespaces including Japanese whitespaces and splits the user's inputs into a list of possible inputs based on the delimiters, "," or "、".
 
+    Note: this function will also remove any duplicate elements in the user's input so if there is no need to remove duplicate elements, please add in the optional param below.
+
     Requires one argument to be defined:
     - A string
+
+    Optional param:
+    - removeDuplicates (bool): If True, this function will remove duplicate elements in the user's input. Default is True.
     """
     userInput = userInput.replace(" ", "")
     userInput = userInput.replace("　", "")
     if "," in userInput: userInput = userInput.split(",")
     elif "、" in userInput: userInput = userInput.split("、")
-    return userInput
+
+    if "removeDuplicates" in options: removeDuplicates = options["removeDuplicates"]
+    else: removeDuplicates = True
+
+    if type(userInput) == list:
+        if removeDuplicates:
+            removedDuplicatedUrls = list(dict.fromkeys(userInput))
+            if len(removedDuplicatedUrls) > 1:
+                return removedDuplicatedUrls
+            else:
+                return removedDuplicatedUrls[0]
+        else:
+            return userInput
+    elif type(userInput) == str:
+        return userInput
+    else:
+        raise Exception("Invalid data type in the function, split_inputs_to_possible_multiple_inputs...")
 
 def get_page_num(userURLInput):
     """
@@ -1181,8 +1202,8 @@ def get_page_num(userURLInput):
             en=(f"{F.YELLOW}Note: If you have entered multiple urls previously, please enter in this format, \"1-3, 5, 2-10\"{END}"),
             jp=(f"{F.YELLOW}注意： 以前に複数のURLを入力したことがある場合は、このフォーマットで入力してください。\"1-3、5、2-10\"{END}")
         )
-        if lang == "en": pageInput = split_inputs_to_possible_multiple_inputs(input("Enter the number of pages (X to cancel): "))
-        else: pageInput = split_inputs_to_possible_multiple_inputs(input("ページ数を入力します (Xでキャンセル)： "))
+        if lang == "en": pageInput = split_inputs_to_possible_multiple_inputs(input("Enter the number of pages (X to cancel): "), removeDuplicates=False)
+        else: pageInput = split_inputs_to_possible_multiple_inputs(input("ページ数を入力します (Xでキャンセル)： "), removeDuplicates=False)
 
         if pageInput == "x" or pageInput == "X": 
             return False
@@ -1379,6 +1400,8 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             postCount = 0
             pageCount = 0
             arrayOffsetPointer = 0
+            urlUnwantedParts = ("https:", "www", "fanbox", "cc", "", "fantia", "jp", "fanclubs")
+            creatorNameArr = []
 
         for postURL in postPreviewURLArray: 
             driver.get(postURL)
@@ -1397,6 +1420,11 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 if pageCount == pagePostOffsetArr[arrayOffsetPointer]:
                     arrayOffsetPointer += 1
                     offSetArr.append(postCount)
+                    
+                    for urlParts in driver.current_url.replace(".", "/").split("/")[:-1]:
+                        if urlParts not in urlUnwantedParts:
+                            if "@" in urlParts: urlParts = urlParts.replace("@", "")
+                            creatorNameArr.append(urlParts)
                 
         if postURLToDownloadArray and type(urlInput) == str:
             counter = 0
@@ -1407,14 +1435,14 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         elif postURLToDownloadArray and type(urlInput) == list:
             counter = 0
             creatorCounter = 0
-            downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
+            downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorNameArr[creatorCounter]}")
             for postURL in postURLToDownloadArray:
                 downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{counter}")
                 download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
                 counter += 1
-                if counter == offSetArr[creatorCounter]:
+                if (counter == offSetArr[creatorCounter]) and not (counter == len(postURLToDownloadArray)):
                     creatorCounter += 1
-                    downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorCounter}")
+                    downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorNameArr[creatorCounter]}")
         else:
             print_in_both_en_jp(
                 en=(
@@ -1909,7 +1937,6 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(progress, totalImages, downloadMessage)
                     progress += 1
 
-                
                 driver.get(attachmentURL) # getting the url which in turns downloads the attachments
                 sleep(3) # for the browser to download the attachment
 

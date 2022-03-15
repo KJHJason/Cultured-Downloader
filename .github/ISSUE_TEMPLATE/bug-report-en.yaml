@@ -1,6 +1,6 @@
 name: Bug Report
 description: File a bug report here
-title: "[Bug]: (Enter a short summary of the bug here)"
+title: "[Bug]: (Enter a short summary of the bug here）"
 labels: ["bug"]
 assignees: 
   - KJHJason
@@ -9,7 +9,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for taking the time to fill out this bug report! 
       
   - type: dropdown
     id: programName
@@ -30,6 +30,7 @@ body:
       options:
         - Chrome
         - Edge
+        - Firefox
     validations:
       required: true
 
@@ -68,7 +69,7 @@ body:
     id: errorLogText
     attributes:
       label: Relevant log output (If any)
-      description: Please copy and paste the text in the error log (found in your AppData LocalLow folder) or copy and paste any tracebacks or any error message text that appeared during a program crash.
+      description: Please copy and paste the text in the error log or copy and paste any tracebacks or any error message text that appeared during a program crash.
     validations:
       required: false
 
