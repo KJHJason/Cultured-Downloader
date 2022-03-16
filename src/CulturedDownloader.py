@@ -325,6 +325,7 @@ def get_driver(browserType, **additionalOptions):
     Optional params:
     - headless --> True or False, defaults to True
     - blockImg --> a number, defaults to 2
+    - windowSize --> Tuple of int, defaults to (1920, 1080)
 
     For numbers, use the definition below:
     - 0 is default
@@ -332,10 +333,13 @@ def get_driver(browserType, **additionalOptions):
     - 2 is to block
     """
     headlessOption = additionalOptions.get("headless")
-    if headlessOption == None: headlessOption = True # set to True by default
+    if headlessOption == None: headlessOption = True 
 
     blockImages = additionalOptions.get("blockImg")
     if blockImages == None: blockImages = 2 # set to 2 by default to block all images
+
+    windowSize = additionalOptions.get("windowSize")
+    if windowSize == None: windowSize = (1920, 1080) 
 
     print_in_both_en_jp(
         en=(f"\n{F.LIGHTYELLOW_EX}Initialising Browser...{END}"),
@@ -416,7 +420,7 @@ def get_driver(browserType, **additionalOptions):
             jap=("エラー： config.jsonに不明なブラウザタイプがある。", "このプログラムを再起動してください。")
         )
 
-    driver.set_window_size(1920, 1080)
+    driver.set_window_size(windowSize[0], windowSize[1])
     return driver
 
 def check_browser_config():
@@ -955,7 +959,7 @@ def save_and_load_cookie(originalDriver, website, **options):
         )
     )
 
-    newDriver = get_driver(selectedBrowser, headless=False, blockImg=1)
+    newDriver = get_driver(selectedBrowser, headless=False, blockImg=1, windowSize=(800, 800))
     if website == "fantia":
         cookieName = "_session_id"
         websiteURL = "https://fantia.jp/"
@@ -980,7 +984,7 @@ def save_and_load_cookie(originalDriver, website, **options):
                     f"{F.LIGHTRED_EX}注意： ブラウザを閉じないでください!{END}"
                 )
             )
-            newDriver = get_driver(selectedBrowser, headless=False, blockImg=1)
+            newDriver = get_driver(selectedBrowser, headless=False, blockImg=1, windowSize=(800, 800))
 
         if loggedIn: break
         else:
