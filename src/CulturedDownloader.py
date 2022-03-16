@@ -600,7 +600,6 @@ def update_lang():
             else:
                 config["Language"] = "en"
             
-
             with open(jsonPath, "w") as f:
                 json.dump(config, f, indent=4)
         else:
