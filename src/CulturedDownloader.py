@@ -886,41 +886,6 @@ def get_cookie_for_session(website, **options):
             return sessionObject
         else: raise SessionError(f"{website} cookies did not have the corresponding value in the defined session ID needed for the session object in the function, get_cookie_for_session.")
 
-def load_cookie(website):
-    """
-    For adding Fantia cookie into the webdriver.
-
-    Will return True or False depending on whether the cookie has been loaded successfully or not.
-
-    Requires one argument to be defined:
-    - The website which is either "pixiv" or "fantia" (string)
-    """
-    cookiePath = appPath.joinpath("configs", f"{website}_cookies")
-
-    if cookiePath.is_file():
-        if website == "fantia": driver.get("https://fantia.jp/")
-        elif website == "pixiv": driver.get("https://www.fanbox.cc/")
-        else: raise Exception("Invalid website argument in load_cookie function...")
-
-        with open(cookiePath, 'rb') as f:
-            cookie = decrypt_data(dill.load(f))
-
-        driver.delete_all_cookies()
-        driver.add_cookie(cookie)
-
-        if website == "fantia": websiteURL = "https://fantia.jp/mypage/users/plans"
-        else: websiteURL = "https://www.fanbox.cc/messages"
-
-        driver.get(websiteURL)
-        if driver.current_url == websiteURL: 
-            print_in_both_en_jp(
-                en=(f"{F.GREEN}{website.title()} cookied loaded successfully!{END}"),
-                jp=(f"{F.GREEN}{website.title()}のクッキーが正常に読み込まれました！{END}")
-            )
-            return True
-        else: return False
-    else: return False
-
 def login(currentDriver, website):
     """
     Used to verify if the loaded cookie is valid and allows the webdriver to be logged in.
@@ -1071,6 +1036,41 @@ def save_and_load_cookie(originalDriver, website, **options):
         if getSessionID: return False, None
         else: return False
 
+def load_cookie(website):
+    """
+    For adding Fantia cookie into the webdriver.
+
+    Will return True or False depending on whether the cookie has been loaded successfully or not.
+
+    Requires one argument to be defined:
+    - The website which is either "pixiv" or "fantia" (string)
+    """
+    cookiePath = appPath.joinpath("configs", f"{website}_cookies")
+
+    if cookiePath.is_file():
+        if website == "fantia": driver.get("https://fantia.jp/")
+        elif website == "pixiv": driver.get("https://www.fanbox.cc/")
+        else: raise Exception("Invalid website argument in load_cookie function...")
+
+        with open(cookiePath, 'rb') as f:
+            cookie = decrypt_data(dill.load(f))
+
+        driver.delete_all_cookies()
+        driver.add_cookie(cookie)
+
+        if website == "fantia": websiteURL = "https://fantia.jp/mypage/users/plans"
+        else: websiteURL = "https://www.fanbox.cc/messages"
+
+        driver.get(websiteURL)
+        if driver.current_url == websiteURL: 
+            print_in_both_en_jp(
+                en=(f"{F.GREEN}{website.title()} cookied loaded successfully!{END}"),
+                jp=(f"{F.GREEN}{website.title()}のクッキーが正常に読み込まれました！{END}")
+            )
+            return True
+        else: return False
+    else: return False
+
 def load_cookies():
     """
     To load in the saved cookies into the webdriver browser session.
@@ -1084,8 +1084,9 @@ def load_cookies():
     pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
 
     if fantiaCookieExist or pixivCookieExist:    
-        if lang == "en": cookiePrompt = "Would you like to load in your existing cookies? (y/n): "
-        else: cookiePrompt = "保存されたクッキーを読み込みますか？ (y/n)： "
+        if lang == "en": cookiePrompt = "Would you like to login using your saved cookies? (y/n): "
+        elif lang == "jp": cookiePrompt = "保存されているクッキーを使用してログインしますか？ (y/n): "
+
         userCookieInput = get_input_from_user(prompt=cookiePrompt, command=("y", "n"))
         if userCookieInput == "y":
             if pixivCookieExist: pixivCookieLoadedLocal = load_cookie("pixiv")
@@ -2485,15 +2486,12 @@ def main():
 
                 print_in_both_en_jp(
                     en=(f"\n{F.LIGHTRED_EX}You will now have to login again by manually logging in or loading in your cookies.{END}"),
-                    jp=(f"\n{F.LIGHTRED_EX}手動でログインするか、Cookieを読み込んで再度ログインする必要があります。{END}")
+                    jp=(f"\n{F.LIGHTRED_EX}手動でログインするか、クッキーを読み込んで再度ログインする必要があります。{END}")
                 )
 
                 pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
-                pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
-                if pixivCookieLoaded and pixivCookieExist: 
+                if pixivCookieLoaded: 
                     pixivSession = get_cookie_for_session("pixiv")
-                else:
-                    pixivCookieLoaded = False
             else:
                 print_in_both_en_jp(
                     en=(f"{F.YELLOW}No changes were made to the default download location.{END}"),
@@ -2544,11 +2542,8 @@ def main():
                 driver = get_driver(newDefaultBrowser)
 
                 pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
-                pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
-                if pixivCookieLoaded and pixivCookieExist: 
+                if pixivCookieLoaded: 
                     pixivSession = get_cookie_for_session("pixiv")
-                else:
-                    pixivCookieLoaded = False
 
                 selectedBrowser = newDefaultBrowser
             
@@ -2558,15 +2553,17 @@ def main():
         elif cmdInput == "8":
             if not check_if_user_is_logged_in():
                 pixivCookieExist = appPath.joinpath("configs", "pixiv_cookies").is_file()
-                if not pixivCookieLoaded and not pixivCookieExist:
+                fantiaCookieExist = appPath.joinpath("configs", "fantia_cookies").is_file()
+
+                if pixivCookieExist or fantiaCookieExist:
+                    pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
+                    if pixivCookieLoaded: 
+                        pixivSession = get_cookie_for_session("pixiv")
+
+                if not pixivCookieLoaded:
                     pixivCookieLoaded, pixivSessionID = save_and_load_cookie(driver, "pixiv", getID=True)
                     if pixivCookieLoaded:
                          pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
-
-                elif not pixivCookieLoaded and pixivCookieExist:
-                    pixivCookieLoaded = save_and_load_cookie(driver, "pixiv")
-                    if pixivCookieLoaded: 
-                        pixivSession = get_cookie_for_session("pixiv")
 
                 if not fantiaCookieLoaded:
                     fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
