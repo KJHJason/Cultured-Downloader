@@ -1211,8 +1211,32 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
             else:
                 return removedDuplicatedUrls[0]
         else:
+            print_in_both_en_jp(
+                en=(
+                    "\n",
+                    f"{F.YELLOW}Entered URLs: \n" + ", ".join(url for url in userInput) + f"{END}",
+                    "\n"
+                ),
+                jp=(
+                    "\n",
+                    f"{F.YELLOW}入力したURL: \n" + "、".join(url for url in userInput) + f"{END}",
+                    "\n"
+                )
+            )
             return userInput
     elif type(userInput) == str:
+        print_in_both_en_jp(
+            en=(
+                "\n",
+                f"{F.YELLOW}Entered URL: {userInput}{END}",
+                "\n"
+            ),
+            jp=(
+                "\n",
+                f"{F.YELLOW}入力したURL: {userInput}{END}",
+                "\n"
+            )
+        )
         return userInput
     else:
         raise Exception("Invalid data type in the function, split_inputs_to_possible_multiple_inputs...")
