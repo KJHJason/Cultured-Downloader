@@ -1163,7 +1163,8 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
     - A string
 
     Optional param:
-    - removeDuplicates (bool): If True, this function will remove duplicate elements in the user's input. Default is True.
+    - removeDuplicates (bool): If True, this function will remove duplicate elements in the user's input. However, if the user enters "d-", it will not remove duplicate elements anymore. Defaults to True if not defined.
+    - allowDupeCommand (bool): If True, this function will allow the user to enter "d-" in the input to prevent duplicate element(s) removal. Note that this will only work if removeDuplicates param is also true. Defaults to False if not defined.
     """
     userInput = userInput.replace(" ", "")
     userInput = userInput.replace("　", "")
@@ -1173,10 +1174,40 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
     if "removeDuplicates" in options: removeDuplicates = options["removeDuplicates"]
     else: removeDuplicates = True
 
+    if "allowDupeCommand" in options and removeDuplicates: 
+        allowDupeCommand = options["allowDupeCommand"]
+    else: allowDupeCommand = False
+
     if type(userInput) == list:
+        if "d-" in userInput and allowDupeCommand:
+            removeDuplicates = False
+            userInput.remove("d-")
+
         if removeDuplicates:
             removedDuplicatedUrls = list(dict.fromkeys(userInput))
-            if len(removedDuplicatedUrls) > 1:
+
+            removedDuplicatedUrlsLen = len(removedDuplicatedUrls)
+            if removedDuplicatedUrlsLen != len(userInput):
+                print_in_both_en_jp(
+                    en=(
+                        "\n",
+                        f"{F.LIGHTRED_EX}Warning: Duplicate URL(s) have been removed from your input.{END}",
+                        f"{F.YELLOW}Entered URLs with duplicates removed: \n" + ", ".join(url for url in removedDuplicatedUrls) + f"{END}",
+                        f"{F.YELLOW}\nIf you would like to keep the duplicate URLs, please type \"d-,\" in your input together with the URLs!{END}",
+                        f"{F.YELLOW}For example: d-, URL1, URL1, URL2{END}",
+                        "\n"
+                    ),
+                    jp=(
+                        "\n",
+                        f"{F.LIGHTRED_EX}ご注意： 入力にある重複URLは削除されました。{END}",
+                        f"{F.YELLOW}重複URLを削除して入力した： \n" + "、".join(url for url in removedDuplicatedUrls) + f"{END}",
+                        f"{F.YELLOW}\n重複したURLを残したい場合は、URLと一緒に入力欄に\"d-、\"と入力してください!{END}",
+                        f"{F.YELLOW}例： d-、URL1、URL1、URL2{END}",
+                        "\n"
+                    )
+                )
+
+            if removedDuplicatedUrlsLen > 1:
                 return removedDuplicatedUrls
             else:
                 return removedDuplicatedUrls[0]
@@ -1196,7 +1227,6 @@ def get_page_num(userURLInput):
     Requires one argument to be defined:
     - The user's URL input (string or list)
     """
-    print("\n")
     while True:
         print_in_both_en_jp(
             en=(f"{F.YELLOW}Note: If you have entered multiple urls previously, please enter in this format, \"1-3, 5, 2-10\"{END}"),
@@ -1211,10 +1241,10 @@ def get_page_num(userURLInput):
         if (pageInput == ""):
             print_in_both_en_jp(
                 en=(
-                    f"{F.RED}Error: No URL entered or URL entered.{END}"
+                    f"{F.RED}Error: No URL entered or URL entered.{END}\n"
                 ),
                 jp=(
-                    f"{F.RED}エラー： URLが入力されていない。{END}"
+                    f"{F.RED}エラー： URLが入力されていない。{END}\n"
                 )
             )
         else: 
@@ -1292,19 +1322,32 @@ def get_url_inputs(urlValidationType, promptTuple):
     - urlValidationType --> The type of URL validation to be done with the global regex variables.
     - promptTuple --> The prompt tuple to be used for the input prompt, first index for English and second index for Japanese in the tuple.
     """
-    if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input(promptTuple[0]))
-    else: urlInput = split_inputs_to_possible_multiple_inputs(input(promptTuple[1]))
+    while True:
+        if lang == "en": urlInput = split_inputs_to_possible_multiple_inputs(input(promptTuple[0]), allowDupeCommand=True)
+        else: urlInput = split_inputs_to_possible_multiple_inputs(input(promptTuple[1]), allowDupeCommand=True)
 
-    if urlInput == "x" or urlInput == "X":
-        return False
+        if urlInput == "x" or urlInput == "X":
+            return False
+
+        if lang == "en": confirmationPrompt = "Are/Is the entered URL(s) correct? (y/n): "
+        elif lang == "jp": confirmationPrompt = "入力されたURLは正しいですか？ (y/n)： "
+        else: raise Exception(f"Invalid language, {lang}, in function, get_url_inputs...")
+
+        confirmation = get_input_from_user(prompt=confirmationPrompt, command=("y", "n"))
+        print("\n")
+
+        if confirmation == "y":
+            break
+        else:
+            return "invalid"
 
     if (urlInput == "") or (check_if_input_is_url(urlInput, urlValidationType) == False): 
         print_in_both_en_jp(
             en=(
-                f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}"
+                f"{F.RED}Error: No URL entered or URL entered is/are invalid.{END}\n"
             ),
             jp=(
-                f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}"
+                f"{F.RED}エラー： URLが入力されていない、または入力されたURLが無効である。{END}\n"
             )
         )
         return "invalid"
@@ -2278,12 +2321,12 @@ def main():
                     print("\n")
                     print_in_both_en_jp(
                         en=(
-                            f"{F.LIGHTYELLOW_EX}However, please enter the base URL first! (e.g. https://fantia.jp/fanclubs/5744/posts){END}",
+                            f"{F.LIGHTYELLOW_EX}Please enter the base URL first! (e.g. https://fantia.jp/fanclubs/5744/posts){END}",
                             f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls.\n(e.g. https://fantia.jp/fanclubs/5744/posts, https://fantia.jp/fanclubs/14935/posts){END}",
                             f"{F.LIGHTYELLOW_EX}Afterwards, you will be prompted to enter the number of pages in this format, \"1-5\" or \"5\" to indicate page 1 to 5 or page 5 respectively.{END}"
                         ), 
                         jp=(
-                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://fantia.jp/fanclubs/5744/posts)。{END}",
+                            f"{F.LIGHTYELLOW_EX}最初にベースURLを入力してください (例: https://fantia.jp/fanclubs/5744/posts)。{END}",
                             f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。\n(例: https://fantia.jp/fanclubs/5744/posts、https://fantia.jp/fanclubs/14935/posts)。{END}",
                             f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
                         )
@@ -2353,12 +2396,12 @@ def main():
                 while True:
                     print_in_both_en_jp(
                         en=(
-                            f"{F.LIGHTYELLOW_EX}However, please enter the base URL first! (e.g. https://www.fanbox.cc/@creator_name/posts){END}",
+                            f"{F.LIGHTYELLOW_EX}Please enter the base URL first! (e.g. https://www.fanbox.cc/@creator_name/posts){END}",
                             f"{F.LIGHTYELLOW_EX}For multiple inputs, please add a comma in between the urls.\n(e.g. https://www.fanbox.cc/@creator_name_one/posts, https://www.fanbox.cc/@creator_name_two/posts){END}",
                             f"{F.LIGHTYELLOW_EX}Afterwards, you will be prompted to enter the number of pages in this format, \"1-5\" or \"5\" to indicate page 1 to 5 or page 5 respectively.{END}"
                         ), 
                         jp=(
-                            f"{F.LIGHTYELLOW_EX}ただし、最初にベースURLを入力してください (例: https://www.fanbox.cc/@creator_name/posts)。{END}",
+                            f"{F.LIGHTYELLOW_EX}最初にベースURLを入力してください (例: https://www.fanbox.cc/@creator_name/posts)。{END}",
                             f"{F.LIGHTYELLOW_EX}複数のURLを入力する場合は、URLの後にコンマを入力してください。\n(例: https://www.fanbox.cc/@creator_name_one/posts、https://www.fanbox.cc/@creator_name_two/posts)。{END}",
                             f"{F.LIGHTYELLOW_EX}その後、ページ数を入力する画面になるので、1～5ページを示す \"1-5\"やページ5を示す\"5\"を入力下さい。{END}"
                         )
