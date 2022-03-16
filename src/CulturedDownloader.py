@@ -154,7 +154,7 @@ def error_shutdown(**errorMessages):
                 print(f"{F.RED}{line}{END}")
         else: print(f"{F.RED}{enErrorMessages}{END}")
         input("Please enter any key to exit...")
-        print("Thank you for your understanding.")
+        print(f"{F.LIGHTYELLOW_EX}Thank you for your understanding.{END}")
         
     elif "jp" in errorMessages and lang == "jp":
         jpErrorMessages = errorMessages.get("jp")
@@ -163,7 +163,7 @@ def error_shutdown(**errorMessages):
                 print(f"{F.RED}{line}{END}")
         else: print(f"{F.RED}{jpErrorMessages}{END}")
         input("何か入力すると終了します。。。")
-        print("ご理解頂き誠にありがとうございます。")
+        print(f"{F.LIGHTYELLOW_EX}ご理解頂き誠にありがとうございます。{END}")
 
     try: driver.quit()
     except: pass
@@ -416,7 +416,7 @@ def get_driver(browserType, **additionalOptions):
             jap=("エラー： config.jsonに不明なブラウザタイプがある。", "このプログラムを再起動してください。")
         )
 
-    driver.set_window_size(1280, 720)
+    driver.set_window_size(1920, 1080)
     return driver
 
 def check_browser_config():
@@ -638,12 +638,12 @@ def set_default_download_directory_to_desktop(jsonConfig):
 
     print_in_both_en_jp(
         en=(
-            f"{F.YELLOW}Note: The default download folder will be defaulted to your desktop folder.{END}",
-            f"{F.YELLOW}Default Download Folder Path: {defaultDownloadFolderPath}{END}"
+            f"{F.LIGHTYELLOW_EX}Note: The default download folder will be defaulted to your desktop folder.{END}",
+            f"{F.LIGHTYELLOW_EX}Default Download Folder Path: {defaultDownloadFolderPath}{END}"
         ),
         jp=(
-            f"{F.YELLOW}注意： デフォルトのダウンロードフォルダをデスクトップに設定しました。{END}",
-            f"{F.YELLOW}ダウンロードフォルダのフルパス： {defaultDownloadFolderPath}{END}"
+            f"{F.LIGHTYELLOW_EX}注意： デフォルトのダウンロードフォルダをデスクトップに設定しました。{END}",
+            f"{F.LIGHTYELLOW_EX}ダウンロードフォルダのフルパス： {defaultDownloadFolderPath}{END}"
         )
     )
     return defaultDownloadFolderPath
@@ -1093,8 +1093,8 @@ def load_cookies():
             if fantiaCookieExist: fantiaCookieLoadedLocal = load_cookie("fantia")
         else:
             print_in_both_en_jp(
-                en=(f"{F.YELLOW}Saved cookies will not be loaded into the webdriver...{END}"),
-                jp=(f"{F.YELLOW}その場合、保存されたクッキーは読み込まれません...{END}")
+                en=(f"{F.LIGHTYELLOW_EX}Saved cookies will not be loaded into the webdriver...{END}"),
+                jp=(f"{F.LIGHTYELLOW_EX}その場合、保存されたクッキーは読み込まれません...{END}")
             )
 
     return pixivCookieLoadedLocal, fantiaCookieLoadedLocal
@@ -1192,17 +1192,17 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
                     en=(
                         "\n",
                         f"{F.LIGHTRED_EX}Warning: Duplicate URL(s) have been removed from your input.{END}",
-                        f"{F.YELLOW}Entered URLs with duplicates removed: \n" + ", ".join(url for url in removedDuplicatedUrls) + f"{END}",
-                        f"{F.YELLOW}\nIf you would like to keep the duplicate URLs, please type \"d-,\" in your input together with the URLs!{END}",
-                        f"{F.YELLOW}For example: d-, URL1, URL1, URL2{END}",
+                        f"{F.LIGHTYELLOW_EX}Entered URLs with duplicates removed: \n" + ", ".join(url for url in removedDuplicatedUrls) + f"{END}",
+                        f"{F.LIGHTYELLOW_EX}\nIf you would like to keep the duplicate URLs, please type \"d-,\" in your input together with the URLs!{END}",
+                        f"{F.LIGHTYELLOW_EX}For example: d-, URL1, URL1, URL2{END}",
                         "\n"
                     ),
                     jp=(
                         "\n",
                         f"{F.LIGHTRED_EX}ご注意： 入力にある重複URLは削除されました。{END}",
-                        f"{F.YELLOW}重複URLを削除して入力した： \n" + "、".join(url for url in removedDuplicatedUrls) + f"{END}",
-                        f"{F.YELLOW}\n重複したURLを残したい場合は、URLと一緒に入力欄に\"d-、\"と入力してください!{END}",
-                        f"{F.YELLOW}例： d-、URL1、URL1、URL2{END}",
+                        f"{F.LIGHTYELLOW_EX}重複URLを削除して入力した： \n" + "、".join(url for url in removedDuplicatedUrls) + f"{END}",
+                        f"{F.LIGHTYELLOW_EX}\n重複したURLを残したい場合は、URLと一緒に入力欄に\"d-、\"と入力してください!{END}",
+                        f"{F.LIGHTYELLOW_EX}例： d-、URL1、URL1、URL2{END}",
                         "\n"
                     )
                 )
@@ -1215,12 +1215,12 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
             print_in_both_en_jp(
                 en=(
                     "\n",
-                    f"{F.YELLOW}Entered URLs: \n" + ", ".join(url for url in userInput) + f"{END}",
+                    f"{F.LIGHTYELLOW_EX}Entered URLs: \n" + ", ".join(url for url in userInput) + f"{END}",
                     "\n"
                 ),
                 jp=(
                     "\n",
-                    f"{F.YELLOW}入力したURL: \n" + "、".join(url for url in userInput) + f"{END}",
+                    f"{F.LIGHTYELLOW_EX}入力したURL: \n" + "、".join(url for url in userInput) + f"{END}",
                     "\n"
                 )
             )
@@ -1229,12 +1229,12 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
         print_in_both_en_jp(
             en=(
                 "\n",
-                f"{F.YELLOW}Entered URL: {userInput}{END}",
+                f"{F.LIGHTYELLOW_EX}Entered URL: {userInput}{END}",
                 "\n"
             ),
             jp=(
                 "\n",
-                f"{F.YELLOW}入力したURL: {userInput}{END}",
+                f"{F.LIGHTYELLOW_EX}入力したURL: {userInput}{END}",
                 "\n"
             )
         )
@@ -1253,8 +1253,8 @@ def get_page_num(userURLInput):
     """
     while True:
         print_in_both_en_jp(
-            en=(f"{F.YELLOW}Note: If you have entered multiple urls previously, please enter in this format, \"1-3, 5, 2-10\"{END}"),
-            jp=(f"{F.YELLOW}注意： 以前に複数のURLを入力したことがある場合は、このフォーマットで入力してください。\"1-3、5、2-10\"{END}")
+            en=(f"{F.LIGHTYELLOW_EX}Note: If you have entered multiple urls previously, please enter in this format, \"1-3, 5, 2-10\"{END}"),
+            jp=(f"{F.LIGHTYELLOW_EX}注意： 以前に複数のURLを入力したことがある場合は、このフォーマットで入力してください。\"1-3、5、2-10\"{END}")
         )
         if lang == "en": pageInput = split_inputs_to_possible_multiple_inputs(input("Enter the number of pages (X to cancel): "), removeDuplicates=False)
         else: pageInput = split_inputs_to_possible_multiple_inputs(input("ページ数を入力します (Xでキャンセル)： "), removeDuplicates=False)
@@ -1358,7 +1358,6 @@ def get_url_inputs(urlValidationType, promptTuple):
         else: raise Exception(f"Invalid language, {lang}, in function, get_url_inputs...")
 
         confirmation = get_input_from_user(prompt=confirmationPrompt, command=("y", "n"))
-        print("\n")
 
         if confirmation == "y":
             break
@@ -1441,14 +1440,14 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         print("\n")
         print_in_both_en_jp(
             en=(
-                f"{F.YELLOW}Please wait as auto downloading files from {website.title()} can take quite a while if the file size is large...{END}",
-                f"{F.YELLOW}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}",
-                f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
+                f"{F.LIGHTYELLOW_EX}Please wait as auto downloading files from {website.title()} can take quite a while if the file size is large...{END}",
+                f"{F.LIGHTYELLOW_EX}The program will automatically download files from {numOfPostPage} all posts preview pages.{END}",
+                f"{F.LIGHTYELLOW_EX}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
             ),
             jp=(
-                f"{F.YELLOW}{website.title()}からのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                f"{F.YELLOW}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}",
-                f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
+                f"{F.LIGHTYELLOW_EX}{website.title()}からのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
+                f"{F.LIGHTYELLOW_EX}このプログラムは、{numOfPostPage}件の投稿プレビューページから自動的にファイルをダウンロードする。{END}",
+                f"{F.LIGHTYELLOW_EX}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
             )
         )
         print("\n")
@@ -1539,14 +1538,14 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         print("\n")
         print_in_both_en_jp(
             en=(
-                f"{F.YELLOW}Please wait as auto downloading files from {website.title()} can take quite a while if the file size is large...{END}",
-                f"{F.YELLOW}The program will automatically download files from {numOfPosts} posts.{END}",
-                f"{F.YELLOW}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
+                f"{F.LIGHTYELLOW_EX}Please wait as auto downloading files from {website.title()} can take quite a while if the file size is large...{END}",
+                f"{F.LIGHTYELLOW_EX}The program will automatically download files from {numOfPosts} posts.{END}",
+                f"{F.LIGHTYELLOW_EX}If it freezes, fret not! It's in the midst of downloading large files.\nJust let it run and do not terminate the program! Otherwise you will have to restart the download again.{END}"
             ),
             jp=(
-                f"{F.YELLOW}{website.title()}からのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
-                f"{F.YELLOW}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}",
-                f"{F.YELLOW}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
+                f"{F.LIGHTYELLOW_EX}{website.title()}からのファイルの自動ダウンロードは、ファイルサイズが大きい場合、かなり時間がかかるので、お待ちください...{END}",
+                f"{F.LIGHTYELLOW_EX}このプログラムは、{numOfPosts}投稿の中からファイルを自動的にダウンロードします。{END}",
+                f"{F.LIGHTYELLOW_EX}フリーズしても大丈夫! 大きなファイルをダウンロードしている最中なのです。\nそのまま実行させ、プログラムを終了させないでください! そうしないと、またダウンロードを再開しなければならなくなります。{END}"
             )
         )
         print("\n")
@@ -1957,10 +1956,10 @@ def download(urlInput, website, subFolderPath, **options):
     elif website == "Pixiv":
         thumbnailDownloadedCondition = False
         if downloadThumbnailFlag:
-            try: 
-                thumbnailURL = driver.find_element(by=By.XPATH, value="//div[contains(@class, 'jmiIFE')]").value_of_css_property("background-image").split('"')[1]
-                # splitting the url by " since the value of the css property will return 'url("https://...")'
-            except: thumbnailURL = None
+            try:
+                thumbnailURL = driver.find_element(by=By.XPATH, value="//div[contains(@class, 'sc-1ryrgzm-1 jmiIFE')]").value_of_css_property("background-image").split('"')[1] # splitting the url by " since the value of the css property will return 'url("https://...")'
+            except: 
+                thumbnailURL = None
             
             if thumbnailURL:
                 thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
@@ -2494,8 +2493,8 @@ def main():
                     pixivSession = get_cookie_for_session("pixiv")
             else:
                 print_in_both_en_jp(
-                    en=(f"{F.YELLOW}No changes were made to the default download location.{END}"),
-                    jp=(f"{F.YELLOW}デフォルトのダウンロード先は変更されませんでした。{END}")
+                    en=(f"{F.LIGHTYELLOW_EX}No changes were made to the default download location.{END}"),
+                    jp=(f"{F.LIGHTYELLOW_EX}デフォルトのダウンロード先は変更されませんでした。{END}")
                 )
             
         elif cmdInput == "6":
@@ -2508,8 +2507,8 @@ def main():
                 newDefaultBrowser = get_user_browser_preference()
                 if newDefaultBrowser == defaultBrowser:
                     print_in_both_en_jp(
-                        en=(f"{F.YELLOW}No changes were made to the default browser.{END}"),
-                        jp=(f"{F.YELLOW}デフォルトブラウザは変更されませんでした。{END}")
+                        en=(f"{F.LIGHTYELLOW_EX}No changes were made to the default browser.{END}"),
+                        jp=(f"{F.LIGHTYELLOW_EX}デフォルトブラウザは変更されませんでした。{END}")
                     )
             else:
                 print_in_both_en_jp(
@@ -2526,8 +2525,8 @@ def main():
                     newDefaultBrowser = get_user_browser_preference()
                     if newDefaultBrowser == defaultBrowser:
                         print_in_both_en_jp(
-                            en=(f"{F.YELLOW}No changes were made to the default browser.{END}"),
-                            jp=(f"{F.YELLOW}デフォルトブラウザは変更されませんでした。{END}")
+                            en=(f"{F.LIGHTYELLOW_EX}No changes were made to the default browser.{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}デフォルトブラウザは変更されませんでした。{END}")
                         )
                 else: 
                     print_in_both_en_jp(
