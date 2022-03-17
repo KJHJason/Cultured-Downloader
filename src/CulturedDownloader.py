@@ -22,18 +22,16 @@ try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import TimeoutException, WebDriverException
+    from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
     from webdriver_manager.chrome import ChromeDriverManager
     from selenium.webdriver.chrome.service import Service as chromeService
     from selenium.webdriver.chrome.options import Options as chromeOptions
     from webdriver_manager.microsoft import EdgeChromiumDriverManager
     from selenium.webdriver.edge.service import Service as edgeService
     from selenium.webdriver.edge.options import Options as edgeOptions
-    from webdriver_manager.firefox import GeckoDriverManager
-    from selenium.webdriver.firefox.service import Service as firefoxService
-    from selenium.webdriver.firefox.options import Options as firefoxOptions
     from Crypto.Cipher import ChaCha20_Poly1305 as Cha
     from Crypto.Random import get_random_bytes
+    from fake_useragent import UserAgent
 except (ImportError, ModuleNotFoundError):
     print("Failed to import third-party libraries/サードパーティーライブラリのインポートに失敗しました...")
     input("Please enter any key to exit/何か入力すると終了します...")
@@ -48,6 +46,7 @@ try:
     from datetime import datetime
     from shutil import rmtree, copyfileobj, move
     from base64 import b64encode, b64decode
+    from random import randint
 except (ImportError, ModuleNotFoundError):
     print("Failed to import standard libraries/標準ライブラリのインポートに失敗しました...")
     print("Please use Python 3.8.X and above/Python 3.8.X以降をご使用ください。")
@@ -134,7 +133,7 @@ def log_error():
             f.write(f"Cultured Downloader v{__version__ } Error Logs\n\n")
     else:
         with open(fullFilePath, "a") as f:
-            f.write("\n")
+            f.write("\n\n")
 
     logging.basicConfig(filename=fullFilePath, filemode="a", format="%(asctime)s - %(message)s")
     logging.error("Error Details: ", exc_info=True)
@@ -147,6 +146,7 @@ def error_shutdown(**errorMessages):
 
     Used for printing out error messages defined in the params before shutting down the program when an error occurs.
     """
+    log_error()
     if "en" in errorMessages and lang == "en":
         enErrorMessages = errorMessages.get("en")
         if type(enErrorMessages) == tuple:
@@ -167,7 +167,6 @@ def error_shutdown(**errorMessages):
 
     try: driver.quit()
     except: pass
-    log_error()
     sleep(2)
     raise SystemExit
 
@@ -320,12 +319,13 @@ def get_driver(browserType, **additionalOptions):
     Requires one argument to be defined:: 
     - "chrome"
     - "edge"
-    - "firefox"
 
     Optional params:
     - headless --> True or False, defaults to True
     - blockImg --> a number, defaults to 2
     - windowSize --> Tuple of int, defaults to (1920, 1080)
+    - randomiseUserAgent --> True or False, defaults to False
+    - quiet --> True or False, defaults to False
 
     For numbers, use the definition below:
     - 0 is default
@@ -341,72 +341,59 @@ def get_driver(browserType, **additionalOptions):
     windowSize = additionalOptions.get("windowSize")
     if windowSize == None: windowSize = (1920, 1080) 
 
-    print_in_both_en_jp(
-        en=(f"\n{F.LIGHTYELLOW_EX}Initialising Browser...{END}"),
-        jp=(f"\n{F.LIGHTYELLOW_EX}ブラウザの初期化中です...{END}")
-    )
+    randomiseUserAgent = additionalOptions.get("randomiseUserAgent")
+    if randomiseUserAgent == None: randomiseUserAgent = False
+
+    quietFlag = additionalOptions.get("quiet")
+    if quietFlag == None: quietFlag = False
+
+    if not quietFlag:
+        print_in_both_en_jp(
+            en=(f"\n{F.LIGHTYELLOW_EX}Initialising Browser...{END}"),
+            jp=(f"\n{F.LIGHTYELLOW_EX}ブラウザの初期化中です...{END}")
+        )
+        
+    if randomiseUserAgent:
+        UA = UserAgent()
+        userAgentInfo = UA.random
+
     if browserType == "chrome":
-        #minimise the browser window and hides unnecessary text output
-        cOptions = chromeOptions()
-        cOptions.headless = headlessOption
-        cOptions.add_argument("--log-level=3")
-        cOptions.add_argument("--disable-gpu")
-        cOptions.add_argument("--disable-dev-shm-usage") # from https://stackoverflow.com/questions/62898801/selenium-headless-chrome-runs-much-slower
+        options = chromeOptions()
+    elif browserType == "edge":
+        options = edgeOptions()
+        options.use_chromium = True
 
-        # change default download location
-        cOptions.add_experimental_option("prefs", {
-            "download.default_directory": str(browserDownloadLocation),
-            "profile.managed_default_content_settings.images": blockImages,
-            "download.prompt_for_download": False
-        })
+    # run browser in headless mode and hides unnecessary text output
+    options.headless = headlessOption
+    options.add_argument("--log-level=3")
 
+    # performance settings for webdriver
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-shm-usage") # from https://stackoverflow.com/questions/62898801/selenium-headless-chrome-runs-much-slower
+
+    # change default download location
+    options.add_experimental_option("prefs", {
+        "download.default_directory": str(browserDownloadLocation),
+        "profile.managed_default_content_settings.images": blockImages,
+        "download.prompt_for_download": False
+    })
+
+    # remove DevTools msg
+    options.add_experimental_option("excludeSwitches", ["enable-logging"])
+
+    if randomiseUserAgent:
+        options.add_argument(f"user-agent={userAgentInfo}")
+
+    if browserType == "chrome":
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
-        driver = webdriver.Chrome(service=gService, options=cOptions)
+        driver = webdriver.Chrome(service=gService, options=options)
     elif browserType == "edge":
-        # minimise the browser window and hides unnecessary text output
-        eOptions = edgeOptions()
-        eOptions.headless = headlessOption
-        eOptions.use_chromium = True
-        eOptions.add_argument("--log-level=3")
-        eOptions.add_argument("--disable-gpu")
-        eOptions.add_argument("--disable-dev-shm-usage")
-
-        # change default download location
-        eOptions.add_experimental_option("prefs", {
-            "download.default_directory": str(browserDownloadLocation),
-            "profile.managed_default_content_settings.images": blockImages,
-            "download.prompt_for_download": False
-        })
-
         eService = edgeService(EdgeChromiumDriverManager(log_level=0, print_first_line=False).install())
 
         # start webdriver
-        driver = webdriver.Edge(service=eService, options=eOptions)
-    elif browserType == "firefox":
-        # minimise the browser window and hides unnecessary text output
-        fOptions = firefoxOptions()
-        fOptions.headless = headlessOption
-        fOptions.add_argument("--log-level=3")
-        fOptions.add_argument("--disable-gpu")
-        fOptions.add_argument("--disable-dev-shm-usage")
-
-        # change default download location
-        fOptions.set_preference("browser.download.folderList", 2) # 0 means to download to the desktop, 1 means to download to the default "Downloads" directory, 2 means to use the directory below
-        fOptions.set_preference("browser.download.dir", str(browserDownloadLocation))
-        fOptions.set_preference("permissions.default.image", blockImages)
-
-        # disabling download prompt for Firefox
-        # Resources: https://fanbox.pixiv.help/hc/en-us/articles/360011057793-What-types-of-attachments-can-I-post- and https://help.fantia.jp/992 and with the help of https://www.digipres.org/formats/sources/tika/formats/
-        fOptions.set_preference("browser.helperApps.neverAsk.saveToDisk", "image/png, image/jpeg, image/jpg, image/gif, video/mp4, video/x-msvideo, video/msvideo, video/avi, video/quicktime, audio/flac, audio/wav, audio/mpeg, application/zip, application/pdf, text/plain, image/vnd.adobe.photoshop, application/octet-stream, application/x-rar-compressed, application/vnd.rar, audio/aac, audio/m4a, audio/ogg, video/ogg, application/ogg, video/mpeg, video/x-flv, application/epub+zip") 
-        fOptions.set_preference("browser.helperApps.alwaysAsk.force", False) # Hide download confirmation dialog
-        fOptions.set_preference("browser.download.manager.showWhenStarting", False) # hide download progress bar
-
-        fService = firefoxService(GeckoDriverManager(log_level=0, print_first_line=False).install())
-
-        # start webdriver
-        driver = webdriver.Firefox(service=fService, options=fOptions)
+        driver = webdriver.Edge(service=eService, options=options)
     else:
         with open(jsonPath, "r") as f:
             config = json.load(f)
@@ -429,7 +416,7 @@ def check_browser_config():
 
     If it doesn not have the necessary information, it will return None.
 
-    Otherwise, it will return the browser type which will usually be either "chrome", "firefox" or "edge".
+    Otherwise, it will return the browser type which will usually be either "chrome" or "edge".
     """
     with open(jsonPath, "r") as f:
         config = json.load(f)
@@ -451,18 +438,18 @@ def check_browser_config():
 
 def get_user_browser_preference():
     """
-    To get the user's preferred browser which will either return "chrome", "firefox" or "edge"
+    To get the user's preferred browser which will either return "chrome" or "edge"
     """
     if lang == "en":
         inputPrompt = "Select a browser from the available options: "
-        printsPrompt = ("What browser would you like to use?", "Available browsers: Chrome, Edge, Firefox.")
+        printsPrompt = ("What browser would you like to use?", "Available browsers: Chrome, Edge.")
         warningPrompt = "Invalid browser, please enter a browser from the available browsers."
     else:
         inputPrompt = "利用可能なオプションからブラウザを選択します： "
-        printsPrompt = ("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge, Firefox。")
+        printsPrompt = ("どのブラウザを使用しますか？", "使用可能なブラウザ： Chrome, Edge。")
         warningPrompt = "不正なブラウザです。使用可能なブラウザから選んでください。"
 
-    selectedBrowser = get_input_from_user(prompt=inputPrompt, command=("chrome", "edge", "firefox"), prints=printsPrompt, warning=warningPrompt)
+    selectedBrowser = get_input_from_user(prompt=inputPrompt, command=("chrome", "edge"), prints=printsPrompt, warning=warningPrompt)
     return selectedBrowser
 
 def get_browser_preferences():
@@ -471,14 +458,14 @@ def get_browser_preferences():
     
     This function will check the config.json file if the user has defined their preferred browser in the json file by calling the function check_browser_config.
 
-    Hence, in any event that the function check_browser_config() returns a string and not None and if the returned string from check_browser_config() is not "chrome", "firefox" or "edge", the user might have entered manually to config.json.
+    Hence, in any event that the function check_browser_config() returns a string and not None and if the returned string from check_browser_config() is not "chrome" or "edge", the user might have entered manually to config.json.
 
-    However, the function get_driver(browserType) will do the necessary checks and change the config.json file browser data to an empty string if it's not "chrome", "firefox" or "edge".
+    However, the function get_driver(browserType) will do the necessary checks and change the config.json file browser data to an empty string if it's not "chrome" or "edge".
 
     Otherwise, if the user has not set a default browser, it will ask the user to select a browser and prompt them 
     if they want to save their preferred browser type to config.json for future runs.
 
-    This function will return the browser type which will usually be either "chrome", "firefox" or "edge".
+    This function will return the browser type which will usually be either "chrome" or "edge".
     """
     loadBrowser = check_browser_config()
     if loadBrowser == None:
@@ -500,7 +487,7 @@ def save_browser_config(selectedBrowser):
     To save the user's preferred browser to config.json.
 
     Requires one argument to be defined:
-    - the browser type which will usually be either "chrome", "firefox" or "edge".
+    - the browser type which will usually be either "chrome" or "edge".
     """
     with open(jsonPath, "r") as f:
         config = json.load(f)
@@ -798,25 +785,23 @@ def encrypt_data(data):
     - A dictionary containing the data to be encrypted
     """
     header = b"Cultured_Downloader" # converts string to bytes string
-    if type(data) == dict:
-        data = json.dumps(data) # converts the dict to a string
+    
+    data = json.dumps(data) # converts the python object to a string
 
-        try:
-            cipher = Cha.new(key=ChaChaKey)
-        except TypeError:
-            raise EncryptionKeyError
+    try:
+        cipher = Cha.new(key=ChaChaKey)
+    except TypeError:
+        raise EncryptionKeyError
 
-        cipher.update(header)
-        cipherText, tag = cipher.encrypt_and_digest(data.encode())
+    cipher.update(header)
+    cipherText, tag = cipher.encrypt_and_digest(data.encode())
 
-        dictKeys = ["nonce", "header", "cipherText", "tag"]
-        valuesList = [b64encode(x).decode() for x in (cipher.nonce, header, cipherText, tag)] # b64encodes the values and decode it to a string
+    dictKeys = ["nonce", "header", "cipherText", "tag"]
+    valuesList = [b64encode(x).decode() for x in (cipher.nonce, header, cipherText, tag)] # b64encodes the values and decode it to a string
 
-        encryptedData = dict(zip(dictKeys, valuesList)) # converts both lists to a dictionary
+    encryptedData = dict(zip(dictKeys, valuesList)) # converts both lists to a dictionary
 
-        return EncryptedData(encryptedData)
-    else:
-        raise Exception("Data to be encrypted is not a dictionary...")
+    return EncryptedData(encryptedData)
 
 def decrypt_data(encryptedData):
     """
@@ -945,7 +930,6 @@ def save_and_load_cookie(originalDriver, website, **options):
     Optional param:
     - getID to retrieve the cookie session ID (bool)
     """
-
     getSessionID = options.get("getID")
 
     print_in_both_en_jp(
@@ -1022,7 +1006,7 @@ def save_and_load_cookie(originalDriver, website, **options):
         else:
             print_in_both_en_jp(
                 en=(f"{F.RED}Saving of {website.title()} cookie will be aborted as per user's request.{END}"),
-                jp=(f"{F.RED}{website.title()}のセッションCookieの保存は、ユーザーの要求に応じて中止されます。{END}")
+                jp=(f"{F.RED}{website.title()}のセッションクッキーの保存は、ユーザーの要求に応じて中止されます。{END}")
             )
 
         if originalDriver.current_url != websiteURL: 
@@ -1195,18 +1179,18 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
                 print_in_both_en_jp(
                     en=(
                         "\n",
-                        f"{F.LIGHTRED_EX}Warning: Duplicate URL(s) have been removed from your input.{END}",
-                        f"{F.LIGHTYELLOW_EX}Entered URLs with duplicates removed: \n" + ", ".join(url for url in removedDuplicatedUrls) + f"{END}",
-                        f"{F.LIGHTYELLOW_EX}\nIf you would like to keep the duplicate URLs, please type \"d-,\" in your input together with the URLs!{END}",
-                        f"{F.LIGHTYELLOW_EX}For example: d-, URL1, URL1, URL2{END}",
+                        f"{F.LIGHTRED_EX}Warning: Duplicate input(s) have been removed from your input.{END}",
+                        f"{F.LIGHTYELLOW_EX}Entered input(s) with duplicates removed: \n" + ", ".join(url for url in removedDuplicatedUrls) + f"{END}",
+                        f"{F.LIGHTYELLOW_EX}\nIf you would like to keep the duplicate inputs, please type \"d-,\" in your input as well!{END}",
+                        f"{F.LIGHTYELLOW_EX}For example: d-, input1, input1, input2{END}",
                         "\n"
                     ),
                     jp=(
                         "\n",
-                        f"{F.LIGHTRED_EX}ご注意： 入力にある重複URLは削除されました。{END}",
-                        f"{F.LIGHTYELLOW_EX}重複URLを削除して入力した： \n" + "、".join(url for url in removedDuplicatedUrls) + f"{END}",
-                        f"{F.LIGHTYELLOW_EX}\n重複したURLを残したい場合は、URLと一緒に入力欄に\"d-、\"と入力してください!{END}",
-                        f"{F.LIGHTYELLOW_EX}例： d-、URL1、URL1、URL2{END}",
+                        f"{F.LIGHTRED_EX}ご注意： 重複する入力は入力から削除されました。{END}",
+                        f"{F.LIGHTYELLOW_EX}重複を排除して入力した： \n" + "、".join(url for url in removedDuplicatedUrls) + f"{END}",
+                        f"{F.LIGHTYELLOW_EX}\n重複入力を避けたい場合は、入力の際にも\"d-、\"と入力してください!{END}",
+                        f"{F.LIGHTYELLOW_EX}例： d-、インプット1、インプット1、インプット2{END}",
                         "\n"
                     )
                 )
@@ -1219,12 +1203,12 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
             print_in_both_en_jp(
                 en=(
                     "\n",
-                    f"{F.LIGHTYELLOW_EX}Entered URLs: \n" + ", ".join(url for url in userInput) + f"{END}",
+                    f"{F.LIGHTYELLOW_EX}Entered: \n" + ", ".join(url for url in userInput) + f"{END}",
                     "\n"
                 ),
                 jp=(
                     "\n",
-                    f"{F.LIGHTYELLOW_EX}入力したURL: \n" + "、".join(url for url in userInput) + f"{END}",
+                    f"{F.LIGHTYELLOW_EX}入力された内容: \n" + "、".join(url for url in userInput) + f"{END}",
                     "\n"
                 )
             )
@@ -1233,12 +1217,12 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
         print_in_both_en_jp(
             en=(
                 "\n",
-                f"{F.LIGHTYELLOW_EX}Entered URL: {userInput}{END}",
+                f"{F.LIGHTYELLOW_EX}Your entered input: {userInput}{END}",
                 "\n"
             ),
             jp=(
                 "\n",
-                f"{F.LIGHTYELLOW_EX}入力したURL: {userInput}{END}",
+                f"{F.LIGHTYELLOW_EX}入力された内容: {userInput}{END}",
                 "\n"
             )
         )
@@ -1380,6 +1364,73 @@ def get_url_inputs(urlValidationType, promptTuple):
         return "invalid"
     else: return urlInput
 
+def get_download_flags(website):
+    """
+    Retrieves the download flags for executing the download logic.
+
+    Requires one argument to be defined:
+    - website --> "fantia" or "pixiv"
+
+    Returns a tuple of the download flags in the order of 
+    imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag
+
+    If user plans to cancel the entire download process and return to menu, it will return a tuple of None values.
+    """
+    while True:
+        if lang == "en": 
+            imagePrompt = "Would you like to download images from each post? (y/n/x to cancel and return to menu): "
+        elif lang == "jp": 
+            imagePrompt = "投稿ごとに画像をダウンロードしますか？ (y/n/xでキャンセルしてメニューに戻る): "
+            
+        imageFlag = get_input_from_user(prompt=imagePrompt, command=("y", "n", "x"))
+        if imageFlag == "y": imageFlag = True
+        elif imageFlag == "n": imageFlag = False
+        else: return None, None, None, None
+
+        if website == "pixiv":
+            if lang == "en": 
+                gdrivePrint = f"Note: Downloading files from gdrive will take quite a while to avoid too many requests per minute."
+                gdrivePrompt = "Would you like to download any gdrive links if found? (y/n/x to cancel and return to menu): "
+            elif lang == "jp":
+                gdrivePrint = f"ご注意：gdriveからのファイルのダウンロードは、1分間に多くのリクエストを避けるため、かなり時間がかかります。"
+                gdrivePrompt = "gdriveのリンクが見つかったら、ダウンロードしますか？ (y/n/xでキャンセルしてメニューに戻る): "
+
+            gdriveFlag = get_input_from_user(prompt=gdrivePrompt, command=("y", "n", "x"), prints=gdrivePrint)
+            if gdriveFlag == "y": gdriveFlag = True
+            elif gdriveFlag == "n": gdriveFlag = False
+            else: return None, None, None, None
+
+        elif website == "fantia":
+            gdriveFlag = False
+
+        if lang == "en": attachmentPrompt = "Would you like to download attachments such as psd files, videos, gifs (if found)? (y/n/x to cancel and return to menu): "
+        elif lang == "jp": attachmentPrompt = "psdファイルや動画ファイルやgifファイルをダウンロードしますか (見つかった場合)？ (y/n/xでキャンセルしてメニューに戻る): "
+        downloadAttachmentFlag = get_input_from_user(prompt=attachmentPrompt, command=("y", "n", "x"))
+
+        if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
+        elif downloadAttachmentFlag == "n": downloadAttachmentFlag = False
+        else: return None, None, None, None
+
+        if lang == "en": thumbnailPrompt = "Would you like to download the thumbnail for each post? (y/n/x to cancel and return to menu): "
+        elif lang == "jp": thumbnailPrompt = "投稿ごとにサムネイルをダウンロードしますか？ (y/n/xでキャンセルしてメニューに戻る): "
+        downloadThumbnailFlag = get_input_from_user(prompt=thumbnailPrompt, command=("y", "n", "x"))
+
+        if downloadThumbnailFlag == "y": downloadThumbnailFlag = True
+        elif downloadThumbnailFlag == "n": downloadThumbnailFlag = False
+        else: return None, None, None, None
+
+        if not imageFlag and not gdriveFlag and not downloadAttachmentFlag and not downloadThumbnailFlag:
+            print_in_both_en_jp(
+                en=(
+                    f"{F.RED}Error: Please select at least one download option.{END}\n"
+                ),
+                jp=(
+                    f"{F.RED}エラー： ダウンロードを1つ以上選択してください。{END}\n"
+                )
+            )
+        else: 
+            return imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag
+
 def execute_download_process(urlInput, imagePath, downloadType, website, **options):
     """
     For executing the logic behind downloading images or attachments.
@@ -1425,19 +1476,17 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         else:
             raise Exception(f"{website} posts download's variables are not in correct format...")
 
-        if lang == "en": attachmentPrompt = "Would you like to download attachments such as psd files, videos, gifs (if found)? (y/n): "
-        else: attachmentPrompt = "psdファイルや動画ファイルやgifファイルをダウンロードしますか (見つかった場合)？ (y/n): "
-        downloadAttachmentFlag = get_input_from_user(prompt=attachmentPrompt, command=("y", "n"))
-
-        if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
-        else: downloadAttachmentFlag = False
-
-        if lang == "en": thumbnailPrompt = "Would you like to download the thumbnail for each post? (y/n): "
-        else: thumbnailPrompt = "投稿ごとにサムネイルをダウンロードしますか？ (y/n): "
-        downloadThumbnailFlag = get_input_from_user(prompt=thumbnailPrompt, command=("y", "n"))
-
-        if downloadThumbnailFlag == "y": downloadThumbnailFlag = True
-        else: downloadThumbnailFlag = False
+        imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag = get_download_flags(website)
+        if imageFlag == None: 
+            print_in_both_en_jp(
+                en=(
+                    f"{F.LIGHTYELLOW_EX}Download cancelled...{END}"
+                ),
+                jp=(
+                    f"{F.LIGHTYELLOW_EX}ダウンロードはキャンセルされました...{END}"
+                )
+            )
+            return
 
         if type(urlInput) == list: numOfPostPage = len(urlInput)
         else: numOfPostPage = 1
@@ -1500,7 +1549,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             counter = 0
             for postURL in postURLToDownloadArray:
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
-                download(postURL, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
+                download(postURL, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
         elif postURLToDownloadArray and type(urlInput) == list:
             counter = 0
@@ -1508,7 +1557,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorNameArr[creatorCounter]}")
             for postURL in postURLToDownloadArray:
                 downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{counter}")
-                download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
+                download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
                 if (counter == offSetArr[creatorCounter]) and not (counter == len(postURLToDownloadArray)):
                     creatorCounter += 1
@@ -1523,19 +1572,17 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 )
             )
     elif downloadType == "postPage":
-        if lang == "en": attachmentPrompt = "Would you like to download attachments such as psd files, videos, gifs (if found)? (y/n): "
-        else: attachmentPrompt = "psdファイルや動画ファイルやgifファイルをダウンロードしますか (見つかった場合)？ (y/n): "
-        downloadAttachmentFlag = get_input_from_user(prompt=attachmentPrompt, command=("y", "n"))
-
-        if downloadAttachmentFlag == "y": downloadAttachmentFlag = True
-        else: downloadAttachmentFlag = False
-
-        if lang == "en": thumbnailPrompt = "Would you like to download the thumbnail for each post? (y/n): "
-        else: thumbnailPrompt = "投稿ごとにサムネイルをダウンロードしますか？ (y/n): "
-        downloadThumbnailFlag = get_input_from_user(prompt=thumbnailPrompt, command=("y", "n"))
-
-        if downloadThumbnailFlag == "y": downloadThumbnailFlag = True
-        else: downloadThumbnailFlag = False
+        imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag = get_download_flags(website)
+        if imageFlag == None: 
+            print_in_both_en_jp(
+                en=(
+                    f"{F.LIGHTYELLOW_EX}Download cancelled...{END}"
+                ),
+                jp=(
+                    f"{F.LIGHTYELLOW_EX}ダウンロードはキャンセルされました...{END}"
+                )
+            )
+            return
 
         if type(urlInput) == list: numOfPosts = len(urlInput)
         else: numOfPosts = 1
@@ -1557,9 +1604,9 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             counter = 0
             for url in urlInput: 
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
-                download(url, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
+                download(url, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
-        else: download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag)
+        else: download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
     else:
         raise Exception(f"Download type given: {downloadType} is not valid!")
 
@@ -1571,14 +1618,15 @@ def check_for_incomplete_download():
     while True:
         browserDownloadLocation.mkdir(parents=True, exist_ok=True)
         hasIncompleteDownloads = False
+        sleep(2)
         for filePath in browserDownloadLocation.iterdir():
             if filePath.is_file():
-                fileExtension = str(filePath.name).split(".")[-1]
-                if fileExtension.lower() == "crdownload" or fileExtension.lower() == "part": # crdownload for chrome and edge while part for firefox
-                    # since edge is set to use chromium, hence not checking for .partial files for edge.
-                    hasIncompleteDownloads = True
+                if filePath.suffix == ".crdownload": # crdownload for chrome and edge 
+                    hasIncompleteDownloads = True # since edge is set to use chromium, hence not checking for .partial files for edge.
 
-        if not hasIncompleteDownloads: break
+        if not hasIncompleteDownloads: 
+            sleep(1.5)
+            return
 
 def remove_any_files_in_directory(pathToDelete):
     """
@@ -1701,34 +1749,55 @@ def print_download_completion_message(totalImage, subFolderPath, **options):
     - The path to the folder where the images are saved (pathlib Path object or a string)
 
     Optional param:
+    - images (bool) if True, will print out the corresponding message to alert of the images that have already being downloaded
     - attachments (bool) if True, will print out the corresponding message instead of just alerting the user that the program have downloaded all the images. 
     - thumbnailNotice (bool) if True, will print out the corresponding message to alert the user that the thumbnail has been downloaded.
+    - gdriveNotice (bool) if True, will print out the corresponding message to alert the user that the file has been downloaded from gdrive
     --> default: False if not defined
     """
+    if "images" in options: images = options["images"]
+    else: images = False
+
     if "attachments" in options: attachments = options["attachments"]
     else: attachments = False
 
     if "thumbnailNotice" in options: thumbnailNotice = options["thumbnailNotice"]
     else: thumbnailNotice = False
 
+    if "gdriveNotice" in options: gdriveNotice = options["gdriveNotice"]
+    else: gdriveNotice = False
+
     completionMsg = "\n"
 
     if totalImage > 0:
+        if lang == "en": completionMsg += f"{F.LIGHTYELLOW_EX}Main download location: {subFolderPath}{END}\n"
+        elif lang == "jp": completionMsg += f"{F.LIGHTYELLOW_EX}メインダウンロードの場所： {subFolderPath}{END}\n"
+
         if thumbnailNotice:
             if lang == "en": completionMsg += f"{F.GREEN}The thumbnail of the post has been downloaded.{END}"
             elif lang == "jp": completionMsg += f"{F.GREEN}投稿のサムネイルがダウンロードされました。{END}"
             completionMsg += "\n"
 
-        if attachments:
+        if gdriveNotice:
+            if lang == "en": completionMsg += f"{F.GREEN}{totalImage} files has been successfully downloaded from gdrive{END}"
+            elif lang == "jp": completionMsg += f"{F.GREEN}gdriveから{totalImage}個のファイルがダウンロードされました。{END}"
+            completionMsg += "\n"
+
+        if attachments and images:
             if lang == "en": 
-                completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} images and attachments at\n{subFolderPath}{END}"
+                completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} images and attachments{END}"
             elif lang == "jp": 
-                completionMsg += f"{F.GREEN}{subFolderPath}\nにある{totalImage}個のイメージと添付ファイルのダウンロードに成功しました。{END}"
-        else:
+                completionMsg += f"{F.GREEN}{totalImage}個のイメージとファイルのダウンロードに成功しました。{END}"
+        elif images:
             if lang == "en":
-                completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} images at\n{subFolderPath}{END}"
+                completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} images{END}"
             elif lang == "jp":
-                completionMsg += f"{F.GREEN}{subFolderPath}\nに{totalImage}枚の画像をダウンロードしました!{END}"
+                completionMsg += f"{F.GREEN}{totalImage}枚の画像をダウンロードしました!{END}"
+        elif attachments:
+            if lang == "en":
+                completionMsg += f"{F.GREEN}Successfully downloaded {totalImage} attachments{END}"
+            elif lang == "jp":
+                completionMsg += f"{F.GREEN}{totalImage}個のファイルをダウンロードしました。{END}"
     else:
         if thumbnailNotice:
             thumbnailPath = subFolderPath.joinpath("thumbnail")
@@ -1736,8 +1805,8 @@ def print_download_completion_message(totalImage, subFolderPath, **options):
             elif lang == "jp": completionMsg += f"{F.GREEN}投稿のサムネイルが\n{thumbnailPath} にダウンロードされました。{END}"
             completionMsg += "\n"
 
-        if lang == "en": completionMsg += f"{F.LIGHTRED_EX}Note: No images or attachments to download from the post.{END}"
-        elif lang == "jp": completionMsg += f"{F.LIGHTRED_EX}注意： ポストからダウンロードする画像や添付ファイルはありません。{END}"
+        if lang == "en": completionMsg += f"{F.LIGHTRED_EX}Note: There is no main content to download from the post.{END}"
+        elif lang == "jp": completionMsg += f"{F.LIGHTRED_EX}注意：投稿からダウンロードするメインコンテンツはありません。{END}"
     
     print(completionMsg, "\n")
 
@@ -1797,6 +1866,100 @@ def close_new_tab():
     
 #     return "".join([downloadImageHeaderJS, downloadImageFooterJS, "}\n", downloadImageExecuteFn])
 
+def change_gdrive_link_to_dl(gdriveURL):
+    """
+    Returns a gdrive download link and see if it matches the predefined regex pattern.
+
+    Requires one argument to be defined:
+    - The gdrive link (string)
+
+    Returns a formatted gdrive download link.
+    
+    If the gdrive link do not match the regex pattern, it will raise an exception.
+    """
+    if re.fullmatch(gdriveRegexDict["filePattern"], gdriveURL):
+        if "?" in gdriveURL:
+            gdriveURL = gdriveURL.split("?")[0]
+        return "".join(["https://drive.google.com/u/0/uc?id=", gdriveURL.rsplit("/")[5], "&export=download"])
+    elif re.fullmatch(gdriveRegexDict["folderPattern"], gdriveURL):
+        if "?" in gdriveURL: return gdriveURL.split("?")[0]
+        else: return gdriveURL
+    else:
+        raise Exception(f"Unknown gdrive pattern, {gdriveURL} ,please report to this to the developer(s)...")
+
+def execute_gdrive_download(gdriveURL, directoryPath):
+    """
+    Function for downloading files from gdrive based on the given url.
+
+    Requires one argument to be defined:
+    - The gdrive link (string)
+    """
+    newDriver = get_driver(selectedBrowser, randomiseUserAgent=True, quiet=True)
+
+    newDriver.get(gdriveURL)
+    sleep(randint(50, 80)) # to prevent from requesting too fast to gdrive which will result in a higher chance of getting a reCAPTCHA
+    
+    try:
+        reCaptcha = newDriver.find_element(by=By.XPATH, value="//*[contains(text(), 'sorry')]")
+    except:
+        reCaptcha = None
+
+    if reCaptcha == None:
+        currentURL = newDriver.current_url
+        if "export=download" in currentURL:
+            try:
+                newDriver.find_element(by=By.XPATH, value="//input").click()
+            except NoSuchElementException:
+                raise Exception(f"NoSuchElementException: Unable to locate button to download gdrive files. Current URL: {currentURL} , Argument URL: {gdriveURL}")
+        elif "folder" in currentURL:
+            filesDownloadButtons = newDriver.find_elements(by=By.XPATH, value="//div[(contains(@class, 'akerZd')) and contains(@role, 'link')]") # //div[(contains(@aria-label, 'Download') or contains(@aria-label, 'ダウンロード')) and contains(@role, 'link')]
+            for fileDownloadButton in filesDownloadButtons:
+                try:
+                    fileDownloadButton.click()
+                except NoSuchElementException:
+                    raise Exception(f"NoSuchElementException: Unable to locate button to download gdrive files in gdrive folder link. Current URL: {currentURL} , Argument URL: {gdriveURL}")
+                sleep(5)
+                try:
+                    # a confirmation button will appear if the file is too large
+                    downloadConfirmationButton = newDriver.find_element(by=By.XPATH, value="//button[contains(@name, 'ok') and contains(@tabindex, '0')]")
+                    downloadConfirmationButton.click()
+                    sleep(3)
+                except NoSuchElementException: pass # if element is not found
+        else:
+            pass # for small files
+        check_for_incomplete_download()
+    else:
+        print("\n")
+        print_in_both_en_jp(
+            en=(
+                f"{F.RED}Warning: reCAPTCHA detected for {gdriveURL}, this program is unable to download the file.{END}",
+                f"{F.RED}This usually happens when the gdrive folder has many files or you have downloaded too many files within a short span of time.{END}",
+                f"{F.RED}Please check the text file at {directoryPath} for more information.{END}"
+            ),
+            jp=(
+                f"{F.RED}警告： {gdriveURL} にreCAPTCHAが検出されました。このプログラムはファイルをダウンロードできません。{END}",
+                f"{F.RED}これはgdriveフォルダにファイルが多すぎるか、短い時間でダウンロードしたファイルが多すぎることが原因です。{END}"
+                f"{F.RED}詳細は {directoryPath} にあるテキストファイルを確認してください。{END}"
+            )
+        )
+
+        directoryPath.mkdir(parents=True, exist_ok=True)
+        textFilePath = directoryPath.joinpath("incomplete-downloads.txt")
+        if not textFilePath.is_file():
+            with open(textFilePath, "w") as f:
+                if lang == "en": f.write(f"Incomplete gdrive file downloads log for Cultured Downloader v{__version__}\n")
+                elif lang == "jp": f.write(f"Cultured Downloader v{__version__}の不完全なgdriveファイルダウンロードログ\n")
+                
+        with open(textFilePath, "a") as f:
+            if lang =="en":
+                f.write(f"Unable to download gdrive files from\n{gdriveURL}\n")
+                if reCaptcha: f.write(f"Reason: reCAPTCHA detected\n")
+            elif lang == "jp":
+                f.write(f"gdriveファイルをダウンロードできませんでした\n{gdriveURL}\n")
+                if reCaptcha: f.write(f"理由： reCAPTCHAが検出されました\n")
+    
+    newDriver.close()
+
 def download(urlInput, website, subFolderPath, **options):
     """
     To download images from Fantia or pixiv Fanbox.
@@ -1807,11 +1970,16 @@ def download(urlInput, website, subFolderPath, **options):
     - The path to the folder where the images are saved or a string which will be the latest post num for pixiv downloads (pathlib Path object or a string)
 
     Optional param:
+    - images (boolean). If True, will download images from the post (Default: False if not defined)
     - attachments (boolean). If True, will download any attachments from the given url (default: False if not defined)
     - thumbnails (boolean). If True, will download the thumbnail of the post (default: False if not defined)
+    - gdrive (boolean). If True, will scan the post page for any gdrive links and downloads them (default: False if not defined)
     """
     driver.get(urlInput)
     sleep(4)
+
+    downloadImageFlag = options.get("images")
+    if downloadImageFlag == None: downloadImageFlag = False
 
     downloadAttachmentFlag = options.get("attachments")
     if downloadAttachmentFlag == None: downloadAttachmentFlag = False
@@ -1819,7 +1987,11 @@ def download(urlInput, website, subFolderPath, **options):
     downloadThumbnailFlag = options.get("thumbnails")
     if downloadThumbnailFlag == None: downloadThumbnailFlag = False
 
+    downloadGdriveLinks = options.get("gdrive")
+    if downloadGdriveLinks == None: downloadGdriveLinks = False
+
     if website == "Fantia":
+        totalEl = 0
         thumbnailDownloadedCondition = False
         if downloadThumbnailFlag:
             try: thumbnailSrc = driver.find_element(by=By.XPATH, value="//img[contains(@class, 'img-default')]").get_attribute("src")
@@ -1834,42 +2006,42 @@ def download(urlInput, website, subFolderPath, **options):
                 thumbnailDownloadedCondition = True
         
         imagesURLToDownloadArray = []
+        if downloadImageFlag:
+            fantiaImageClassOffset = 0
+            # retrieving images' URL that are usually free but can restricted to those with memebership but these images are usually low in resolution
+            try: imagePosts = driver.find_elements(by=By.CLASS_NAME, value="fantiaImage")
+            except: imagePosts = []
 
-        fantiaImageClassOffset = 0
-        # retrieving images' URL that are usually free but can restricted to those with memebership but these images are usually low in resolution
-        try: imagePosts = driver.find_elements(by=By.CLASS_NAME, value="fantiaImage")
-        except: imagePosts = []
+            fantiaImageClassOffset = len(imagePosts)
 
-        fantiaImageClassOffset = len(imagePosts)
+            # Retrieving Fantia blog images's URL that are may be locked by default due to membership restrictions
+            for imagePost in imagePosts:
+                imageHREFLink = imagePost.get_attribute("href")
+                imagesURLToDownloadArray.append(imageHREFLink)
 
-        # Retrieving Fantia blog images's URL that are may be locked by default due to membership restrictions
-        for imagePost in imagePosts:
-            imageHREFLink = imagePost.get_attribute("href")
-            imagesURLToDownloadArray.append(imageHREFLink)
+            # Retrieving images' URL that are free and are usually low in resolution but can be restricted to those with membership and have high resolution images
+            try: fullyDisplayedImageAnchor = driver.find_elements(by=By.XPATH, value="//a[@class='image-container clickable']") 
+            except: fullyDisplayedImageAnchor = []
+            
+            for anchor in fullyDisplayedImageAnchor:
+                anchor.click()
+                sleep(0.5)
+                fullyDisplayedImageURL = driver.find_element(by=By.XPATH, value="//a[contains(text(),'オリジナルサイズを表示 ')]").get_attribute("href")
+                imagesURLToDownloadArray.append(fullyDisplayedImageURL)
+                driver.find_element(by=By.XPATH, value="//a[@class='btn btn-dark btn-sm']").click()
+                sleep(0.5)
 
-        # Retrieving images' URL that are free and are usually low in resolution but can be restricted to those with membership and have high resolution images
-        try: fullyDisplayedImageAnchor = driver.find_elements(by=By.XPATH, value="//a[@class='image-container clickable']") 
-        except: fullyDisplayedImageAnchor = []
-        
-        for anchor in fullyDisplayedImageAnchor:
-            anchor.click()
-            sleep(0.5)
-            fullyDisplayedImageURL = driver.find_element(by=By.XPATH, value="//a[contains(text(),'オリジナルサイズを表示 ')]").get_attribute("href")
-            imagesURLToDownloadArray.append(fullyDisplayedImageURL)
-            driver.find_element(by=By.XPATH, value="//a[@class='btn btn-dark btn-sm']").click()
-            sleep(0.5)
+            # Retrieving images' URL that are free but can be restricted to those with membership but has multiple images hence, the force-square class
+            try: premiumImages = driver.find_elements(by=By.XPATH, value="//a[@class='image-container force-square clickable']")
+            except: premiumImages = []
 
-        # Retrieving images' URL that are free but can be restricted to those with membership but has multiple images hence, the force-square class
-        try: premiumImages = driver.find_elements(by=By.XPATH, value="//a[@class='image-container force-square clickable']")
-        except: premiumImages = []
-
-        for paidImageContainer in premiumImages:
-            paidImageContainer.click()
-            sleep(0.5)
-            paidImageURL = driver.find_element(by=By.XPATH, value="//a[contains(text(),'オリジナルサイズを表示 ')]").get_attribute("href")
-            imagesURLToDownloadArray.append(paidImageURL)
-            driver.find_element(by=By.XPATH, value="//a[@class='btn btn-dark btn-sm']").click()
-            sleep(0.5)
+            for paidImageContainer in premiumImages:
+                paidImageContainer.click()
+                sleep(0.5)
+                paidImageURL = driver.find_element(by=By.XPATH, value="//a[contains(text(),'オリジナルサイズを表示 ')]").get_attribute("href")
+                imagesURLToDownloadArray.append(paidImageURL)
+                driver.find_element(by=By.XPATH, value="//a[@class='btn btn-dark btn-sm']").click()
+                sleep(0.5)
         
         # Retrieving attachment url if the user chose to download attachment as well as an addon to this program and start printing the progress bar
         totalImageProgress = 0
@@ -1885,23 +2057,33 @@ def download(urlInput, website, subFolderPath, **options):
             
             del attachmentAnchors
 
-            totalImages = len(imagesURLToDownloadArray) + len(anchorURLArray)
+            if downloadImageFlag: totalEl += len(imagesURLToDownloadArray) + len(anchorURLArray)
+            else: totalEl += len(anchorURLArray)
+
             remove_any_files_in_directory(browserDownloadLocation)
             for attachmentURL in anchorURLArray:
-                if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
-                elif lang == "jp": downloadMessage = f"画像や添付ファイル {totalImageProgress} / {totalImages} をダウンロード中"
+                if downloadImageFlag:
+                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"画像やファイル {totalImageProgress} / {totalEl} をダウンロード中"
+                else:
+                    if lang == "en": downloadMessage = f"Downloading attachment no.{totalImageProgress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"ファイル {totalImageProgress} / {totalEl} をダウンロード中"
 
                 if totalImageProgress == 0:
-                    print_progress_bar(totalImageProgress, totalImages, downloadMessage)
+                    print_progress_bar(totalImageProgress, totalEl, downloadMessage)
                     totalImageProgress += 1
 
                 driver.get(attachmentURL) # getting the url which in turns downloads the attachments
                 sleep(3) # for the browser to download the attachment
                 
-                if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
-                elif lang == "jp": downloadMessage = f"画像や添付ファイル {totalImageProgress} / {totalImages} をダウンロード中"
+                if downloadImageFlag:
+                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"画像やファイル {totalImageProgress} / {totalEl} をダウンロード中"
+                else:
+                    if lang == "en": downloadMessage = f"Downloading attachment no.{totalImageProgress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"ファイル {totalImageProgress} / {totalEl} をダウンロード中"
 
-                print_progress_bar(totalImageProgress, totalImages, downloadMessage)
+                print_progress_bar(totalImageProgress, totalEl, downloadMessage)
                 totalImageProgress += 1
             
             if anchorURLArray:
@@ -1915,49 +2097,106 @@ def download(urlInput, website, subFolderPath, **options):
             else:
                 totalImageProgress += 1 # since the for loop won't be executed, plus one for the next loop
         else:
-            totalImages = len(imagesURLToDownloadArray)
+            if downloadImageFlag:
+                totalEl += len(imagesURLToDownloadArray)
 
-            if lang == "en": downloadMessage = f"Downloading image no.{totalImageProgress} out of {totalImages}{END}"
-            elif lang == "jp":  downloadMessage = f"画像 {totalImageProgress} / {totalImages} をダウンロード中"
+                if lang == "en": downloadMessage = f"Downloading image no.{totalImageProgress} out of {totalEl}{END}"
+                elif lang == "jp":  downloadMessage = f"画像 {totalImageProgress} / {totalEl} をダウンロード中"
 
-            print_progress_bar(totalImageProgress, totalImages, downloadMessage)
-            totalImageProgress += 1
+                print_progress_bar(totalImageProgress, totalEl, downloadMessage)
+                totalImageProgress += 1
 
-        # Downloading all the retrieved images' URL
-        if fantiaImageClassOffset > 0: 
-            downloadFolder = subFolderPath.joinpath("website_displayed_images")
-        else:
-            downloadFolder = subFolderPath.joinpath("downloaded_images")
-        
-        counter = 0
-        for imageURL in imagesURLToDownloadArray:
-            downloadFolder.mkdir(parents=True, exist_ok=True)
-
-            if downloadAttachmentFlag:
-                if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalImages}"
-                elif lang == "jp": downloadMessage = f"画像や添付ファイル {totalImageProgress} / {totalImages} をダウンロード中"
+        if downloadImageFlag:
+            # Downloading all the retrieved images' URL
+            if fantiaImageClassOffset > 0: 
+                downloadFolder = subFolderPath.joinpath("website_displayed_images")
             else:
-                if lang == "en": downloadMessage = f"Downloading image no.{totalImageProgress} out of {totalImages}{END}"
-                elif lang == "jp":  downloadMessage = f"画像 {totalImageProgress} / {totalImages} をダウンロード中"
+                downloadFolder = subFolderPath.joinpath("downloaded_images")
+            
+            counter = 0
+            for imageURL in imagesURLToDownloadArray:
+                downloadFolder.mkdir(parents=True, exist_ok=True)
 
-            open_new_tab()
-            driver.get(imageURL)
-            imageSrc = driver.find_element(by=By.XPATH, value="/html/body/img").get_attribute("src")
-            imagePath = downloadFolder.joinpath(get_file_name(imageSrc, "Fantia"))
-            save_image(imageSrc, imagePath)
-            close_new_tab()
+                if downloadAttachmentFlag:
+                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{totalImageProgress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"画像やファイル {totalImageProgress} / {totalEl} をダウンロード中"
+                else:
+                    if lang == "en": downloadMessage = f"Downloading image no.{totalImageProgress} out of {totalEl}{END}"
+                    elif lang == "jp":  downloadMessage = f"画像 {totalImageProgress} / {totalEl} をダウンロード中"
 
-            if fantiaImageClassOffset > 0:
-                if counter != fantiaImageClassOffset: counter += 1
-                if counter == fantiaImageClassOffset:
-                    downloadFolder = subFolderPath.joinpath("downloaded_images")
+                open_new_tab()
+                driver.get(imageURL)
+                imageSrc = driver.find_element(by=By.XPATH, value="/html/body/img").get_attribute("src")
+                imagePath = downloadFolder.joinpath(get_file_name(imageSrc, "Fantia"))
+                save_image(imageSrc, imagePath)
+                close_new_tab()
 
-            print_progress_bar(totalImageProgress, totalImages, downloadMessage)
-            totalImageProgress += 1
+                if fantiaImageClassOffset > 0:
+                    if counter != fantiaImageClassOffset: counter += 1
+                    if counter == fantiaImageClassOffset:
+                        downloadFolder = subFolderPath.joinpath("downloaded_images")
 
-        print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition)
+                print_progress_bar(totalImageProgress, totalEl, downloadMessage)
+                totalImageProgress += 1
+
+        print_download_completion_message(totalEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag)
 
     elif website == "Pixiv":
+        totalEl = 0
+        if downloadGdriveLinks:
+            gdriveFolder = subFolderPath.joinpath("gdrive-files")
+            try:
+                gdriveAnchors = driver.find_elements(by=By.XPATH, value="//a[starts-with(@href, 'https://drive.google.com/')]")
+            except:
+                gdriveAnchors = []
+
+            try:
+                potentialPasswords = driver.find_elements(by=By.XPATH, value="//*[contains(text(), 'Pass') or contains(text(), 'pass') or contains(text(), 'パス') or contains(text(), '密码')]")
+            except:
+                potentialPasswords = []
+
+            if potentialPasswords and gdriveAnchors:
+                gdriveFolder.mkdir(parents=True, exist_ok=True)
+                with open(gdriveFolder.joinpath("password.txt"), "w") as f:
+                    if lang == "en":
+                        f.write(f"Post link: {urlInput}\n")
+                        f.write("Passwords found potentially for the gdrive files!\n\n")
+                    elif lang == "jp":
+                        f.write(f"投稿リンク: {urlInput}\n")
+                        f.write("gdriveファイルのパスワードの可能性が見つかりました！\n\n")
+                    
+                    f.writelines(el.text + "\n" for el in potentialPasswords)
+            
+            gdriveProgress = 0
+            totalEl += len(gdriveAnchors)
+            if gdriveAnchors: 
+                gdriveLinks = [el.get_attribute("href") for el in gdriveAnchors]
+            else:
+                gdriveLinks = []
+
+            for gdriveLink in gdriveLinks:
+                if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
+                elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalEl} をダウンロード中"
+
+                if gdriveProgress == 0:
+                    print_progress_bar(gdriveProgress, totalEl, downloadMessage)
+                    gdriveProgress += 1
+
+                execute_gdrive_download(change_gdrive_link_to_dl(gdriveLink), gdriveFolder)
+
+                if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
+                elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalEl} をダウンロード中"
+
+                print_progress_bar(gdriveProgress, totalEl, downloadMessage)
+                gdriveProgress += 1
+            
+            if gdriveLinks:
+                print("\n")
+                # moves all the files to the corresponding folder based on the user's input.
+                for file in browserDownloadLocation.iterdir():
+                    gdriveFolder.mkdir(parents=True, exist_ok=True)
+                    move(file, gdriveFolder.joinpath(file.name)) 
+
         thumbnailDownloadedCondition = False
         if downloadThumbnailFlag:
             try:
@@ -1974,13 +2213,13 @@ def download(urlInput, website, subFolderPath, **options):
                 thumbnailDownloadedCondition = True
 
         urlToDownloadArray = []
+        if downloadImageFlag:
+            # downloads gifs or static images based on a pixiv post
+            try: imagesAnchors = driver.find_elements(by=By.XPATH, value="//a[contains(@class, 'iyApTb')]")
+            except: imagesAnchors = []
 
-        # downloads gifs or static images based on a pixiv post
-        try: imagesAnchors = driver.find_elements(by=By.XPATH, value="//a[contains(@class, 'iyApTb')]")
-        except: imagesAnchors = []
-
-        for anchor in imagesAnchors:
-            urlToDownloadArray.append(anchor.get_attribute("href"))
+            for anchor in imagesAnchors:
+                urlToDownloadArray.append(anchor.get_attribute("href"))
 
         # for attachment, get anchor url and go to that url to download it, similar to Fantia's process
         # Chose this approach since large files will take a while and the remote connection may close after a certain period of time
@@ -1997,23 +2236,33 @@ def download(urlInput, website, subFolderPath, **options):
             
             del attachmentAnchors
 
-            totalImages = len(urlToDownloadArray) + len(anchorURLArray)
+            if downloadImageFlag: totalEl += len(imagesURLToDownloadArray) + len(anchorURLArray)
+            else: totalEl += len(anchorURLArray)
+
             remove_any_files_in_directory(browserDownloadLocation)
             for attachmentURL in anchorURLArray:
-                if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
-                elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
+                if downloadImageFlag:
+                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"画像やファイル {progress} / {totalEl} をダウンロード中"
+                else:
+                    if lang == "en": downloadMessage = f"Downloading attachment no.{progress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"ファイル {progress} / {totalEl} をダウンロード中"
 
                 if progress == 0:
-                    print_progress_bar(progress, totalImages, downloadMessage)
+                    print_progress_bar(progress, totalEl, downloadMessage)
                     progress += 1
 
                 driver.get(attachmentURL) # getting the url which in turns downloads the attachments
                 sleep(3) # for the browser to download the attachment
 
-                if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
-                elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
+                if downloadImageFlag:
+                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"画像やファイル {progress} / {totalEl} をダウンロード中"
+                else:
+                    if lang == "en": downloadMessage = f"Downloading attachment no.{progress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"ファイル {progress} / {totalEl} をダウンロード中"
 
-                print_progress_bar(progress, totalImages, downloadMessage)
+                print_progress_bar(progress, totalEl, downloadMessage)
                 progress += 1
 
             if anchorURLArray:
@@ -2026,31 +2275,33 @@ def download(urlInput, website, subFolderPath, **options):
             else:
                 progress += 1 # since the for loop won't be executed, plus one for the next loop
         else:
-            totalImages = len(urlToDownloadArray)
-            if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalImages}{END}"
-            elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalImages} をダウンロード中"
-            print_progress_bar(progress, totalImages, downloadMessage)
-            progress += 1
+            if downloadImageFlag:
+                totalEl += len(urlToDownloadArray)
+                if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalEl}{END}"
+                elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalEl} をダウンロード中"
+                print_progress_bar(progress, totalEl, downloadMessage)
+                progress += 1
         
-        for url in urlToDownloadArray:
-            subFolderPath.mkdir(parents=True, exist_ok=True)
-            
-            if pixivSession == None:
-                save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")))
-            else:
-                save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")), session=pixivSession)
+        if downloadImageFlag:
+            for url in urlToDownloadArray:
+                subFolderPath.mkdir(parents=True, exist_ok=True)
+                
+                if pixivSession == None:
+                    save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")))
+                else:
+                    save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")), session=pixivSession)
 
-            if downloadAttachmentFlag:
-                if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalImages}"
-                elif lang == "jp": downloadMessage = f"画像や添付ファイル {progress} / {totalImages} をダウンロード中"
-            else:
-                if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalImages}{END}"
-                elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalImages} をダウンロード中"
+                if downloadAttachmentFlag:
+                    if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalEl}"
+                    elif lang == "jp": downloadMessage = f"画像やファイル {progress} / {totalEl} をダウンロード中"
+                else:
+                    if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalEl}{END}"
+                    elif lang == "jp":  downloadMessage = f"画像 {progress} / {totalEl} をダウンロード中"
 
-            print_progress_bar(progress, totalImages, downloadMessage)
-            progress += 1
-            
-        print_download_completion_message(totalImages, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition)
+                print_progress_bar(progress, totalEl, downloadMessage)
+                progress += 1
+                
+        print_download_completion_message(totalEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag, gdriveNotice=downloadGdriveLinks)
 
     else: raise Exception("Invalid website argument in download function...")
 
@@ -2267,10 +2518,10 @@ def main():
     loadBrowser = check_browser_config()
     if loadBrowser == None:
         selectedBrowser = get_browser_preferences()
-        driver = get_driver(selectedBrowser)
+        driver = get_driver(selectedBrowser, quiet=True)
     else: 
         selectedBrowser = loadBrowser
-        driver = get_driver(loadBrowser)
+        driver = get_driver(loadBrowser, quiet=True)
 
     # retrieve cookie if exists
     pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
@@ -2485,7 +2736,7 @@ def main():
                 )
 
                 driver.quit()
-                driver = get_driver(selectedBrowser)
+                driver = get_driver(selectedBrowser, quiet=True)
 
                 print_in_both_en_jp(
                     en=(f"\n{F.LIGHTRED_EX}You will now have to login again by manually logging in or loading in your cookies.{END}"),
@@ -2542,7 +2793,7 @@ def main():
             if newDefaultBrowser != defaultBrowser: 
                 save_browser_config(newDefaultBrowser)
                 driver.quit()
-                driver = get_driver(newDefaultBrowser)
+                driver = get_driver(newDefaultBrowser, quiet=True)
 
                 pixivCookieLoaded, fantiaCookieLoaded = load_cookies()
                 if pixivCookieLoaded: 
@@ -2630,12 +2881,17 @@ if __name__ == "__main__":
     global pixivFanboxPostRegex
     global pixivFanboxPostPageRegex
     global pageNumRegex
+    global gdriveRegexDict
 
     fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d+")
     fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d+(/posts)")
     pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts/)\d+|(https://)[\w&.-]+(.fanbox.cc/posts/)\d+") # [\w&.-]+ regex from https://stackoverflow.com/questions/13946651/matching-special-characters-and-letters-in-regex
     pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts)|(https://)[\w&.-]+(.fanbox.cc/posts)") 
     pageNumRegex = re.compile(r"\d+(-)\d+|\d+")
+    gdriveRegexDict = {
+        "filePattern": re.compile(r"(https://drive.google.com/file/d/)[\w&.-]+(/view|/edit)?(\?usp=sharing)?"),
+        "folderPattern": re.compile(r"(https://drive.google.com/)(drive/folders/|drive/u/\d+/folders/)[\w&.-]+(\?usp=sharing)?")
+    }
 
     introMenu = f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
@@ -2698,8 +2954,8 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         try: driver.quit()
         except: pass
 
-        print_error_log_notification()
         log_error()
+        print_error_log_notification()
 
         input("Please enter any key to exit/何か入力すると終了します...")
         osExit(1)

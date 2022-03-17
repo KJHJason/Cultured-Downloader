@@ -4,3 +4,4 @@ webdriver-manager>=3.5.3
 pycryptodome>=3.14.1
 dill>=0.3.4
 colorama>=0.4.4
+fake-useragent>=0.1.11
