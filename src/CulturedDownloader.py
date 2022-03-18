@@ -14,7 +14,7 @@ except (ImportError, ModuleNotFoundError):
 
 # Import Third-party Libraries
 try:
-    import requests, dill
+    import requests, dill, gdown
     from colorama import init as coloramaInit
     from colorama import Style
     from colorama import Fore as F
@@ -22,7 +22,7 @@ try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException
+    from selenium.common.exceptions import TimeoutException, WebDriverException
     from webdriver_manager.chrome import ChromeDriverManager
     from selenium.webdriver.chrome.service import Service as chromeService
     from selenium.webdriver.chrome.options import Options as chromeOptions
@@ -31,7 +31,6 @@ try:
     from selenium.webdriver.edge.options import Options as edgeOptions
     from Crypto.Cipher import ChaCha20_Poly1305 as Cha
     from Crypto.Random import get_random_bytes
-    from fake_useragent import UserAgent
 except (ImportError, ModuleNotFoundError):
     print("Failed to import third-party libraries/サードパーティーライブラリのインポートに失敗しました...")
     input("Please enter any key to exit/何か入力すると終了します...")
@@ -46,7 +45,7 @@ try:
     from datetime import datetime
     from shutil import rmtree, copyfileobj, move
     from base64 import b64encode, b64decode
-    from random import randint
+    from os import devnull
 except (ImportError, ModuleNotFoundError):
     print("Failed to import standard libraries/標準ライブラリのインポートに失敗しました...")
     print("Please use Python 3.8.X and above/Python 3.8.X以降をご使用ください。")
@@ -324,7 +323,6 @@ def get_driver(browserType, **additionalOptions):
     - headless --> True or False, defaults to True
     - blockImg --> a number, defaults to 2
     - windowSize --> Tuple of int, defaults to (1920, 1080)
-    - randomiseUserAgent --> True or False, defaults to False
     - quiet --> True or False, defaults to False
 
     For numbers, use the definition below:
@@ -341,9 +339,6 @@ def get_driver(browserType, **additionalOptions):
     windowSize = additionalOptions.get("windowSize")
     if windowSize == None: windowSize = (1920, 1080) 
 
-    randomiseUserAgent = additionalOptions.get("randomiseUserAgent")
-    if randomiseUserAgent == None: randomiseUserAgent = False
-
     quietFlag = additionalOptions.get("quiet")
     if quietFlag == None: quietFlag = False
 
@@ -352,10 +347,6 @@ def get_driver(browserType, **additionalOptions):
             en=(f"\n{F.LIGHTYELLOW_EX}Initialising Browser...{END}"),
             jp=(f"\n{F.LIGHTYELLOW_EX}ブラウザの初期化中です...{END}")
         )
-        
-    if randomiseUserAgent:
-        UA = UserAgent()
-        userAgentInfo = UA.random
 
     if browserType == "chrome":
         options = chromeOptions()
@@ -378,11 +369,9 @@ def get_driver(browserType, **additionalOptions):
         "download.prompt_for_download": False
     })
 
+   
     # remove DevTools msg
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
-
-    if randomiseUserAgent:
-        options.add_argument(f"user-agent={userAgentInfo}")
 
     if browserType == "chrome":
         gService = chromeService(ChromeDriverManager(log_level=0, print_first_line=False).install())
@@ -1389,13 +1378,11 @@ def get_download_flags(website):
 
         if website == "pixiv":
             if lang == "en": 
-                gdrivePrint = f"Note: Downloading files from gdrive will take quite a while to avoid too many requests per minute."
                 gdrivePrompt = "Would you like to download any gdrive links if found? (y/n/x to cancel and return to menu): "
             elif lang == "jp":
-                gdrivePrint = f"ご注意：gdriveからのファイルのダウンロードは、1分間に多くのリクエストを避けるため、かなり時間がかかります。"
                 gdrivePrompt = "gdriveのリンクが見つかったら、ダウンロードしますか？ (y/n/xでキャンセルしてメニューに戻る): "
 
-            gdriveFlag = get_input_from_user(prompt=gdrivePrompt, command=("y", "n", "x"), prints=gdrivePrint)
+            gdriveFlag = get_input_from_user(prompt=gdrivePrompt, command=("y", "n", "x"))
             if gdriveFlag == "y": gdriveFlag = True
             elif gdriveFlag == "n": gdriveFlag = False
             else: return None, None, None, None
@@ -1824,141 +1811,104 @@ def close_new_tab():
     driver.execute_script("window.close();")
     driver.switch_to.window(driver.window_handles[0])
 
-# Unused function
-# def get_latest_post_num_from_file_name():
-#     """
-#     To retrieve the latest/highest post_num from all the files in the browser's default download folder.
-
-#     This is used when the requests session object is not defined and is equal to "".
-
-#     Returns the latest/highest post_num (int)
-#     """
-#     postNumList = []
-#     try:
-#         for filePath in browserDownloadLocation.iterdir():
-#             if filePath.is_file():
-#                 filePath = str(filePath.name).split("_")
-#                 postNumList.append(int(filePath[1]))
-#         return max(postNumList) + 1
-#     except:
-#         return 0
-
-# Unused failsafe function if pixivSession is equal to ""
-# def download_image_javascript(imageSrcURL, imageName):
-#     """
-#     Returns a javascript code to be executed for downloading pixiv images on the webdriver browser.
-
-#     Requires two arguments to be defined:
-#     - The image's URL (string)
-#     - The image's name (string)
-#     """
-#     downloadImageHeaderJS = """function download(imageURL) {"""
-#     downloadImageFooterJS = f"""
-#     const fileName = "{imageName}"  + imageURL.split('/').pop();
-#     var el = document.createElement("a");
-#     el.setAttribute("href", imageURL);
-#     el.setAttribute("download", fileName);
-#     document.body.appendChild(el);
-#     el.click();
-#     el.remove();
-# """
-#     downloadImageExecuteFn = f"download('{imageSrcURL}');"
-    
-#     return "".join([downloadImageHeaderJS, downloadImageFooterJS, "}\n", downloadImageExecuteFn])
-
-def change_gdrive_link_to_dl(gdriveURL):
+def get_gdrive_id(url):
     """
-    Returns a gdrive download link and see if it matches the predefined regex pattern.
+    Returns the gdrive ID by splitting with the delimiter "/" and getting the element on index 5 which is usually the gdrive ID for a file or folder
 
     Requires one argument to be defined:
     - The gdrive link (string)
-
-    Returns a formatted gdrive download link.
-    
-    If the gdrive link do not match the regex pattern, it will raise an exception.
     """
-    if re.fullmatch(gdriveRegexDict["filePattern"], gdriveURL):
-        if "?" in gdriveURL:
-            gdriveURL = gdriveURL.split("?")[0]
-        return "".join(["https://drive.google.com/u/0/uc?id=", gdriveURL.rsplit("/")[5], "&export=download"])
-    elif re.fullmatch(gdriveRegexDict["folderPattern"], gdriveURL):
-        if "?" in gdriveURL: return gdriveURL.split("?")[0]
-        else: return gdriveURL
-    else:
-        raise Exception(f"Unknown gdrive pattern, {gdriveURL} ,please report to this to the developer(s)...")
+    return url.rsplit("/")[5]
+
+def get_data_for_request(gdriveID, gdriveType):
+    """
+    Returns the data for the request to retrieve information about the gdrive files/folders.
+
+    Requires two arguments to be defined:
+    - The gdrive ID (string)
+    - The gdrive type (string) --> "file" or "folder"
+    """
+    data = {
+        "data": {
+            "id": gdriveID,
+            "type": gdriveType
+        }
+    }
+    return data
 
 def execute_gdrive_download(gdriveURL, directoryPath):
     """
     Function for downloading files from gdrive based on the given url.
 
-    Requires one argument to be defined:
+    Requires two argument to be defined:
     - The gdrive link (string)
+    - The directory path (pathlib Path Object)
     """
-    newDriver = get_driver(selectedBrowser, randomiseUserAgent=True, quiet=True)
+    class HiddenPrints: # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
+        def __enter__(self):
+            self._original_stdout = sys.stdout
+            sys.stdout = open(devnull, 'w')
 
-    newDriver.get(gdriveURL)
-    sleep(randint(50, 80)) # to prevent from requesting too fast to gdrive which will result in a higher chance of getting a reCAPTCHA
-    
-    try:
-        reCaptcha = newDriver.find_element(by=By.XPATH, value="//*[contains(text(), 'sorry')]")
-    except:
-        reCaptcha = None
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            sys.stdout.close()
+            sys.stdout = self._original_stdout
+            
+    if "file" in gdriveURL:
+        fileID = get_gdrive_id(gdriveURL)
 
-    if reCaptcha == None:
-        currentURL = newDriver.current_url
-        if "export=download" in currentURL:
-            try:
-                newDriver.find_element(by=By.XPATH, value="//input").click()
-            except NoSuchElementException:
-                raise Exception(f"NoSuchElementException: Unable to locate button to download gdrive files. Current URL: {currentURL} , Argument URL: {gdriveURL}")
-        elif "folder" in currentURL:
-            filesDownloadButtons = newDriver.find_elements(by=By.XPATH, value="//div[(contains(@class, 'akerZd')) and contains(@role, 'link')]") # //div[(contains(@aria-label, 'Download') or contains(@aria-label, 'ダウンロード')) and contains(@role, 'link')]
-            for fileDownloadButton in filesDownloadButtons:
-                try:
-                    fileDownloadButton.click()
-                except NoSuchElementException:
-                    raise Exception(f"NoSuchElementException: Unable to locate button to download gdrive files in gdrive folder link. Current URL: {currentURL} , Argument URL: {gdriveURL}")
-                sleep(5)
-                try:
-                    # a confirmation button will appear if the file is too large
-                    downloadConfirmationButton = newDriver.find_element(by=By.XPATH, value="//button[contains(@name, 'ok') and contains(@tabindex, '0')]")
-                    downloadConfirmationButton.click()
-                    sleep(3)
-                except NoSuchElementException: pass # if element is not found
+        gReq = requests.post(queryWebsite, json=get_data_for_request(fileID, "file")).json()
+
+        if "error" not in gReq:
+            fullDownloadPath = directoryPath.joinpath(gReq["name"])
+            directoryPath.mkdir(parents=True, exist_ok=True)
+            with HiddenPrints():
+                downloaded = gdown.download(id=fileID, output=str(fullDownloadPath), quiet=True)
+            if downloaded == None: return False
         else:
-            pass # for small files
-        check_for_incomplete_download()
-    else:
-        print("\n")
-        print_in_both_en_jp(
-            en=(
-                f"{F.RED}Warning: reCAPTCHA detected for {gdriveURL}, this program is unable to download the file.{END}",
-                f"{F.RED}This usually happens when the gdrive folder has many files or you have downloaded too many files within a short span of time.{END}",
-                f"{F.RED}Please check the text file at {directoryPath} for more information.{END}"
-            ),
-            jp=(
-                f"{F.RED}警告： {gdriveURL} にreCAPTCHAが検出されました。このプログラムはファイルをダウンロードできません。{END}",
-                f"{F.RED}これはgdriveフォルダにファイルが多すぎるか、短い時間でダウンロードしたファイルが多すぎることが原因です。{END}"
-                f"{F.RED}詳細は {directoryPath} にあるテキストファイルを確認してください。{END}"
-            )
-        )
+            return False
+    elif "folder" in gdriveURL:
+        folderID = get_gdrive_id(gdriveURL)
 
-        directoryPath.mkdir(parents=True, exist_ok=True)
-        textFilePath = directoryPath.joinpath("incomplete-downloads.txt")
-        if not textFilePath.is_file():
-            with open(textFilePath, "w") as f:
-                if lang == "en": f.write(f"Incomplete gdrive file downloads log for Cultured Downloader v{__version__}\n")
-                elif lang == "jp": f.write(f"Cultured Downloader v{__version__}の不完全なgdriveファイルダウンロードログ\n")
-                
-        with open(textFilePath, "a") as f:
-            if lang =="en":
-                f.write(f"Unable to download gdrive files from\n{gdriveURL}\n")
-                if reCaptcha: f.write(f"Reason: reCAPTCHA detected\n")
-            elif lang == "jp":
-                f.write(f"gdriveファイルをダウンロードできませんでした\n{gdriveURL}\n")
-                if reCaptcha: f.write(f"理由： reCAPTCHAが検出されました\n")
+        gReq = requests.post(queryWebsite, json=get_data_for_request(folderID, "folder")).json()
+
+        nestedFolderIDArr = []
+        if "error" not in gReq:
+            gFiles = gReq["files"]
+            for file in gFiles:
+                if file["mimeType"] != "application/vnd.google-apps.folder":
+                    fullDownloadPath = directoryPath.joinpath(file["name"])
+                    directoryPath.mkdir(parents=True, exist_ok=True)
+                    fileID = file["id"]
+                    with HiddenPrints():
+                        downloaded = gdown.download(id=fileID, output=str(fullDownloadPath), quiet=True)
+                    if downloaded == None: return False
+                else:
+                    nestedFolderIDArr.append(file["id"])
+        else:
+            return False
+
+        while nestedFolderIDArr:
+            nestedFolderID = nestedFolderIDArr.pop()
+            gReq = requests.post(queryWebsite, json=get_data_for_request(nestedFolderID, "folder")).json()
+
+            if "error" not in gReq:
+                gFiles = gReq["files"]
+                for file in gFiles:
+                    if file["mimeType"] != "application/vnd.google-apps.folder":
+                        fullDownloadPath = directoryPath.joinpath(file["name"])
+                        directoryPath.mkdir(parents=True, exist_ok=True)
+                        fileID = file["id"]
+                        with HiddenPrints():
+                            downloaded = gdown.download(id=fileID, output=str(fullDownloadPath), quiet=True)
+                        if downloaded == None: return False
+                    else:
+                        nestedFolderIDArr.append(file["id"])
+            else:
+                return False
+    else:
+        raise Exception(f"Unknown gdrive url, {gdriveURL} ,please report to this to the developer(s)...")
     
-    newDriver.close()
+    return True
 
 def download(urlInput, website, subFolderPath, **options):
     """
@@ -2143,6 +2093,7 @@ def download(urlInput, website, subFolderPath, **options):
 
     elif website == "Pixiv":
         totalEl = 0
+        gdriveLinks = []
         if downloadGdriveLinks:
             gdriveFolder = subFolderPath.joinpath("gdrive-files")
             try:
@@ -2171,8 +2122,6 @@ def download(urlInput, website, subFolderPath, **options):
             totalEl += len(gdriveAnchors)
             if gdriveAnchors: 
                 gdriveLinks = [el.get_attribute("href") for el in gdriveAnchors]
-            else:
-                gdriveLinks = []
 
             for gdriveLink in gdriveLinks:
                 if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
@@ -2182,7 +2131,46 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(gdriveProgress, totalEl, downloadMessage)
                     gdriveProgress += 1
 
-                execute_gdrive_download(change_gdrive_link_to_dl(gdriveLink), gdriveFolder)
+                successCondition = execute_gdrive_download(gdriveLink, gdriveFolder)
+
+                if not successCondition:
+                    print("\n")
+                    print_in_both_en_jp(
+                        en=(
+                            f"{F.LIGHTRED_EX}Note: Please ignore the message above as it is printed by another library used by this program.\nThank you for your understanding.\n",
+                            f"{F.LIGHTRED_EX}Error: Unable to download file from gdrive {END}",
+                            f"{F.LIGHTRED_EX}This could be due to exceeding the gdrive API's quota limit for the day or the file being blocked for public downloads due to many views/downloads for that particular file. Please wait and try again later the next day.{END}",
+                            f"{F.LIGHTRED_EX}A text file has been generated at\n{pixivDownloadLocation} for the gdrive urls that have yet to be downloaded by this program for the post, {urlInput}.{END}"
+                        ),
+                        jp=(
+                            f"{F.LIGHTRED_EX}注意: 上記のメッセージは、このプログラムが使用している別のライブラリによって出力されているので、無視してください。\nご理解いただきありがとうございます。\n",
+                            f"{F.LIGHTRED_EX}エラー: gdriveファイルのダウンロードに失敗しました。{END}",
+                            f"{F.LIGHTRED_EX}これは、今日のgdrive APIのクオータリミットに達したか、ファイルが公開ダウンロードによってブロックされているかのいずれかです。次の日に再度お試しください。{END}",
+                            f"{F.LIGHTRED_EX}このプログラムでダウンロードされていないgdriveファイルのURLを保存したテキストファイルは\n{pixivDownloadLocation}にあります。{END}"
+                        )
+                    )
+
+                    pixivDownloadLocation.mkdir(parents=True, exist_ok=True)
+                    textFilePath = pixivDownloadLocation.joinpath("gdrive-urls.txt")
+                    if not textFilePath.is_file():
+                        if lang == "en": heading = "List of incomplete gdrive links that have yet to be downloaded.\nYou are likely to be able to download these files manually if you're logged in.\n"
+                        elif lang == "jp": heading = "まだダウンロードされていないgdriveファイルのリストです。\nログインしている場合、手動でダウンロードすることが可能です。\n"
+                        with open(textFilePath, "w") as f:
+                            f.write(heading)
+                            f.write("\n")
+
+                    timing = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+                    if lang == "en": postLinkHeader = f"pixiv Fanbox post link: {urlInput}\n"
+                    elif lang == "jp": postLinkHeader = f"pixivファンボックス投稿リンク: {urlInput}\n"
+                    with open(textFilePath, "a") as f:
+                        f.write(f"{timing}\n")
+                        f.write(f"{postLinkHeader}")
+                        for i in range(gdriveProgress-1, len(gdriveAnchors)):
+                            f.write(f"{gdriveLinks[i]}\n")
+                        f.write("\n")
+
+                    downloadGdriveLinks = False # to prevent the success msg from being printed later
+                    break
 
                 if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
                 elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalEl} をダウンロード中"
@@ -2190,13 +2178,6 @@ def download(urlInput, website, subFolderPath, **options):
                 print_progress_bar(gdriveProgress, totalEl, downloadMessage)
                 gdriveProgress += 1
             
-            if gdriveLinks:
-                print("\n")
-                # moves all the files to the corresponding folder based on the user's input.
-                for file in browserDownloadLocation.iterdir():
-                    gdriveFolder.mkdir(parents=True, exist_ok=True)
-                    move(file, gdriveFolder.joinpath(file.name)) 
-
         thumbnailDownloadedCondition = False
         if downloadThumbnailFlag:
             try:
@@ -2232,6 +2213,7 @@ def download(urlInput, website, subFolderPath, **options):
             if attachmentAnchors: 
                 for anchor in attachmentAnchors:
                     anchorURLArray.append(anchor.get_attribute("href"))
+                if gdriveLinks: print("\n")
                 open_new_tab()
             
             del attachmentAnchors
@@ -2275,6 +2257,9 @@ def download(urlInput, website, subFolderPath, **options):
             else:
                 progress += 1 # since the for loop won't be executed, plus one for the next loop
         else:
+            if urlToDownloadArray: 
+                if gdriveLinks: print("\n")
+
             if downloadImageFlag:
                 totalEl += len(urlToDownloadArray)
                 if lang == "en": downloadMessage = f"Downloading image no.{progress} out of {totalEl}{END}"
@@ -2584,7 +2569,14 @@ def main():
                         break
 
                 if startDownloadingFlag:
-                    execute_download_process(urlInput, imagePath, "postPage", "fantia")
+                    try:
+                        execute_download_process(urlInput, imagePath, "postPage", "fantia")
+                    except KeyboardInterrupt:
+                        print("\n")
+                        print_in_both_en_jp(
+                            en=(f"{F.LIGHTYELLOW_EX}Download cancelled by user...{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}ダウンロードがキャンセルされました...{END}")
+                        )
 
         elif cmdInput == "2":
             imagePath = create_subfolder("fantia")
@@ -2625,7 +2617,14 @@ def main():
                     if not pageInput: startDownloadingFlag = False
 
                 if startDownloadingFlag:
-                    execute_download_process(urlInput, imagePath, "postPreviewPage", "fantia", pageInput=pageInput)
+                    try:
+                        execute_download_process(urlInput, imagePath, "postPreviewPage", "fantia", pageInput=pageInput)
+                    except KeyboardInterrupt:
+                        print("\n")
+                        print_in_both_en_jp(
+                            en=(f"{F.LIGHTYELLOW_EX}Download cancelled by user...{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}ダウンロードがキャンセルされました...{END}")
+                        )
 
         elif cmdInput == "3":
             imagePath = ""
@@ -2660,7 +2659,14 @@ def main():
                         break
 
                 if startDownloadingFlag:
-                    execute_download_process(urlInput, imagePath, "postPage", "pixiv")
+                    try:
+                        execute_download_process(urlInput, imagePath, "postPage", "pixiv")
+                    except KeyboardInterrupt:
+                        print("\n")
+                        print_in_both_en_jp(
+                            en=(f"{F.LIGHTYELLOW_EX}Download cancelled by user...{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}ダウンロードがキャンセルされました...{END}")
+                        )
         
         elif cmdInput == "4":
             imagePath = create_subfolder("pixiv")
@@ -2701,7 +2707,14 @@ def main():
                     if not pageInput: startDownloadingFlag = False
 
                 if startDownloadingFlag:
-                    execute_download_process(urlInput, imagePath, "postPreviewPage", "pixiv", pageInput=pageInput)
+                    try:
+                        execute_download_process(urlInput, imagePath, "postPreviewPage", "pixiv", pageInput=pageInput)
+                    except KeyboardInterrupt:
+                        print("\n")
+                        print_in_both_en_jp(
+                            en=(f"{F.LIGHTYELLOW_EX}Download cancelled by user...{END}"),
+                            jp=(f"{F.LIGHTYELLOW_EX}ダウンロードがキャンセルされました...{END}")
+                        )
 
         elif cmdInput == "5":
             print_in_both_en_jp(
@@ -2876,22 +2889,20 @@ if __name__ == "__main__":
     global END
     END = Style.RESET_ALL
 
+    global queryWebsite
+    queryWebsite = "https://cultureddownloader.web.app/query"
+
     global fantiaPostRegex
     global fantiaPostPageRegex
     global pixivFanboxPostRegex
     global pixivFanboxPostPageRegex
     global pageNumRegex
-    global gdriveRegexDict
 
     fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d+")
     fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d+(/posts)")
     pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts/)\d+|(https://)[\w&.-]+(.fanbox.cc/posts/)\d+") # [\w&.-]+ regex from https://stackoverflow.com/questions/13946651/matching-special-characters-and-letters-in-regex
     pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts)|(https://)[\w&.-]+(.fanbox.cc/posts)") 
     pageNumRegex = re.compile(r"\d+(-)\d+|\d+")
-    gdriveRegexDict = {
-        "filePattern": re.compile(r"(https://drive.google.com/file/d/)[\w&.-]+(/view|/edit)?(\?usp=sharing)?"),
-        "folderPattern": re.compile(r"(https://drive.google.com/)(drive/folders/|drive/u/\d+/folders/)[\w&.-]+(\?usp=sharing)?")
-    }
 
     introMenu = f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
