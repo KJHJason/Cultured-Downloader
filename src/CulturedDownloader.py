@@ -1183,6 +1183,19 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
                         "\n"
                     )
                 )
+            else:
+                print_in_both_en_jp(
+                    en=(
+                        "\n",
+                        f"{F.LIGHTYELLOW_EX}Your entered input: \n" + ", ".join(url for url in userInput) + f"{END}",
+                        "\n"
+                    ),
+                    jp=(
+                        "\n",
+                        f"{F.LIGHTYELLOW_EX}入力された内容: \n" + "、".join(url for url in userInput) + f"{END}",
+                        "\n"
+                    )
+                )
 
             if removedDuplicatedUrlsLen > 1:
                 return removedDuplicatedUrls
@@ -1192,7 +1205,7 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
             print_in_both_en_jp(
                 en=(
                     "\n",
-                    f"{F.LIGHTYELLOW_EX}Entered: \n" + ", ".join(url for url in userInput) + f"{END}",
+                    f"{F.LIGHTYELLOW_EX}Your entered input: \n" + ", ".join(url for url in userInput) + f"{END}",
                     "\n"
                 ),
                 jp=(
