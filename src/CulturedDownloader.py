@@ -2147,7 +2147,7 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(gdriveProgress, totalEl, downloadMessage)
                     gdriveProgress += 1
 
-                successCondition = True #execute_gdrive_download(gdriveLink, gdriveFolder)
+                successCondition = execute_gdrive_download(gdriveLink, gdriveFolder)
 
                 if not successCondition:
                     print("\n")
