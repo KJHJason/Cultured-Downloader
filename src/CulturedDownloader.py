@@ -2890,7 +2890,7 @@ if __name__ == "__main__":
     END = Style.RESET_ALL
 
     global queryWebsite
-    queryWebsite = "https://cultureddownloader.web.app/query"
+    queryWebsite = "https://cultureddownloader.com/"
 
     global fantiaPostRegex
     global fantiaPostPageRegex
