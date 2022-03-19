@@ -2152,13 +2152,13 @@ def download(urlInput, website, subFolderPath, **options):
                     print("\n")
                     print_in_both_en_jp(
                         en=(
-                            f"{F.LIGHTRED_EX}Note: Please ignore the message above as it is printed by another library used by this program.\nThank you for your understanding.\n",
+                            f"{F.LIGHTRED_EX}Note: If there is a message above, please ignore the message above as it is printed by another library used by this program.\nThank you for your understanding.\n",
                             f"{F.LIGHTRED_EX}Error: Unable to download file from gdrive {END}",
                             f"{F.LIGHTRED_EX}This could be due to exceeding the gdrive API's quota limit for the day or the file being blocked for public downloads due to many views/downloads for that particular file. Please wait and try again later the next day.{END}",
                             f"{F.LIGHTRED_EX}A text file has been generated at\n{pixivDownloadLocation} for the gdrive urls that have yet to be downloaded by this program for the post, {urlInput}.{END}"
                         ),
                         jp=(
-                            f"{F.LIGHTRED_EX}注意: 上記のメッセージは、このプログラムが使用している別のライブラリによって出力されているので、無視してください。\nご理解いただきありがとうございます。\n",
+                            f"{F.LIGHTRED_EX}注意：上記のメッセージがある場合、このプログラムが使用している別のライブラリから出力されているため、無視してください。\nご理解のほど、よろしくお願いいたします。\n",
                             f"{F.LIGHTRED_EX}エラー: gdriveファイルのダウンロードに失敗しました。{END}",
                             f"{F.LIGHTRED_EX}これは、今日のgdrive APIのクオータリミットに達したか、ファイルが公開ダウンロードによってブロックされているかのいずれかです。次の日に再度お試しください。{END}",
                             f"{F.LIGHTRED_EX}このプログラムでダウンロードされていないgdriveファイルのURLを保存したテキストファイルは\n{pixivDownloadLocation}にあります。{END}"
