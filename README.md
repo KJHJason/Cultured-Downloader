@@ -74,6 +74,7 @@ Although the program has Japanese language support, most of them are translated 
 ## Features
 * **Allow multiple URLs input**
 * **Allow downloads of attachments such as videos, psd, etc.**
+* **Allow downloads of gdrive links (for pixiv Fanbox only)**
 * **4 Download Options**
     * Downloading all the images or attachment files (videos, psd, etc.) in a Fantia post based on a URL such as "https://fantia.jp/posts/1234567"
     * Downloading all the images or attachment files (videos, psd, etc.) in a pixiv Fanbox post based on a URL such as "https://www.fanbox.cc/@creator_name/posts/1234567"
@@ -139,6 +140,7 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 ## 特徴
 * **複数URLの入力ができます**
 * **ビデオ、psdなどの添付ファイルのダウンロードができます**
+* **gdriveのリンクのダウンロードができます（pixiv Fanboxのみ）**
 * **4 ダウンロードオプション**
     * "https://fantia.jp/posts/1234567" などのURLをもとに、Fantiaの投稿に含まれるすべての画像や添付ファイルをダウンロードする。
     * "https://www.fanbox.cc/@creator_name/posts/1234567" などのURLをもとに、pixivファンボックスの投稿内の画像や添付ファイルをすべてダウンロードする。
