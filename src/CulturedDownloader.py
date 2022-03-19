@@ -2117,10 +2117,11 @@ def download(urlInput, website, subFolderPath, **options):
                 gdriveAnchors = []
 
             try:
-                potentialPasswords = driver.find_elements(by=By.XPATH, value="//*[contains(text(), 'Pass') or contains(text(), 'pass') or contains(text(), 'パス') or contains(text(), '密码')]")
+                potentialPasswords = driver.find_elements(by=By.XPATH, value="//div[@id='root']//*[text()[contains(., 'パス') or contains(., 'Pass') or contains(., 'pass') or contains(., '密码')]]")
             except:
                 potentialPasswords = []
-
+            
+            print(potentialPasswords)
             if potentialPasswords and gdriveAnchors:
                 gdriveFolder.mkdir(parents=True, exist_ok=True)
                 with open(gdriveFolder.joinpath("password.txt"), "w") as f:
@@ -2146,7 +2147,7 @@ def download(urlInput, website, subFolderPath, **options):
                     print_progress_bar(gdriveProgress, totalEl, downloadMessage)
                     gdriveProgress += 1
 
-                successCondition = execute_gdrive_download(gdriveLink, gdriveFolder)
+                successCondition = True #execute_gdrive_download(gdriveLink, gdriveFolder)
 
                 if not successCondition:
                     print("\n")
@@ -2233,7 +2234,7 @@ def download(urlInput, website, subFolderPath, **options):
             
             del attachmentAnchors
 
-            if downloadImageFlag: totalEl += len(imagesURLToDownloadArray) + len(anchorURLArray)
+            if downloadImageFlag: totalEl += len(urlToDownloadArray) + len(anchorURLArray)
             else: totalEl += len(anchorURLArray)
 
             remove_any_files_in_directory(browserDownloadLocation)
