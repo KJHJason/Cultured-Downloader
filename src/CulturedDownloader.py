@@ -1378,11 +1378,13 @@ def get_download_flags(website):
 
         if website == "pixiv":
             if lang == "en": 
+                gdrivePrints = "\nNote: If one of the gdrive files from a post is locked due to exceeding its download quota,\nthis program will halt the gdrive download for that post and will generate a text file for you to manually download."
                 gdrivePrompt = "Would you like to download any gdrive links if found? (y/n/x to cancel and return to menu): "
             elif lang == "jp":
+                gdrivePrints = "\n注意：ある投稿のgdriveファイルがダウンロード枠を超えてロックされている場合、\nこのプログラムはその投稿のgdriveダウンロードを停止し、\n手動でダウンロードするためのテキストファイルを生成します。"
                 gdrivePrompt = "gdriveのリンクが見つかったら、ダウンロードしますか？ (y/n/xでキャンセルしてメニューに戻る): "
 
-            gdriveFlag = get_input_from_user(prompt=gdrivePrompt, command=("y", "n", "x"))
+            gdriveFlag = get_input_from_user(prompt=gdrivePrompt, command=("y", "n", "x"), prints=gdrivePrints)
             if gdriveFlag == "y": gdriveFlag = True
             elif gdriveFlag == "n": gdriveFlag = False
             else: return None, None, None, None
