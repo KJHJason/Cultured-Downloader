@@ -2121,7 +2121,6 @@ def download(urlInput, website, subFolderPath, **options):
             except:
                 potentialPasswords = []
             
-            print(potentialPasswords)
             if potentialPasswords and gdriveAnchors:
                 gdriveFolder.mkdir(parents=True, exist_ok=True)
                 with open(gdriveFolder.joinpath("password.txt"), "w") as f:
