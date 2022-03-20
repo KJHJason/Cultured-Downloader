@@ -1449,16 +1449,15 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
     if downloadType == "postPreviewPage":
         if "pageInput" in options: pageInput = options["pageInput"]
         else: raise Exception("pageInput variable for downloading post preview page is not defined...")
-        
         postPreviewURLArray = []
         if type(pageInput) == str and type(urlInput) == str:
             try:
                 pageNum = int(pageInput)
                 postPreviewURLArray.append("".join([urlInput, "?page=", str(pageNum)]))
             except:
-                pageNumList = pageInput.split("-")
+                pageNumList = [int(num) for num in pageInput.split("-")]
                 pageNumList.sort()
-                for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
+                for i in range(pageNumList[0], pageNumList[1] + 1):
                     postPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
         elif type(pageInput) == list and type(urlInput) == list:
             arrayPointer = 0
@@ -1468,16 +1467,16 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                     pageNum = int(pageNumInput)
                     postPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(pageNum)]))
                 except:
-                    pageNumList = pageNumInput.split("-")
+                    pageNumList = [int(num) for num in pageNumInput.split("-")]
                     pageNumList.sort()
-                    for i in range(int(pageNumList[0]), int(pageNumList[1]) + 1):
+                    for i in range(pageNumList[0], pageNumList[1] + 1):
                         postPreviewURLArray.append("".join([urlInput[arrayPointer], "?page=", str(i)]))
 
                 pagePostOffsetArr.append(len(postPreviewURLArray))
                 arrayPointer += 1
         else:
             raise Exception(f"{website} posts download's variables are not in correct format...")
-
+        print("manipulated:", postPreviewURLArray)
         imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag = get_download_flags(website)
         if imageFlag == None: 
             print_in_both_en_jp(
