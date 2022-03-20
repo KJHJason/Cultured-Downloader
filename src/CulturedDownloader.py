@@ -1449,6 +1449,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
     if downloadType == "postPreviewPage":
         if "pageInput" in options: pageInput = options["pageInput"]
         else: raise Exception("pageInput variable for downloading post preview page is not defined...")
+        
         postPreviewURLArray = []
         if type(pageInput) == str and type(urlInput) == str:
             try:
@@ -1476,7 +1477,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 arrayPointer += 1
         else:
             raise Exception(f"{website} posts download's variables are not in correct format...")
-        print("manipulated:", postPreviewURLArray)
+        
         imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag = get_download_flags(website)
         if imageFlag == None: 
             print_in_both_en_jp(
