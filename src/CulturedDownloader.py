@@ -1833,7 +1833,9 @@ def get_gdrive_id(url):
     Requires one argument to be defined:
     - The gdrive link (string)
     """
-    return url.split("/")[5]
+    url = url.split("/")[5]
+    if "?" in url: url = url.split("?")[0]
+    return url
 
 def get_data_for_request(gdriveID, gdriveType):
     """
