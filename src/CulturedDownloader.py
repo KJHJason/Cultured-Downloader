@@ -148,7 +148,7 @@ def error_shutdown(**errorMessages):
     log_error()
     if "en" in errorMessages and lang == "en":
         enErrorMessages = errorMessages.get("en")
-        if type(enErrorMessages) == tuple:
+        if isinstance(enErrorMessages, tuple):
             for line in enErrorMessages:
                 print(f"{F.RED}{line}{END}")
         else: print(f"{F.RED}{enErrorMessages}{END}")
@@ -157,7 +157,7 @@ def error_shutdown(**errorMessages):
         
     elif "jp" in errorMessages and lang == "jp":
         jpErrorMessages = errorMessages.get("jp")
-        if type(jpErrorMessages) == tuple:
+        if isinstance(jpErrorMessages, tuple):
             for line in jpErrorMessages:
                 print(f"{F.RED}{line}{END}")
         else: print(f"{F.RED}{jpErrorMessages}{END}")
@@ -183,21 +183,21 @@ def print_in_both_en_jp(**message):
     jpMessages = message.get("jp")
 
     if lang == "en":
-        if type(enMessages) == tuple:
+        if isinstance(enMessages, tuple):
             for enLine in enMessages:
                 print(enLine)
         else: print(enMessages)
     elif lang == "jp":
-        if type(jpMessages) == tuple:
+        if isinstance(jpMessages, tuple):
             for jpLine in jpMessages:
                 print(jpLine)
         else: print(jpMessages)
     else:
-        if type(enMessages) == tuple:
+        if isinstance(enMessages, tuple):
             for enLine in enMessages:
                 print(enLine)
         else: print(enMessages)
-        if type(jpMessages) == tuple:
+        if isinstance(jpMessages, tuple):
             for jpLine in jpMessages:
                 print(jpLine)
         else: print(jpMessages)
@@ -230,7 +230,7 @@ def get_input_from_user(**kwargs):
     warning = kwargs.get("warning")
 
     if prints != None:
-        if type(prints) == tuple:
+        if isinstance(prints, tuple):
             for line in prints:
                 print(f"{F.LIGHTYELLOW_EX}{line}{END}")
         else: print(f"{F.LIGHTYELLOW_EX}{prints}{END}")
@@ -1084,7 +1084,7 @@ def check_if_input_is_url(inputString, website):
     - User's input (string or list)
     - The website, either "fantiaPost", "fantiaImage", "pixivFanbox", "fantiaPostPage", or "pixivFanboxPostPage" (string)
     """
-    if type(inputString) != list:
+    if not isinstance(inputString, list):
         try:
             result = urlparse(inputString)
             if all([result.scheme, result.netloc]):
@@ -1155,7 +1155,7 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
         allowDupeCommand = options["allowDupeCommand"]
     else: allowDupeCommand = False
 
-    if type(userInput) == list:
+    if isinstance(userInput, list):
         if "d-" in userInput and allowDupeCommand:
             removeDuplicates = False
             userInput.remove("d-")
@@ -1215,7 +1215,7 @@ def split_inputs_to_possible_multiple_inputs(userInput, **options):
                 )
             )
             return userInput
-    elif type(userInput) == str:
+    elif isinstance(userInput, str):
         print_in_both_en_jp(
             en=(
                 "\n",
@@ -1267,13 +1267,13 @@ def get_page_num(userURLInput):
 
             pageNumConfirmation = get_input_from_user(prompt=pageNumConfirmationPrompt, command=("y", "n"))
             if pageNumConfirmation == "y":
-                if type(pageInput) == list:
+                if isinstance(pageInput, list):
                     validPageNumInputs = True
                     for pageNum in pageInput:
                         if re.fullmatch(pageNumRegex, pageNum) == None:
                             validPageNumInputs = False
                     if validPageNumInputs:
-                        if type(userURLInput) == list:
+                        if isinstance(userURLInput, list):
                             if len(userURLInput) == len(pageInput):
                                 return pageInput
                             else:
@@ -1303,7 +1303,7 @@ def get_page_num(userURLInput):
                                 f"{F.RED}エラー： ページ数が無効である。{END}"
                             )
                         )
-                elif type(pageInput) == str:
+                elif isinstance(pageInput, str):
                     if re.fullmatch(pageNumRegex, pageInput) == None:
                         print_in_both_en_jp(
                             en=(
@@ -1314,7 +1314,7 @@ def get_page_num(userURLInput):
                             )
                         )
                     else:
-                        if type(userURLInput) == str:
+                        if isinstance(userURLInput, str):
                             return pageInput
                         else:
                             print_in_both_en_jp(
@@ -1451,7 +1451,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         else: raise Exception("pageInput variable for downloading post preview page is not defined...")
         
         postPreviewURLArray = []
-        if type(pageInput) == str and type(urlInput) == str:
+        if isinstance(pageInput, str)and isinstance(urlInput, str):
             try:
                 pageNum = int(pageInput)
                 postPreviewURLArray.append("".join([urlInput, "?page=", str(pageNum)]))
@@ -1460,7 +1460,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 pageNumList.sort()
                 for i in range(pageNumList[0], pageNumList[1] + 1):
                     postPreviewURLArray.append("".join([urlInput, "?page=", str(i)]))
-        elif type(pageInput) == list and type(urlInput) == list:
+        elif isinstance(pageInput, list) and isinstance(urlInput, list):
             arrayPointer = 0
             pagePostOffsetArr = []
             for pageNumInput in pageInput:
@@ -1490,7 +1490,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             )
             return
 
-        if type(urlInput) == list: numOfPostPage = len(urlInput)
+        if isinstance(urlInput, list): numOfPostPage = len(urlInput)
         else: numOfPostPage = 1
         print("\n")
         print_in_both_en_jp(
@@ -1516,7 +1516,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         if website == "fantia": xpathValue = "//a[@class='link-block']"
         elif website == "pixiv": xpathValue = "//a[@class='sc-1bjj922-0 gwbPAH']"
 
-        if type(urlInput) == list: 
+        if isinstance(urlInput, list): 
             offSetArr = []
             postCount = 0
             pageCount = 0
@@ -1533,10 +1533,10 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             for postAnchorEl in posts:
                 postURLToDownloadArray.append(postAnchorEl.get_attribute("href"))
 
-                if type(urlInput) == list:
+                if isinstance(urlInput, list):
                     postCount += 1
 
-            if type(urlInput) == list:     
+            if isinstance(urlInput, list):     
                 pageCount += 1
                 if pageCount == pagePostOffsetArr[arrayOffsetPointer]:
                     arrayOffsetPointer += 1
@@ -1547,13 +1547,13 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                             if "@" in urlParts: urlParts = urlParts.replace("@", "")
                             creatorNameArr.append(urlParts)
                 
-        if postURLToDownloadArray and type(urlInput) == str:
+        if postURLToDownloadArray and isinstance(urlInput, str):
             counter = 0
             for postURL in postURLToDownloadArray:
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
                 download(postURL, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
-        elif postURLToDownloadArray and type(urlInput) == list:
+        elif postURLToDownloadArray and isinstance(urlInput, list):
             counter = 0
             creatorCounter = 0
             downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorNameArr[creatorCounter]}")
@@ -1586,7 +1586,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             )
             return
 
-        if type(urlInput) == list: numOfPosts = len(urlInput)
+        if isinstance(urlInput, list): numOfPosts = len(urlInput)
         else: numOfPosts = 1
         print("\n")
         print_in_both_en_jp(
@@ -1602,7 +1602,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             )
         )
         print("\n")
-        if type(urlInput) == list:
+        if isinstance(urlInput, list):
             counter = 0
             for url in urlInput: 
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
