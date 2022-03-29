@@ -925,10 +925,12 @@ def save_and_load_cookie(originalDriver, website, **options):
         en=(
             f"{F.LIGHTYELLOW_EX}A new browser should have opened. However, please do not close it at all times!{END}",
             f"{F.LIGHTYELLOW_EX}Please enter your username and password and login to {website.title()} manually.{END}",
+            f"{F.LIGHTRED_EX}If you would like to skip this login process, please just press enter and ignore the login failure message and enter \"n\" for the login retry prompt.{END}"
         ),
         jp=(
             f"{F.LIGHTYELLOW_EX}新しいブラウザが起動したはずです。ただし、常に閉じないようにしてください！{END}", 
             f"{F.LIGHTYELLOW_EX}ユーザー名とパスワードを入力し、手動で{website.title()}にログインしてください。{END}",
+            f"{F.LIGHTRED_EX}このログイン処理を省略したい場合は、Enterキーを押してログイン失敗のメッセージを無視し、ログイン再試行のプロンプトに \"n\" を入力してください。{END}"
         )
     )
 
@@ -2849,7 +2851,7 @@ def main():
                 if not pixivCookieLoaded:
                     pixivCookieLoaded, pixivSessionID = save_and_load_cookie(driver, "pixiv", getID=True)
                     if pixivCookieLoaded:
-                         pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
+                        pixivSession = get_cookie_for_session("pixiv", sessionID=pixivSessionID)
 
                 if not fantiaCookieLoaded:
                     fantiaCookieLoaded = save_and_load_cookie(driver, "fantia")
