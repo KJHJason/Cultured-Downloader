@@ -2139,6 +2139,8 @@ def download(urlInput, website, subFolderPath, **options):
             totalEl += len(gdriveAnchors)
             if gdriveAnchors: 
                 gdriveLinks = [el.get_attribute("href") for el in gdriveAnchors]
+            else:
+                downloadGdriveLinks = False
 
             for gdriveLink in gdriveLinks:
                 if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
