@@ -2113,6 +2113,7 @@ def download(urlInput, website, subFolderPath, **options):
     elif website == "Pixiv":
         totalEl = 0
         gdriveLinks = []
+        gdriveMessageInfo = 0
         if downloadGdriveLinks:
             gdriveFolder = subFolderPath.joinpath("gdrive-files")
             try:
@@ -2141,8 +2142,7 @@ def download(urlInput, website, subFolderPath, **options):
             totalEl += len(gdriveAnchors)
             if gdriveAnchors: 
                 gdriveLinks = [el.get_attribute("href") for el in gdriveAnchors]
-            else:
-                downloadGdriveLinks = False
+                gdriveMessageInfo = len(gdriveLinks)
 
             for gdriveLink in gdriveLinks:
                 if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
@@ -2190,7 +2190,7 @@ def download(urlInput, website, subFolderPath, **options):
                             f.write(f"{gdriveLinks[i]}\n")
                         f.write("\n")
 
-                    downloadGdriveLinks = False # to prevent the success msg from being printed later
+                    gdriveMessageInfo = 0 # to prevent the success msg from being printed later
                     break
 
                 if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
@@ -2307,7 +2307,7 @@ def download(urlInput, website, subFolderPath, **options):
                 print_progress_bar(progress, totalEl, downloadMessage)
                 progress += 1
                 
-        print_download_completion_message(totalEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag, gdriveNotice=downloadGdriveLinks)
+        print_download_completion_message(totalEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag, gdriveNotice=gdriveMessageInfo)
 
     else: raise Exception("Invalid website argument in download function...")
 
