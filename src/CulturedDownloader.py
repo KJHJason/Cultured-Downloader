@@ -1967,9 +1967,8 @@ def download(urlInput, website, subFolderPath, **options):
             except: thumbnailSrc = None
 
             if thumbnailSrc:
-                thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
-                thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
-                imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailSrc, "Fantia"))
+                subFolderPath.mkdir(parents=True, exist_ok=True)
+                imagePath = subFolderPath.joinpath(get_file_name(thumbnailSrc, "Fantia"))
                 # no session needed since it's displayed regardless of membership status
                 save_image(thumbnailSrc, imagePath) 
                 thumbnailDownloadedCondition = True
@@ -2207,9 +2206,8 @@ def download(urlInput, website, subFolderPath, **options):
                 thumbnailURL = None
             
             if thumbnailURL:
-                thumbnailDownloadFolder = subFolderPath.joinpath("thumbnail")
-                thumbnailDownloadFolder.mkdir(parents=True, exist_ok=True)
-                imagePath = thumbnailDownloadFolder.joinpath(get_file_name(thumbnailURL, "Pixiv"))
+                subFolderPath.mkdir(parents=True, exist_ok=True)
+                imagePath = subFolderPath.joinpath(get_file_name(thumbnailURL, "Pixiv"))
                 # no session needed since it's displayed regardless of membership status
                 save_image(thumbnailURL, imagePath) 
                 thumbnailDownloadedCondition = True
