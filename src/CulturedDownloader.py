@@ -102,9 +102,6 @@ def shutdown():
     if lang == "en": print(f"{F.RED}Exiting...{END}")
     elif lang == "jp": print(f"{F.RED}終了しています...{END}")
 
-    try: driver.quit()
-    except: pass
-
     osExit(0)
 
 def print_error_log_notification():
@@ -114,8 +111,6 @@ def print_error_log_notification():
     logFolderPath = get_saved_config_data_folder().joinpath("logs")
     print(f"\n{F.RED}Unknown Error Occurred/不明なエラーが発生した{END}")
     print(f"{F.RED}Please provide the developer with a error text file generated in {logFolderPath}\n{logFolderPath}に生成されたエラーテキストファイルを開発者に提供してください。\n{END}")
-    try: driver.quit()
-    except: pass
 
 def log_error():
     """
@@ -164,8 +159,6 @@ def error_shutdown(**errorMessages):
         input("何か入力すると終了します。。。")
         print(f"{F.LIGHTYELLOW_EX}ご理解頂き誠にありがとうございます。{END}")
 
-    try: driver.quit()
-    except: pass
     sleep(2)
     raise SystemExit
 
@@ -1717,14 +1710,12 @@ def save_image(imageURL, pathToSave, **requestSession):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
     }
     if "session" in requestSession:
-        session = requestSession["session"]
-        with session.get(imageURL, stream=True, headers=headers, timeout=10) as r:
-            with open(pathToSave, "wb") as f:
-                copyfileobj(r.raw, f)
+        req = requestSession["session"]
     else:    
-        with requests.get(imageURL, stream=True, headers=headers, timeout=10) as r:
-            with open(pathToSave, "wb") as f:
-                copyfileobj(r.raw, f)
+        req = requests
+    with req.get(imageURL, stream=True, headers=headers, timeout=10) as r:
+        with open(pathToSave, "wb") as f:
+            copyfileobj(r.raw, f)
 
 def print_progress_bar(prog, totalEl, caption):
     """
@@ -2272,10 +2263,12 @@ def download(urlInput, website, subFolderPath, **options):
             if anchorURLArray:
                 close_new_tab()
                 check_for_incomplete_download()
-                # moves all the files to the corresponding folder based on the user's input.
+                
+                # moves all the files to the corresponding folder based on the user's input
+                attachmentFolderPath = subFolderPath.joinpath("attachments")
                 for file in browserDownloadLocation.iterdir():
-                    subFolderPath.mkdir(parents=True, exist_ok=True)
-                    move(file, subFolderPath.joinpath(file.name)) 
+                    attachmentFolderPath.mkdir(parents=True, exist_ok=True)
+                    move(file, attachmentFolderPath.joinpath(file.name)) 
             else:
                 progress += 1 # since the for loop won't be executed, plus one for the next loop
         else:
@@ -2290,13 +2283,14 @@ def download(urlInput, website, subFolderPath, **options):
                 progress += 1
         
         if downloadImageFlag:
+            downloadFolder = subFolderPath.joinpath("downloaded_images")
             for url in urlToDownloadArray:
                 subFolderPath.mkdir(parents=True, exist_ok=True)
                 
                 if pixivSession == None:
-                    save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")))
+                    save_image(url, downloadFolder.joinpath(get_file_name(url, "Pixiv")))
                 else:
-                    save_image(url, subFolderPath.joinpath(get_file_name(url, "Pixiv")), session=pixivSession)
+                    save_image(url, downloadFolder.joinpath(get_file_name(url, "Pixiv")), session=pixivSession)
 
                 if downloadAttachmentFlag:
                     if lang == "en": downloadMessage = f"Downloading image/attachment no.{progress} out of {totalEl}"
@@ -2953,29 +2947,18 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
     try:
         main()
     except SystemExit:
-        try: driver.quit()
-        except: pass
-        
         print(f"{F.RED}Exiting/終了しています...{END}")
         osExit(1)
     except KeyboardInterrupt:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
         print(f"{F.RED}Exiting/終了しています...{END}")
-        try: driver.quit()
-        except: pass
         
         sleep(1)
         osExit(0)
     except (EncryptionKeyError, DecryptError):
-        try: driver.quit()
-        except: pass
-        
         delete_encrypted_data()
         osExit(1)
     except (SessionError, EOFError):
-        try: driver.quit()
-        except: pass
-
         # deletes any saved files created by this program
         remove_any_files_in_directory(get_saved_config_data_folder().joinpath("configs"))
 
@@ -2986,15 +2969,11 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         input()
         osExit(1)
     except:
-        try: driver.quit()
-        except: pass
-
         log_error()
         print_error_log_notification()
 
         input("Please enter any key to exit/何か入力すると終了します...")
         osExit(1)
-
     try:
         shutdown()
     except KeyboardInterrupt:
