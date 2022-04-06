@@ -1713,13 +1713,16 @@ def save_image(imageURL, pathToSave, **requestSession):
     Optional param:
     - session (requests session object)
     """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+    }
     if "session" in requestSession:
         session = requestSession["session"]
-        with session.get(imageURL, stream=True) as r:
+        with session.get(imageURL, stream=True, headers=headers, timeout=10) as r:
             with open(pathToSave, "wb") as f:
                 copyfileobj(r.raw, f)
     else:    
-        with requests.get(imageURL, stream=True) as r:
+        with requests.get(imageURL, stream=True, headers=headers, timeout=10) as r:
             with open(pathToSave, "wb") as f:
                 copyfileobj(r.raw, f)
 
