@@ -91,7 +91,8 @@ Although the program has Japanese language support, most of them are translated 
 ## FAQ
 1. Does this work on other OS platforms such as macOS and Linux?
     * This program has only been tested on Windows.
-    * However, I have added support for macOS and Linux but have yet to test them as I do not have a Linux or a macOS system.
+    * Although this program has partial support for macOS and Linux, I've only tested it on Linux but it was unable to run.
+    * If there is enough requests for other OS support like Linux, I will consider adding full support for it.
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
@@ -157,7 +158,8 @@ pixivのFanboxやFantiaの投稿から、自分で画像をダウンロードす
 ## よくある質問
 1. macOSやLinuxなど、他のOSプラットフォームでも動作しますか？
     * 本プログラムはWindows上でのみ動作確認を行っています。
-    * ただし、macOSとLinuxのサポートを追加しましたが、LinuxやmacOSのシステムを持っていないので、まだテストしていません。
+    * このプログラムはmacOSとLinuxに一部対応していますが、私はLinuxでしかテストしていませんが、実行できませんでした。
+    * Linuxなど他のOSへの対応についても要望が多ければ、フルサポートすることを検討します。
 
 ## 最終ノート
 1. これは個人的な使用を前提としたミニプロジェクトであることを忘れないでください。
