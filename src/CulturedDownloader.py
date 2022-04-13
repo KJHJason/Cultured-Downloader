@@ -98,11 +98,6 @@ def shutdown():
     elif lang == "jp":
         print(f"{F.LIGHTYELLOW_EX}Cultured Downloaderをご利用いただきありがとうございます。{END}")
         input("何か入力すると終了します。。。")
-    
-    if lang == "en": print(f"{F.RED}Exiting...{END}")
-    elif lang == "jp": print(f"{F.RED}終了しています...{END}")
-
-    osExit(0)
 
 def print_error_log_notification():
     """
@@ -1428,6 +1423,19 @@ def get_download_flags(website):
         else: 
             return imageFlag, downloadAttachmentFlag, downloadThumbnailFlag, gdriveFlag
 
+def get_creator_from_url(url):
+    """
+    Extract the creator's pixiv creator name ID or fantia ID from the URL.
+    
+    Requires one argument to be defined:
+    - url (string)
+    """
+    urlUnwantedParts = ("https:", "www", "fanbox", "cc", "", "fantia", "jp", "fanclubs")
+    for urlParts in url.replace(".", "/").split("/")[:-1]:
+        if urlParts not in urlUnwantedParts:
+            if "@" in urlParts: urlParts = urlParts.replace("@", "")
+            return urlParts
+
 def execute_download_process(urlInput, imagePath, downloadType, website, **options):
     """
     For executing the logic behind downloading images or attachments.
@@ -1516,8 +1524,10 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
             postCount = 0
             pageCount = 0
             arrayOffsetPointer = 0
-            urlUnwantedParts = ("https:", "www", "fanbox", "cc", "", "fantia", "jp", "fanclubs")
+            
             creatorNameArr = []
+        elif isinstance(urlInput, str):
+            count = 0
 
         for postURL in postPreviewURLArray: 
             driver.get(postURL)
@@ -1531,34 +1541,49 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 if isinstance(urlInput, list):
                     postCount += 1
 
+            # if downloading from multiple creators
             if isinstance(urlInput, list):     
                 pageCount += 1
                 if pageCount == pagePostOffsetArr[arrayOffsetPointer]:
                     arrayOffsetPointer += 1
                     offSetArr.append(postCount)
-                    
-                    for urlParts in driver.current_url.replace(".", "/").split("/")[:-1]:
-                        if urlParts not in urlUnwantedParts:
-                            if "@" in urlParts: urlParts = urlParts.replace("@", "")
-                            creatorNameArr.append(urlParts)
-                
+                    creatorNameArr.append(get_creator_from_url(driver.current_url))
+
+            # if downloading from one creator
+            elif isinstance(urlInput, str) and count == 0:
+                count += 1
+                creatorName = get_creator_from_url(driver.current_url)
+
+        # iterate in reversed when downloading such that the latest one will be the highest post number
         if postURLToDownloadArray and isinstance(urlInput, str):
-            counter = 0
-            for postURL in postURLToDownloadArray:
-                downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
+            counter = get_latest_post_num(imagePath)
+            for postURL in reversed(postURLToDownloadArray):
+                downloadDirectoryFolder = imagePath.joinpath(creatorName, f"Post-{counter}")
                 download(postURL, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
         elif postURLToDownloadArray and isinstance(urlInput, list):
-            counter = 0
-            creatorCounter = 0
-            downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorNameArr[creatorCounter]}")
-            for postURL in postURLToDownloadArray:
-                downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{counter}")
+            counter = creatorPostPointer = 0
+            creatorNamePointer = -1
+            downloadDirectoryFolder = imagePath.joinpath(creatorNameArr[creatorNamePointer])
+            postNum = get_latest_post_num(downloadDirectoryFolder)
+            
+            # calculate the number of posts to download before moving on to a new folder for the next creator
+            postsToDownloadArr = []
+            for i, n in reversed(list(enumerate(offSetArr[:-1]))):
+                postsToDownloadArr.append(abs(n - offSetArr[i + 1]))
+            postsToDownloadArr.append(offSetArr[0])
+
+            for postURL in reversed(postURLToDownloadArray):
+                downloadSubDirectoryFolder = downloadDirectoryFolder.joinpath(f"Post-{postNum}")
                 download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
-                if (counter == offSetArr[creatorCounter]) and not (counter == len(postURLToDownloadArray)):
-                    creatorCounter += 1
-                    downloadDirectoryFolder = imagePath.joinpath(f"Creator-{creatorNameArr[creatorCounter]}")
+                postNum += 1
+                if (counter == postsToDownloadArr[creatorPostPointer]) and not (counter == len(postURLToDownloadArray)):
+                    creatorNamePointer -= 1
+                    counter = 0
+                    creatorPostPointer += 1
+                    downloadDirectoryFolder = imagePath.joinpath(creatorNameArr[creatorNamePointer])
+                    postNum = get_latest_post_num(downloadDirectoryFolder)
         else:
             print_in_both_en_jp(
                 en=(
@@ -1598,12 +1623,21 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
         )
         print("\n")
         if isinstance(urlInput, list):
-            counter = 0
-            for url in urlInput: 
+            if lang == "en": reversePrompt = "Do you want to download in reverse order? (y/n): "
+            else: reversePrompt = "逆順でダウンロードしますか？ (y/n)： "
+            downloadInReversedFlag = get_input_from_user(prompt=reversePrompt, command=("y", "n"))
+            counter = get_latest_post_num(imagePath)
+            
+            if downloadInReversedFlag == "y": dl = reversed(urlInput)
+            else: dl = urlInput
+            
+            for url in dl: 
                 downloadDirectoryFolder = imagePath.joinpath(f"Post-{counter}")
                 download(url, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
-        else: download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
+        else:
+            if check_if_directory_has_files(imagePath): imagePath = imagePath.joinpath(f"Post-{get_latest_post_num(imagePath)}")
+            download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
     else:
         raise Exception(f"Download type given: {downloadType} is not valid!")
 
@@ -1713,9 +1747,17 @@ def save_image(imageURL, pathToSave, **requestSession):
         req = requestSession["session"]
     else:    
         req = requests
-    with req.get(imageURL, stream=True, headers=headers, timeout=10) as r:
-        with open(pathToSave, "wb") as f:
-            copyfileobj(r.raw, f)
+
+    try:
+        with req.get(imageURL, stream=True, headers=headers, timeout=10) as r:
+            with open(pathToSave, "wb") as f:
+                copyfileobj(r.raw, f)
+    except requests.exceptions.ReadTimeout:
+        print_in_both_en_jp(
+            en=f"\n{F.LIGHTRED_EX}Error: Request timeout, retrying...{END}\n",
+            jp=f"\n{F.LIGHTRED_EX}エラー： リクエストタイムアウト、再試行します。{END}\n"
+        )
+        save_image(imageURL, pathToSave, **requestSession)
 
 def print_progress_bar(prog, totalEl, caption):
     """
@@ -2285,7 +2327,7 @@ def download(urlInput, website, subFolderPath, **options):
         if downloadImageFlag:
             downloadFolder = subFolderPath.joinpath("downloaded_images")
             for url in urlToDownloadArray:
-                subFolderPath.mkdir(parents=True, exist_ok=True)
+                downloadFolder.mkdir(parents=True, exist_ok=True)
                 
                 if pixivSession == None:
                     save_image(url, downloadFolder.joinpath(get_file_name(url, "Pixiv")))
@@ -2319,6 +2361,31 @@ def check_if_folder_name_contains_illegal_char(userFolderNameInput):
     if any(char in illegalChars for char in userFolderNameInput): return True
     else: return False
 
+def check_if_valid_folder_name(userFolderName):
+    """
+    Check if the folder name is according to the pattern of "Post-1"
+    """
+    if re.fullmatch(postNumFolderNameRegex, userFolderName): return True
+    return False
+
+def get_latest_post_num(folderPath):
+    """
+    Returns the highest post num folder name in the given folder path.
+    
+    Requires one argument to be defined:
+    - A folder path (pathlib Path object)
+    """
+    postNumList = []
+    try:
+        for dirPath in folderPath.iterdir():
+            if dirPath.is_dir():
+                dirName = dirPath.name
+                if check_if_valid_folder_name(dirName):
+                    dirPath = str(dirName).split("-")
+                    postNumList.append(int(dirPath[-1]))
+        return max(postNumList) + 1
+    except: return 0
+
 def create_subfolder(website):
     """
     Asks the user for a folder name to save all the images to be downloaded into (The user can enter "X" to cancel this process).
@@ -2344,10 +2411,16 @@ def create_subfolder(website):
 
                 if check_if_directory_has_files(imagePath): 
                     print_in_both_en_jp(
-                        en=(f"{F.RED}Error: Folder already exists with images inside.\nPlease enter a different {END}{F.RED}{Style.BRIGHT}NEW{END} {F.RED}name for a new folder.{END}"),
-                        jp=(f"{F.RED}エラー： フォルダはすでに存在し、その中に画像があります。{END}{F.RED}{Style.BRIGHT}新しい名前{END}{F.RED}を入力してください。{END}")
+                        en=(f"{F.RED}Warning: Folder already exists with files inside.\nAre you sure that you would like to download into the folder, {folderName}?{END}"),
+                        jp=(f"{F.RED}警告： すでにファイルがあるフォルダーです。\n{folderName} にダウンロードしますか？{END}")
                     )
                     print("\n")
+                    if lang == "en": prompt = f"Enter \"Y\" to continue or \"N\" to cancel: "
+                    else: prompt = f"\"Y\"を入力して続行、\"N\"を入力してキャンセルします： "
+                    
+                    confirm = get_input_from_user(prompt=prompt, command=("y", "n"))
+                    if confirm.lower() == "y": return imagePath
+                    else: print("\n")
                 else: return imagePath
             else:
                 print_in_both_en_jp(
@@ -2908,17 +2981,19 @@ if __name__ == "__main__":
     global queryWebsite
     queryWebsite = "https://cultureddownloader.com/query"
 
+    global postNumFolderNameRegex
     global fantiaPostRegex
     global fantiaPostPageRegex
     global pixivFanboxPostRegex
     global pixivFanboxPostPageRegex
     global pageNumRegex
 
+    postNumFolderNameRegex = re.compile(r"^(Post-)(\d+)$")
     fantiaPostRegex = re.compile(r"(https://fantia.jp/posts/)\d+")
     fantiaPostPageRegex = re.compile(r"(https://fantia.jp/fanclubs/)\d+(/posts)")
     pixivFanboxPostRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts/)\d+|(https://)[\w&.-]+(.fanbox.cc/posts/)\d+") # [\w&.-]+ regex from https://stackoverflow.com/questions/13946651/matching-special-characters-and-letters-in-regex
     pixivFanboxPostPageRegex = re.compile(r"(https://www.fanbox.cc/@)[\w&.-]+(/posts)|(https://)[\w&.-]+(.fanbox.cc/posts)") 
-    pageNumRegex = re.compile(r"\d+(-)\d+|\d+")
+    pageNumRegex = re.compile(r"[1-9][0-9]{0,}(-)[1-9][0-9]{0,}|[1-9][0-9]{0,}") # ensures that the user cannot enter page 0 or negative numbers
 
     introMenu = f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{END} ===========================================
@@ -2944,20 +3019,16 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
 本プログラムをご利用になる前に、https://github.com/KJHJason/Cultured-Downloader の利用規約をお読みください。{END}
 """
     print(introMenu)
+    code = 0
     try:
         main()
-    except SystemExit:
-        print(f"{F.RED}Exiting/終了しています...{END}")
-        osExit(1)
+        shutdown()
     except KeyboardInterrupt:
         print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
-        print(f"{F.RED}Exiting/終了しています...{END}")
-        
         sleep(1)
-        osExit(0)
     except (EncryptionKeyError, DecryptError):
         delete_encrypted_data()
-        osExit(1)
+        code = 1
     except (SessionError, EOFError):
         # deletes any saved files created by this program
         remove_any_files_in_directory(get_saved_config_data_folder().joinpath("configs"))
@@ -2967,16 +3038,16 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
             jap=(f"{F.RED}エラー：  保存したファイルを読み込めない...{END}", "このプログラムを再起動してください。{END}", "何か入力すると終了します...")
         )
         input()
-        osExit(1)
+        code = 1
     except:
         log_error()
         print_error_log_notification()
 
         input("Please enter any key to exit/何か入力すると終了します...")
-        osExit(1)
-    try:
-        shutdown()
-    except KeyboardInterrupt:
-        print(f"\n{F.RED}Program Terminated/プログラムが終了しました{END}")
-        sleep(1)
-        osExit(0)
+        code = 1
+    finally:
+        print(f"{F.RED}Exiting/終了しています...{END}")
+        # shuts down the webdriver session
+        try: driver.quit()
+        except: pass
+        osExit(code)
