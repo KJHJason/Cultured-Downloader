@@ -1636,7 +1636,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 download(url, f"{website.title()}", downloadDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
         else:
-            if check_if_directory_has_files(imagePath): imagePath = imagePath.joinpath(f"Post-{get_latest_post_num(imagePath)}")
+            imagePath = imagePath.joinpath(f"Post-{get_latest_post_num(imagePath)}")
             download(urlInput, f"{website.title()}", imagePath, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
     else:
         raise Exception(f"Download type given: {downloadType} is not valid!")
@@ -2969,7 +2969,6 @@ def main():
                 )
 
         elif cmdInput == "y": webbrowser.open("https://github.com/KJHJason/Cultured-Downloader/issues", new=2)
-        elif cmdInput == "x": driver.quit()
 
 """--------------------------- End of Main Codes ---------------------------"""
 
@@ -3005,10 +3004,10 @@ if __name__ == "__main__":
 Purpose/目的: Allows you to download multiple images from Fantia or Pixiv Fanbox automatically.
               FantiaやPixivファンボックスから複数の画像を自動でダウンロードできるようにします。
 
-Note/注意: Requires the user to login via this program for images that requires a membership.
-           This program is not affiliated with Pixiv or Fantia.
-           会員登録が必要な画像は、本プログラムによるログインが必要です。
-           このプログラムはPixivやFantiaとは関係ありません。{END}
+Note/注意:    Requires the user to login via this program for images that requires a membership.
+              This program is not affiliated with Pixiv or Fantia.
+              会員登録が必要な画像は、本プログラムによるログインが必要です。
+              このプログラムはPixivやFantiaとは関係ありません。{END}
 {F.LIGHTRED_EX}
 For English-speaking users:
 If you have noticed the weird "?" text, it means that your PC do not have Japanese language support.
