@@ -88,6 +88,28 @@ class SessionError(Exception):
 
 """--------------------------- Config Codes ---------------------------"""
 
+def check_for_new_ver():
+    """
+    Checks for a new update and if the program is up to date.
+    
+    Will print out some messages for the user to inform them of the update.
+    """
+    res = requests.get("https://api.github.com/repos/KJHJason/Cultured-Downloader/releases/latest").json()
+    latestVer = res["tag_name"]
+    print("-" * 100)
+    print(f"\n{F.LIGHTYELLOW_EX}Checking for updates/更新を確認しています...{END}")
+    if latestVer != __version__:
+        print(f"\n{F.RED}New version of Cultured Downloader is available/新しいバージョンのCultured Downloaderが利用可能です{END}\n")
+        print(f"{F.RED}Current version/現在のバージョン: {__version__}{END}")
+        print(f"{F.RED}Latest version/最新のバージョン: {latestVer}{END}\n")
+        print(f"{F.RED}Please update the program/プログラムを更新してください{END}\n")
+        print(f"{F.RED}Link to the latest version/最新バージョンへのリンク:{END}")
+        print(f"f{F.RED}{res['html_url']}{END}\n")
+    else: 
+        print(f"{F.GREEN}You are using the latest version/最新バージョンを使用しています{END}\n")
+    print("-" * 100)
+    print()
+
 def shutdown():
     """
     Closes the main global variable driver's webdriver session prints out some messages for the user.
@@ -3020,6 +3042,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
     print(introMenu)
     code = 0
     try:
+        check_for_new_ver()
         main()
         shutdown()
     except KeyboardInterrupt:
