@@ -2476,7 +2476,7 @@ def print_menu():
         elif lang == "jp": pixivStatus = "クッキーでログインしました"
 
     if lang == "jp": 
-        menuHead = f"""{F.LIGHTYELLOW_EX}
+        print(f"""{F.LIGHTYELLOW_EX}
 > ログイン・ステータス...
 > Fantia: {fantiaStatus}
 > Pixiv: {pixivStatus}
@@ -2484,36 +2484,29 @@ def print_menu():
 --------------------- {F.LIGHTYELLOW_EX}ダウンロードのオプション{END} ---------------------
       {F.GREEN}1. Fantia投稿URLから画像をダウンロードする{END}
       {F.GREEN}2. 全投稿ページのURLからFantiaの全投稿をダウンロードする。{END}
-      {F.CYAN}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
-      {F.CYAN}4. 全投稿ページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
+      {F.LIGHTYELLOW_EX}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
+      {F.LIGHTYELLOW_EX}4. 全投稿ページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}コンフィグのオプション{END} ----------------------
       {F.LIGHTBLUE_EX}5. デフォルトのダウンロードフォルダを変更する{END}
       {F.LIGHTBLUE_EX}6. ブラウザを変更する{END}
-      {F.LIGHTBLUE_EX}7. 言語を変更する{END}
-"""
-        if fantiaStatus == "ゲスト（ログインしていない）" or pixivStatus == "ゲスト（ログインしていない）":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}8. ログインする{END}\n"""
-        else:
-            menuAdditionalOptions = ""
+      {F.LIGHTBLUE_EX}7. 言語を変更する{END}""")
 
-        menuFooterStart = f"""
--------------------------- {F.LIGHTYELLOW_EX}他のオプション{END} ---------------------------"""
+        if fantiaStatus == "ゲスト（ログインしていない）" or pixivStatus == "ゲスト（ログインしていない）":
+            print(f"      {F.LIGHTBLUE_EX}8. ログインする{END}")
+
+        print(f"\n-------------------------- {F.LIGHTYELLOW_EX}他のオプション{END} ---------------------------")
         if appPath.joinpath("configs", "pixiv_cookies").is_file() or appPath.joinpath("configs", "fantia_cookies").is_file(): 
-            menuDeleteCookieOption = f"""\n      {F.LIGHTRED_EX}DC. 保存されたクッキーを削除する{END}"""
-        else: 
-            menuDeleteCookieOption = ""
+            print(f"      {F.LIGHTRED_EX}DC. 保存されたクッキーを削除する{END}")
 
         if check_if_directory_has_files(appPath.joinpath("configs")): 
-            menuDeleteDataOption = f"""\n      {F.RED}D. Cultured Downloaderで作成されたデータをすべて削除します。{END}\n"""
-        else: 
-            menuDeleteDataOption = "\n"
+            print(f"      {F.RED}D. Cultured Downloaderで作成されたデータをすべて削除します。{END}")
 
-        menuFooterEnd = f"""      {F.LIGHTRED_EX}Y. バグを報告する{END}
-      {F.RED}X. プログラムを終了する{END}
- """
+        print(f"      {F.LIGHTRED_EX}Y. バグを報告する{END}")
+        print(f"      {F.RED}X. プログラムを終了する{END}")
+        print()
     else:
-        menuHead = f"""{F.LIGHTYELLOW_EX}
+        print(f"""{F.LIGHTYELLOW_EX}
 > Login Status...
 > Fantia: {fantiaStatus}
 > Pixiv: {pixivStatus}
@@ -2521,36 +2514,27 @@ def print_menu():
 --------------------- {F.LIGHTYELLOW_EX}Download Options{END} --------------------
       {F.GREEN}1. Download images from a Fantia post URL{END}
       {F.GREEN}2. Download all Fantia posts from an all posts page URL{END}
-      {F.CYAN}3. Download images from a pixiv Fanbox post URL{END}
-      {F.CYAN}4. Download all pixiv Fanbox posts from an all posts page URL{END}
+      {F.LIGHTCYAN_EX}3. Download images from a pixiv Fanbox post URL{END}
+      {F.LIGHTCYAN_EX}4. Download all pixiv Fanbox posts from an all posts page URL{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{END} ----------------------
       {F.LIGHTBLUE_EX}5. Change Default Download Folder{END}
       {F.LIGHTBLUE_EX}6. Change Default Browser{END}
-      {F.LIGHTBLUE_EX}7. Change Language{END}
-"""
+      {F.LIGHTBLUE_EX}7. Change Language{END}""")
+        
         if fantiaStatus == "Guest (Not logged in)" or pixivStatus == "Guest (Not logged in)":
-            menuAdditionalOptions = f"""      {F.LIGHTBLUE_EX}8. Login{END}\n"""
-        else:
-            menuAdditionalOptions = ""
+            print(f"      {F.LIGHTBLUE_EX}8. Login{END}")
 
-        menuFooterStart = f"""
----------------------- {F.LIGHTYELLOW_EX}Other Options{END} ----------------------"""
+        print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{END} ----------------------")
         if appPath.joinpath("configs", "pixiv_cookies").is_file() or appPath.joinpath("configs", "fantia_cookies").is_file(): 
-            menuDeleteCookieOption = f"""\n      {F.LIGHTRED_EX}DC. Delete saved cookies{END}"""
-        else:
-            menuDeleteCookieOption = ""
+            print(f"      {F.LIGHTRED_EX}DC. Delete saved cookies{END}")
 
         if check_if_directory_has_files(appPath.joinpath("configs")): 
-            menuDeleteDataOption = f"""\n      {F.RED}D. Delete all data created by Cultured Downloader{END}\n"""
-        else: 
-            menuDeleteDataOption = "\n"
+            print(f"      {F.RED}D. Delete all data created by Cultured Downloader{END}")
 
-        menuFooterEnd = f"""      {F.LIGHTRED_EX}Y. Report a bug{END}
-      {F.RED}X. Shutdown the program{END}
- """
-        
-    print("".join([menuHead, menuAdditionalOptions, menuFooterStart, menuDeleteCookieOption, menuDeleteDataOption, menuFooterEnd]))
+        print(f"      {F.LIGHTRED_EX}Y. Report a bug{END}")
+        print(f"      {F.RED}X. Shutdown the program{END}")
+        print()
 
 """--------------------------- End of Functions Codes ---------------------------"""
 
@@ -2640,7 +2624,7 @@ def main():
     else: pixivSession = None
 
     cmdInput = ""
-    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "d", "dc", "x", "y")
+    cmdCommands = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" "d", "dc", "x", "y")
     while cmdInput != "x":
         print_menu()
         if lang == "en":
