@@ -2484,8 +2484,8 @@ def print_menu():
 --------------------- {F.LIGHTYELLOW_EX}ダウンロードのオプション{END} ---------------------
       {F.GREEN}1. Fantia投稿URLから画像をダウンロードする{END}
       {F.GREEN}2. 全投稿ページのURLからFantiaの全投稿をダウンロードする。{END}
-      {F.LIGHTYELLOW_EX}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
-      {F.LIGHTYELLOW_EX}4. 全投稿ページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
+      {F.LIGHTCYAN_EX}3. Pixivファンボックスの投稿URLから画像をダウンロードする{END}
+      {F.LIGHTCYAN_EX}4. 全投稿ページのURLからPixivファンボックスの全投稿をダウンロードする。{END}
 
 ---------------------- {F.LIGHTYELLOW_EX}コンフィグのオプション{END} ----------------------
       {F.LIGHTBLUE_EX}5. デフォルトのダウンロードフォルダを変更する{END}
