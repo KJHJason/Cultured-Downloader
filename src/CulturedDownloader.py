@@ -1600,7 +1600,7 @@ def execute_download_process(urlInput, imagePath, downloadType, website, **optio
                 download(postURL, f"{website.title()}", downloadSubDirectoryFolder, attachments=downloadAttachmentFlag, thumbnails=downloadThumbnailFlag, images=imageFlag, gdrive=gdriveFlag)
                 counter += 1
                 postNum += 1
-                if (counter == postsToDownloadArr[creatorPostPointer]) and not (counter == len(postURLToDownloadArray)):
+                if (postURL != postURLToDownloadArray[0] and counter == postsToDownloadArr[creatorPostPointer]):
                     creatorNamePointer -= 1
                     counter = 0
                     creatorPostPointer += 1
@@ -2168,7 +2168,7 @@ def download(urlInput, website, subFolderPath, **options):
         print_download_completion_message(totalEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag)
 
     elif website == "Pixiv":
-        totalEl = 0
+        totalEl = totalGdriveEl = 0
         gdriveLinks = []
         gdriveMessageInfo = 0
         if downloadGdriveLinks:
@@ -2196,17 +2196,17 @@ def download(urlInput, website, subFolderPath, **options):
                     f.writelines(el.text + "\n" for el in potentialPasswords)
             
             gdriveProgress = 0
-            totalEl += len(gdriveAnchors)
+            totalGdriveEl = len(gdriveAnchors)
             if gdriveAnchors: 
                 gdriveLinks = [el.get_attribute("href") for el in gdriveAnchors]
                 gdriveMessageInfo = len(gdriveLinks)
 
             for gdriveLink in gdriveLinks:
-                if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
-                elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalEl} をダウンロード中"
+                if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalGdriveEl}{END}"
+                elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalGdriveEl} をダウンロード中"
 
                 if gdriveProgress == 0:
-                    print_progress_bar(gdriveProgress, totalEl, downloadMessage)
+                    print_progress_bar(gdriveProgress, totalGdriveEl, downloadMessage)
                     gdriveProgress += 1
 
                 successCondition = execute_gdrive_download(gdriveLink, gdriveFolder)
@@ -2250,11 +2250,14 @@ def download(urlInput, website, subFolderPath, **options):
                     gdriveMessageInfo = 0 # to prevent the success msg from being printed later
                     break
 
-                if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalEl}{END}"
-                elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalEl} をダウンロード中"
+                if lang == "en": downloadMessage = f"Downloading gdrive file no.{gdriveProgress} out of {totalGdriveEl}{END}"
+                elif lang == "jp": downloadMessage = f"gdriveファイル {gdriveProgress} / {totalGdriveEl} をダウンロード中"
 
-                print_progress_bar(gdriveProgress, totalEl, downloadMessage)
+                print_progress_bar(gdriveProgress, totalGdriveEl, downloadMessage)
                 gdriveProgress += 1
+            
+            if gdriveLinks: 
+                print("\n")
             
         thumbnailDownloadedCondition = False
         if downloadThumbnailFlag:
@@ -2366,7 +2369,7 @@ def download(urlInput, website, subFolderPath, **options):
                 print_progress_bar(progress, totalEl, downloadMessage)
                 progress += 1
                 
-        print_download_completion_message(totalEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag, gdriveNotice=gdriveMessageInfo)
+        print_download_completion_message(totalEl + totalGdriveEl, subFolderPath, attachments=downloadAttachmentFlag, thumbnailNotice=thumbnailDownloadedCondition, images=downloadImageFlag, gdriveNotice=gdriveMessageInfo)
 
     else: raise Exception("Invalid website argument in download function...")
 
