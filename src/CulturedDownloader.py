@@ -104,7 +104,7 @@ def check_for_new_ver():
         print(f"{F.RED}Latest version/最新のバージョン: {latestVer}{END}\n")
         print(f"{F.RED}Please update the program/プログラムを更新してください{END}\n")
         print(f"{F.RED}Link to the latest version/最新バージョンへのリンク:{END}")
-        print(f"f{F.RED}{res['html_url']}{END}\n")
+        print(f"{F.RED}{res['html_url']}{END}\n")
     else: 
         print(f"{F.GREEN}You are using the latest version/最新バージョンを使用しています{END}\n")
     print("-" * 100)
