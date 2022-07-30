@@ -2262,7 +2262,7 @@ def download(urlInput, website, subFolderPath, **options):
         thumbnailDownloadedCondition = False
         if downloadThumbnailFlag:
             try:
-                thumbnailURL = driver.find_element(by=By.XPATH, value="//div[contains(@class, 'sc-1ryrgzm-1 jmiIFE')]").value_of_css_property("background-image").split('"')[1] # splitting the url by " since the value of the css property will return 'url("https://...")'
+                thumbnailURL = driver.find_element(by=By.XPATH, value="//div[contains(@class, 'sc-1ryrgzm-2 ktnxOz')]").value_of_css_property("background-image").split('"')[1] # splitting the url by " since the value of the css property will return 'url("https://...")'
             except: 
                 thumbnailURL = None
             
