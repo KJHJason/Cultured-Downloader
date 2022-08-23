@@ -26,8 +26,10 @@ def download_github_files(filename: str) -> None:
         None
     """
     print(f"Missing {filename}, downloading from CulturedDownloader GitHub repository...")
+
+    # TODO: change the url branch to main when the dev branch is merged to main
     code = urllib_request.urlopen(
-        urllib_request.Request(f"https://raw.githubusercontent.com/KJHJason/Cultured-Downloader/main/src/functions/{filename}"),
+        urllib_request.Request(f"https://raw.githubusercontent.com/KJHJason/Cultured-Downloader/dev/src/functions/{filename}"),
         timeout=10
     )
 

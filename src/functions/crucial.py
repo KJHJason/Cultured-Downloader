@@ -7,7 +7,6 @@ from typing import NoReturn, Union, Optional
 
 # define important constants
 USER_PLATFORM = platform.system()
-FILE_PATH = pathlib.Path(__file__).parent.absolute()
 
 def install_dependency(dep: str) -> Union[None, NoReturn]:
     """Install a dependency using pip install using the subprocess module.
