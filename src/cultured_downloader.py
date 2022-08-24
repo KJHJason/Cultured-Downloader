@@ -5,8 +5,6 @@ import asyncio
 import urllib.request as urllib_request
 import webbrowser
 
-from functions.functional import print_warning
-
 # import local libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
 
@@ -59,10 +57,10 @@ except (ModuleNotFoundError, ImportError):
     from functions.constants import CONSTANTS as C
 
 try:
-    from functions.functional import print_menu, get_input
+    from functions.functional import *
 except (ModuleNotFoundError, ImportError):
     download_github_files(filename="functional.py")
-    from functions.functional import print_menu, get_input
+    from functions.functional import *
 
 try:
     from functions.logger import exception_handler
@@ -73,7 +71,7 @@ except (ModuleNotFoundError, ImportError):
 try:
     from functions.download import *
 except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="functions.py")
+    download_github_files(filename="download.py")
     from functions.download import *
 
 try:
