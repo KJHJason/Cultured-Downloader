@@ -1,15 +1,13 @@
 # import Python's standard libraries
 import pathlib
 import re
-import sys
-from typing import NoReturn, Union, Optional, Any
+import json
+from typing import Union, Optional, Any
 
 # import local files
 if (__name__ != "__main__"):
-    from .crucial import install_dependency
     from .constants import CONSTANTS as C
 else:
-    from crucial import install_dependency
     from constants import CONSTANTS as C
 
 # import third-party libraries
@@ -57,6 +55,30 @@ def print_success(message: Any, **kwargs) -> None:
     """
     print(f"{F.LIGHTGREEN_EX}{message}{F.RESET}", **kwargs)
 
+def load_configs() -> dict:
+    """Load the configs from the config file.
+
+    Returns:
+        Any: The configs loaded from the config file.
+    """
+    configs = {}
+    if (C.CONFIG_JSON_FILE_PATH.exists() and C.CONFIG_JSON_FILE_PATH.is_file()):
+        with open(C.CONFIG_JSON_FILE_PATH, "r") as f:
+            configs = json.load(f)
+    return configs
+
+def edit_configs(newConfigs: dict) -> None:
+    """Edit the configs in the config file.
+    Args:
+        newConfigs (dict):
+            The new configuration to save to the config file.
+
+    Returns:
+        None
+    """
+    with open(C.CONFIG_JSON_FILE_PATH, "w") as f:
+        json.dump(newConfigs, f, indent=4)
+
 def check_and_make_dir(dirPath: pathlib.Path) -> None:
     """Check if a directory exists and if not, create it.
 
@@ -69,25 +91,6 @@ def check_and_make_dir(dirPath: pathlib.Path) -> None:
     """
     if (not dirPath.exists() and not dirPath.is_dir()):
         dirPath.mkdir(parents=True)
-
-def get_saved_folder_path() -> Union[pathlib.Path, NoReturn]:
-    """Returns a pathlib Path object of Cultured Downloader folder where files are saved depending on the platform.
-    Supported OS: Windows, Linux, macOS
-    """
-    if (C.USER_PLATFORM == "Windows"):
-        dataDirectory = pathlib.Path.home().joinpath("AppData/Roaming/Cultured-Downloader")
-    elif (C.USER_PLATFORM == "Linux"):
-        dataDirectory = pathlib.Path.home().joinpath(".config/Cultured-Downloader")
-    elif (C.USER_PLATFORM == "Darwin"): # macOS
-        dataDirectory = pathlib.Path.home().joinpath("Library/Preferences/Cultured-Downloader")
-    else:
-        print_danger(f"Your OS is not supported")
-        print_danger(f"Supported OS: Windows, Linux, macOS...")
-        print("Please enter any key to exit")
-        return sys.exit(1)
-
-    check_and_make_dir(dirPath=dataDirectory)
-    return dataDirectory
 
 def print_menu(loginStatus: dict[str, bool]) -> None:
     """Print the menu for the user to read and enter their desired action

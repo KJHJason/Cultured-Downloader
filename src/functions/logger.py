@@ -7,10 +7,12 @@ from typing import Any, NoReturn
 # import local files
 if (__name__ != "__main__"):
     from .crucial import __version__
-    from .functional import check_and_make_dir, get_saved_folder_path, print_danger
+    from .functional import check_and_make_dir, print_danger
+    from .constants import CONSTANTS as C
 else:
     from crucial import __version__
-    from functional import check_and_make_dir, get_saved_folder_path, print_danger
+    from functional import check_and_make_dir, print_danger
+    from constants import CONSTANTS as C
 
 def get_exception_logger() -> logging.Logger:
     """Get the exception logger."""
@@ -22,7 +24,7 @@ def get_exception_logger() -> logging.Logger:
     formatter = logging.Formatter(f"{separator}\n%(asctime)s [{name}] [%(levelname)s]: %(message)s\n{separator}")
 
     currentDate = datetime.now().strftime("%Y-%m-%d")
-    loggingFilePath = get_saved_folder_path().joinpath("logs")
+    loggingFilePath = C.APP_FOLDER_PATH.joinpath("logs")
     check_and_make_dir(loggingFilePath)
     fileHandler = logging.FileHandler(
         filename=loggingFilePath.joinpath( f"cultured-downloader_v{__version__}_{currentDate}.log"), mode="a"

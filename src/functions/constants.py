@@ -3,9 +3,28 @@ from dataclasses import dataclass, field
 import re
 import platform
 import pathlib
+import sys
 
 # import third-party libraries
 from colorama import Style
+
+# Code to be executed upon import of this module
+USER_PLATFORM = platform.system()
+
+if (USER_PLATFORM == "Windows"):
+    APP_DIR = pathlib.Path.home().joinpath("AppData/Roaming/Cultured-Downloader")
+elif (USER_PLATFORM == "Linux"):
+    APP_DIR = pathlib.Path.home().joinpath(".config/Cultured-Downloader")
+elif (USER_PLATFORM == "Darwin"): # macOS
+    APP_DIR = pathlib.Path.home().joinpath("Library/Preferences/Cultured-Downloader")
+else:
+    print("Your OS is not supported")
+    print("Supported OS: Windows, Linux, macOS...")
+    print("Please enter any key to exit")
+    sys.exit(1)
+
+if (not APP_DIR.exists() and not APP_DIR.is_dir()):
+    APP_DIR.mkdir(parents=True)
 
 @dataclass(frozen=True, repr=False)
 class Constants:
@@ -16,14 +35,16 @@ class Constants:
 
     # Application constants
     END: str = Style.RESET_ALL
-    USER_PLATFORM: str = platform.system()
+    USER_PLATFORM: str = USER_PLATFORM
     ROOT_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
+    APP_FOLDER_PATH: pathlib.Path = APP_DIR
+    CONFIG_JSON_FILE_PATH: pathlib.Path = APP_DIR.joinpath("config.json")
 
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
 
     # For downloading
-    HEADERS: dict[str, str] = field(default_factory=lambda :{
+    HEADERS: dict[str, str] = field(default_factory=lambda : {
         "User-Agent": 
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
     })
