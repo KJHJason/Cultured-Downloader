@@ -11,9 +11,11 @@ from typing import Union, Optional
 if (__name__ != "__main__"):
     from .crucial import install_dependency, __version__
     from .functional import check_and_make_dir, print_danger
+    from .constants import CONSTANTS as C
 else:
     from crucial import install_dependency, __version__
     from functional import check_and_make_dir, print_danger
+    from constants import CONSTANTS as C
 
 # import third-party libraries
 try:
@@ -71,7 +73,7 @@ async def download_fantia_image(postID: str, urls: list[str], folderPath: pathli
         )
 
     failedToDownload = []
-    async with aiohttp.ClientSession(headers=HEADERS) as session:
+    async with aiohttp.ClientSession(headers=C.HEADERS) as session:
         for idx, url in enumerate(urls):
             async with session.get(url) as response:
                 try:
