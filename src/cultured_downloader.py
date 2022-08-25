@@ -132,7 +132,9 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
             # Report a bug
             openedTab = webbrowser.open(C.ISSUE_PAGE, new=2)
             if (not openedTab):
-                print_warning(f"Failed to open web browser. Please visit the issue page manually at\n{C.ISSUE_PAGE}.")
+                print_warning(f"\nFailed to open web browser. Please visit the issue page manually at\n{C.ISSUE_PAGE}")
+            else:
+                print_success(f"\nA new tab has been opened in your web browser, please create an issue there to report the bug.")
 
 if (__name__ == "__main__"):
     # sys.excepthook = exception_handler

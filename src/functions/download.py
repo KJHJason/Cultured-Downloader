@@ -40,12 +40,6 @@ except (ModuleNotFoundError, ImportError):
     install_dependency(dep="gdown>=4.4.0")
     import gdown
 
-# define constants
-HEADERS = {
-    "User-Agent": 
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
-}
-
 async def download_fantia_image(postID: str, urls: list[str], folderPath: pathlib.Path) -> None:
     """Download images from Fantia.
 

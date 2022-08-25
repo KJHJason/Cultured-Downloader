@@ -2,6 +2,7 @@
 from dataclasses import dataclass, field
 import re
 import platform
+import pathlib
 
 # import third-party libraries
 from colorama import Style
@@ -9,14 +10,23 @@ from colorama import Style
 @dataclass(frozen=True, repr=False)
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
+
+    # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-6xy]$")
+
+    # Application constants
     END: str = Style.RESET_ALL
-    USER_PLATFORM = platform.system()
+    USER_PLATFORM: str = platform.system()
+    ROOT_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
 
     # GitHub issue page
-    ISSUE_PAGE = "https://github.com/KJHJason/Cultured-Downloader/issues"
+    ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
 
     # For downloading
+    HEADERS: dict[str, str] = field(default_factory=lambda :{
+        "User-Agent": 
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+    })
     POST_NUM_FOLDER_NAME: re.Pattern[str] = re.compile(r"^(Post-)(\d+)$")
     PAGE_NUM: re.Pattern[str] = re.compile(r"[1-9][0-9]{0,}(-)[1-9][0-9]{0,}|[1-9][0-9]{0,}")
 
