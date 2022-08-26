@@ -11,34 +11,43 @@ from colorama import Style
 # Code to be executed upon import of this module
 USER_PLATFORM = platform.system()
 
-if (USER_PLATFORM == "Windows"):
-    APP_DIR = pathlib.Path.home().joinpath("AppData/Roaming/Cultured-Downloader")
-elif (USER_PLATFORM == "Linux"):
-    APP_DIR = pathlib.Path.home().joinpath(".config/Cultured-Downloader")
-elif (USER_PLATFORM == "Darwin"): # macOS
-    APP_DIR = pathlib.Path.home().joinpath("Library/Preferences/Cultured-Downloader")
+DIRECTORIES = {
+    "Windows": "AppData/Roaming/Cultured-Downloader",
+    "Linux": ".config/Cultured-Downloader",
+    "Darwin": "Library/Preferences/Cultured-Downloader"
+}
+
+appDir = pathlib.Path.home()
+if (USER_PLATFORM in DIRECTORIES):
+    appDir = appDir.joinpath(DIRECTORIES[USER_PLATFORM])
 else:
     print("Your OS is not supported")
     print("Supported OS: Windows, Linux, macOS...")
     print("Please enter any key to exit")
     sys.exit(1)
 
-if (not APP_DIR.exists() and not APP_DIR.is_dir()):
-    APP_DIR.mkdir(parents=True)
+if (not appDir.exists() and not appDir.is_dir()):
+    appDir.mkdir(parents=True)
 
 @dataclass(frozen=True, repr=False)
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
-
     # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-6xy]$")
+
+    # Debug mode (For requesting to the web application hosted on localhost)
+    DEBUG_MODE: bool = True
+
+    # For user's saved cookie cryptographic operations
+    RSA_PUBLIC_KEY_URL: str = "http://127.0.0.1:8080/rsa/public-key" \
+                               if (DEBUG_MODE) else "https://cultureddownloader.com/rsa/public-key"
 
     # Application constants
     END: str = Style.RESET_ALL
     USER_PLATFORM: str = USER_PLATFORM
     ROOT_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
-    APP_FOLDER_PATH: pathlib.Path = APP_DIR
-    CONFIG_JSON_FILE_PATH: pathlib.Path = APP_DIR.joinpath("config.json")
+    APP_FOLDER_PATH: pathlib.Path = appDir
+    CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
 
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
