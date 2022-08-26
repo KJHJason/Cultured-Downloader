@@ -51,7 +51,7 @@ def encrypt_cookie(plaintext: Union[str, bytes], digestMethod: Optional[Callable
     if (not issubclass(digestMethod, hashes.HashAlgorithm)):
         raise TypeError("digestMethod must be a subclass of cryptography.hazmat.primitives.hashes.HashAlgorithm")
 
-    publicKey = requests.get(C.RSA_PUBLIC_KEY_URL).json().get("public_key")
+    publicKey = requests.get(C.RSA_PUBLIC_KEY_URL).json()["public_key"]
     publicKey = serialization.load_pem_public_key(publicKey.encode("utf-8"), backend=default_backend())
 
     if (isinstance(plaintext, str)):

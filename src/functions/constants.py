@@ -38,7 +38,7 @@ class Constants:
     # Debug mode (For requesting to the web application hosted on localhost)
     DEBUG_MODE: bool = True
 
-    # For user's saved cookie cryptographic operations
+    # For cryptographic operations with the user's saved cookies
     RSA_PUBLIC_KEY_URL: str = "http://127.0.0.1:8080/rsa/public-key" \
                                if (DEBUG_MODE) else "https://cultureddownloader.com/rsa/public-key"
 
