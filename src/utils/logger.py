@@ -24,10 +24,9 @@ def get_exception_logger() -> logging.Logger:
     formatter = logging.Formatter(f"{separator}\n%(asctime)s [{name}] [%(levelname)s]: %(message)s\n{separator}")
 
     currentDate = datetime.now().strftime("%Y-%m-%d")
-    loggingFilePath = C.APP_FOLDER_PATH.joinpath("logs")
-    check_and_make_dir(loggingFilePath)
+    check_and_make_dir(C.LOG_FOLDER_PATH)
     fileHandler = logging.FileHandler(
-        filename=loggingFilePath.joinpath( f"cultured-downloader_v{__version__}_{currentDate}.log"), mode="a"
+        filename=C.LOG_FOLDER_PATH.joinpath( f"cultured-downloader_v{__version__}_{currentDate}.log"), mode="a"
     )
     fileHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)

@@ -4,6 +4,4 @@ from .functional import *
 from .logger import *
 from .download import *
 from .cryptography_operations import *
-from .cookie import Cookie
-
-
+from .cookie import SecureCookie

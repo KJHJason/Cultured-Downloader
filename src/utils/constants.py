@@ -17,7 +17,7 @@ DIRECTORIES = {
     "Darwin": "Library/Preferences/Cultured-Downloader"
 }
 
-appDir = pathlib.Path.home()
+appDir = pathlib.Path.home().absolute()
 if (USER_PLATFORM in DIRECTORIES):
     appDir = appDir.joinpath(DIRECTORIES[USER_PLATFORM])
 else:
@@ -62,9 +62,11 @@ class Constants:
     # Application constants
     END: str = Style.RESET_ALL
     USER_PLATFORM: str = USER_PLATFORM
-    ROOT_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
+    ROOT_PY_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
     APP_FOLDER_PATH: pathlib.Path = appDir
+    LOG_FOLDER_PATH: pathlib.Path = appDir.joinpath("logs")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
+    COOKIES_PATH: pathlib.Path = appDir.joinpath("cookies")
 
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"

@@ -13,12 +13,12 @@ def download_github_files(filename: str) -> None:
 
     This function does not use the requests library but urllib instead as
     it is one of Python's standard libraries.
-    Additionally, this function will only download from the functions folder in
+    Additionally, this function will only download from the utils folder in
     CulturedDownloader github repository's src folder. The files downloaded will be 
     downloaded to the folder where the currently running Python file is located.
 
     Usage Example:
-    >>> download_github_files(filename="functions.py")
+    >>> download_github_files(filename="utils.py")
 
     Args:
         filename (str): 
@@ -27,7 +27,7 @@ def download_github_files(filename: str) -> None:
     Returns:
         None
     """
-    filePath = FILE_PATH.joinpath("functions")
+    filePath = FILE_PATH.joinpath("utils")
     if (not filePath.exists() and not filePath.is_dir()):
         filePath.mkdir()
 

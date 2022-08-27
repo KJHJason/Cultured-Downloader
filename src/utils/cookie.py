@@ -6,11 +6,11 @@ import base64
 if (__name__ == "__main__"):
     from cryptography_operations import *
     from constants import CONSTANTS as C
-    from functional import validate_schema
+    from functional import validate_schema, check_and_make_dir
 else:
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
-    from .functional import validate_schema
+    from .functional import validate_schema, check_and_make_dir
 
 # Import Third-party Libraries
 import requests
@@ -21,7 +21,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import types
 from cryptography.hazmat.primitives import serialization
 
-class Cookie:
+class SecureCookie:
     """Creates a way to securely deal with the cookie data 
     that is stored on the user's machine.
 
@@ -29,9 +29,17 @@ class Cookie:
     which is done server-side as only the server knows the symmetric key used.
 
     During transmission to Cultured Downloader API, the cookie is encrypted using asymmetric encryption
-    on top of HTTPS as a form of layered security.
+    on top of HTTPS as a form of layered security. Note that the RSA key pair is generated within 
+    the current application execution and is not stored on the user's machine.
     """
-    def __init__(self, cookieData: dict | bytes) -> None:
+    def __init__(self, cookieData: Optional[dict | bytes] = None) -> None:
+        """Constructor for the SecureCookie class.
+
+        Attributes:
+            cookieData (dict | bytes): 
+                The cookie data to be handled. If None, the cookie data will be loaded 
+                from the saved file in the application's directory.
+        """
         keyPair = generate_rsa_key_pair()
         self.__privateKey = keyPair[0].decode("utf-8")
         self.__publicKey = keyPair[1].decode("utf-8")
@@ -40,6 +48,8 @@ class Cookie:
             self.__cookieData = cookieData
         elif (isinstance(cookieData, bytes)):
             self.__cookieData = self.__decrypt(cookieData)
+        elif (cookieData is None):
+            self.load_cookies()
         else:
             raise TypeError("Invalid cookie data type, must be a dict or bytes...")
 
@@ -66,6 +76,17 @@ class Cookie:
             data=self.publicKey.encode("utf-8"),
             backend=default_backend(),
         )
+
+    def save_cookies(self) -> None:
+        """Saves the cookie data to the user's machine in a file."""
+        check_and_make_dir(C.COOKIES_PATH.parent)
+        with open(C.COOKIES_PATH, "wb") as f:
+            f.write(self.encrypt())
+
+    def load_cookies(self) -> None:
+        """Loads the cookie data from the user's machine from the saved file."""
+        with open(C.COOKIES_PATH, "rb") as f:
+            self.__cookieData = self.__decrypt(f.read())
 
     def encrypt(self) -> bytes:
         """Encrypts the cookie data using AES-256-GCM (server-side).
