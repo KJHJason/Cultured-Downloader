@@ -70,7 +70,7 @@ class Cookie:
     def encrypt(self) -> bytes:
         """Encrypts the cookie data using AES-256-GCM (server-side).
 
-        Will send the asymmetrically encrypted cookie during tranmission to Cultured Downloader website which
+        Will send the asymmetrically encrypted cookie during tranmission to Cultured Downloader API which
         does not provide much benefits but more for a layered security approach instead of just relying on HTTPS.
 
         The server will then decrypt the asymmetrically encrypted cookie ciphertext using its private key
@@ -78,6 +78,10 @@ class Cookie:
 
         Returns:
             The symmetrically encrypted cookie data (bytes).
+
+        Raises:
+            Exception: 
+                If the server response is not 200 or if the JSON response is invalid.
         """
         data = {
             "cookie": 
@@ -88,7 +92,13 @@ class Cookie:
                 self.__publicKey
         }
 
-        res = requests.post(f"{C.WEBSITE_URL}/api/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS).json()
+        res = requests.post(f"{C.WEBSITE_URL}/api/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS)
+        if (res.status_code != 200):
+            raise Exception(f"Server Response: {res.status_code} {res.reason}")
+
+        res = res.json()
+        if ("error" in res):
+            raise Exception(res["error"])
         if (not validate_schema(schema=C.SERVER_RESPONSE_SCHEMA, data=res)):
             raise Exception("Invalid JSON format response from server...")
 
@@ -98,7 +108,7 @@ class Cookie:
     def __decrypt(self, encryptedCookie: bytes) -> dict:
         """Decrypts the cookie data using AES-256-GCM (server-side).
 
-        Will send the asymmetrically encrypted cookie during tranmission to Cultured Downloader website which
+        Will send the asymmetrically encrypted cookie during tranmission to Cultured Downloader API which
         does not provide much benefits but more for a layered security approach instead of just relying on HTTPS.
 
         The server will then decrypt the asymmetrically encrypted cookie ciphertext using its private key
@@ -106,6 +116,10 @@ class Cookie:
 
         Returns:
             The symmetrically decrypted cookie data (dict).
+
+        Raises:
+            Exception: 
+                If the server response is not 200 or if the JSON response is invalid.
         """
         data = {
             "cookie": 
@@ -116,10 +130,14 @@ class Cookie:
                 self.__publicKey
         }
 
-        res = requests.post(f"{C.WEBSITE_URL}/api/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS).json()
+        res = requests.post(f"{C.WEBSITE_URL}/api/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS)
+        if (res.status_code != 200):
+            raise Exception(f"Server Response: {res.status_code} {res.reason}")
+
+        res = res.json()
         if ("error" in res):
             raise Exception(res["error"])
-        elif (not validate_schema(schema=C.SERVER_RESPONSE_SCHEMA, data=res)):
+        if (not validate_schema(schema=C.SERVER_RESPONSE_SCHEMA, data=res)):
             raise Exception("Invalid JSON format response from server...")
 
         return json.loads(

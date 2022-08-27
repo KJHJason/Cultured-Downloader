@@ -47,7 +47,7 @@ def generate_rsa_key_pair() -> tuple[bytes, bytes]:
     )
 
 def rsa_encrypt(plaintext: Union[str, bytes], digestMethod: Optional[Callable] = hashes.SHA512) -> bytes:
-    """Encrypts a plaintext using the public key (RSA-OAEP-SHA) from Cultured Downloader website.
+    """Encrypts a plaintext using the public key (RSA-OAEP-SHA) from Cultured Downloader API.
 
     Args:
         plaintext (str|bytes): 
@@ -62,12 +62,16 @@ def rsa_encrypt(plaintext: Union[str, bytes], digestMethod: Optional[Callable] =
         TypeError:
             If the digest method is not a subclass of cryptography.hazmat.primitives.hashes.HashAlgorithm.
         Exception:
-            If the JSON response from the Cultured Downloader website does not match the schema.
+            If the JSON response from the Cultured Downloader API does not match the schema or the response status code was not 200 OK.
     """
     if (not issubclass(digestMethod, hashes.HashAlgorithm)):
         raise TypeError("digestMethod must be a subclass of cryptography.hazmat.primitives.hashes.HashAlgorithm")
 
-    res = requests.get(f"{C.WEBSITE_URL}/api/v1/rsa/public-key").json()
+    res = requests.get(f"{C.WEBSITE_URL}/api/v1/rsa/public-key")
+    if (res.status_code != 200):
+        raise Exception(f"Server Response: {res.status_code} {res.reason}")
+
+    res = res.json()
     if (not validate_schema(schema=C.SERVER_PUBLIC_KEY_SCHEMA, data=res)):
         raise Exception("Invalid json response from Cultured Downloader website")
 

@@ -1,0 +1,1 @@
+# TODO: add update checker and auto-updater features
