@@ -39,8 +39,25 @@ class Constants:
     DEBUG_MODE: bool = True
 
     # For cryptographic operations with the user's saved cookies
-    RSA_PUBLIC_KEY_URL: str = "http://127.0.0.1:8080/rsa/public-key" \
-                               if (DEBUG_MODE) else "https://cultureddownloader.com/rsa/public-key"
+    WEBSITE_URL: str = "http://127.0.0.1:8080" if (DEBUG_MODE) else "https://cultureddownloader.com"
+    SERVER_RESPONSE_SCHEMA: dict = field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "cookie": {"type": "string"}
+            },
+            "required": ["cookie"]
+        }
+    )
+    SERVER_PUBLIC_KEY_SCHEMA: dict = field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "public_key": {"type": "string"}
+            },
+            "required": ["public_key"]
+        }
+    )
 
     # Application constants
     END: str = Style.RESET_ALL
@@ -53,10 +70,14 @@ class Constants:
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
 
     # For downloading
-    HEADERS: dict[str, str] = field(default_factory=lambda : {
-        "User-Agent": 
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
-    })
+    REQ_HEADERS: dict[str, str] = field(
+        default_factory=lambda: {
+            "User-Agent": 
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
+            "Content-Type": 
+                "application/json"
+        }
+    )
     POST_NUM_FOLDER_NAME: re.Pattern[str] = re.compile(r"^(Post-)(\d+)$")
     PAGE_NUM: re.Pattern[str] = re.compile(r"^([1-9]\d*)(-([1-9]\d*))?$")
 
@@ -73,19 +94,21 @@ class Constants:
     )
 
     # Config json schema
-    CONFIG_SCHEMA: dict = field(default_factory=lambda :{
-        "type": "object",
-        "properties": {
-            "download_directory": {
-                "type": "string"
+    CONFIG_SCHEMA: dict = field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "download_directory": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string",
+                    "enum": ["en"] # only en is supported (considering jp)
+                }
             },
-            "language": {
-                "type": "string",
-                "enum": ["en"] # only en is supported (considering jp)
-            }
-        },
-        "required": ["download_directory", "language"]
-    })
+            "required": ["download_directory", "language"]
+        }
+    )
 
 CONSTANTS = Constants()
 

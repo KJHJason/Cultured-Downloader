@@ -27,61 +27,40 @@ def download_github_files(filename: str) -> None:
     Returns:
         None
     """
-    print(f"Missing {filename}, downloading from CulturedDownloader GitHub repository...")
-
-    # TODO: change the url branch to main when the dev branch is merged to main
-    code = urllib_request.urlopen(
-        urllib_request.Request(f"https://raw.githubusercontent.com/KJHJason/Cultured-Downloader/dev/src/functions/{filename}"),
-        timeout=10
-    )
-
     filePath = FILE_PATH.joinpath("functions")
     if (not filePath.exists() and not filePath.is_dir()):
         filePath.mkdir()
 
-    with open(filePath.joinpath(filename), "w") as f:
+    filePath = filePath.joinpath(filename)
+    if (filePath.exists() and filePath.is_file()):
+        return
+
+    print(f"Missing {filename}, downloading from CulturedDownloader GitHub repository...")
+
+    # TODO: change the url branch to main when the dev branch is merged to main
+    code = urllib_request.urlopen(
+        urllib_request.Request(f"https://raw.githubusercontent.com/KJHJason/Cultured-Downloader/dev/src/utils/{filename}"),
+        timeout=10
+    )
+
+    with open(filePath, "w") as f:
         for line in code:
             f.write(line.decode("utf-8"))
     print(f"{filename} downloaded.\n")
 
 try:
-    from functions.crucial import __version__, __author__, __license__
+    from utils import *
 except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="crucial.py")
-    from functions.crucial import __version__, __author__, __license__
-
-try:
-    from functions.constants import CONSTANTS as C
-except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="constants.py")
-    from functions.constants import CONSTANTS as C
-
-try:
-    from functions.functional import *
-except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="functional.py")
-    from functions.functional import *
-
-try:
-    from functions.logger import exception_handler
-except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="logger.py")
-    from functions.logger import exception_handler
-
-try:
-    from functions.download import *
-except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="download.py")
-    from functions.download import *
-
-try:
-    from functions.cookie import *
-except (ModuleNotFoundError, ImportError):
-    download_github_files(filename="cookie.py")
-    from functions.cookie import *
+    pyFilesTuple = ("__init__.py", "crucial.py", "constants.py", "functional.py", "logger.py",
+                    "download.py", "cryptography_operations.py", "cookie.py")
+    for pyFile in pyFilesTuple:
+        download_github_files(filename=pyFile)
+from utils import *
+from utils import __version__, __author__, __license__
 
 # import third-party libraries
 from colorama import Fore as F, init as colorama_init
+from requests.exceptions import JSONDecodeError
 
 def main() -> None:
     """Main function where the program starts."""

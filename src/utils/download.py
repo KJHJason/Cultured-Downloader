@@ -8,14 +8,14 @@ import asyncio
 from typing import Union, Optional
 
 # import local files
-if (__name__ != "__main__"):
-    from .crucial import install_dependency, __version__
-    from .functional import check_and_make_dir, print_danger
-    from .constants import CONSTANTS as C
-else:
+if (__package__ is None or __package__ == ""):
     from crucial import install_dependency, __version__
     from functional import check_and_make_dir, print_danger
     from constants import CONSTANTS as C
+else:
+    from .crucial import install_dependency, __version__
+    from .functional import check_and_make_dir, print_danger
+    from .constants import CONSTANTS as C
 
 # import third-party libraries
 try:
@@ -31,16 +31,12 @@ except (ModuleNotFoundError, ImportError):
     import aiofiles
 
 try:
-    import requests
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="requests>=2.27.1")
-    import requests
-
-try:
     import gdown
 except (ModuleNotFoundError, ImportError):
     install_dependency(dep="gdown>=4.4.0")
     import gdown
+
+import requests
 
 async def download_fantia_image(postID: str, urls: list[str], folderPath: pathlib.Path) -> None:
     """Download images from Fantia.

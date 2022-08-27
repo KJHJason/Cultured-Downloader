@@ -5,13 +5,34 @@ import json
 from typing import Union, Optional, Any
 
 # import local files
-if (__name__ != "__main__"):
-    from .constants import CONSTANTS as C
-else:
+if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
+else:
+    from .constants import CONSTANTS as C
 
 # import third-party libraries
 from colorama import Fore as F
+import jsonschema
+
+def validate_schema(schema: dict, data: dict) -> bool:
+    """Validates the data against the schema
+
+    Args:
+        schema (dict): 
+            The schema to validate against
+        data (dict):
+            The data to validate
+
+    Returns:
+        bool:
+            True if the data is valid, False otherwise
+    """
+    try:
+        jsonschema.validate(data, schema)
+    except (jsonschema.exceptions.ValidationError):
+        return False
+    else:
+        return True
 
 def print_danger(message: Any, **kwargs) -> None:
     """Print a message in red.

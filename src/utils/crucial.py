@@ -38,9 +38,18 @@ def install_dependency(dep: str) -> Union[None, NoReturn]:
     else:
         print(f"{dep} module has been installed.\n")
 
-# install colorama if it is not installed
+# install commonly used libraries if it is not installed
 try:
     import colorama
 except (ModuleNotFoundError, ImportError):
     install_dependency(dep="colorama>=0.4.5")
-    import colorama
+
+try:
+    import requests
+except (ModuleNotFoundError, ImportError):
+    install_dependency(dep="requests>=2.27.1")
+
+try:
+    import jsonschema
+except (ModuleNotFoundError, ImportError):
+    install_dependency(dep="jsonschema>=4.14.0")

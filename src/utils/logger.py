@@ -5,14 +5,14 @@ from datetime import datetime
 from typing import Any, NoReturn
 
 # import local files
-if (__name__ != "__main__"):
-    from .crucial import __version__
-    from .functional import check_and_make_dir, print_danger
-    from .constants import CONSTANTS as C
-else:
+if (__package__ is None or __package__ == ""):
     from crucial import __version__
     from functional import check_and_make_dir, print_danger
     from constants import CONSTANTS as C
+else:
+    from .crucial import __version__
+    from .functional import check_and_make_dir, print_danger
+    from .constants import CONSTANTS as C
 
 def get_exception_logger() -> logging.Logger:
     """Get the exception logger."""
@@ -44,3 +44,8 @@ def exception_handler(excType: Any, excValue: Any, execTraceback: Any) -> NoRetu
     return sys.exit(1)
 
 logger = get_exception_logger()
+
+__all__ = [
+    "logger",
+    "exception_handler"
+]
