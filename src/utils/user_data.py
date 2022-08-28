@@ -1,6 +1,8 @@
 # import Python's standard libraries
 import json
 import base64
+import abc
+from typing import Optional, Any, Union
 
 # import local files
 if (__name__ == "__main__"):
@@ -21,41 +23,68 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import types
 from cryptography.hazmat.primitives import serialization
 
-class SecureCookie:
-    """Creates a way to securely deal with the cookie data 
+class UserData(abc.ABC):
+    """Creates a way to securely deal with the user's data
     that is stored on the user's machine.
 
-    The cookie stored on the user's machine is encrypted using AES-256-GCM 
+    Requires the following methods 
+    to be overridden in the child class:
+        - save_data
+        - load_data
+        - encrypt
+        - decrypt
+
+    The data stored on the user's machine is encrypted using AES-256-GCM 
     which is done server-side as only the server knows the symmetric key used.
 
-    During transmission to Cultured Downloader API, the cookie is encrypted using asymmetric encryption
+    During transmission to Cultured Downloader API, the data is encrypted using asymmetric encryption
     on top of HTTPS as a form of layered security. Note that the RSA key pair is generated within 
     the current application execution and is not stored on the user's machine.
     """
-    def __init__(self, cookieData: Optional[dict | bytes] = None) -> None:
-        """Constructor for the SecureCookie class.
+    def __init__(self, data: Optional[Any] = None) -> None:
+        """Constructor for the UserData class.
 
         Attributes:
-            cookieData (dict | bytes): 
-                The cookie data to be handled. If None, the cookie data will be loaded 
-                from the saved file in the application's directory.
+            data (dict | bytes): 
+                The data to be handled. If None, the data will be loaded 
+                from the saved file in the application's directory via the
+                load_data method that must be configured in the child class.
+                Othewise, if the data is a type of bytes, it will be automatically be decrypted.
         """
         keyPair = generate_rsa_key_pair()
         self.__privateKey = keyPair[0].decode("utf-8")
         self.__publicKey = keyPair[1].decode("utf-8")
 
-        if (isinstance(cookieData, dict)):
-            self.__cookieData = cookieData
-        elif (isinstance(cookieData, bytes)):
-            self.__cookieData = self.__decrypt(cookieData)
-        elif (cookieData is None):
-            self.load_cookies()
+        if (data is None):
+            self.__data = self.load_data()
+        elif (isinstance(data, bytes)):
+            self.__data = self.__decrypt(data)
         else:
-            raise TypeError("Invalid cookie data type, must be a dict or bytes...")
+            self.__data = data
+
+    @abc.abstractmethod
+    def save_data(self) -> None:
+        """Saves the data to the user's machine."""
+        pass
+
+    @abc.abstractmethod
+    def load_data(self) -> None:
+        """Loads the data from the user's machine from the saved file."""
+        pass
+
+    @abc.abstractmethod
+    def encrypt(self) -> bytes:
+        """Encrypts the data which is done server-side on Cultured Downloader API."""
+        pass
+
+    @abc.abstractmethod
+    def decrypt(self, data: bytes) -> Any:
+        """Decrypts the data which is done server-side on Cultured Downloader API."""
+        pass
 
     @property
-    def cookieData(self) -> dict:
-        return self.__cookieData
+    def data(self) -> dict:
+        return self.__data
 
     @property
     def privateKey(self) -> str:
@@ -65,28 +94,78 @@ class SecureCookie:
     def publicKey(self) -> str:
         return self.__publicKey
 
+    def prepare_data_for_transmission(self, data: Union[str, bytes]) -> str:
+        """Prepares the data for transmission to the server by encrypting the payload
+        using the public key obtained from Cultured Downloader API.
+
+        Args:
+            data (str | bytes): 
+                The data to be transmitted for encryption.
+
+        Returns:
+            str: 
+                The encrypted data to sent to Cultured Downloader API for symmetric encryption.
+        """
+        return base64.b64encode(rsa_encrypt(plaintext=data)).decode("utf-8")
+
+    def read_api_response(self, receivedData: str) -> bytes:
+        """Reads the response from the server and decrypts the data.
+
+        Args:
+            receivedData (str): 
+                The data received from the server.
+        """
+        return rsa_decrypt(
+                ciphertext=base64.b64decode(receivedData), 
+                privateKey=self.__format_private_key()
+            )
+
     def __format_private_key(self) -> types.PRIVATE_KEY_TYPES:
+        """Formats the private key for use in the asymmetric encryption."""
         return serialization.load_pem_private_key(
             data=self.privateKey.encode("utf-8"),
             password=None,
             backend=default_backend(),
         )
     def format_public_key(self) -> types.PUBLIC_KEY_TYPES:
+        """Formats the public key for use in the asymmetric encryption."""
         return serialization.load_pem_public_key(
             data=self.publicKey.encode("utf-8"),
             backend=default_backend(),
         )
 
-    def save_cookies(self) -> None:
+    def __str__(self) -> str:
+        return str(self.__data)
+
+    def __repr__(self) -> str:
+        return f"Data<{self.__data}>"
+
+class SecureCookie(UserData):
+    """Creates a way to securely deal with the user's saved
+    cookies that is stored on the user's machine."""
+    def __init__(self, cookieData: Optional[Union[bytes, dict]] = None):
+        """Initializes the SecureCookie class.
+
+        Args:
+            cookieData (dict | bytes): 
+                The cookie data to be handled. If None, the cookie data will be loaded 
+                from the saved file in the application's directory.
+        """
+        if (cookieData is not None and not isinstance(cookieData, Union[bytes, dict])):
+            raise TypeError("cookieData must be of type dict or bytes")
+
+        super().__init__(data=cookieData)
+
+    def save_data(self) -> None:
         """Saves the cookie data to the user's machine in a file."""
         check_and_make_dir(C.COOKIES_PATH.parent)
         with open(C.COOKIES_PATH, "wb") as f:
             f.write(self.encrypt())
 
-    def load_cookies(self) -> None:
+    def load_data(self) -> None:
         """Loads the cookie data from the user's machine from the saved file."""
         with open(C.COOKIES_PATH, "rb") as f:
-            self.__cookieData = self.__decrypt(f.read())
+            self.data = self.__decrypt(f.read())
 
     def encrypt(self) -> bytes:
         """Encrypts the cookie data using AES-256-GCM (server-side).
@@ -105,15 +184,15 @@ class SecureCookie:
                 If the server response is not 200 or if the JSON response is invalid.
         """
         data = {
-            "cookie": 
-                base64.b64encode(
-                    rsa_encrypt(json.dumps(self.__cookieData))
-                ).decode("utf-8"), 
+            "cookie":
+                self.prepare_data_for_transmission(
+                    data=json.dumps(self.data)
+                ), 
             "public_key":
                 self.__publicKey
         }
 
-        res = requests.post(f"{C.WEBSITE_URL}/api/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS)
+        res = requests.post(f"{C.API_URL}/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS)
         if (res.status_code != 200):
             raise Exception(f"Server Response: {res.status_code} {res.reason}")
 
@@ -126,7 +205,7 @@ class SecureCookie:
         encryptedCookie = base64.b64decode(res["cookie"])
         return rsa_decrypt(ciphertext=encryptedCookie, privateKey=self.__format_private_key())
 
-    def __decrypt(self, encryptedCookie: bytes) -> dict:
+    def decrypt(self, encryptedCookie: bytes) -> dict:
         """Decrypts the cookie data using AES-256-GCM (server-side).
 
         Will send the asymmetrically encrypted cookie during tranmission to Cultured Downloader API which
@@ -144,14 +223,14 @@ class SecureCookie:
         """
         data = {
             "cookie": 
-                base64.b64encode(
-                    rsa_encrypt(encryptedCookie)
-                ).decode("utf-8"), 
+                self.prepare_data_for_transmission(
+                    data=encryptedCookie
+                ),
             "public_key":
                 self.__publicKey
         }
 
-        res = requests.post(f"{C.WEBSITE_URL}/api/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS)
+        res = requests.post(f"{C.API_URL}/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS)
         if (res.status_code != 200):
             raise Exception(f"Server Response: {res.status_code} {res.reason}")
 
@@ -169,7 +248,7 @@ class SecureCookie:
         )
 
     def __str__(self) -> str:
-        return json.dumps(self.__cookieData)
+        return json.dumps(self.data)
 
     def __repr__(self) -> str:
-        return f"Cookie<{self.__cookieData}>"
+        return f"Cookie<{self.data}>"

@@ -39,7 +39,7 @@ class Constants:
     DEBUG_MODE: bool = True
 
     # For cryptographic operations with the user's saved cookies
-    WEBSITE_URL: str = "http://127.0.0.1:8080" if (DEBUG_MODE) else "https://cultureddownloader.com"
+    API_URL: str = "http://127.0.0.1:8080" if (DEBUG_MODE) else "https://api.cultureddownloader.com"
     SERVER_RESPONSE_SCHEMA: dict = field(
         default_factory=lambda: {
             "type": "object",
