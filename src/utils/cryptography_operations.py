@@ -67,7 +67,7 @@ def rsa_encrypt(plaintext: Union[str, bytes], digestMethod: Optional[Callable] =
     if (not issubclass(digestMethod, hashes.HashAlgorithm)):
         raise TypeError("digestMethod must be a subclass of cryptography.hazmat.primitives.hashes.HashAlgorithm")
 
-    res = requests.get(f"{C.WEBSITE_URL}/api/v1/rsa/public-key")
+    res = requests.get(f"{C.API_URL}/v1/public-key?algorithm=rsa")
     if (res.status_code != 200):
         raise Exception(f"Server Response: {res.status_code} {res.reason}")
 

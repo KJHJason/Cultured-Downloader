@@ -117,10 +117,10 @@ class UserData(abc.ABC):
         """
         return rsa_decrypt(
                 ciphertext=base64.b64decode(receivedData), 
-                privateKey=self.__format_private_key()
+                privateKey=self.format_private_key()
             )
 
-    def __format_private_key(self) -> types.PRIVATE_KEY_TYPES:
+    def format_private_key(self) -> types.PRIVATE_KEY_TYPES:
         """Formats the private key for use in the asymmetric encryption."""
         return serialization.load_pem_private_key(
             data=self.privateKey.encode("utf-8"),
@@ -189,7 +189,7 @@ class SecureCookie(UserData):
                     data=json.dumps(self.data)
                 ), 
             "public_key":
-                self.__publicKey
+                self.publicKey
         }
 
         res = requests.post(f"{C.API_URL}/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS)
@@ -203,7 +203,7 @@ class SecureCookie(UserData):
             raise Exception("Invalid JSON format response from server...")
 
         encryptedCookie = base64.b64decode(res["cookie"])
-        return rsa_decrypt(ciphertext=encryptedCookie, privateKey=self.__format_private_key())
+        return rsa_decrypt(ciphertext=encryptedCookie, privateKey=self.format_private_key())
 
     def decrypt(self, encryptedCookie: bytes) -> dict:
         """Decrypts the cookie data using AES-256-GCM (server-side).
@@ -227,7 +227,7 @@ class SecureCookie(UserData):
                     data=encryptedCookie
                 ),
             "public_key":
-                self.__publicKey
+                self.publicKey
         }
 
         res = requests.post(f"{C.API_URL}/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS)
@@ -243,7 +243,7 @@ class SecureCookie(UserData):
         return json.loads(
             rsa_decrypt(
                 ciphertext=base64.b64decode(res["cookie"]), 
-                privateKey=self.__format_private_key()
+                privateKey=self.format_private_key()
             )
         )
 
