@@ -1,10 +1,6 @@
 # import Python's standard libraries
-import sys
-import subprocess
-import platform
 import pathlib
 import shutil
-import asyncio
 from typing import Union, Optional
 
 # import local files
@@ -78,7 +74,17 @@ async def download_fantia_image(postID: str, urls: list[str], folderPath: pathli
 
                     async with aiofiles.open(folderPath.joinpath(filenameArr[idx]), "wb") as f:
                         await f.write(await response.read())
-                except:
+                except (
+                    aiohttp.ClientConnectionError, 
+                    aiohttp.ClientConnectorError, 
+                    aiohttp.ServerConnectionError,
+                    aiohttp.ClientSSLError,
+                    aiohttp.ClientResponseError,
+                    aiohttp.ContentTypeError,
+                    aiohttp.TooManyRedirects,
+                    aiohttp.ClientPayloadError,
+                    aiohttp.ClientOSError
+                ):
                     failedToDownload.append(url)
 
     if (failedToDownload):
