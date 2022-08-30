@@ -27,8 +27,7 @@ else:
     print("Please enter any key to exit")
     sys.exit(1)
 
-if (not appDir.exists() and not appDir.is_dir()):
-    appDir.mkdir(parents=True)
+appDir.mkdir(parents=True, exist_ok=True)
 
 @dataclass(frozen=True, repr=False)
 class Constants:

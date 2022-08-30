@@ -8,11 +8,11 @@ from typing import Optional, Any, Union
 if (__name__ == "__main__"):
     from cryptography_operations import *
     from constants import CONSTANTS as C
-    from functional import validate_schema, check_and_make_dir
+    from functional import validate_schema
 else:
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
-    from .functional import validate_schema, check_and_make_dir
+    from .functional import validate_schema
 
 # Import Third-party Libraries
 import requests
@@ -163,7 +163,7 @@ class SecureCookie(UserData):
 
     def save_data(self) -> None:
         """Saves the cookie data to the user's machine in a file."""
-        check_and_make_dir(C.COOKIES_PATH.parent)
+        C.COOKIES_PATH.parent.mkdir(parents=True, exist_ok=True)
         with open(C.COOKIES_PATH, "wb") as f:
             f.write(self.encrypt())
 

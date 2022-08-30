@@ -3,6 +3,6 @@ selenium>=4.1.2,<5.0.0
 webdriver-manager==3.5.3
 cryptography>=37.0.4
 jsonschema>=4.14.0
-aiohttp>=3.8.1
+httpx[http2]>=0.23.0
 colorama>=0.4.4
 gdown>=4.4.0

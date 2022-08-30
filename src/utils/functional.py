@@ -100,19 +100,6 @@ def edit_configs(new_configs: dict) -> None:
     with open(C.CONFIG_JSON_FILE_PATH, "w") as f:
         json.dump(new_configs, f, indent=4)
 
-def check_and_make_dir(dir_path: pathlib.Path) -> None:
-    """Check if a directory exists and if not, create it.
-
-    Args:
-        dir_path (pathlib.Path):
-            The path of the directory to check and create if it doesn't exist.
-
-    Returns:
-        None
-    """
-    if (not dir_path.exists() and not dir_path.is_dir()):
-        dir_path.mkdir(parents=True)
-
 def print_menu(login_status: dict[str, bool]) -> None:
     """Print the menu for the user to read and enter their desired action
 

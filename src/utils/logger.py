@@ -7,11 +7,11 @@ from typing import Any, NoReturn
 # import local files
 if (__package__ is None or __package__ == ""):
     from crucial import __version__
-    from functional import check_and_make_dir, print_danger
+    from functional import print_danger
     from constants import CONSTANTS as C
 else:
     from .crucial import __version__
-    from .functional import check_and_make_dir, print_danger
+    from .functional import print_danger
     from .constants import CONSTANTS as C
 
 def get_exception_logger() -> logging.Logger:
@@ -24,7 +24,7 @@ def get_exception_logger() -> logging.Logger:
     formatter = logging.Formatter(f"{separator}\n%(asctime)s [{name}] [%(levelname)s]: %(message)s\n{separator}")
 
     current_date = datetime.now().strftime("%Y-%m-%d")
-    check_and_make_dir(C.LOG_FOLDER_PATH)
+    C.LOG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
     file_handler = logging.FileHandler(
         filename=C.LOG_FOLDER_PATH.joinpath( f"cultured-downloader_v{__version__}_{current_date}.log"), mode="a"
     )
