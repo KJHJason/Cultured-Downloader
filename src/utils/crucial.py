@@ -26,12 +26,12 @@ def install_dependency(dep: str) -> Union[None, NoReturn]:
     """
     print(f"{dep} module not found, CulturedDownloader will install it for you...")
 
-    pipCmd = ["python3", "-m", "pip", "install", dep]
+    pip_cmd = ["python3", "-m", "pip", "install", dep]
     if (platform.system() == "Windows"):
-        pipCmd[0] = "python"
+        pip_cmd[0] = "python"
 
     try:
-        subprocess.run(pipCmd, stdout=subprocess.DEVNULL, check=True)
+        subprocess.run(pip_cmd, stdout=subprocess.DEVNULL, check=True)
     except (subprocess.CalledProcessError):
         print(f"{dep} module installation failed, please check your internet connection or pip install it manually.")
         return sys.exit(1)

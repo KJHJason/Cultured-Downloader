@@ -88,47 +88,47 @@ def load_configs() -> dict:
             configs = json.load(f)
     return configs
 
-def edit_configs(newConfigs: dict) -> None:
+def edit_configs(new_configs: dict) -> None:
     """Edit the configs in the config file.
     Args:
-        newConfigs (dict):
+        new_configs (dict):
             The new configuration to save to the config file.
 
     Returns:
         None
     """
     with open(C.CONFIG_JSON_FILE_PATH, "w") as f:
-        json.dump(newConfigs, f, indent=4)
+        json.dump(new_configs, f, indent=4)
 
-def check_and_make_dir(dirPath: pathlib.Path) -> None:
+def check_and_make_dir(dir_path: pathlib.Path) -> None:
     """Check if a directory exists and if not, create it.
 
     Args:
-        dirPath (pathlib.Path):
+        dir_path (pathlib.Path):
             The path of the directory to check and create if it doesn't exist.
 
     Returns:
         None
     """
-    if (not dirPath.exists() and not dirPath.is_dir()):
-        dirPath.mkdir(parents=True)
+    if (not dir_path.exists() and not dir_path.is_dir()):
+        dir_path.mkdir(parents=True)
 
-def print_menu(loginStatus: dict[str, bool]) -> None:
+def print_menu(login_status: dict[str, bool]) -> None:
     """Print the menu for the user to read and enter their desired action
 
     Args:
-        loginStatus (dict[str, bool]):
+        login_status (dict[str, bool]):
             The login status of the user,
             E.g. {"pixiv": False, "fantia": True}
 
     Returns:
         None
     """
-    fantiaStatus, pixivStatus = loginStatus.get("fantia"), loginStatus.get("pixiv")
+    fantia_status, pixiv_status = login_status.get("fantia"), login_status.get("pixiv")
     print(f"""{F.LIGHTYELLOW_EX}
 > Login Status...
-> Fantia: {'Logged In' if (fantiaStatus) else 'Guest (Not logged in)'}
-> Pixiv: {'Logged In' if (pixivStatus) else 'Guest (Not logged in)'}
+> Fantia: {'Logged In' if (fantia_status) else 'Guest (Not logged in)'}
+> Pixiv: {'Logged In' if (pixiv_status) else 'Guest (Not logged in)'}
 {C.END}
 --------------------- {F.LIGHTYELLOW_EX}Download Options{C.END} --------------------
       {F.GREEN}1. Download images from Fantia post(s){C.END}
@@ -139,7 +139,7 @@ def print_menu(loginStatus: dict[str, bool]) -> None:
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{C.END} ----------------------
       {F.LIGHTBLUE_EX}5. Change Default Download Folder{C.END}""")
 
-    if (not fantiaStatus or not pixivStatus):
+    if (not fantia_status or not pixiv_status):
         print(f"      {F.LIGHTBLUE_EX}6. Login{C.END}")
 
     print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{C.END} ----------------------")
@@ -147,13 +147,13 @@ def print_menu(loginStatus: dict[str, bool]) -> None:
     print(f"      {F.RED}X. Shutdown the program{C.END}")
     print()
 
-def get_input(inputMsg: str, inputs: Optional[Union[tuple[str], list[str]]] = None, 
+def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = None, 
               regex: re.Pattern[str] = None, default: Optional[str] = None,
               warning: str = None) -> Any:
     """Get the expected input from the user.
 
     Args:
-        inputMsg (str):
+        input_msg (str):
             The message to print to the user.
         inputs (tuple[str] | list[str], optional):
             The inputs that the user can enter.
@@ -189,12 +189,12 @@ def get_input(inputMsg: str, inputs: Optional[Union[tuple[str], list[str]]] = No
         inputs = tuple(str(inp).lower() for inp in inputs)
 
     while (1):
-        userInput = input(inputMsg).strip().lower()
-        if (inputs is not None and userInput in inputs):
-            return userInput
-        elif (regex is not None and regex.match(userInput)):
-            return userInput
-        elif (default is not None and userInput == ""):
+        user_input = input(input_msg).strip().lower()
+        if (inputs is not None and user_input in inputs):
+            return user_input
+        elif (regex is not None and regex.match(user_input)):
+            return user_input
+        elif (default is not None and user_input == ""):
             return default
         else:
             print_danger(f"Sorry, please enter a valid input." if (warning is None) else warning)

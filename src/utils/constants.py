@@ -4,6 +4,7 @@ import re
 import platform
 import pathlib
 import sys
+import struct
 
 # import third-party libraries
 from colorama import Style
@@ -62,6 +63,7 @@ class Constants:
     # Application constants
     END: str = Style.RESET_ALL
     USER_PLATFORM: str = USER_PLATFORM
+    IS_64BITS: bool = (struct.calcsize("P") * 8 == 64) # from https://stackoverflow.com/a/12568652/16377492
     ROOT_PY_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
     APP_FOLDER_PATH: pathlib.Path = appDir
     LOG_FOLDER_PATH: pathlib.Path = appDir.joinpath("logs")

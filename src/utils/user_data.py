@@ -51,14 +51,15 @@ class UserData(abc.ABC):
                 load_data method that must be configured in the child class.
                 Othewise, if the data is a type of bytes, it will be automatically be decrypted.
         """
-        keyPair = generate_rsa_key_pair()
-        self.__privateKey = keyPair[0].decode("utf-8")
-        self.__publicKey = keyPair[1].decode("utf-8")
+        key_pair = generate_rsa_key_pair()
+        self.__private_key = key_pair[0].decode("utf-8")
+        self.__public_key = key_pair[1].decode("utf-8")
+        self.__digest_method = "sha512" if (C.IS_64BITS) else "sha256"
 
         if (data is None):
             self.__data = self.load_data()
         elif (isinstance(data, bytes)):
-            self.__data = self.__decrypt(data)
+            self.__data = self.decrypt(data)
         else:
             self.__data = data
 
@@ -87,12 +88,16 @@ class UserData(abc.ABC):
         return self.__data
 
     @property
-    def privateKey(self) -> str:
-        return self.__privateKey
+    def private_key (self) -> str:
+        return self.__private_key
 
     @property
-    def publicKey(self) -> str:
-        return self.__publicKey
+    def public_key(self) -> str:
+        return self.__public_key
+
+    @property
+    def digest_method(self) -> str:
+        return self.__digest_method
 
     def prepare_data_for_transmission(self, data: Union[str, bytes]) -> str:
         """Prepares the data for transmission to the server by encrypting the payload
@@ -108,22 +113,22 @@ class UserData(abc.ABC):
         """
         return base64.b64encode(rsa_encrypt(plaintext=data)).decode("utf-8")
 
-    def read_api_response(self, receivedData: str) -> bytes:
+    def read_api_response(self, received_data: str) -> bytes:
         """Reads the response from the server and decrypts the data.
 
         Args:
-            receivedData (str): 
+            received_data (str): 
                 The data received from the server.
         """
         return rsa_decrypt(
-                ciphertext=base64.b64decode(receivedData), 
-                privateKey=self.format_private_key()
+                ciphertext=base64.b64decode(received_data), 
+                private_key=self.format_private_key()
             )
 
     def format_private_key(self) -> types.PRIVATE_KEY_TYPES:
         """Formats the private key for use in the asymmetric encryption."""
         return serialization.load_pem_private_key(
-            data=self.privateKey.encode("utf-8"),
+            data=self.private_key.encode("utf-8"),
             password=None,
             backend=default_backend(),
         )
@@ -143,18 +148,18 @@ class UserData(abc.ABC):
 class SecureCookie(UserData):
     """Creates a way to securely deal with the user's saved
     cookies that is stored on the user's machine."""
-    def __init__(self, cookieData: Optional[Union[bytes, dict]] = None):
+    def __init__(self, cookie_data: Optional[Union[bytes, dict]] = None):
         """Initializes the SecureCookie class.
 
         Args:
-            cookieData (dict | bytes): 
+            cookie_data (dict | bytes): 
                 The cookie data to be handled. If None, the cookie data will be loaded 
                 from the saved file in the application's directory.
         """
-        if (cookieData is not None and not isinstance(cookieData, Union[bytes, dict])):
-            raise TypeError("cookieData must be of type dict or bytes")
+        if (cookie_data is not None and not isinstance(cookie_data, Union[bytes, dict])):
+            raise TypeError("cookie_data must be of type dict or bytes")
 
-        super().__init__(data=cookieData)
+        super().__init__(data=cookie_data)
 
     def save_data(self) -> None:
         """Saves the cookie data to the user's machine in a file."""
@@ -165,7 +170,7 @@ class SecureCookie(UserData):
     def load_data(self) -> None:
         """Loads the cookie data from the user's machine from the saved file."""
         with open(C.COOKIES_PATH, "rb") as f:
-            self.data = self.__decrypt(f.read())
+            self.data = self.decrypt(f.read())
 
     def encrypt(self) -> bytes:
         """Encrypts the cookie data using AES-256-GCM (server-side).
@@ -189,7 +194,9 @@ class SecureCookie(UserData):
                     data=json.dumps(self.data)
                 ), 
             "public_key":
-                self.publicKey
+                self.public_key,
+            "digest_method":
+                self.digest_method
         }
 
         res = requests.post(f"{C.API_URL}/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS)
@@ -203,7 +210,11 @@ class SecureCookie(UserData):
             raise Exception("Invalid JSON format response from server...")
 
         encryptedCookie = base64.b64decode(res["cookie"])
-        return rsa_decrypt(ciphertext=encryptedCookie, privateKey=self.format_private_key())
+        return rsa_decrypt(
+            ciphertext=encryptedCookie,
+            private_key=self.format_private_key(),
+            digest_method=self.digest_method
+        )
 
     def decrypt(self, encryptedCookie: bytes) -> dict:
         """Decrypts the cookie data using AES-256-GCM (server-side).
@@ -227,7 +238,9 @@ class SecureCookie(UserData):
                     data=encryptedCookie
                 ),
             "public_key":
-                self.publicKey
+                self.public_key,
+            "digest_method":
+                self.digest_method
         }
 
         res = requests.post(f"{C.API_URL}/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS)
@@ -243,7 +256,8 @@ class SecureCookie(UserData):
         return json.loads(
             rsa_decrypt(
                 ciphertext=base64.b64decode(res["cookie"]), 
-                privateKey=self.format_private_key()
+                private_key=self.format_private_key(),
+                digest_method=self.digest_method
             )
         )
 

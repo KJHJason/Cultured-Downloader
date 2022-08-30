@@ -34,37 +34,37 @@ except (ModuleNotFoundError, ImportError):
 
 import requests
 
-async def download_fantia_image(postID: str, urls: list[str], folderPath: pathlib.Path) -> None:
+async def download_fantia_image(post_id: str, urls: list[str], folder_path: pathlib.Path) -> None:
     """Download images from Fantia.
 
     This function will download images from Fantia.
-    The images will be downloaded to the folderPath provided.
+    The images will be downloaded to the folder_path provided.
     The images will be downloaded in parallel.
 
     Usage Example:
-    >>> asyncio.run(download_fantia_image(urls=[urlOne, urlTwo], folderPath=pathlib.Path(".")))
+    >>> asyncio.run(download_fantia_image(urls=[urlOne, urlTwo], folder_path=pathlib.Path(".")))
 
     Args:
-        postID (str):
-            The postID of the post to download which will be used as reference in the event
+        post_id (str):
+            The post ID of the post to download which will be used as reference in the event
             the download fails for logging purposes.
         urls (list[str]):
             The urls of the images to download.
-        folderPath (pathlib.Path):
+        folder_path (pathlib.Path):
             The path to the folder where the images will be downloaded.
 
     Returns:
         None
     """
-    check_and_make_dir(folderPath)
+    check_and_make_dir(folder_path)
 
-    filenameArr = []
+    filename_arr = []
     for url in urls:
-        filenameArr.append(
+        filename_arr.append(
             url.rsplit(sep="?", maxsplit=1)[0].rsplit(sep="/", maxsplit=1)[1]
         )
 
-    failedToDownload = []
+    failed_to_download = []
     async with aiohttp.ClientSession(headers=C.HEADERS) as session:
         for idx, url in enumerate(urls):
             async with session.get(url) as response:
@@ -72,7 +72,7 @@ async def download_fantia_image(postID: str, urls: list[str], folderPath: pathli
                     if (response.status != 200):
                         raise Exception(f"Failed to download {url}")
 
-                    async with aiofiles.open(folderPath.joinpath(filenameArr[idx]), "wb") as f:
+                    async with aiofiles.open(folder_path.joinpath(filename_arr[idx]), "wb") as f:
                         await f.write(await response.read())
                 except (
                     aiohttp.ClientConnectionError, 
@@ -85,13 +85,13 @@ async def download_fantia_image(postID: str, urls: list[str], folderPath: pathli
                     aiohttp.ClientPayloadError,
                     aiohttp.ClientOSError
                 ):
-                    failedToDownload.append(url)
+                    failed_to_download.append(url)
 
-    if (failedToDownload):
-        downloadLogFile = folderPath.joinpath("failed_downloads.log")
-        with open(downloadLogFile, "a") as f:
-            for url in failedToDownload:
-                imageID = url.rsplit(sep="/", maxsplit=2)[1]
-                f.write(f"https://fantia.jp/posts/{postID}/post_content_photo/{imageID}\n")
+    if (failed_to_download):
+        download_log_file = folder_path.joinpath("failed_downloads.log")
+        with open(download_log_file, "a") as f:
+            for url in failed_to_download:
+                image_id = url.rsplit(sep="/", maxsplit=2)[1]
+                f.write(f"https://fantia.jp/posts/{post_id}/post_content_photo/{image_id}\n")
 
-        print_danger(f"\nFailed to download {len(failedToDownload)} images from {postID}.\n")
+        print_danger(f"\nFailed to download {len(failed_to_download)} images from {post_id}.\n")

@@ -27,12 +27,12 @@ def download_github_files(filename: str) -> None:
     Returns:
         None
     """
-    filePath = FILE_PATH.joinpath("utils")
-    if (not filePath.exists() and not filePath.is_dir()):
-        filePath.mkdir()
+    file_path = FILE_PATH.joinpath("utils")
+    if (not file_path.exists() and not file_path.is_dir()):
+        file_path.mkdir()
 
-    filePath = filePath.joinpath(filename)
-    if (filePath.exists() and filePath.is_file()):
+    file_path = file_path.joinpath(filename)
+    if (file_path.exists() and file_path.is_file()):
         return
 
     print(f"Missing {filename}, downloading from CulturedDownloader GitHub repository...")
@@ -43,7 +43,7 @@ def download_github_files(filename: str) -> None:
         timeout=10
     )
 
-    with open(filePath, "w") as f:
+    with open(file_path, "w") as f:
         for line in code:
             f.write(line.decode("utf-8"))
     print(f"{filename} downloaded.\n")
@@ -80,40 +80,40 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
 """)
 
     configs = load_configs()
-    defaultDownloadPath = configs.get("download_directory")
+    default_download_path = configs.get("download_directory")
     language = configs.get("language", "en")
-    loginStatus = {}
+    login_status = {}
 
     while (1):
-        print_menu(loginStatus=loginStatus)
-        userAction = get_input(
+        print_menu(login_status=login_status)
+        user_action = get_input(
             "Enter command: ", regex=C.CMD_REGEX, 
             warning="Invalid command input, please enter a valid command from the menu above."
         )
-        if (userAction == "x"):
+        if (user_action == "x"):
             return
-        elif (userAction == "1"):
+        elif (user_action == "1"):
             # Download images from Fantia post(s)
             pass
-        elif (userAction == "2"):
+        elif (user_action == "2"):
             # Download all Fantia posts from creator(s)
             pass
-        elif (userAction == "3"):
+        elif (user_action == "3"):
             # Download images from pixiv Fanbox post(s)
             pass
-        elif (userAction == "4"):
+        elif (user_action == "4"):
             # Download all pixiv Fanbox posts from a creator(s)
             pass
-        elif (userAction == "5"):
+        elif (user_action == "5"):
             # Change Default Download Folder
             pass
-        elif (userAction == "6" and not (loginStatus.get("fantia") or loginStatus.get("pixiv"))):
+        elif (user_action == "6" and not (login_status.get("fantia") or login_status.get("pixiv"))):
             # Login
             pass
         else:
             # Report a bug
-            openedTab = webbrowser.open(C.ISSUE_PAGE, new=2)
-            if (not openedTab):
+            opened_tab = webbrowser.open(C.ISSUE_PAGE, new=2)
+            if (not opened_tab):
                 print_warning(f"\nFailed to open web browser. Please visit the issue page manually and create an issue to report the bug at\n{C.ISSUE_PAGE}")
             else:
                 print_success(f"\nA new tab has been opened in your web browser, please create an issue there to report the bug.")
