@@ -111,7 +111,7 @@ class UserData(abc.ABC):
             str: 
                 The encrypted data to sent to Cultured Downloader API for symmetric encryption.
         """
-        return base64.b64encode(rsa_encrypt(plaintext=data)).decode("utf-8")
+        return base64.b64encode(rsa_encrypt(plaintext=data, digest_method=self.digest_method)).decode("utf-8")
 
     def read_api_response(self, received_data: str) -> bytes:
         """Reads the response from the server and decrypts the data.
@@ -122,7 +122,8 @@ class UserData(abc.ABC):
         """
         return rsa_decrypt(
                 ciphertext=base64.b64decode(received_data), 
-                private_key=self.format_private_key()
+                private_key=self.format_private_key(), 
+                digest_method=self.digest_method
             )
 
     def format_private_key(self) -> types.PRIVATE_KEY_TYPES:
@@ -189,7 +190,7 @@ class SecureCookie(UserData):
                 If the server response is not 200 or if the JSON response is invalid.
         """
         data = {
-            "cookie":
+            "data":
                 self.prepare_data_for_transmission(
                     data=json.dumps(self.data)
                 ), 
@@ -199,7 +200,7 @@ class SecureCookie(UserData):
                 self.digest_method
         }
 
-        res = requests.post(f"{C.API_URL}/v1/encrypt-cookie", json=data, headers=C.REQ_HEADERS)
+        res = requests.post(f"{C.API_URL}/v1/encrypt", json=data, headers=C.REQ_HEADERS)
         if (res.status_code != 200):
             raise Exception(f"Server Response: {res.status_code} {res.reason}")
 
@@ -209,7 +210,7 @@ class SecureCookie(UserData):
         if (not validate_schema(schema=C.SERVER_RESPONSE_SCHEMA, data=res)):
             raise Exception("Invalid JSON format response from server...")
 
-        encryptedCookie = base64.b64decode(res["cookie"])
+        encryptedCookie = base64.b64decode(res["data"])
         return rsa_decrypt(
             ciphertext=encryptedCookie,
             private_key=self.format_private_key(),
@@ -233,7 +234,7 @@ class SecureCookie(UserData):
                 If the server response is not 200 or if the JSON response is invalid.
         """
         data = {
-            "cookie": 
+            "data": 
                 self.prepare_data_for_transmission(
                     data=encryptedCookie
                 ),
@@ -243,7 +244,7 @@ class SecureCookie(UserData):
                 self.digest_method
         }
 
-        res = requests.post(f"{C.API_URL}/v1/decrypt-cookie", json=data, headers=C.REQ_HEADERS)
+        res = requests.post(f"{C.API_URL}/v1/decrypt", json=data, headers=C.REQ_HEADERS)
         if (res.status_code != 200):
             raise Exception(f"Server Response: {res.status_code} {res.reason}")
 
@@ -255,7 +256,7 @@ class SecureCookie(UserData):
 
         return json.loads(
             rsa_decrypt(
-                ciphertext=base64.b64decode(res["cookie"]), 
+                ciphertext=base64.b64decode(res["data"]), 
                 private_key=self.format_private_key(),
                 digest_method=self.digest_method
             )

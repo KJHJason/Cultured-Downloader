@@ -44,9 +44,9 @@ class Constants:
         default_factory=lambda: {
             "type": "object",
             "properties": {
-                "cookie": {"type": "string"}
+                "data": {"type": "string"}
             },
-            "required": ["cookie"]
+            "required": ["data"]
         }
     )
     SERVER_PUBLIC_KEY_SCHEMA: dict = field(

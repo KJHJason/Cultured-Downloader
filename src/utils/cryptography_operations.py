@@ -12,7 +12,7 @@ else:
     from .functional import validate_schema
 
 # Import Third-party Libraries
-import requests
+import httpx
 
 try:
     from cryptography.hazmat.backends import default_backend
@@ -99,7 +99,13 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
     elif (not issubclass(digest_method, hashes.HashAlgorithm)):
         raise TypeError("digest_method must be a subclass of cryptography.hazmat.primitives.hashes.HashAlgorithm")
 
-    res = requests.get(f"{C.API_URL}/v1/rsa/public-key")
+    json_data = {
+        "algorithm": "rsa",
+        "digest_method": digest_method.name,
+    }
+    with httpx.Client(headers=C.REQ_HEADERS, http2=True) as client:
+        res = client.post(f"{C.API_URL}/v1/public-key", json=json_data)
+
     if (res.status_code != 200):
         raise Exception(f"Server Response: {res.status_code} {res.reason}")
 

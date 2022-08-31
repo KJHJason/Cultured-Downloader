@@ -1,6 +1,7 @@
 # import Python's standard libraries
 import pathlib
 import shutil
+import asyncio
 from typing import Union, Optional
 
 # import local files
@@ -14,11 +15,7 @@ else:
     from .constants import CONSTANTS as C
 
 # import third-party libraries
-try:
-    import httpx
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="httpx[http2]>=0.23.0")
-    import httpx
+import httpx
 
 try:
     import aiofiles
@@ -31,6 +28,38 @@ try:
 except (ModuleNotFoundError, ImportError):
     install_dependency(dep="gdown>=4.4.0")
     import gdown
+
+async def async_download_file(url: str, file_path: pathlib.Path, failed_to_download: list[str]) -> None:
+    """Download a file asynchronously from the given url.
+
+    Args:
+        url (str):
+            The url of the file to download.
+        file_path (pathlib.Path):
+            The path to the file to download.
+        failed_to_download (list[str]):
+            The list of urls that failed to download which will be appended to if the download fails.
+
+    Returns:
+        None
+    """
+    async with httpx.AsyncClient(headers=C.REQ_HEADERS, http2=True) as client:
+        async with client.stream(method="GET", url=url) as response:
+            try:
+                if (response.status_code != 200):
+                    raise Exception(f"Failed to download {url}")
+
+                async with aiofiles.open(file_path, "wb") as f:
+                    async for chunk in response.aiter_bytes():
+                        await f.write(chunk)
+            except (
+                httpx.RequestError,
+                httpx.HTTPStatusError,
+                httpx.HTTPError,
+                httpx.StreamError
+            ):
+                file_path.unlink(missing_ok=True)
+                failed_to_download.append(url)
 
 async def download_fantia_image(post_id: str, urls: list[str], folder_path: pathlib.Path) -> None:
     """Download images from Fantia.
@@ -68,25 +97,14 @@ async def download_fantia_image(post_id: str, urls: list[str], folder_path: path
 
     # Using httpx instead of aiohttp for HTTP/2 support since Fantia uses AWS S3
     # and I have tested it for HTTP/2 compatibility which would help improve download speeds.
-    async with httpx.AsyncClient(headers=C.REQ_HEADERS, http2=True) as client:
-        for idx, url in enumerate(urls):
-            async with client.stream(method="GET", url=url) as response:
-                file_path = folder_path.joinpath(filename_arr[idx])
-                try:
-                    if (response.status_code != 200):
-                        raise Exception(f"Failed to download {url}")
-
-                    async with aiofiles.open(file_path, "wb") as f:
-                        async for chunk in response.aiter_bytes():
-                            await f.write(chunk)
-                except (
-                    httpx.RequestError,
-                    httpx.HTTPStatusError,
-                    httpx.HTTPError,
-                    httpx.StreamError
-                ):
-                    file_path.unlink(missing_ok=True)
-                    failed_to_download.append(url)
+    await asyncio.gather(*[
+        async_download_file(
+            url=url,
+            file_path=folder_path.joinpath(filename), 
+            failed_to_download=failed_to_download
+        ) 
+        for url, filename in zip(urls, filename_arr)
+    ])
 
     if (failed_to_download):
         download_log_file = folder_path.joinpath("failed_downloads.log")

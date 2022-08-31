@@ -45,9 +45,9 @@ except (ModuleNotFoundError, ImportError):
     install_dependency(dep="colorama>=0.4.5")
 
 try:
-    import requests
+    import httpx
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="requests>=2.27.1")
+    install_dependency(dep="httpx[http2]>=0.23.0")
 
 try:
     import jsonschema
