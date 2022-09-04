@@ -39,14 +39,33 @@ class Constants:
     DEBUG_MODE: bool = True
 
     # For cryptographic operations with the user's saved cookies
-    API_URL: str = "http://127.0.0.1:8080" if (DEBUG_MODE) else "https://api.cultureddownloader.com"
-    SERVER_RESPONSE_SCHEMA: dict = field(
+    API_URL: str = "http://127.0.0.1:8080/api/v1" if (DEBUG_MODE) else "https://cultureddownloader.com/api/v1"
+    TAG: bytes = " ".join(platform.uname()).encode("utf-8")
+    SERVER_CSRF_RESPONSE: dict = field(
         default_factory=lambda: {
             "type": "object",
             "properties": {
-                "data": {"type": "string"}
+                "csrf_token": {"type": "string"},
             },
-            "required": ["data"]
+            "required": ["csrf_token"]
+        }
+    )
+    SECRET_KEY_RESPONSE_SCHEMA: dict = field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "secret_key": {"type": "string"}
+            },
+            "required": ["secret_key"]
+        }
+    )
+    KEY_ID_TOKEN_RESPONSE_SCHEMA: dict = field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "key_id_token": {"type": "string"}
+            },
+            "required": ["key_id_token"]
         }
     )
     SERVER_PUBLIC_KEY_SCHEMA: dict = field(
@@ -68,6 +87,8 @@ class Constants:
     LOG_FOLDER_PATH: pathlib.Path = appDir.joinpath("logs")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
     COOKIES_PATH: pathlib.Path = appDir.joinpath("cookies")
+    KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
+    SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
 
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"

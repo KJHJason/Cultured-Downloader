@@ -1,4 +1,5 @@
 # Import Standard Libraries
+import secrets
 from typing import Union, Optional, Callable
 
 # import local files
@@ -21,6 +22,7 @@ except (ModuleNotFoundError, ImportError):
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding, rsa, types
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
 def generate_rsa_key_pair() -> tuple[bytes, bytes]:
     """Generates a 2048 bits private and public key pair.
@@ -31,7 +33,7 @@ def generate_rsa_key_pair() -> tuple[bytes, bytes]:
     """
     private_key = rsa.generate_private_key(
         public_exponent=65537, # as recommended by the cryptography library documentation
-        key_size=2048,
+        key_size=4096, # gives more lee-way for future-proofing and larger data sizes
     )
     public_key = private_key.public_key()
     return (
@@ -104,7 +106,7 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
         "digest_method": digest_method.name,
     }
     with httpx.Client(headers=C.REQ_HEADERS, http2=True) as client:
-        res = client.post(f"{C.API_URL}/v1/public-key", json=json_data)
+        res = client.post(f"{C.API_URL}/public-key", json=json_data)
 
     if (res.status_code != 200):
         raise Exception(f"Server Response: {res.status_code} {res.reason}")
@@ -172,3 +174,68 @@ def rsa_decrypt(ciphertext: bytes, private_key: str | types.PRIVATE_KEY_TYPES,
     # Decrypt the ciphertext using the private key
     ciphertext = private_key.decrypt(ciphertext=ciphertext, padding=pad)
     return ciphertext.decode("utf-8") if (decode) else ciphertext
+
+def generate_chacha20_key() -> bytes:
+    """Generates a 256-bits ChaCha20 key.
+
+    Returns:
+        The ChaCha20 key (bytes).
+    """
+    return secrets.token_bytes(32)
+
+def generate_chacha20_nonce() -> bytes:
+    """Generates a 96-bits ChaCha20 nonce.
+
+    Returns:
+        The ChaCha20 nonce (bytes).
+    """
+    return secrets.token_bytes(12)
+
+def chacha_encrypt(plaintext: Union[str, bytes], key: bytes) -> tuple[bytes, bytes]:
+    """Encrypts a plaintext using the ChaCha20-Poly1305 algorithm.
+
+    Args:
+        plaintext (str|bytes): 
+            The plaintext to encrypt.
+        key (bytes): 
+            The key to use for the encryption.
+
+    Returns:
+        The encrypted plaintext (bytes) and the nonce used.
+        (ciphertext, nonce)
+    """
+    if (isinstance(plaintext, str)):
+        plaintext = plaintext.encode("utf-8")
+
+    # Construct the cipher
+    chacha = ChaCha20Poly1305(key=key)
+
+    # Encrypt the plaintext
+    nonce = secrets.token_bytes(12)
+    ciphertext = chacha.encrypt(nonce=nonce, data=plaintext, associated_data=C.TAG)
+
+    return ciphertext, nonce
+
+def chacha_decrypt(ciphertext: bytes, key: bytes, nonce: bytes, decode: Optional[bool] = False) -> bytes:
+    """Decrypts a ciphertext using the ChaCha20-Poly1305 algorithm.
+
+    Args:
+        ciphertext (bytes): 
+            The ciphertext to decrypt.
+        key (bytes): 
+            The key to use for the decryption.
+        nonce (bytes): 
+            The nonce to use for the decryption.
+        decode (bool):
+            Whether to decode the decrypted plaintext to a string (defaults to False).
+
+    Returns:
+        The decrypted ciphertext (bytes | str).
+    """
+    # Construct the cipher
+    chacha = ChaCha20Poly1305(key=key)
+
+    # Decrypt the ciphertext
+    plaintext = chacha.decrypt(nonce=nonce, data=ciphertext, associated_data=C.TAG)
+
+    return plaintext.decode("utf-8") if (decode) else plaintext
