@@ -331,4 +331,6 @@ class SecureCookie(UserData):
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
 
-print(SecureCookie({"test": "test"}).save_key())
+# test codes
+if (__name__ == "__main__"):
+    SecureCookie({"test": "test"}).save_key()
