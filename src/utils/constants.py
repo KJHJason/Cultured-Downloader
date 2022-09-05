@@ -36,7 +36,7 @@ class Constants:
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-6xy]$")
 
     # Debug mode (For requesting to the web application hosted on localhost)
-    DEBUG_MODE: bool = True
+    DEBUG_MODE: bool = False
 
     # For cryptographic operations with the user's saved cookies
     API_URL: str = "http://127.0.0.1:8080/api/v1" if (DEBUG_MODE) else "https://cultureddownloader.com/api/v1"

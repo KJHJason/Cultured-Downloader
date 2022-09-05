@@ -210,8 +210,18 @@ class UserData(abc.ABC):
             None
         """
         if (save_locally):
+            # Check if the key was already saved locally
+            if (C.SECRET_KEY_PATH.exists() and C.SECRET_KEY_PATH.is_file()):
+                with open(C.SECRET_KEY_PATH, "rb") as f:
+                    if (f.read() == self.secret_key):
+                        return
+
             with open(C.SECRET_KEY_PATH, "wb") as f:
                 f.write(self.__secret_key)
+
+        # Check if the key was already saved on the API
+        if (C.KEY_ID_TOKEN_JSON_PATH.exists() and C.KEY_ID_TOKEN_JSON_PATH.is_file()):
+            return
 
         csrf_token, cookies = self.get_csrf_token()
         json_data = {
@@ -334,3 +344,4 @@ class SecureCookie(UserData):
 # test codes
 if (__name__ == "__main__"):
     SecureCookie({"test": "test"}).save_key()
+    print(SecureCookie({"test": "test"}).secret_key)
