@@ -63,11 +63,11 @@ class UserData(abc.ABC):
 
         self.__secret_key = self.__load_key()
         if (data is None):
-            self.__data = self.load_data()
+            self.data = self.load_data()
         elif (isinstance(data, bytes)):
-            self.__data = self.decrypt(data)
+            self.data = self.decrypt(data)
         else:
-            self.__data = data
+            self.data = data
 
     @abc.abstractmethod
     def save_data(self) -> None:
@@ -251,13 +251,6 @@ class UserData(abc.ABC):
             json.dump({"key_id_token": key_id_token}, f, indent=4)
 
     @property
-    def data(self) -> Any:
-        return self.__data
-    @data.setter
-    def data(self, data: Any) -> None:
-        self.__data = data
-
-    @property
     def secret_key(self) -> bytes:
         return self.__secret_key
 
@@ -278,10 +271,10 @@ class UserData(abc.ABC):
         return self.__server_digest_method
 
     def __str__(self) -> str:
-        return str(self.__data)
+        return str(self.data)
 
     def __repr__(self) -> str:
-        return f"Data<{self.__data}>"
+        return f"Data<{self.data}>"
 
 class SecureCookie(UserData):
     """Creates a way to securely deal with the user's saved
