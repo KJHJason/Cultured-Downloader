@@ -345,3 +345,4 @@ class SecureCookie(UserData):
 if (__name__ == "__main__"):
     SecureCookie({"test": "test"}).save_key()
     print(SecureCookie({"test": "test"}).secret_key)
+    print(len(SecureCookie({"test": "test"}).secret_key))

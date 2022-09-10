@@ -53,3 +53,13 @@ try:
     import jsonschema
 except (ModuleNotFoundError, ImportError):
     install_dependency(dep="jsonschema>=4.14.0")
+
+try:
+    from selenium import webdriver
+except (ModuleNotFoundError, ImportError):
+    install_dependency(dep="selenium>=4.4.3")
+
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except (ModuleNotFoundError, ImportError):
+    install_dependency(dep="webdriver-manager>=3.8.3")
