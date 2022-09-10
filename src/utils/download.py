@@ -43,7 +43,7 @@ async def async_download_file(url: str, file_path: pathlib.Path, failed_to_downl
     Returns:
         None
     """
-    async with httpx.AsyncClient(headers=C.REQ_HEADERS, http2=True) as client:
+    async with httpx.AsyncClient(headers=C.REQ_HEADERS, http2=True, timeout=60) as client:
         async with client.stream(method="GET", url=url) as response:
             try:
                 if (response.status_code != 200):
