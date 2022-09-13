@@ -50,9 +50,9 @@ except (ModuleNotFoundError, ImportError):
     install_dependency(dep="httpx[http2]>=0.23.0")
 
 try:
-    import jsonschema
+    import pydantic
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="jsonschema>=4.14.0")
+    install_dependency(dep="pydantic>=1.10.2")
 
 try:
     from selenium import webdriver

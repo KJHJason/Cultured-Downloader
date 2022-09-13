@@ -1,18 +1,23 @@
 # import Python's standard libraries
+import abc
 import json
 import base64
-import abc
 import binascii
+import threading
 from typing import Optional, Any, Union
 
 # import local files
 if (__name__ == "__main__"):
+    from errors import APIServerError
     from cryptography_operations import *
     from constants import CONSTANTS as C
+    from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
     from functional import validate_schema
 else:
+    from .errors import APIServerError
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
+    from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
     from .functional import validate_schema
 
 # Import Third-party Libraries
@@ -36,7 +41,7 @@ class UserData(abc.ABC):
         - encrypt
         - decrypt
 
-    The data stored on the user's machine is encrypted using AES-256-GCM 
+    The data stored on the user's machine is encrypted using ChaCha20-Poly1305
     which is done server-side as only the server knows the symmetric key used.
 
     During transmission to Cultured Downloader API, the data is encrypted using asymmetric encryption
@@ -47,11 +52,10 @@ class UserData(abc.ABC):
         """Constructor for the UserData class.
 
         Attributes:
-            data (Any | bytes): 
+            data (Any): 
                 The data to be handled. If None, the data will be loaded 
                 from the saved file in the application's directory via the
                 load_data method that must be configured in the child class.
-                Othewise, if the data is a type of bytes, it will be automatically be decrypted.
         """
         key_pair = generate_rsa_key_pair()
         self.__private_key = key_pair[0].decode("utf-8")
@@ -64,8 +68,6 @@ class UserData(abc.ABC):
         self.__secret_key = self.__load_key()
         if (data is None):
             self.data = self.load_data()
-        elif (isinstance(data, bytes)):
-            self.data = self.decrypt(data)
         else:
             self.data = data
 
@@ -129,18 +131,18 @@ class UserData(abc.ABC):
         Returns:
             The CSRF token (str) and the session cookie with the CSRF token.
         """
-        with httpx.Client(http2=True, headers=C.REQ_HEADERS) as client:
+        with httpx.Client(http2=True, headers=C.REQ_HEADERS, timeout=30) as client:
             res = client.get(f"{C.API_URL}/csrf-token")
 
         if (res.status_code not in (200, 404)):
-            raise Exception(f"Server Response: {res.status_code} {res.reason}")
+            raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
 
         cookies = res.cookies
         json_data = res.json()
         if ("error" in json_data):
-            raise Exception(json_data["error"])
-        if (not validate_schema(schema=C.SERVER_CSRF_RESPONSE, data=json_data)):
-            raise Exception("Invalid JSON format response from server...")
+            raise APIServerError(json_data["error"])
+        if (not validate_schema(schema=APICsrfResponse, data=json_data)):
+            raise APIServerError("Invalid JSON format response from server...")
 
         return json_data["csrf_token"], cookies
 
@@ -178,11 +180,11 @@ class UserData(abc.ABC):
                     data=key_id_token
                 )
         }
-        with httpx.Client(http2=True, headers=C.REQ_HEADERS, cookies=cookies) as client:
+        with httpx.Client(http2=True, headers=C.REQ_HEADERS, cookies=cookies, timeout=30) as client:
             res = client.post(f"{C.API_URL}/get-key", json=json_data)
 
         if (res.status_code not in (200, 404, 400)):
-            raise Exception(f"Server Response: {res.status_code}")
+            raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
 
         if (res.status_code == 404):
             # happens when the key_id_token 
@@ -192,9 +194,9 @@ class UserData(abc.ABC):
 
         json_data = res.json()
         if ("error" in json_data):
-            raise Exception(json_data["error"])
-        if (not validate_schema(schema=C.SECRET_KEY_RESPONSE_SCHEMA, data=json_data)):
-            raise Exception("Invalid JSON format response from server...")
+            raise APIServerError(json_data["error"])
+        if (not validate_schema(schema=APIKeyResponse, data=json_data)):
+            raise APIServerError("Invalid JSON format response from server...")
 
         secret_key = self.read_api_response(json_data["secret_key"])
         return secret_key
@@ -209,19 +211,19 @@ class UserData(abc.ABC):
         Returns:
             None
         """
-        if (save_locally):
-            # Check if the key was already saved locally
-            if (C.SECRET_KEY_PATH.exists() and C.SECRET_KEY_PATH.is_file()):
-                with open(C.SECRET_KEY_PATH, "rb") as f:
-                    if (f.read() == self.secret_key):
-                        return
-
-            with open(C.SECRET_KEY_PATH, "wb") as f:
-                f.write(self.__secret_key)
+        # Check if the key was already saved locally
+        if (C.SECRET_KEY_PATH.exists() and C.SECRET_KEY_PATH.is_file()):
+            with open(C.SECRET_KEY_PATH, "rb") as f:
+                if (f.read() == self.secret_key):
+                    return
 
         # Check if the key was already saved on the API
         if (C.KEY_ID_TOKEN_JSON_PATH.exists() and C.KEY_ID_TOKEN_JSON_PATH.is_file()):
             return
+
+        if (save_locally):
+            with open(C.SECRET_KEY_PATH, "wb") as f:
+                f.write(self.__secret_key)
 
         csrf_token, cookies = self.get_csrf_token()
         json_data = {
@@ -239,17 +241,17 @@ class UserData(abc.ABC):
                 )
         }
 
-        with httpx.Client(http2=True, headers=C.REQ_HEADERS, cookies=cookies) as client:
+        with httpx.Client(http2=True, headers=C.REQ_HEADERS, cookies=cookies, timeout=30) as client:
             res = client.post(f"{C.API_URL}/save-key", json=json_data)
 
         if (res.status_code not in (200, 400)):
-            raise Exception(f"Server Response: {res.status_code}")
+            raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
 
         res = res.json()
         if ("error" in res):
-            raise Exception(res["error"])
-        if (not validate_schema(schema=C.KEY_ID_TOKEN_RESPONSE_SCHEMA, data=res)):
-            raise Exception("Invalid JSON format response from server...")
+            raise APIServerError(res["error"])
+        if (not validate_schema(schema=APIKeyIDResponse, data=res)):
+            raise APIServerError("Invalid JSON format response from server...")
 
         key_id_token = rsa_decrypt(
             ciphertext=base64.b64decode(res["key_id_token"]),
@@ -289,51 +291,70 @@ class UserData(abc.ABC):
 class SecureCookie(UserData):
     """Creates a way to securely deal with the user's saved
     cookies that is stored on the user's machine."""
-    def __init__(self, cookie_data: Optional[Union[bytes, dict]] = None):
+    def __init__(self, website: str, cookie_data: Optional[dict] = None) -> None:
         """Initializes the SecureCookie class.
 
         Args:
-            cookie_data (dict | bytes): 
+            cookie_data (dict): 
                 The cookie data to be handled. If None, the cookie data will be loaded 
                 from the saved file in the application's directory.
+            website (str):
+                The website that the cookie data is for.
         """
-        if (cookie_data is not None and not isinstance(cookie_data, Union[bytes, dict])):
-            raise TypeError("cookie_data must be of type dict or bytes")
+        if (not isinstance(cookie_data, Union[None, dict])):
+            raise TypeError("cookie_data must be of type dict or None")
 
+        self.__website = website
         super().__init__(data=cookie_data)
 
     def save_data(self) -> None:
         """Saves the cookie data to the user's machine in a file."""
-        C.COOKIES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        encrypted_cookies, nonce = chacha_encrypt(plaintext=self.data, key=self.secret_key)
+        cookie_path = C.APP_FOLDER_PATH.joinpath(f"{self.__website}-cookie")
+        cookie_path.parent.mkdir(parents=True, exist_ok=True)
+
+        encrypted_cookies, nonce = chacha_encrypt(plaintext=json.dumps(self.data), key=self.secret_key)
+
         encoded_cookies = base64.b64encode(encrypted_cookies)
         nonce = base64.b64encode(nonce)
-        with open(C.COOKIES_PATH, "w") as f:
+        with open(cookie_path, "w") as f:
             f.write(".".join((encoded_cookies.decode("utf-8"), nonce.decode("utf-8"))))
 
-    def load_data(self) -> None:
-        """Loads the cookie data from the user's machine from the saved file."""
-        if (not C.COOKIES_PATH.exists() and not C.COOKIES_PATH.is_file()):
-            self.data = {}
+    def load_data(self) -> Union[dict, None]:
+        """Loads the cookie data from the user's machine from the saved file.
+
+        Returns:
+            dict | None: 
+                The cookie data or None if the file does not exist or is invalid.
+        """
+        cookie_path = C.APP_FOLDER_PATH.joinpath(f"{self.__website}-cookie")
+        if (not cookie_path.exists() and not cookie_path.is_file()):
             return
 
-        with open(C.COOKIES_PATH, "r") as f:
+        with open(cookie_path, "r") as f:
             try:
                 encrypted_data, nonce = f.read().split(".")
             except (ValueError):
-                raise Exception("Invalid cookie data...")
+                raise APIServerError("Invalid cookie data...")
 
         try:
             encrypted_data = base64.b64decode(encrypted_data)
             nonce = base64.b64decode(nonce)
         except (binascii.Error, TypeError, ValueError):
-            raise Exception("Invalid cookie data...")
+            raise APIServerError("Invalid cookie data...")
 
         try:
-            self.data = chacha_decrypt(ciphertext=encrypted_data, key=self.secret_key, nonce=nonce)
-        except (InvalidTag):
-            self.data = {}
-            C.COOKIES_PATH.unlink()
+            decrypted_cookie = json.loads(
+                chacha_decrypt(ciphertext=encrypted_data, key=self.secret_key, nonce=nonce)
+            )
+        except (InvalidTag, json.JSONDecodeError):
+            cookie_path.unlink()
+            return
+
+        if (not validate_schema(schema=CookieSchema, data=decrypted_cookie)):
+            cookie_path.unlink()
+            return
+
+        return decrypted_cookie
 
     def __str__(self) -> str:
         return json.dumps(self.data)
@@ -341,8 +362,91 @@ class SecureCookie(UserData):
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
 
+class SaveCookieThread(threading.Thread):
+    """Thread to securely save the cookie to a file."""
+    def __init__(self, cookie: dict, website: str, save_locally: bool):
+        """Constructor for the SaveCookieThread class.
+
+        Attributes:
+            cookie (dict):
+                The cookie to save.
+            website (str):
+                The website to save the cookie for.
+            save_locally (bool):
+                Whether to save the cookie locally or on Cultured Downloader API.
+        """
+        super().__init__()
+        self.cookie = cookie
+        self.website = website
+        self.save_locally = save_locally
+        self.result = None
+
+    def run(self) -> None:
+        try:
+            secure_cookie = SecureCookie(website=self.website, cookie_data=self.cookie)
+            secure_cookie.save_key(save_locally=self.save_locally)
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
+            self.result = False
+
+        secure_cookie.save_data()
+        self.result = True
+
+class LoadCookieThread(threading.Thread):
+    """Thread to securely load the cookie from a file."""
+    def __init__(self, website: str):
+        """Constructor for the LoadCookieThread class.
+
+        Attributes:
+            website (str):
+                The website to load the cookie for.
+            load_locally (bool):
+                Whether to load the cookie locally or from Cultured Downloader API.
+        """
+        super().__init__()
+        self.website = website
+        self.result = None
+
+    def run(self) -> None:
+        try:
+            secure_cookie = SecureCookie(website=self.website)
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
+            self.result = False
+
+        self.result = secure_cookie.data
+
+def load_cookie(website: str) -> Union[None, LoadCookieThread]:
+    """Loads the cookie from the user's machine.
+
+    Args:
+        website (str):
+            The website to load the cookie for.
+
+    Returns:
+        dict | None:
+            The cookie data if it exists, otherwise None.
+    """
+    cookie_path = C.APP_FOLDER_PATH.joinpath(f"{website}-cookie")
+    if (not cookie_path.exists() and not cookie_path.is_file()):
+        return None
+
+    load_cookie_thread = LoadCookieThread(website=website)
+    load_cookie_thread.start()
+    return load_cookie_thread
+
+__all__ = [
+    "SecureCookie",
+    "SaveCookieThread",
+    "LoadCookieThread",
+    "load_cookie"
+]
+
 # test codes
 if (__name__ == "__main__"):
-    SecureCookie({"test": "test"}).save_key()
-    print(SecureCookie({"test": "test"}).secret_key)
-    print(len(SecureCookie({"test": "test"}).secret_key))
+    s = SecureCookie("fantia", {"test": "test"})
+    print(s.data)
+    # s.save_key()
+    # print(SecureCookie({"test": "test"}).secret_key)
+    # print(len(SecureCookie({"test": "test"}).secret_key))
+    # s.save_data("fantia")
+    t = SecureCookie("fantia")
+    print(t.data)

@@ -4,12 +4,16 @@ from typing import Union, Optional, Callable
 
 # import local files
 if (__package__ is None or __package__ == ""):
+    from errors import APIServerError
     from crucial import install_dependency
     from constants import CONSTANTS as C
+    from schemas.api_response import APIPublicKeyResponse
     from functional import validate_schema
 else:
+    from .errors import APIServerError
     from .crucial import install_dependency
     from .constants import CONSTANTS as C
+    from .schemas.api_response import APIPublicKeyResponse
     from .functional import validate_schema
 
 # Import Third-party Libraries
@@ -105,15 +109,15 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
         "algorithm": "rsa",
         "digest_method": digest_method.name,
     }
-    with httpx.Client(headers=C.REQ_HEADERS, http2=True) as client:
+    with httpx.Client(headers=C.REQ_HEADERS, http2=True, timeout=30) as client:
         res = client.post(f"{C.API_URL}/public-key", json=json_data)
 
     if (res.status_code != 200):
-        raise Exception(f"Server Response: {res.status_code} {res.reason}")
+        raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
 
     res = res.json()
-    if (not validate_schema(schema=C.SERVER_PUBLIC_KEY_SCHEMA, data=res)):
-        raise Exception("Invalid json response from Cultured Downloader website")
+    if (not validate_schema(schema=APIPublicKeyResponse, data=res)):
+        raise APIServerError("Invalid json response from Cultured Downloader website")
 
     public_key = serialization.load_pem_public_key(
         data=res["public_key"].encode("utf-8"), 

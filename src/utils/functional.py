@@ -1,38 +1,45 @@
 # import Python's standard libraries
-import pathlib
 import re
 import json
 from typing import Union, Optional, Any
 
 # import local files
 if (__package__ is None or __package__ == ""):
+    from schemas.config import ConfigSchema
     from constants import CONSTANTS as C
 else:
+    from .schemas.config import ConfigSchema
     from .constants import CONSTANTS as C
 
 # import third-party libraries
 from colorama import Fore as F
-import jsonschema
+from pydantic import BaseModel
+import pydantic.error_wrappers as pydantic_error_wrappers 
 
-def validate_schema(schema: dict, data: dict) -> bool:
+def validate_schema(schema: BaseModel, data: Union[dict, list], 
+                    return_bool: Optional[bool] = True) -> Union[bool, BaseModel]:
     """Validates the data against the schema
 
     Args:
-        schema (dict): 
-            The schema to validate against
-        data (dict):
+        schema (BaseModel): 
+            The pydantic base model object to validate against
+        data (dict | list):
             The data to validate
+        return_bool (bool, optional):
+            Whether to return a boolean or the pydantic base model object.
 
     Returns:
-        bool:
-            True if the data is valid, False otherwise
+        Union[bool, BaseModel]:
+            False if the data is invalid, otherwise the pydantic base model object with the data or a boolean.
     """
-    try:
-        jsonschema.validate(data, schema)
-    except (jsonschema.exceptions.ValidationError):
+    if (not isinstance(data, Union[dict, list])):
         return False
-    else:
-        return True
+
+    try:
+        pydantic_obj = schema(**data)
+        return pydantic_obj if (not return_bool) else True
+    except (pydantic_error_wrappers.ValidationError):
+        return False
 
 def print_danger(message: Any, **kwargs) -> None:
     """Print a message in red.
@@ -76,7 +83,7 @@ def print_success(message: Any, **kwargs) -> None:
     """
     print(f"{F.LIGHTGREEN_EX}{message}{F.RESET}", **kwargs)
 
-def load_configs() -> dict:
+def load_configs() -> Union[bool, BaseModel]:
     """Load the configs from the config file.
 
     Returns:
@@ -86,7 +93,8 @@ def load_configs() -> dict:
     if (C.CONFIG_JSON_FILE_PATH.exists() and C.CONFIG_JSON_FILE_PATH.is_file()):
         with open(C.CONFIG_JSON_FILE_PATH, "r") as f:
             configs = json.load(f)
-    return configs
+
+    return validate_schema(schema=ConfigSchema, data=configs, return_bool=False)
 
 def edit_configs(new_configs: dict) -> None:
     """Edit the configs in the config file.
@@ -136,7 +144,7 @@ def print_menu(login_status: dict[str, bool]) -> None:
 
 def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = None, 
               regex: re.Pattern[str] = None, default: Optional[str] = None,
-              warning: str = None) -> Any:
+              warning: str = None, extra_information: Optional[str] = None) -> Any:
     """Get the expected input from the user.
 
     Args:
@@ -153,6 +161,8 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
             The default input to be returned if the user doesn't enter anything.
         warning (str, optional):
             The warning message to print to the user if the input is invalid.
+        extra_information (str, optional):
+            The extra information to print to the user before the input message.
 
     Returns:
         The input the user entered.
@@ -172,10 +182,13 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         raise TypeError("warning must be a str")
 
     if (inputs is not None):
-        # failsafe if the list or tuple passed in does not contain all lowercase strings
+        # fail-safe if the list or tuple passed in does not contain all lowercase strings
         inputs = tuple(str(inp).lower() for inp in inputs)
 
     while (1):
+        if (extra_information is not None):
+            print_warning(extra_information)
+
         user_input = input(input_msg).strip().lower()
         if (inputs is not None and user_input in inputs):
             return user_input
