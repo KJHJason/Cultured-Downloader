@@ -1,5 +1,6 @@
 # import Python's standard libraries
 import re
+import time
 import json
 import pathlib
 from typing import Union, Optional, Any
@@ -272,3 +273,16 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
             return default
         else:
             print_danger(f"Sorry, please enter a valid input." if (warning is None) else warning)
+
+def delete_empty_and_old_logs() -> None:
+    """Delete all empty log files and log files
+    older than 30 days except for the current day's log file.
+
+    Returns:
+        None
+    """
+    for log_file in C.LOG_FOLDER_PATH.iterdir():
+        if (log_file.is_file() and log_file != C.TODAYS_LOG_FILE_PATH):
+            file_info = log_file.stat()
+            if (file_info.st_size == 0 or file_info.st_mtime < (time.time() - 2592000)):
+                log_file.unlink()

@@ -265,4 +265,5 @@ if (__name__ == "__main__"):
         print_warning("\nProgram terminated by user.")
         input("Please press ENTER to quit.")
 
+    delete_empty_and_old_logs()
     sys.exit(0)

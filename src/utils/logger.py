@@ -2,33 +2,28 @@
 import sys
 import types
 import logging
-from datetime import datetime
 from typing import Optional, NoReturn, Type
 
 # import local files
 if (__package__ is None or __package__ == ""):
-    from crucial import __version__
     from functional import print_danger
     from constants import CONSTANTS as C
 else:
-    from .crucial import __version__
     from .functional import print_danger
     from .constants import CONSTANTS as C
 
 def get_logger() -> logging.Logger:
     """Get the logger."""
-    name = f"Cultured Downloader V{__version__}"
-    logger = logging.getLogger(name)
+    logger = logging.getLogger(C.LOGGER_NAME)
 
     logger.setLevel(logging.ERROR)
     separator = "-" * 100
-    formatter = logging.Formatter(f"{separator}\n%(asctime)s [{name}] [%(levelname)s]: %(message)s\n{separator}")
-
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    C.LOG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.FileHandler(
-        filename=C.LOG_FOLDER_PATH.joinpath( f"cultured-downloader_v{__version__}_{current_date}.log"), mode="a"
+    formatter = logging.Formatter(
+        f"{separator}\n%(asctime)s [{C.LOGGER_NAME}] [%(levelname)s]: %(message)s\n{separator}"
     )
+
+    C.LOG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler(filename=C.TODAYS_LOG_FILE_PATH, mode="a")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 

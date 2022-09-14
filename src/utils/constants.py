@@ -4,10 +4,17 @@ import sys
 import struct
 import pathlib
 import platform
+from datetime import datetime
 from dataclasses import dataclass, field
 
 # import third-party libraries
 from colorama import Style
+
+# import local files
+if (__package__ is None or __package__ == ""):
+    from crucial import __version__
+else:
+    from .crucial import __version__
 
 # Code to be executed upon import of this module
 USER_PLATFORM = platform.system()
@@ -45,6 +52,7 @@ class Constants:
     # Application constants
     END: str = Style.RESET_ALL
     USER_PLATFORM: str = USER_PLATFORM
+    LOGGER_NAME: str = f"Cultured Downloader V{__version__}"
     IS_64BITS: bool = (struct.calcsize("P") * 8 == 64) # from https://stackoverflow.com/a/12568652/16377492
     DESKTOP_PATH: pathlib.Path = pathlib.Path.home().joinpath("Desktop")
 
@@ -52,6 +60,9 @@ class Constants:
     ROOT_PY_FILE_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.absolute()
     APP_FOLDER_PATH: pathlib.Path = appDir
     LOG_FOLDER_PATH: pathlib.Path = appDir.joinpath("logs")
+    TODAYS_LOG_FILE_PATH: pathlib.Path = LOG_FOLDER_PATH.joinpath(
+        f"cultured-downloader_v{__version__}_{datetime.now().strftime('%Y-%m-%d')}.log"
+    )
 
     # Applications configuration and cookies file paths
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
