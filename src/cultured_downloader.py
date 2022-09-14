@@ -92,9 +92,13 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
 
     configs: ConfigSchema = load_configs()
     webdriver_download_path = configs.download_directory
-    # language = configs.get("language", "en")
+    # language = configs.language
     login_status = {}
 
+    # Ask before initialising the webdriver since
+    # a change in the webdriver download path will
+    # require the user to re-run the program.
+    change_download_directory(configs=configs)
     with get_driver(download_path=webdriver_download_path) as driver:
         has_fantia_cookie = C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()
         has_pixiv_fanbox_cookie = C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()
@@ -209,7 +213,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                 pass
             elif (user_action == "5"):
                 # Change Default Download Folder
-                pass
+                change_download_directory(configs=configs, print_message=True)
             elif (user_action == "6"):
                 # Login
                 fantia_logged_in = login_status.get("fantia", False)

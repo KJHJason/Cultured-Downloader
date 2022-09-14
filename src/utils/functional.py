@@ -1,6 +1,7 @@
 # import Python's standard libraries
 import re
 import json
+import pathlib
 from typing import Union, Optional, Any
 
 # import local files
@@ -56,7 +57,7 @@ def print_danger(message: Any, **kwargs) -> None:
     print(f"{F.LIGHTRED_EX}{message}{F.RESET}", **kwargs)
 
 def print_warning(message: Any, **kwargs) -> None:
-    """Print a message in yellow.
+    """Print a message in light yellow.
 
     Args:
         message (Any):
@@ -83,7 +84,7 @@ def print_success(message: Any, **kwargs) -> None:
     """
     print(f"{F.LIGHTGREEN_EX}{message}{F.RESET}", **kwargs)
 
-def load_configs() -> Union[bool, BaseModel]:
+def load_configs() -> BaseModel:
     """Load the configs from the config file.
 
     Returns:
@@ -94,10 +95,26 @@ def load_configs() -> Union[bool, BaseModel]:
         with open(C.CONFIG_JSON_FILE_PATH, "r") as f:
             configs = json.load(f)
 
-    return validate_schema(schema=ConfigSchema, data=configs, return_bool=False)
+    schema_obj = validate_schema(schema=ConfigSchema, data=configs, return_bool=False)
+    if (schema_obj is False):
+        # If the config JSON data is invalid,
+        # reset the config file to the default values 
+        # and save it to the config JSON file.
+        schema_obj = ConfigSchema(**{})
+        edit_configs(new_configs=schema_obj.dict())
+
+    # check if the download directory exists
+    download_dir = pathlib.Path(schema_obj.download_directory)
+    if (not download_dir.exists() and not download_dir.is_dir()):
+        # if the download directory does not exist,
+        # reset to the user's desktop folder path.
+        schema_obj.download_directory = str(pathlib.Path.home().joinpath("Desktop", "cultured-downloader"))
+
+    return schema_obj
 
 def edit_configs(new_configs: dict) -> None:
     """Edit the configs in the config file.
+
     Args:
         new_configs (dict):
             The new configuration to save to the config file.
@@ -107,6 +124,60 @@ def edit_configs(new_configs: dict) -> None:
     """
     with open(C.CONFIG_JSON_FILE_PATH, "w") as f:
         json.dump(new_configs, f, indent=4)
+
+def change_download_directory(configs: Optional[ConfigSchema] = None, 
+                              print_message: Optional[bool] = False) -> None:
+    """Change the download directory in the config file.
+
+    Args:
+        configs (ConfigSchema, optional):
+            The configs to edit. If None, the configs will be loaded from the config file.
+        print_message (bool, optional):
+            Whether to print the messages to the user to inform them that the changes have been saved
+            but will require the user to re-run the program for the changes to take effect.
+
+    Returns:
+        None
+    """
+    if (configs is None):
+        configs = load_configs()
+
+    print_warning(f"Your current download directory is\n{configs.download_directory}")
+    change_download_directory = get_input(
+        input_msg="Do you want to change your download directory? (y/N): ",
+        inputs=("y", "n"),
+        default="n"
+    )
+    if (change_download_directory == "y"):
+        while (True):
+            download_directory_path = input("Enter your new download directory (X to cancel): ").strip()
+            if (download_directory_path == ""):
+                print_danger("Please enter a valid download directory.\n")
+                continue
+
+            if (download_directory_path.lower() == "x"):
+                print_warning("Cancelled changing webdriver's download directory.")
+                break
+
+            download_directory_path = pathlib.Path(download_directory_path)
+            if (not download_directory_path.exists() or not download_directory_path.is_dir()):
+                print_danger("Download directory does not exist, please create it first and try again.\n")
+                continue
+
+            download_directory_path = str(download_directory_path)
+            if (configs.download_directory == download_directory_path):
+                print_danger("Download directory is already set to that.\n")
+                continue
+
+            configs.download_directory = download_directory_path
+            edit_configs(configs.dict())
+            print_success(f"Download directory successfully changed to\n{download_directory_path}")
+
+            if (print_message):
+                print_danger("\nImportant: You will need to re-run the program for the changes to take effect.")
+
+            break
+    print()
 
 def print_menu(login_status: dict[str, bool]) -> None:
     """Print the menu for the user to read and enter their desired action
