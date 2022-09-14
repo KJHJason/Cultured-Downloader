@@ -33,7 +33,7 @@ appDir.mkdir(parents=True, exist_ok=True)
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Inputs regex or tuples
-    CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-6xy]$")
+    CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-7xy]$")
 
     # Debug mode (For requesting to the web application hosted on localhost)
     DEBUG_MODE: bool = False
@@ -54,12 +54,14 @@ class Constants:
     LOG_FOLDER_PATH: pathlib.Path = appDir.joinpath("logs")
 
     # Applications configuration and cookies file paths
+    FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
+    PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
     SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
 
     # Spinner JSON path
-    SPINNERS_JSON_PATH: pathlib.Path = ROOT_PY_FILE_PATH.joinpath("utils", "json", "spinners.json")
+    SPINNERS_JSON_PATH: pathlib.Path = ROOT_PY_FILE_PATH.joinpath("json", "spinners.json")
 
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
@@ -68,7 +70,8 @@ class Constants:
     REQ_HEADERS: dict[str, str] = field(
         default_factory=lambda: {
             "User-Agent": 
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) " \
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
             "Content-Type": 
                 "application/json"
         }

@@ -2,32 +2,75 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import selenium.common.exceptions as selenium_exceptions
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from webdriver_manager.chrome import ChromeDriverManager
 
 # import Python's standard libraries
 import time
+import types
 import logging
 import pathlib
-from typing import Optional, Union
 from os import environ
+from typing import Optional, Union, Type
 
 # import local files
 if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
+    from logger import logger
+    from spinner import Spinner
+    from user_data import convert_to_readable_format
     from functional import print_danger, get_input
 else:
     from .constants import CONSTANTS as C
+    from .logger import logger
+    from .spinner import Spinner
+    from .user_data import convert_to_readable_format
     from .functional import print_danger, get_input
 
+class CustomWebDriver(webdriver.Chrome):
+    """Custom chrome webdriver with some modifications."""
+    SHUTDOWN_MSG = "Shutting down webdriver instance..."
+
+    def quit_with_message(self) -> None:
+        """Close the browser and display a message since 
+        it can take quite a while to shut down the webdriver instance."""
+        with Spinner(
+            message=self.SHUTDOWN_MSG,
+            colour="light_yellow", 
+            spinner_type="arc", 
+            spinner_position="left"
+        ):
+            self.quit()
+
+    def __exit__(self, 
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        traceback: Optional[types.TracebackType]
+    ) -> None:
+        """Close the browser and display a message since 
+        it can take quite a while to shut down the webdriver instance."""
+        with Spinner(
+            message=self.SHUTDOWN_MSG,
+            colour="light_yellow", 
+            spinner_type="arc", 
+            spinner_position="left"
+        ):
+            self.quit()
+
+@Spinner(
+    message="Initializing a new webdriver instance...", 
+    colour="light_yellow", 
+    spinner_type="arc", 
+    spinner_position="left"
+)
 def get_driver(
     download_path: Union[pathlib.Path, str],
     headless: Optional[bool] = True, 
     block_images: Optional[int] = 2, 
-    window_size: tuple[int, int] = (1920, 1080)) -> webdriver.Chrome:
+    window_size: tuple[int, int] = (1920, 1080)) -> CustomWebDriver:
     """Get a Chrome webdriver instance.
 
     Args:
@@ -43,7 +86,7 @@ def get_driver(
             The size of the browser window. Defaults to (1920, 1080).
 
     Returns:
-        A Chrome webdriver instance.
+        A Chrome webdriver instance (CustomWebDriver).
     """
     # Configurations for the webdriver manager
     environ["WDM_LOG_LEVEL"] = str(logging.NOTSET)
@@ -77,7 +120,7 @@ def get_driver(
     )
 
     try:
-        driver = webdriver.Chrome(service=ChromeService(driver_path), options=driver_options)
+        driver = CustomWebDriver(service=ChromeService(driver_path), options=driver_options)
     except (selenium_exceptions.WebDriverException):
         print_danger(message="\nFailed to initialise a Chrome webdriver instance.")
         print_danger(message="Please check if you have Google Chrome browser installed on your computer.")
@@ -90,17 +133,17 @@ def get_driver(
     driver.set_window_size(*window_size)
     return driver
 
-def login(current_driver: webdriver.Chrome, website: str, 
-          driver: Optional[webdriver.Chrome] = None) -> Union[None, dict, tuple[dict, bool]]:
+def login(current_driver: CustomWebDriver, website: str,
+          login_status: dict) -> Union[None, dict, tuple[dict, bool]]:
     """Login to the both Fantia and Pixiv Fanbox.
 
     Args:
-        current_driver (webdriver.Chrome):
+        current_driver (CustomWebDriver):
             The current webdriver instance to load the cookies after login.
         website (str):
             The website to login to.
-        driver (webdriver.Chrome, optional):
-            The webdriver instance to use for manual login.
+        login_status (dict):
+            The login status of the website to update for the user to read.
 
     Returns:
         - If login is successful:
@@ -115,7 +158,7 @@ def login(current_driver: webdriver.Chrome, website: str,
         website_url = C.FANTIA_WEBSITE_URL
         login_url = C.FANTIA_LOGIN_URL
         url_verifier = C.FANTIA_VERIFY_LOGIN_URL
-    elif (website == "pixiv"):
+    elif (website == "pixiv_fanbox"):
         cookie_name = C.PIXIV_FANBOX_COOKIE_NAME
         website_url = C.PIXIV_FANBOX_WEBSITE_URL
         login_url = C.PIXIV_FANBOX_LOGIN_URL
@@ -123,32 +166,34 @@ def login(current_driver: webdriver.Chrome, website: str,
     else:
         raise ValueError("Invalid website in login function...")
 
+    website_name = convert_to_readable_format(website)
     login_prompt = get_input(
-            input_msg="Do you want to login to {website} (Y/n)?: ".format(
-                website="Fantia" if (website == "fantia") else "Pixiv Fanbox"
-            ),
-            inputs=("y", "n"),
-            default="y"
+        input_msg=f"Do you want to login to {website_name} (Y/n)?: ",
+        inputs=("y", "n"),
+        default="y"
     )
     if (login_prompt == "n"):
         return
 
     # prepare the current webdriver instance
     # to load the cookies later after the user logins manually
-    current_driver.get(website_url)
+    with Spinner(
+        message="Prepping the current webdriver instance...",
+        colour="light_yellow",
+        spinner_type="arc",
+        spinner_position="left"
+    ):
+        current_driver.get(website_url)
 
-    generated_new_driver = False
-    if (driver is None):
-        driver = get_driver(download_path=".", headless=False, block_images=1, window_size=(800, 800))
-        generated_new_driver = True
-
-    while (1):
-        if (driver.current_url != login_url):
-            driver.get(login_url)
-        time.sleep(1)
-        input("Press ENTER to continue after logging in...")
-
+    driver = get_driver(download_path=".", headless=False, block_images=1, window_size=(800, 800))
+    while (True):
+        browser_was_closed = False
         try:
+            if (driver.current_url != login_url):
+                driver.get(login_url)
+            time.sleep(1)
+
+            input("Press ENTER to continue after logging in...")
             driver.get(url_verifier)
 
             # wait for browser to load the page
@@ -156,15 +201,21 @@ def login(current_driver: webdriver.Chrome, website: str,
             WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located((By.XPATH, "/html/head/title"))
             )
+
             if (driver.current_url == url_verifier):
+                cookie = driver.get_cookie(cookie_name)
+                driver.quit_with_message()
                 break
-            print_danger(message=f"Error: {website.title()} login failed...")
+
+            print_danger(message=f"Error: {website_name} login was not successful...\n")
         except (selenium_exceptions.TimeoutException):
             print_danger(
-                message="Failed to load the page, please ensure that you have an active internet connection."
+                message="Failed to load the page, " \
+                        "please ensure that you have an active internet connection.\n"
             )
-        except (selenium_exceptions.webdriverException):
-            print_danger(message="Note: Please do not close the browser!")
+        except (selenium_exceptions.WebDriverException):
+            print_danger(message=f"Error: {website_name} login failed as the browser was closed...\n")
+            browser_was_closed = True
 
         retry_login = get_input(
             input_msg="Would you like to retry logging in manually? (Y/n): ",
@@ -172,13 +223,11 @@ def login(current_driver: webdriver.Chrome, website: str,
             default="y"
         )
         if (retry_login == "n"):
-            if (generated_new_driver):
-                driver.quit()
+            driver.quit_with_message()
             return
 
-    cookie = driver.get_cookie(cookie_name)
-    if (generated_new_driver):
-        driver.quit()
+        if (browser_was_closed):
+            driver = get_driver(download_path=".", headless=False, block_images=1, window_size=(800, 800))
 
     # a fail-safe to ensure that the
     # current driver is on the correct domain
@@ -193,8 +242,12 @@ def login(current_driver: webdriver.Chrome, website: str,
     current_driver.delete_all_cookies()
     current_driver.add_cookie(cookie)
 
+    # update the login status
+    # to indicate a successful login
+    login_status[website] = True
+
     save_cookie = get_input(
-        input_msg=f"Would you like to save the {website.title()} session cookie for a faster login next time? (Y/n): ",
+        input_msg=f"Would you like to save the {website_name} session cookie for a faster login next time? (Y/n): ",
         inputs=("y", "n"), 
         default="y"
     )
@@ -228,9 +281,99 @@ Enter \"API\" to save your secret key to Cultured Downloader API for security,
 
     return (cookie, save_locally)
 
+def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
+    """Logout from a website.
+
+    Args:
+        driver (webdriver.Chrome):
+            The current webdriver instance.
+        website (str):
+            The website to logout from.
+        login_status (dict):
+            The login status of the website to update for the user to read.
+
+    Returns:
+        None
+    """
+    website_name = convert_to_readable_format(website)
+    confirm_logout = get_input(
+        input_msg=f"Do you want to logout from {website_name} (y/N)?: ",
+        inputs=("y", "n"),
+        default="n"
+    )
+    if (confirm_logout == "n"):
+        return
+
+    if (website == "fantia"):
+        website_url = C.FANTIA_WEBSITE_URL
+    elif (website == "pixiv_fanbox"):
+        website_url = C.PIXIV_FANBOX_WEBSITE_URL
+    else:
+        raise ValueError("Invalid website in logout function...")
+
+    with Spinner(
+        message=f"Logging out from {website_name}...",
+        colour="light_yellow",
+        spinner_type="arc",
+        spinner_position="left"
+    ):
+        # a fail-safe to ensure that the
+        # current driver is on the correct domain
+        # before logging out
+        if (not driver.current_url.startswith(website_url)):
+            driver.get(website_url)
+            time.sleep(3)
+
+        # removes all cookies from the
+        # current driver's current url domain ONLY
+        driver.delete_all_cookies()
+        login_status[website] = False
+
+def load_cookie_to_webdriver(driver: webdriver.Chrome, website: str, login_status: dict, cookie: dict) -> None:
+    """Loads the cookies to the webdriver instance (which takes about 6 seconds).
+
+    Args:
+        driver (webdriver.Chrome):
+            The webdriver instance to load the cookies to.
+        website (str):
+            The website to load the cookies to.
+        login_status (dict):
+            The login status of the website to update for the user to read.
+        cookie (dict):
+            The cookie to load to the webdriver instance.
+
+    Returns:
+        None
+    """
+    if (website == "fantia"):
+        website_url = C.FANTIA_WEBSITE_URL
+        verify_url = C.FANTIA_VERIFY_LOGIN_URL
+    elif (website == "pixiv_fanbox"):
+        website_url = C.PIXIV_FANBOX_WEBSITE_URL
+        verify_url = C.PIXIV_FANBOX_VERIFY_LOGIN_URL
+    else:
+        raise ValueError("Invalid website in load_cookie_to_webdriver function...")
+
+    if (isinstance(cookie, dict)):
+        # Add cookies to the driver
+        driver.get(website_url)
+        time.sleep(3)
+        driver.delete_all_cookies()
+        driver.add_cookie(cookie)
+
+        # verify if the cookies are valid
+        driver.get(verify_url)
+        time.sleep(3)
+        if (driver.current_url != verify_url):
+            driver.delete_all_cookies()
+        else:
+            login_status[website] = True
+    else:
+        logger.warning(f"Invalid cookie type, '{type(cookie)}', for {website}...")
+
 # test codes
 if (__name__ == "__main__"):
     with get_driver(".") as driver:
         driver.get("https://www.google.com")
         print(driver.title)
-        print(driver.page_source)
+        # print(driver.page_source)

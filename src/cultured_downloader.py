@@ -91,66 +91,70 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
 """)
 
     configs: ConfigSchema = load_configs()
-    default_download_path = configs.download_directory
+    webdriver_download_path = configs.download_directory
     # language = configs.get("language", "en")
     login_status = {}
 
-    with get_driver(".") as driver:
-        with Spinner(
-            message="Loading cookies if any...",
-            colour="light_yellow",
-            spinner_position="left",
-            spinner_type="arc"
-        ):
-            load_tasks = [
-                ("fantia", C.FANTIA_WEBSITE_URL, C.FANTIA_VERIFY_LOGIN_URL, load_cookie("fantia")), 
-                ("pixiv", C.PIXIV_FANBOX_WEBSITE_URL, C.PIXIV_FANBOX_VERIFY_LOGIN_URL, load_cookie("pixiv"))
-            ]
-            for tasks in load_tasks:
-                thread = tasks[-1]
-                if (thread is not None):
-                    tasks[-1].join()
+    with get_driver(download_path=webdriver_download_path) as driver:
+        has_fantia_cookie = C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()
+        has_pixiv_fanbox_cookie = C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()
+        if (has_fantia_cookie or has_pixiv_fanbox_cookie):
+            load_cookies = get_input(
+                input_msg="Do you want to load in saved cookies to the current webdriver instance? (Y/n): ",
+                inputs=("y", "n"),
+                default="y"
+            )
+            if (load_cookies == "y"):
+                with Spinner(
+                    message="Loading cookies if valid...",
+                    colour="light_yellow",
+                    spinner_position="left",
+                    spinner_type="arc"
+                ):
+                    load_tasks = (
+                        ("fantia", load_cookie("fantia")), 
+                        ("pixiv_fanbox", load_cookie("pixiv_fanbox"))
+                    )
+                    for tasks in load_tasks:
+                        thread = tasks[-1]
+                        if (thread is not None):
+                            thread.join()
 
-            for website, website_url, verify_url, task in load_tasks:
-                if (task is None):
-                    continue
+                    for website, task in load_tasks:
+                        if (task is None):
+                            continue
 
-                driver.get(website_url)
-                cookies = task.result
-                if (cookies is not None and isinstance(cookies, dict)):
-                    # Add cookies to the driver
-                    login_status[website] = True
-                    time.sleep(3)
-                    driver.delete_all_cookies()
-                    driver.add_cookie(cookies)
+                        cookie = task.result
+                        if (cookie is not None):
+                            load_cookie_to_webdriver(
+                                driver=driver, 
+                                website=website, 
+                                login_status=login_status, 
+                                cookie=cookie
+                            )
 
-                    # verify if the cookies are valid
-                    driver.get(verify_url)
-                    time.sleep(3)
-                    if (driver.current_url != verify_url):
-                        login_status[website] = False
-                        driver.delete_all_cookies()
-                    else:
-                        login_status[website] = True
-
-        fantia_result = pixiv_result = None
+        fantia_result = pixiv_fanbox_result = None
         if (not login_status.get("fantia", False)):
-            fantia_result = login(current_driver=driver, website="fantia")
-            if (fantia_result is not None):
-                login_status["fantia"] = True
+            fantia_result = login(
+                current_driver=driver,
+                website="fantia",
+                login_status=login_status
+            )
         else:
             print_success("Successfully loaded Fantia cookies.")
 
-        if (not login_status.get("pixiv", False)):
-            pixiv_result = login(current_driver=driver, website="pixiv")
-            if (pixiv_result is not None):
-                login_status["pixiv"] = True
+        if (not login_status.get("pixiv_fanbox", False)):
+            pixiv_fanbox_result = login(
+                current_driver=driver,
+                website="pixiv_fanbox",
+                login_status=login_status
+            )
         else:
             print_success("Successfully loaded Pixiv Fanbox cookies.")
 
         save_fantia_cookie = isinstance(fantia_result, tuple)
-        save_pixiv_cookie = isinstance(pixiv_result, tuple)
-        if (save_fantia_cookie or save_pixiv_cookie):
+        save_pixiv_fanbox_cookie = isinstance(pixiv_fanbox_result, tuple)
+        if (save_fantia_cookie or save_pixiv_fanbox_cookie):
             threads_arr = []
             with Spinner(
                 message="Saving cookies...",
@@ -159,23 +163,31 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                 spinner_type="arc"
             ):
                 if (fantia_result is not None and save_fantia_cookie):
-                    fantia_thread = SaveCookieThread(cookie=fantia_result[0], website="fantia", save_locally=fantia_result[1])
+                    fantia_thread = SaveCookieThread(
+                        cookie=fantia_result[0],
+                        website="fantia",
+                        save_locally=fantia_result[1]
+                    )
                     fantia_thread.start()
                     threads_arr.append(fantia_thread)
 
-                if (pixiv_result is not None and save_pixiv_cookie):
-                    pixiv_thread = SaveCookieThread(cookie=pixiv_result[0], website="pixiv", save_locally=pixiv_result[1])
-                    pixiv_thread.start()
-                    threads_arr.append(pixiv_thread)
+                if (pixiv_fanbox_result is not None and save_pixiv_fanbox_cookie):
+                    pixiv_fanbox_thread = SaveCookieThread(
+                        cookie=pixiv_fanbox_result[0],
+                        website="pixiv_fanbox",
+                        save_locally=pixiv_fanbox_result[1]
+                    )
+                    pixiv_fanbox_thread.start()
+                    threads_arr.append(pixiv_fanbox_thread)
 
                 for thread in threads_arr:
                     thread.join()
 
             for thread in threads_arr:
                 if (not thread.result):
-                    print_danger(f"Failed to save {thread.website} cookie.")
+                    print_danger(f"Failed to save {thread.readable_website} cookie.")
 
-        while (1):
+        while (True):
             print_menu(login_status=login_status)
             user_action = get_input(
                 "Enter command: ", regex=C.CMD_REGEX, 
@@ -198,9 +210,32 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
             elif (user_action == "5"):
                 # Change Default Download Folder
                 pass
-            elif (user_action == "6" and not (login_status.get("fantia") or login_status.get("pixiv"))):
+            elif (user_action == "6"):
                 # Login
-                pass
+                fantia_logged_in = login_status.get("fantia", False)
+                pixiv_fanbox_logged_in = login_status.get("pixiv_fanbox", False)
+                if (fantia_logged_in and pixiv_fanbox_logged_in):
+                    print_warning("You are already logged in to both Fantia and Pixiv Fanbox.")
+                    continue
+
+                if (not fantia_logged_in):
+                    login(current_driver=driver, website="fantia", login_status=login_status)
+
+                if (not pixiv_fanbox_logged_in):
+                    login(current_driver=driver, website="pixiv_fanbox", login_status=login_status)
+            elif (user_action == "7"):
+                # logout
+                fantia_logged_in = login_status.get("fantia", False)
+                pixiv_fanbox_logged_in = login_status.get("pixiv_fanbox", False)
+                if (not fantia_logged_in and not pixiv_fanbox_logged_in):
+                    print_warning("You are not logged in to either Fantia or Pixiv Fanbox.")
+                    continue
+
+                if (fantia_logged_in):
+                    logout(driver=driver, website="fantia", login_status=login_status)
+
+                if (pixiv_fanbox_logged_in):
+                    logout(driver=driver, website="pixiv_fanbox", login_status=login_status)
             else:
                 # Report a bug
                 opened_tab = webbrowser.open(C.ISSUE_PAGE, new=2)

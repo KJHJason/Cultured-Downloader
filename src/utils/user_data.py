@@ -2,6 +2,7 @@
 import abc
 import json
 import base64
+import pathlib
 import binascii
 import threading
 from typing import Optional, Any, Union
@@ -288,6 +289,25 @@ class UserData(abc.ABC):
     def __repr__(self) -> str:
         return f"Data<{self.data}>"
 
+def convert_website_to_path(website: str) -> pathlib.Path:
+    """Converts a website to a path.
+
+    Args:
+        website (str): 
+            The website to convert.
+
+    Returns:
+        pathlib.Path: 
+            The path of the website.
+    """
+    path_table = {
+        "fantia": C.FANTIA_COOKIE_PATH,
+        "pixiv_fanbox": C.PIXIV_FANBOX_COOKIE_PATH,
+    }
+    if (website not in path_table):
+        raise ValueError(f"Invalid website: {website}")
+    return path_table[website]
+
 class SecureCookie(UserData):
     """Creates a way to securely deal with the user's saved
     cookies that is stored on the user's machine."""
@@ -305,18 +325,18 @@ class SecureCookie(UserData):
             raise TypeError("cookie_data must be of type dict or None")
 
         self.__website = website
+        self.__cookie_path = convert_website_to_path(self.__website)
         super().__init__(data=cookie_data)
 
     def save_data(self) -> None:
         """Saves the cookie data to the user's machine in a file."""
-        cookie_path = C.APP_FOLDER_PATH.joinpath(f"{self.__website}-cookie")
-        cookie_path.parent.mkdir(parents=True, exist_ok=True)
+        self.__cookie_path.parent.mkdir(parents=True, exist_ok=True)
 
         encrypted_cookies, nonce = chacha_encrypt(plaintext=json.dumps(self.data), key=self.secret_key)
 
         encoded_cookies = base64.b64encode(encrypted_cookies)
         nonce = base64.b64encode(nonce)
-        with open(cookie_path, "w") as f:
+        with open(self.__cookie_path, "w") as f:
             f.write(".".join((encoded_cookies.decode("utf-8"), nonce.decode("utf-8"))))
 
     def load_data(self) -> Union[dict, None]:
@@ -326,13 +346,12 @@ class SecureCookie(UserData):
             dict | None: 
                 The cookie data or None if the file does not exist or is invalid.
         """
-        cookie_path = C.APP_FOLDER_PATH.joinpath(f"{self.__website}-cookie")
-        if (not cookie_path.exists() and not cookie_path.is_file()):
+        if (not self.__cookie_path.exists() and not self.__cookie_path.is_file()):
             return
 
-        with open(cookie_path, "r") as f:
+        with open(self.__cookie_path, "r") as f:
             try:
-                encrypted_data, nonce = f.read().split(".")
+                encrypted_data, nonce = f.read().split(sep=".")
             except (ValueError):
                 raise APIServerError("Invalid cookie data...")
 
@@ -347,11 +366,11 @@ class SecureCookie(UserData):
                 chacha_decrypt(ciphertext=encrypted_data, key=self.secret_key, nonce=nonce)
             )
         except (InvalidTag, json.JSONDecodeError):
-            cookie_path.unlink()
+            self.__cookie_path.unlink()
             return
 
         if (not validate_schema(schema=CookieSchema, data=decrypted_cookie)):
-            cookie_path.unlink()
+            self.__cookie_path.unlink()
             return
 
         return decrypted_cookie
@@ -361,6 +380,25 @@ class SecureCookie(UserData):
 
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
+
+def convert_to_readable_format(website: str) -> str:
+    """Converts a website string to a readable format.
+
+    Args:
+        website (str): 
+            The website to convert.
+
+    Returns:
+        str: 
+            The readable format of the website.
+    """
+    readable_table = {
+        "fantia": "Fantia",
+        "pixiv_fanbox": "Pixiv Fanbox",
+    }
+    if (website not in readable_table):
+        raise ValueError(f"Invalid website: {website}")
+    return readable_table[website]
 
 class SaveCookieThread(threading.Thread):
     """Thread to securely save the cookie to a file."""
@@ -378,6 +416,7 @@ class SaveCookieThread(threading.Thread):
         super().__init__()
         self.cookie = cookie
         self.website = website
+        self.readable_website = convert_to_readable_format(self.website)
         self.save_locally = save_locally
         self.result = None
 
@@ -399,11 +438,10 @@ class LoadCookieThread(threading.Thread):
         Attributes:
             website (str):
                 The website to load the cookie for.
-            load_locally (bool):
-                Whether to load the cookie locally or from Cultured Downloader API.
         """
         super().__init__()
         self.website = website
+        self.readable_website = convert_to_readable_format(self.website)
         self.result = None
 
     def run(self) -> None:
@@ -425,7 +463,7 @@ def load_cookie(website: str) -> Union[None, LoadCookieThread]:
         dict | None:
             The cookie data if it exists, otherwise None.
     """
-    cookie_path = C.APP_FOLDER_PATH.joinpath(f"{website}-cookie")
+    cookie_path = convert_website_to_path(website)
     if (not cookie_path.exists() and not cookie_path.is_file()):
         return None
 
@@ -434,10 +472,12 @@ def load_cookie(website: str) -> Union[None, LoadCookieThread]:
     return load_cookie_thread
 
 __all__ = [
+    "load_cookie",
     "SecureCookie",
     "SaveCookieThread",
     "LoadCookieThread",
-    "load_cookie"
+    "convert_website_to_path",
+    "convert_to_readable_format",
 ]
 
 # test codes

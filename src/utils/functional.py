@@ -114,12 +114,13 @@ def print_menu(login_status: dict[str, bool]) -> None:
     Args:
         login_status (dict[str, bool]):
             The login status of the user,
-            E.g. {"pixiv": False, "fantia": True}
+            E.g. {"pixiv_fanbox": False, "fantia": True}
 
     Returns:
         None
     """
-    fantia_status, pixiv_status = login_status.get("fantia"), login_status.get("pixiv")
+    fantia_status = login_status.get("fantia")
+    pixiv_status = login_status.get("pixiv_fanbox")
     print(f"""{F.LIGHTYELLOW_EX}
 > Login Status...
 > Fantia: {'Logged In' if (fantia_status) else 'Guest (Not logged in)'}
@@ -136,6 +137,8 @@ def print_menu(login_status: dict[str, bool]) -> None:
 
     if (not fantia_status or not pixiv_status):
         print(f"      {F.LIGHTBLUE_EX}6. Login{C.END}")
+    if (fantia_status or pixiv_status):
+        print(f"      {F.LIGHTBLUE_EX}7. Logout{C.END}")
 
     print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{C.END} ----------------------")
     print(f"      {F.LIGHTRED_EX}Y. Report a bug{C.END}")
@@ -185,7 +188,7 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         # fail-safe if the list or tuple passed in does not contain all lowercase strings
         inputs = tuple(str(inp).lower() for inp in inputs)
 
-    while (1):
+    while (True):
         if (extra_information is not None):
             print_warning(extra_information)
 

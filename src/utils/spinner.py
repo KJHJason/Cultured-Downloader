@@ -1,10 +1,11 @@
 # import Python's standard libraries
 import time
 import json
+import types
 import itertools
 import threading
 import functools
-from typing import Any, Callable, Union, Optional
+from typing import Callable, Union, Optional, Type
 
 # import third-party libraries
 from colorama import Fore as F, Style as S
@@ -15,7 +16,7 @@ if (__package__ is None or __package__ == ""):
 else:
     from .constants import CONSTANTS as C
 
-def convert_str_to_ansii(colour: Union[str, None]) -> str:
+def convert_str_to_ansi(colour: Union[str, None]) -> str:
     """Convert a string to ANSI escape code using colorama.
 
     Args:
@@ -83,7 +84,7 @@ class Spinner:
         self.__spinner = itertools.cycle(spinner_info["frames"])
         self.__interval = 0.001 * spinner_info["interval"]
         self.__message = message
-        self.__colour = convert_str_to_ansii(colour)
+        self.__colour = convert_str_to_ansi(colour)
         self.__position = spinner_position.lower()
         if (self.__position not in ("left", "right")):
             raise ValueError("Invalid spinner position.")
@@ -108,6 +109,7 @@ class Spinner:
 
     def __run_spinner(self):
         """Run and display the spinner animation with the text message."""
+        print("\r", self.CLEAR_LINE, end="", sep="") # clear any existing text on the same line
         while (not self.__stop_event.is_set()):
             print(
                 f"\r{self.__colour}",
@@ -143,7 +145,10 @@ class Spinner:
         """Start the spinner object and to be used in a context manager and returns self."""
         return self.start()
 
-    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+    def __exit__(self, 
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        traceback: Optional[types.TracebackType]) -> None:
         """Stops the spinner when used in a context manager."""
         self.stop()
 
@@ -161,6 +166,10 @@ if (__name__ == "__main__"):
 
     @Spinner("loading", colour="yellow", spinner_position="left", spinner_type="aesthetic")
     def test():
-        time.sleep(15)
+        time.sleep(5)
 
+    try:
+        input("test 1231231231231231231231 : ")
+    except (KeyboardInterrupt, EOFError):
+        pass
     test()
