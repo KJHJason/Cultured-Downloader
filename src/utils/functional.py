@@ -310,7 +310,7 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
 
         user_input = input(input_msg).strip()
         if (not is_case_sensitive):
-            user_input.lower()
+            user_input = user_input.lower()
 
         if (inputs is not None and user_input in inputs):
             return user_input
