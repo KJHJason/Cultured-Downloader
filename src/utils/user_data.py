@@ -44,6 +44,8 @@ class UserData(abc.ABC):
     to be overridden in the child class:
         - save_data
         - load_data
+        - __str__
+        - __repr__
 
     The data stored on the user's machine is encrypted client-side using ChaCha20-Poly1305.
     However, the user can opt to store their generated secret key on Cultured Downloader API
@@ -378,11 +380,13 @@ class UserData(abc.ABC):
     def server_digest_method(self) -> str:
         return self.__server_digest_method
 
+    @abc.abstractmethod
     def __str__(self) -> str:
-        return str(self.data)
+        pass
 
+    @abc.abstractmethod
     def __repr__(self) -> str:
-        return f"Data<{self.data}>"
+        pass
 
 def convert_website_to_path(website: str) -> pathlib.Path:
     """Converts a website to a path.
