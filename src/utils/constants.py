@@ -4,6 +4,7 @@ import sys
 import struct
 import pathlib
 import platform
+import warnings
 from datetime import datetime
 from dataclasses import dataclass, field
 
@@ -18,6 +19,8 @@ else:
 
 # Code to be executed upon import of this module
 USER_PLATFORM = platform.system()
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
+             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
 
 DIRECTORIES = {
     "Windows": "AppData/Roaming/Cultured-Downloader",
@@ -27,20 +30,28 @@ DIRECTORIES = {
 
 appDir = pathlib.Path.home().absolute()
 if (USER_PLATFORM in DIRECTORIES):
+    if (USER_PLATFORM not in ("Windows", "Linux")):
+        warnings.warn(
+            message="Your operating system has not been tested so you may experience issues.", 
+            category=RuntimeWarning
+        )
     appDir = appDir.joinpath(DIRECTORIES[USER_PLATFORM])
+    appDir.mkdir(parents=True, exist_ok=True)
 else:
-    print("Your OS is not supported")
+    print(f"Your OS, '{USER_PLATFORM}', is not supported")
     print("Supported OS: Windows, Linux, macOS...")
     print("Please enter any key to exit")
+    input()
     sys.exit(1)
-
-appDir.mkdir(parents=True, exist_ok=True)
 
 @dataclass(frozen=True, repr=False)
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Inputs regex or tuples
-    CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-7xy]$")
+    CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-8xy]$")
+    GOOGLE_API_KEY_REGEX: re.Pattern[str] = re.compile(
+        r"^AIza[\w-]{35}$|^[xX]$" # based on https://github.com/odomojuli/RegExAPI
+    )
 
     # Debug mode (For requesting to the web application hosted on localhost)
     DEBUG_MODE: bool = False
@@ -64,9 +75,14 @@ class Constants:
         f"cultured-downloader_v{__version__}_{datetime.now().strftime('%Y-%m-%d')}.log"
     )
 
-    # Applications configuration and cookies file paths
+    # For the webdriver manager
+    DRIVER_FOLDER_PATH: pathlib.Path = APP_FOLDER_PATH.joinpath("webdrivers")
+    DRIVER_CACHE_RANGE: int = 7 # days
+
+    # Applications configuration, Google Drive API key, and cookies file paths
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
+    GOOGLE_DRIVE_API_KEY_PATH: pathlib.Path = appDir.joinpath("gdrive-api-key")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
     SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
@@ -78,11 +94,17 @@ class Constants:
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
 
     # For downloading
+    USER_AGENT: str = USER_AGENT
     REQ_HEADERS: dict[str, str] = field(
         default_factory=lambda: {
             "User-Agent": 
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) " \
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
+                USER_AGENT,
+        }
+    )
+    JSON_REQ_HEADERS: dict[str, str] = field(
+        default_factory=lambda: {
+            "User-Agent": 
+                USER_AGENT,
             "Content-Type": 
                 "application/json"
         }

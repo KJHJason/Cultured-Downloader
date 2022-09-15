@@ -22,13 +22,13 @@ if (__package__ is None or __package__ == ""):
     from logger import logger
     from spinner import Spinner
     from user_data import convert_to_readable_format
-    from functional import print_danger, get_input
+    from functional import print_danger, get_input, save_key_prompt
 else:
     from .constants import CONSTANTS as C
     from .logger import logger
     from .spinner import Spinner
     from .user_data import convert_to_readable_format
-    from .functional import print_danger, get_input
+    from .functional import print_danger, get_input, save_key_prompt
 
 class CustomWebDriver(webdriver.Chrome):
     """Custom chrome webdriver with some modifications."""
@@ -61,7 +61,7 @@ class CustomWebDriver(webdriver.Chrome):
             self.quit()
 
 @Spinner(
-    message="Initializing a new webdriver instance...", 
+    message="Initialising a new webdriver instance...", 
     colour="light_yellow", 
     spinner_type="arc", 
     spinner_position="left"
@@ -88,17 +88,20 @@ def get_driver(
     Returns:
         A Chrome webdriver instance (CustomWebDriver).
     """
-    # Configurations for the webdriver manager
+    # Disable webdriver manager's logs from displaying
     environ["WDM_LOG_LEVEL"] = str(logging.NOTSET)
-    CACHE_RANGE_IN_DAYS = 7
 
     # Download the webdriver
-    driver_path = ChromeDriverManager(path=C.APP_FOLDER_PATH, cache_valid_range=CACHE_RANGE_IN_DAYS).install()
+    driver_path = ChromeDriverManager(
+        path=C.DRIVER_FOLDER_PATH,
+        cache_valid_range=C.DRIVER_CACHE_RANGE
+    ).install()
 
     # Create an options object and add
     # the desired configurations to the webdriver
     driver_options = ChromeOptions()
     driver_options.headless = headless
+    driver_options.add_argument(f"user-agent={C.USER_AGENT}")
 
     # performance settings for webdriver
     driver_options.add_argument("--disable-gpu")
@@ -168,7 +171,7 @@ def login(current_driver: CustomWebDriver, website: str,
 
     website_name = convert_to_readable_format(website)
     login_prompt = get_input(
-        input_msg=f"Do you want to login to {website_name} (Y/n)?: ",
+        input_msg=f"\nDo you want to login to {website_name} (Y/n)?: ",
         inputs=("y", "n"),
         default="y"
     )
@@ -191,16 +194,18 @@ def login(current_driver: CustomWebDriver, website: str,
         try:
             if (driver.current_url != login_url):
                 driver.get(login_url)
-            time.sleep(1)
-
             input("Press ENTER to continue after logging in...")
-            driver.get(url_verifier)
 
-            # wait for browser to load the page
-            time.sleep(1)
-            WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-            )
+            with Spinner(
+                message="Verifying login...",
+                colour="light_yellow",
+                spinner_type="arc",
+                spinner_position="left"
+            ):
+                driver.get(url_verifier)
+                WebDriverWait(driver, 30).until(
+                    EC.presence_of_element_located((By.XPATH, "/html/head/title"))
+                )
 
             if (driver.current_url == url_verifier):
                 cookie = driver.get_cookie(cookie_name)
@@ -218,7 +223,7 @@ def login(current_driver: CustomWebDriver, website: str,
             browser_was_closed = True
 
         retry_login = get_input(
-            input_msg="Would you like to retry logging in manually? (Y/n): ",
+            input_msg=f"Would you like to retry logging in manually to {website_name}? (Y/n): ",
             inputs=("y", "n"), 
             default="y"
         )
@@ -228,13 +233,6 @@ def login(current_driver: CustomWebDriver, website: str,
 
         if (browser_was_closed):
             driver = get_driver(download_path=".", headless=False, block_images=1, window_size=(800, 800))
-
-    # a fail-safe to ensure that the
-    # current driver is on the correct domain
-    # before loading the obtained cookie
-    if (not current_driver.current_url.startswith(website_url)):
-        current_driver.get(website_url)
-        time.sleep(3)
 
     # removes all cookies from the
     # current driver's current url domain ONLY
@@ -254,32 +252,8 @@ def login(current_driver: CustomWebDriver, website: str,
     if (save_cookie == "n"):
         return cookie
 
-    if (C.KEY_ID_TOKEN_JSON_PATH.exists() and C.KEY_ID_TOKEN_JSON_PATH.is_file()):
-        save_locally = False
-    elif (C.SECRET_KEY_PATH.exists() and C.SECRET_KEY_PATH.is_file()):
-        save_locally = True
-    else:
-        save_key = get_input(
-            input_msg="Enter your desired action (API, LOCAL): ",
-            inputs=("api", "local"),
-            extra_information="""
-Would you like to save your secret key on your computer or on Cultured Downloader API?
-
-If you were to save it on Cultured Downloader API, 
-key rotations will be enabled for you and it is more secure if your computer is being shared.
-Important Note: If you are currently using a proxy such as a VPN, please disable it as the saved key
-is mapped to your IP address (Don't worry as your IP address is hashed on our database).
-
-However, if you prefer faster loading speed than security, 
-you can instead opt for your key to be saved locally on your computer.
-
-TLDR (Too long, didn't read):
-Enter \"API\" to save your secret key to Cultured Downloader API for security,
-\"LOCAL\" otherwise to save it locally on your computer for faster loading time.
-"""     )
-        save_locally = True if (save_key == "local") else False
-
-    return (cookie, save_locally)
+    save_key_locally = save_key_prompt()
+    return (cookie, save_key_locally)
 
 def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
     """Logout from a website.
@@ -317,20 +291,30 @@ def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
         spinner_type="arc",
         spinner_position="left"
     ):
-        # a fail-safe to ensure that the
-        # current driver is on the correct domain
-        # before logging out
+        # ensure that the current driver 
+        # is on the correct domain before deleting all cookies
+        timeout = False
         if (not driver.current_url.startswith(website_url)):
             driver.get(website_url)
-            time.sleep(3)
+            try:
+                WebDriverWait(driver, 30).until(
+                    EC.presence_of_element_located((By.XPATH, "/html/head/title"))
+                )
+            except (selenium_exceptions.TimeoutException):
+                logger.warning(f"The webdriver timed out while trying to logout from {website}.")
+                timeout = True
 
-        # removes all cookies from the
-        # current driver's current url domain ONLY
-        driver.delete_all_cookies()
-        login_status[website] = False
+        if (not timeout):
+            # removes all cookies from the
+            # current driver's current url domain ONLY
+            driver.delete_all_cookies()
+            login_status[website] = False
+
+    if (timeout):
+        print_danger(f"Timeout Error: Failed to logout from {website_name}...\n")
 
 def load_cookie_to_webdriver(driver: webdriver.Chrome, website: str, login_status: dict, cookie: dict) -> None:
-    """Loads the cookies to the webdriver instance (which takes about 6 seconds).
+    """Loads the cookies to the webdriver instance.
 
     Args:
         driver (webdriver.Chrome):
@@ -357,13 +341,23 @@ def load_cookie_to_webdriver(driver: webdriver.Chrome, website: str, login_statu
     if (isinstance(cookie, dict)):
         # Add cookies to the driver
         driver.get(website_url)
-        time.sleep(3)
-        driver.delete_all_cookies()
-        driver.add_cookie(cookie)
+        try:
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.XPATH, "/html/head/title"))
+            )
 
-        # verify if the cookies are valid
-        driver.get(verify_url)
-        time.sleep(3)
+            driver.delete_all_cookies()
+            driver.add_cookie(cookie)
+
+            # verify if the cookies are valid
+            driver.get(verify_url)
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.XPATH, "/html/head/title"))
+            )
+        except (selenium_exceptions.TimeoutException):
+            logger.warning(f"The webdriver timed out while trying to load the {website} cookie.")
+            return
+
         if (driver.current_url != verify_url):
             driver.delete_all_cookies()
         else:

@@ -109,7 +109,7 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
         "algorithm": "rsa",
         "digest_method": digest_method.name,
     }
-    with httpx.Client(headers=C.REQ_HEADERS, http2=True, timeout=30) as client:
+    with httpx.Client(headers=C.JSON_REQ_HEADERS, http2=True, timeout=30) as client:
         res = client.post(f"{C.API_URL}/public-key", json=json_data)
 
     if (res.status_code != 200):

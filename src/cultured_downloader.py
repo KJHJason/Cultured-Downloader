@@ -31,8 +31,8 @@ def download_github_files(filename: str, folder: pathlib.Path, folder_name: str)
     Returns:
         None
     """
-    if (not folder.exists() and not folder.is_dir()):
-        folder.mkdir()
+    if (not folder.exists() or not folder.is_dir()):
+        folder.mkdir(parents=True)
 
     file_path = folder.joinpath(filename)
     if (file_path.exists() and file_path.is_file()):
@@ -61,7 +61,7 @@ except (ModuleNotFoundError, ImportError):
     schemas_files = ("__init__.py", "api_response.py", "config.py", "cookies.py")
     json_files = ("spinners.json",)
 
-    for filenames, folder_name in zip([py_files, schemas_files, json_files], ["utils", "utils/schemas", "utils/json"]):
+    for filenames, folder_name in zip([py_files, schemas_files, json_files], ["utils", "utils/schemas", "json"]):
         folder_path = FILE_PATH.joinpath(*folder_name.split(sep="/"))
         for filename in filenames:
             download_github_files(filename=filename, folder=folder_path, folder_name=folder_name)
@@ -71,7 +71,6 @@ from utils import __version__, __author__, __license__
 
 # import third-party libraries
 from colorama import Fore as F, init as colorama_init
-from requests.exceptions import JSONDecodeError
 
 def main() -> None:
     """Main function where the program starts."""
@@ -90,15 +89,23 @@ Warning:
 Please read the term of use at https://github.com/KJHJason/Cultured-Downloader before using this program.{C.END}
 """)
 
-    configs: ConfigSchema = load_configs()
+    configs = load_configs()
     webdriver_download_path = configs.download_directory
     # language = configs.language
     login_status = {}
+    gdrive_api_key = load_gdrive_api_key()
 
     # Ask before initialising the webdriver since
     # a change in the webdriver download path will
     # require the user to re-run the program.
     change_download_directory(configs=configs)
+
+    # Check if the user has an active internet connection
+    # before initialising the webdriver.
+    if (not check_internet_connection()):
+        print_danger("No internet connection detected. Please check your internet connection and try again.")
+        return
+
     with get_driver(download_path=webdriver_download_path) as driver:
         has_fantia_cookie = C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()
         has_pixiv_fanbox_cookie = C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()
@@ -192,7 +199,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                     print_danger(f"Failed to save {thread.readable_website} cookie.")
 
         while (True):
-            print_menu(login_status=login_status)
+            print_menu(login_status=login_status, gdrive_api_key=gdrive_api_key)
             user_action = get_input(
                 "Enter command: ", regex=C.CMD_REGEX, 
                 warning="Invalid command input, please enter a valid command from the menu above."
@@ -215,6 +222,28 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                 # Change Default Download Folder
                 change_download_directory(configs=configs, print_message=True)
             elif (user_action == "6"):
+                # Google Drive API key configurations
+                if (gdrive_api_key is None):
+                    # Setup Google Drive API key
+                    gdrive_api_key = get_input(
+                        input_msg="Enter Google Drive API key (X to cancel): ",
+                        regex=C.GOOGLE_API_KEY_REGEX,
+                        is_case_sensitive=True,
+                        warning="Invalid Google Drive API key. Please enter a valid Google Drive API key."
+                    )
+                    if (gdrive_api_key in ("x", "X")):
+                        continue
+
+                    save_gdrive_api_key(api_key=gdrive_api_key)
+                    print_success("Successfully saved Google Drive API key.")
+                else:
+                    # Remove Google Drive API key
+                    if (C.GOOGLE_DRIVE_API_KEY_PATH.exists() and C.GOOGLE_DRIVE_API_KEY_PATH.is_file()):
+                        C.GOOGLE_DRIVE_API_KEY_PATH.unlink()
+                    gdrive_api_key = None
+                    print_success("Successfully removed Google Drive API key.")
+
+            elif (user_action == "7"):
                 # Login
                 fantia_logged_in = login_status.get("fantia", False)
                 pixiv_fanbox_logged_in = login_status.get("pixiv_fanbox", False)
@@ -227,7 +256,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
 
                 if (not pixiv_fanbox_logged_in):
                     login(current_driver=driver, website="pixiv_fanbox", login_status=login_status)
-            elif (user_action == "7"):
+            elif (user_action == "8"):
                 # logout
                 fantia_logged_in = login_status.get("fantia", False)
                 pixiv_fanbox_logged_in = login_status.get("pixiv_fanbox", False)

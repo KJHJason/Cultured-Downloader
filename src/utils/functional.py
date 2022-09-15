@@ -14,6 +14,7 @@ else:
     from .constants import CONSTANTS as C
 
 # import third-party libraries
+import httpx
 from colorama import Fore as F
 from pydantic import BaseModel
 import pydantic.error_wrappers as pydantic_error_wrappers 
@@ -85,11 +86,41 @@ def print_success(message: Any, **kwargs) -> None:
     """
     print(f"{F.LIGHTGREEN_EX}{message}{F.RESET}", **kwargs)
 
-def load_configs() -> BaseModel:
+def save_key_prompt() -> bool:
+    """Prompt the user where necessary if they want to save their 
+    generated secret key on their computer or to Cultured Downloader API."""
+    if (C.KEY_ID_TOKEN_JSON_PATH.exists() and C.KEY_ID_TOKEN_JSON_PATH.is_file()):
+        return False
+
+    if (C.SECRET_KEY_PATH.exists() and C.SECRET_KEY_PATH.is_file()):
+        return True
+
+    save_key = get_input(
+        input_msg="Enter your desired action (API, LOCAL): ",
+        inputs=("api", "local"),
+        extra_information="""
+Would you like to save your secret key on your computer or on Cultured Downloader API?
+
+If you were to save it on Cultured Downloader API, 
+key rotations will be enabled for you and it is more secure if your computer is being shared.
+Important Note: If you are currently using a proxy such as a VPN, please disable it as the saved key
+is mapped to your IP address (Don't worry as your IP address is hashed on our database).
+
+However, if you prefer faster loading speed than security, 
+you can instead opt for your key to be saved locally on your computer.
+
+TLDR (Too long, didn't read):
+Enter \"API\" to save your secret key to Cultured Downloader API for security,
+\"LOCAL\" otherwise to save it locally on your computer for faster loading time.
+""")
+    return True if (save_key == "local") else False
+
+def load_configs() -> ConfigSchema:
     """Load the configs from the config file.
 
     Returns:
-        Any: The configs loaded from the config file.
+        ConfigSchema: 
+            The configs loaded from the config file.
     """
     configs = {}
     if (C.CONFIG_JSON_FILE_PATH.exists() and C.CONFIG_JSON_FILE_PATH.is_file()):
@@ -106,7 +137,7 @@ def load_configs() -> BaseModel:
 
     # check if the download directory exists
     download_dir = pathlib.Path(schema_obj.download_directory)
-    if (not download_dir.exists() and not download_dir.is_dir()):
+    if (not download_dir.exists() or not download_dir.is_dir()):
         # if the download directory does not exist,
         # reset to the user's desktop folder path.
         schema_obj.download_directory = str(pathlib.Path.home().joinpath("Desktop", "cultured-downloader"))
@@ -180,13 +211,15 @@ def change_download_directory(configs: Optional[ConfigSchema] = None,
             break
     print()
 
-def print_menu(login_status: dict[str, bool]) -> None:
-    """Print the menu for the user to read and enter their desired action
+def print_menu(login_status: dict[str, bool], gdrive_api_key: Union[str, None]) -> None:
+    """Print the menu for the user to read and enter their desired action.
 
     Args:
         login_status (dict[str, bool]):
             The login status of the user,
             E.g. {"pixiv_fanbox": False, "fantia": True}
+        gdrive_api_key (str | None):
+            The Google Drive API key if it exists, None otherwise.
 
     Returns:
         None
@@ -207,10 +240,15 @@ def print_menu(login_status: dict[str, bool]) -> None:
 ---------------------- {F.LIGHTYELLOW_EX}Config Options{C.END} ----------------------
       {F.LIGHTBLUE_EX}5. Change Default Download Folder{C.END}""")
 
+    if (gdrive_api_key is None):
+        print(f"""      {F.LIGHTBLUE_EX}6. Set Google Drive API Key{C.END}""")
+    else:
+        print(f"""      {F.LIGHTBLUE_EX}6. Remove Google Drive API Key{C.END}""")
+
     if (not fantia_status or not pixiv_status):
-        print(f"      {F.LIGHTBLUE_EX}6. Login{C.END}")
+        print(f"      {F.LIGHTBLUE_EX}7. Login{C.END}")
     if (fantia_status or pixiv_status):
-        print(f"      {F.LIGHTBLUE_EX}7. Logout{C.END}")
+        print(f"      {F.LIGHTBLUE_EX}8. Logout{C.END}")
 
     print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{C.END} ----------------------")
     print(f"      {F.LIGHTRED_EX}Y. Report a bug{C.END}")
@@ -218,8 +256,8 @@ def print_menu(login_status: dict[str, bool]) -> None:
     print()
 
 def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = None, 
-              regex: re.Pattern[str] = None, default: Optional[str] = None,
-              warning: str = None, extra_information: Optional[str] = None) -> Any:
+              regex: re.Pattern[str] = None, default: Optional[str] = None, warning: str = None, 
+              extra_information: Optional[str] = None, is_case_sensitive: Optional[bool] = False) -> Any:
     """Get the expected input from the user.
 
     Args:
@@ -238,6 +276,9 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
             The warning message to print to the user if the input is invalid.
         extra_information (str, optional):
             The extra information to print to the user before the input message.
+        is_case_sensitive (bool, optional):
+            Whether the input is case sensitive or not. 
+            If so, the inputs and the user's input will not be converted to lowercase.
 
     Returns:
         The input the user entered.
@@ -257,14 +298,20 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         raise TypeError("warning must be a str")
 
     if (inputs is not None):
-        # fail-safe if the list or tuple passed in does not contain all lowercase strings
-        inputs = tuple(str(inp).lower() for inp in inputs)
+        # fail-safe if the list or tuple passed in does not contain strings
+        if (not is_case_sensitive):
+            inputs = tuple(str(inp).lower() for inp in inputs)
+        else:
+            inputs = tuple(str(inp) for inp in inputs)
 
     while (True):
         if (extra_information is not None):
             print_warning(extra_information)
 
-        user_input = input(input_msg).strip().lower()
+        user_input = input(input_msg).strip()
+        if (not is_case_sensitive):
+            user_input.lower()
+
         if (inputs is not None and user_input in inputs):
             return user_input
         elif (regex is not None and regex.match(user_input)):
@@ -286,3 +333,17 @@ def delete_empty_and_old_logs() -> None:
             file_info = log_file.stat()
             if (file_info.st_size == 0 or file_info.st_mtime < (time.time() - 2592000)):
                 log_file.unlink()
+
+def check_internet_connection() -> bool:
+    """Check if the user has an internet connection by sending a HEAD request to google.com
+
+    Returns:
+        bool: 
+            True if the user has an internet connection, False otherwise.
+    """
+    with httpx.Client(http2=True, headers=C.REQ_HEADERS, timeout=5) as client:
+        try:
+            client.head("https://www.google.com")
+        except (httpx.ConnectTimeout):
+            return False
+    return True

@@ -1,8 +1,10 @@
 # import Python's standard libraries
+import re
 import abc
 import json
 import base64
 import pathlib
+import warnings
 import binascii
 import threading
 from typing import Optional, Any, Union
@@ -12,17 +14,20 @@ if (__name__ == "__main__"):
     from errors import APIServerError
     from cryptography_operations import *
     from constants import CONSTANTS as C
+    from spinner import Spinner
     from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
-    from functional import validate_schema
+    from functional import validate_schema, save_key_prompt
 else:
     from .errors import APIServerError
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
+    from .spinner import Spinner
     from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
-    from .functional import validate_schema
+    from .functional import validate_schema, save_key_prompt
 
 # Import Third-party Libraries
 import httpx
+from pydantic import BaseModel
 
 # Note: the cryptography library should have been
 # installed upon import of cryptography_operations.py
@@ -39,21 +44,23 @@ class UserData(abc.ABC):
     to be overridden in the child class:
         - save_data
         - load_data
-        - encrypt
-        - decrypt
 
-    The data stored on the user's machine is encrypted using ChaCha20-Poly1305
-    which is done server-side as only the server knows the symmetric key used.
+    The data stored on the user's machine is encrypted client-side using ChaCha20-Poly1305.
+    However, the user can opt to store their generated secret key on Cultured Downloader API
+    or on their own machine if they wish for a faster loading time.
 
-    During transmission to Cultured Downloader API, the data is encrypted using asymmetric encryption
-    on top of HTTPS as a form of layered security. Note that the RSA key pair is generated within 
-    the current application execution and is not stored on the user's machine.
+    During transmission to Cultured Downloader API, the user's secret key or key ID token
+    is encrypted using asymmetric encryption on top of HTTPS as a form of layered security.
+    Note that the RSA key pair is generated within the 
+    current application execution and is not stored on the user's machine.
     """
-    def __init__(self, data: Optional[Any] = None) -> None:
+    def __init__(self, data_path: pathlib.Path, data: Optional[Any] = None) -> None:
         """Constructor for the UserData class.
 
         Attributes:
-            data (Any): 
+            data_path (pathlib.Path):
+                The path to the file where the data is stored.
+            data (Any, Optional): 
                 The data to be handled. If None, the data will be loaded 
                 from the saved file in the application's directory via the
                 load_data method that must be configured in the child class.
@@ -66,11 +73,99 @@ class UserData(abc.ABC):
         self.__server_digest_method = "sha512"  if (self.__client_digest_method == "sha512") \
                                                 else "sha256"
 
+        if (not isinstance(data_path, pathlib.Path)):
+            raise TypeError(f"Expected pathlib.Path object, got {type(data_path)} for data_path argument.")
+        self.__data_path = data_path
+
         self.__secret_key = self.__load_key()
         if (data is None):
             self.data = self.load_data()
         else:
             self.data = data
+
+    def encrypt_data(self, data: Optional[Any] = None) -> None:
+        """Encrypts the cookie data to the user's machine in a file."""
+        self.__data_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if (data is None):
+            data = self.data
+        encrypted_data, nonce = chacha_encrypt(plaintext=data, key=self.secret_key)
+
+        encoded_data = base64.b64encode(encrypted_data)
+        nonce = base64.b64encode(nonce)
+        with open(self.__data_path, "w") as f:
+            f.write(".".join((encoded_data.decode("utf-8"), nonce.decode("utf-8"))))
+
+    def decrypt_data(self, decode: Optional[bool] = True, schema: Optional[BaseModel] = None, 
+                     regex: Optional[re.Pattern] = None) -> Union[bytes, str, dict, None]:
+        """Decrypt the cookie data from the user's machine from the saved file.
+
+        Args:
+            decode (bool):
+                Whether to decode the plaintext from bytes to a string. 
+                (Must be True if validating against a schema or a regex.)
+            schema (BaseModel):
+                The schema to validate the data against.
+                (Will parse the decrypted data into a dictionary if not None.)
+            regex (re.Pattern):
+                The regex pattern to validate the data against.
+
+        Returns:
+            bytes | str | dict | None: 
+                The data or None if the file does not exist or is invalid.
+        """
+        if (schema is not None and regex is not None):
+            raise ValueError("Cannot validate against both schema and regex at the same time")
+
+        if (not decode and (schema is not None or regex is not None)):
+            warnings.warn("Cannot validate schema/regex if decode is False. Hence, decode will be set to True.")
+            decode = True
+
+        if (not self.__data_path.exists() or not self.__data_path.is_file()):
+            return
+
+        with open(self.__data_path, "r") as f:
+            try:
+                encrypted_data, nonce = f.read().split(sep=".")
+            except (ValueError):
+                raise APIServerError("Invalid data...")
+
+        try:
+            encrypted_data = base64.b64decode(encrypted_data)
+            nonce = base64.b64decode(nonce)
+        except (binascii.Error, TypeError, ValueError):
+            raise APIServerError("Invalid data...")
+
+        try:
+            decrypted_data = chacha_decrypt(
+                ciphertext=encrypted_data, 
+                key=self.secret_key, 
+                nonce=nonce
+            )
+        except (InvalidTag):
+            self.__data_path.unlink()
+            return
+
+        if (decode):
+            decrypted_data = decrypted_data.decode("utf-8")
+
+        if (regex is not None):
+            if (regex.match(decrypted_data) is None):
+                self.__data_path.unlink()
+                return
+
+        if (schema is not None):
+            try:
+                decrypted_data = json.loads(decrypted_data)
+            except (json.JSONDecodeError):  
+                self.__data_path.unlink()
+                return
+
+            if (not validate_schema(schema, decrypted_data)):
+                self.__data_path.unlink()
+                return
+
+        return decrypted_data
 
     @abc.abstractmethod
     def save_data(self) -> None:
@@ -181,7 +276,7 @@ class UserData(abc.ABC):
                     data=key_id_token
                 )
         }
-        with httpx.Client(http2=True, headers=C.REQ_HEADERS, cookies=cookies, timeout=30) as client:
+        with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
             res = client.post(f"{C.API_URL}/get-key", json=json_data)
 
         if (res.status_code not in (200, 404, 400)):
@@ -242,7 +337,7 @@ class UserData(abc.ABC):
                 )
         }
 
-        with httpx.Client(http2=True, headers=C.REQ_HEADERS, cookies=cookies, timeout=30) as client:
+        with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
             res = client.post(f"{C.API_URL}/save-key", json=json_data)
 
         if (res.status_code not in (200, 400)):
@@ -315,65 +410,28 @@ class SecureCookie(UserData):
         """Initializes the SecureCookie class.
 
         Args:
-            cookie_data (dict): 
-                The cookie data to be handled. If None, the cookie data will be loaded 
-                from the saved file in the application's directory.
             website (str):
                 The website that the cookie data is for.
+            cookie_data (dict, Optional): 
+                The cookie data to be handled. If None, the cookie data will be loaded 
+                from the saved file in the application's directory.
         """
         if (not isinstance(cookie_data, Union[None, dict])):
             raise TypeError("cookie_data must be of type dict or None")
 
         self.__website = website
-        self.__cookie_path = convert_website_to_path(self.__website)
-        super().__init__(data=cookie_data)
+        super().__init__(
+            data=cookie_data, 
+            data_path=convert_website_to_path(self.__website)
+        )
 
     def save_data(self) -> None:
-        """Saves the cookie data to the user's machine in a file."""
-        self.__cookie_path.parent.mkdir(parents=True, exist_ok=True)
-
-        encrypted_cookies, nonce = chacha_encrypt(plaintext=json.dumps(self.data), key=self.secret_key)
-
-        encoded_cookies = base64.b64encode(encrypted_cookies)
-        nonce = base64.b64encode(nonce)
-        with open(self.__cookie_path, "w") as f:
-            f.write(".".join((encoded_cookies.decode("utf-8"), nonce.decode("utf-8"))))
+        """Saves the data to the user's machine."""
+        return self.encrypt_data(data=json.dumps(self.data))
 
     def load_data(self) -> Union[dict, None]:
-        """Loads the cookie data from the user's machine from the saved file.
-
-        Returns:
-            dict | None: 
-                The cookie data or None if the file does not exist or is invalid.
-        """
-        if (not self.__cookie_path.exists() and not self.__cookie_path.is_file()):
-            return
-
-        with open(self.__cookie_path, "r") as f:
-            try:
-                encrypted_data, nonce = f.read().split(sep=".")
-            except (ValueError):
-                raise APIServerError("Invalid cookie data...")
-
-        try:
-            encrypted_data = base64.b64decode(encrypted_data)
-            nonce = base64.b64decode(nonce)
-        except (binascii.Error, TypeError, ValueError):
-            raise APIServerError("Invalid cookie data...")
-
-        try:
-            decrypted_cookie = json.loads(
-                chacha_decrypt(ciphertext=encrypted_data, key=self.secret_key, nonce=nonce)
-            )
-        except (InvalidTag, json.JSONDecodeError):
-            self.__cookie_path.unlink()
-            return
-
-        if (not validate_schema(schema=CookieSchema, data=decrypted_cookie)):
-            self.__cookie_path.unlink()
-            return
-
-        return decrypted_cookie
+        """Loads the data from the user's machine from the saved file."""
+        return self.decrypt_data(decode=True, schema=CookieSchema)
 
     def __str__(self) -> str:
         return json.dumps(self.data)
@@ -399,6 +457,80 @@ def convert_to_readable_format(website: str) -> str:
     if (website not in readable_table):
         raise ValueError(f"Invalid website: {website}")
     return readable_table[website]
+
+class SecureGDriveAPIKey(UserData):
+    """Creates a way to securely deal with the user's saved
+    Google Drive API key that is stored on the user's machine."""
+    def __init__(self, api_key: Optional[str] = None) -> None:
+        """Initializes the SecureGDriveAPIKey class.
+
+        Args:
+            api_key (str, Optional): 
+                The API key data to be handled. If None, the API key data will be loaded 
+                from the saved file in the application's directory.
+        """
+        if (not isinstance(api_key, Union[None, str])):
+            raise TypeError("api_key must be of type str or None")
+
+        super().__init__(
+            data=api_key, 
+            data_path=C.GOOGLE_DRIVE_API_KEY_PATH
+        )
+
+    def save_data(self) -> None:
+        """Saves the data to the user's machine."""
+        return self.encrypt_data(data=self.data)
+
+    def load_data(self) -> Union[dict, None]:
+        """Loads the data from the user's machine from the saved file."""
+        return self.decrypt_data(decode=True, regex=C.GOOGLE_API_KEY_REGEX)
+
+    def __str__(self) -> str:
+        return json.dumps(self.data)
+
+    def __repr__(self) -> str:
+        return f"GDriveAPIKey<{self.data}>"
+
+def save_gdrive_api_key(api_key: str) -> None:
+    """Save the Google Drive API key.
+
+    Args:
+        api_key (str):
+            The Google Drive API key to save.
+
+    Returns:
+        None
+    """
+    save_key_locally = save_key_prompt()
+    with Spinner(
+        message="Saving Google Drive API Key...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc"
+    ):
+        gdrive_api_key_obj = SecureGDriveAPIKey(api_key)
+        gdrive_api_key_obj.save_key(save_locally=save_key_locally)
+        gdrive_api_key_obj.save_data()
+
+@Spinner(
+    message="Loading Google Drive API Key...",
+    colour="light_yellow",
+    spinner_position="left",
+    spinner_type="arc"
+)
+def load_gdrive_api_key() -> Union[None, str]:
+    """Load the Google Drive API key.
+
+    Returns:
+        None | str: 
+            The Google Drive API key if it exists, None otherwise.
+    """
+    if (not C.GOOGLE_DRIVE_API_KEY_PATH.exists() or not C.GOOGLE_DRIVE_API_KEY_PATH.is_file()):
+        return
+
+    with open(C.GOOGLE_DRIVE_API_KEY_PATH, "rb") as f:
+        encrypted_api_key = f.read()
+    return SecureGDriveAPIKey(encrypted_api_key).data
 
 class SaveCookieThread(threading.Thread):
     """Thread to securely save the cookie to a file."""
@@ -464,7 +596,7 @@ def load_cookie(website: str) -> Union[None, LoadCookieThread]:
             The cookie data if it exists, otherwise None.
     """
     cookie_path = convert_website_to_path(website)
-    if (not cookie_path.exists() and not cookie_path.is_file()):
+    if (not cookie_path.exists() or not cookie_path.is_file()):
         return None
 
     load_cookie_thread = LoadCookieThread(website=website)
@@ -474,19 +606,21 @@ def load_cookie(website: str) -> Union[None, LoadCookieThread]:
 __all__ = [
     "load_cookie",
     "SecureCookie",
+    "SecureGDriveAPIKey",
     "SaveCookieThread",
     "LoadCookieThread",
+    "save_gdrive_api_key",
+    "load_gdrive_api_key",
     "convert_website_to_path",
     "convert_to_readable_format",
 ]
 
 # test codes
 if (__name__ == "__main__"):
-    s = SecureCookie("fantia", {"test": "test"})
+    # Google API key from random repo on GitHub
+    # t = SecureGDriveAPIKey("AIzaSyBxZMqLD3wMDMItNtV45E7aPVZCPsS2jGg")
+    # t.save_key(save_locally=False)
+    # t.save_data()
+
+    s = SecureGDriveAPIKey()
     print(s.data)
-    # s.save_key()
-    # print(SecureCookie({"test": "test"}).secret_key)
-    # print(len(SecureCookie({"test": "test"}).secret_key))
-    # s.save_data("fantia")
-    t = SecureCookie("fantia")
-    print(t.data)
