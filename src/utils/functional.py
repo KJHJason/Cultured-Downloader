@@ -7,13 +7,15 @@ from typing import Union, Optional, Any
 
 # import local files
 if (__package__ is None or __package__ == ""):
+    from spinner import Spinner
     from schemas.config import ConfigSchema
-    from errors import APIServerError
+    from errors import APIServerError, CulturedDownloaderBaseError
     from constants import CONSTANTS as C
     from logger import logger
 else:
+    from .spinner import Spinner
     from .schemas.config import ConfigSchema
-    from .errors import APIServerError
+    from .errors import APIServerError, CulturedDownloaderBaseError
     from .constants import CONSTANTS as C
     from .logger import logger
 
@@ -22,6 +24,25 @@ import httpx
 from colorama import Fore as F
 from pydantic import BaseModel
 import pydantic.error_wrappers as pydantic_error_wrappers 
+
+def website_to_readable_format(website: str) -> str:
+    """Converts a website string to a readable format.
+
+    Args:
+        website (str): 
+            The website to convert.
+
+    Returns:
+        str: 
+            The readable format of the website.
+    """
+    readable_table = {
+        "fantia": "Fantia",
+        "pixiv_fanbox": "Pixiv Fanbox",
+    }
+    if (website not in readable_table):
+        raise ValueError(f"Invalid website: {website}")
+    return readable_table[website]
 
 def log_api_error(error_msg: str) -> None:
     """Log any errors such as Cultured Downloader API's 5XX errors.
@@ -344,6 +365,165 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         else:
             print_danger(f"Sorry, please enter a valid input." if (warning is None) else warning)
 
+def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
+    """Get the URLs from the user.
+
+    Args:
+        website (str):
+            The website the user is downloading from.
+        creator_page (bool):
+            Whether the user is downloading from a creator's page or not.
+
+    Returns:
+        list[str] | None: 
+            The list of validated URLs, None if the user wishes to exit.
+    """
+    url_guide_and_regex_table = {
+        "fantia": (
+            ("https://fantia.jp/posts/1234567", C.FANTIA_POST_REGEX),
+            ("https://fantia.jp/fanclubs/1234/posts", C.FANTIA_CREATOR_POSTS_REGEX)
+        ),
+        "pixiv_fanbox": (
+            ("https://www.fanbox.cc/@creator_name/posts/1234567 or " \
+             "https://creator_name.fanbox.cc/posts/1234567", C.PIXIV_FANBOX_POST_REGEX),
+            ("https://www.fanbox.cc/@creator_name/posts or " \
+             "https://creator_name.fanbox.cc/posts", C.PIXIV_FANBOX_CREATOR_POSTS_REGEX)
+        )
+    }
+    if (website not in url_guide_and_regex_table):
+        raise ValueError(f"Invalid website: {website}")
+
+    extra_info = "This option is for URL(s) such as "
+    url_guide, input_regex = url_guide_and_regex_table[website][creator_page]
+    extra_info += url_guide
+    extra_info += "\nAdditionally, you can enter multiple URLs separated by a comma."
+
+    while (True):
+        print_warning(extra_info)
+        user_input = input("\nEnter URL(s) (X to cancel): ").strip()
+        if (user_input == ""):
+            print_danger("User Error: Please enter a URL")
+            continue
+        elif (user_input in ("X", "x")):
+            return
+
+        urls_arr = [url.strip() for url in user_input.split(",")]
+        unique_urls = list(dict.fromkeys(urls_arr, None))
+        if (len(unique_urls) != len(urls_arr)):
+            print_danger("Warning: Duplicate URLs have been removed from your input...")
+
+        formatted_urls = []
+        for url in unique_urls:
+            # Since a url can end with a slash,
+            # remove it so for the regex validations
+            # and to add GET parameters to the url.
+            if (url.endswith("/")):
+                url = url[:-1]
+
+            if (input_regex.fullmatch(url) is not None):
+                formatted_urls.append(url)
+                continue
+
+            error_msg = "User Error: The URL, {url}, is invalid.\n" \
+                        "Please make sure {suggestion} correct and try again.".format(
+                            url=url,
+                            suggestion="all the URLs entered are" \
+                                        if (len(url) > 1) \
+                                        else "the URL entered is"
+                        )
+            print_danger(error_msg)
+            break
+        else:
+            # print out the formatted URLs and confirm with the user
+            print_warning("\nThe following URLs will be downloaded:\n{urls}".format(
+                urls=", ".join(formatted_urls)
+            ))
+            confirm = get_input(
+                input_msg="Do you wish to download from these URLs? (Y/n): ",
+                inputs=("y", "n"),
+                default="y",
+            )
+            if (confirm == "n"):
+                continue
+
+            # Since there is no need to get more inputs 
+            # from the user for downloading posts,
+            # return the formatted URLs.
+            if (not creator_page):
+                return formatted_urls
+            else:
+                break
+
+    # get page number from user
+    page_num_prompt = "\nPlease enter {} (X to cancel): ".format(
+        f"{len(formatted_urls)} page numbers corresponding to the entered URLs" \
+        if (len(formatted_urls > 1)) \
+        else "a page number"
+    )
+    while (True):
+        print_warning(
+            "\nPlease enter the page numbers you wish to download from corresponding to the URLs you entered." \
+            "\nFor example, if you entered 2 URLs, you will enter something like '1, 1-3' to indicate " \
+            "that you wish to download from the 1st page of the first URL and the 1st to 3rd page of the second URL."
+        )
+        page_inputs = input(page_num_prompt).strip()
+        if (page_inputs == ""):
+            print_danger("User Error: Please enter a page number")
+            continue
+
+        page_nums_arr = [page_num.strip() for page_num in page_inputs.split(",")]
+        if (len(page_nums_arr) != len(unique_urls)):
+            print_danger(
+                "User Error: The number of page numbers entered does not match the number of URLs entered"
+            )
+            continue
+
+        for page_num in page_nums_arr:
+            if (C.PAGE_NUM_REGEX.fullmatch(page_num) is None):
+                print_danger(f"User Error: The page number, {page_num}, is invalid.")
+                print_danger("Please enter in the correct format such as '1, 1-3' and try again.")
+                break
+        else:
+            # TODO: process the page numbers and append them to the URLs as GET parameters
+            pass
+
+def format_post_page_title(title: str, website: str) -> tuple[str, str]:
+    """Formats post page title to get the post title and creator name.
+
+    Args:
+        title (str):
+            The post page title.
+        website (str):
+            The website the post is from.
+
+    Returns:
+        tuple[str, str]:
+            The post title and the creator name (post_title, creator_name).
+
+    Raises:
+        CulturedDownloaderBaseError:
+            If the website's post page title format has likely changed.
+    """
+    regex_table = {
+        "fantia":
+            C.FANTIA_POST_TITLE_REGEX,
+        "pixiv_fanbox":
+            C.PIXIV_FANBOX_POST_TITLE_REGEX
+    }
+    if (website not in regex_table):
+        raise ValueError(f"Invalid website: {website}")
+
+    title_regex = regex_table[website]
+    match = title_regex.fullmatch(title)
+    if (match is not None):
+        # Returns in the format (post_title, creator_name)
+        return (match.group(1), match.group(2))
+
+    raise CulturedDownloaderBaseError(
+        f"{website_to_readable_format(website)}'s post page title format has likely changed, " \
+        "please raise an issue on Cultured Downloader's GitHub repository page."
+    )
+
 def delete_empty_and_old_logs() -> None:
     """Delete all empty log files and log files
     older than 30 days except for the current day's log file.
@@ -357,6 +537,12 @@ def delete_empty_and_old_logs() -> None:
             if (file_info.st_size == 0 or file_info.st_mtime < (time.time() - 2592000)):
                 log_file.unlink()
 
+@Spinner(
+    message="Checking for an active internet connection...",
+    colour="light_yellow",
+    spinner_type="arc",
+    spinner_position="left"
+)
 def check_internet_connection() -> bool:
     """Check if the user has an internet connection by sending a HEAD request to google.com
 

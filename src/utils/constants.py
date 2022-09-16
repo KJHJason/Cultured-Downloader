@@ -109,28 +109,29 @@ class Constants:
                 "application/json"
         }
     )
-    POST_NUM_FOLDER_NAME: re.Pattern[str] = re.compile(r"^(Post-)(\d+)$")
-    PAGE_NUM: re.Pattern[str] = re.compile(r"^([1-9]\d*)(-([1-9]\d*))?$")
+    PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"^[1-9]\d*(-[1-9]\d*)?$")
 
     # For Fantia URLs
     FANTIA_COOKIE_NAME: str = "_session_id"
     FANTIA_WEBSITE_URL: str = "https://fantia.jp/"
     FANTIA_LOGIN_URL: str = "https://fantia.jp/sessions/signin"
     FANTIA_VERIFY_LOGIN_URL: str = "https://fantia.jp/mypage/users/plans"
-    FANTIA_POST: re.Pattern[str] = re.compile(r"^(https://fantia.jp/posts/)\d+$")
-    FANTIA_CREATOR_POSTS: re.Pattern[str] = re.compile(r"^(https://fantia.jp/fanclubs/)\d+(/posts)$")
+    FANTIA_POST_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/posts/\d+$")
+    FANTIA_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/fanclubs/\d+(/posts)?$")
+    FANTIA_POST_TITLE_REGEX: re.Pattern[str] = re.compile(r"^(.*) - (.*)の投稿｜ファンティア\[Fantia\]$")
 
     # For Pixiv Fanbox URLs
     PIXIV_FANBOX_COOKIE_NAME: str = "FANBOXSESSID"
     PIXIV_FANBOX_WEBSITE_URL: str = "https://www.fanbox.cc/"
     PIXIV_FANBOX_LOGIN_URL: str = "https://www.fanbox.cc/login"
     PIXIV_FANBOX_VERIFY_LOGIN_URL: str = "https://www.fanbox.cc/creators/supporting"
-    PIXIV_FANBOX_POST: re.Pattern[str] = re.compile(
-        r"^(https://www.fanbox.cc/@)[\w&.-]+(/posts/)\d+$|^(https://)[\w&.-]+(.fanbox.cc/posts/)\d+$"
+    PIXIV_FANBOX_POST_REGEX: re.Pattern[str] = re.compile(
+        r"^https://(www\.fanbox\.cc/@[\w&.-]+|[\w&.-]+\.fanbox\.cc)/posts/\d+$"
     )
-    PIXIV_FANBOX_CREATOR_POSTS: re.Pattern[str] = re.compile(
-        r"^(https://www.fanbox.cc/@)[\w&.-]+(/posts)$|^(https://)[\w&.-]+(.fanbox.cc/posts)$"
+    PIXIV_FANBOX_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(
+        r"^https://(www\.fanbox\.cc/@[\w&.-]+|[\w&.-]+\.fanbox\.cc)(/posts)?$"
     )
+    PIXIV_FANBOX_POST_TITLE_REGEX: re.Pattern[str] = re.compile(r"^(.*)｜(.*)｜pixivFANBOX$")
 
 CONSTANTS = Constants()
 

@@ -18,7 +18,7 @@ if (__name__ == "__main__"):
     from spinner import Spinner
     from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken
     from functional import  validate_schema, save_key_prompt, \
-                            print_danger, load_configs, edit_configs, log_api_error
+                            print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 else:
     from .errors import APIServerError
     from .cryptography_operations import *
@@ -27,7 +27,7 @@ else:
     from .spinner import Spinner
     from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken
     from .functional import validate_schema, save_key_prompt, \
-                            print_danger, load_configs, edit_configs, log_api_error
+                            print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 
 # Import Third-party Libraries
 import httpx
@@ -463,25 +463,6 @@ class SecureCookie(UserData):
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
 
-def convert_to_readable_format(website: str) -> str:
-    """Converts a website string to a readable format.
-
-    Args:
-        website (str): 
-            The website to convert.
-
-    Returns:
-        str: 
-            The readable format of the website.
-    """
-    readable_table = {
-        "fantia": "Fantia",
-        "pixiv_fanbox": "Pixiv Fanbox",
-    }
-    if (website not in readable_table):
-        raise ValueError(f"Invalid website: {website}")
-    return readable_table[website]
-
 class SecureGDriveAPIKey(UserData):
     """Creates a way to securely deal with the user's saved
     Google Drive API key that is stored on the user's machine."""
@@ -594,7 +575,7 @@ class SaveCookieThread(threading.Thread):
         super().__init__(**threading_kwargs)
         self.cookie = cookie
         self.website = website
-        self.readable_website = convert_to_readable_format(self.website)
+        self.readable_website = website_to_readable_format(self.website)
         self.save_locally = save_locally
         self.result = None
 
@@ -621,7 +602,7 @@ class LoadCookieThread(threading.Thread):
         """
         super().__init__(**threading_kwargs)
         self.website = website
-        self.readable_website = convert_to_readable_format(self.website)
+        self.readable_website = website_to_readable_format(self.website)
         self.result = None
 
     def run(self) -> None:
@@ -702,8 +683,7 @@ __all__ = [
     "load_cookies",
     "save_gdrive_api_key",
     "load_gdrive_api_key",
-    "convert_website_to_path",
-    "convert_to_readable_format",
+    "convert_website_to_path"
 ]
 
 # test codes

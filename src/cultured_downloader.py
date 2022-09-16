@@ -146,16 +146,16 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                 return
             elif (user_action == "1"):
                 # Download images from Fantia post(s)
-                pass
+                user_urls_arr = get_user_urls(website="fantia", creator_page=False)
             elif (user_action == "2"):
                 # Download all Fantia posts from creator(s)
-                pass
+                user_urls_arr = get_user_urls(website="fantia", creator_page=True)
             elif (user_action == "3"):
                 # Download images from pixiv Fanbox post(s)
-                pass
+                user_urls_arr = get_user_urls(website="pixiv_fanbox", creator_page=False)
             elif (user_action == "4"):
                 # Download all pixiv Fanbox posts from a creator(s)
-                pass
+                user_urls_arr = get_user_urls(website="pixiv_fanbox", creator_page=True)
             elif (user_action == "5"):
                 # Change Default Download Folder
                 change_download_directory(configs=configs, print_message=True)

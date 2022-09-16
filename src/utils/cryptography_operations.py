@@ -115,7 +115,7 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
         try:
             res = client.post(f"{C.API_URL}/public-key", json=json_data)
         except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
-            logger.error(f"httpx error while saving key:\n{e}")
+            logger.error(f"httpx error while retrieving API's public key:\n{e}")
             raise
 
     if (res.status_code != 200):

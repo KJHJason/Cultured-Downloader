@@ -21,14 +21,14 @@ if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
     from logger import logger
     from spinner import Spinner
-    from user_data import convert_to_readable_format, load_cookies
-    from functional import print_danger, get_input, save_key_prompt
+    from user_data import load_cookies
+    from functional import print_danger, get_input, save_key_prompt, website_to_readable_format
 else:
     from .constants import CONSTANTS as C
     from .logger import logger
     from .spinner import Spinner
-    from .user_data import convert_to_readable_format, load_cookies
-    from .functional import print_danger, get_input, save_key_prompt
+    from .user_data import load_cookies
+    from .functional import print_danger, get_input, save_key_prompt, website_to_readable_format
 
 class CustomWebDriver(webdriver.Chrome):
     """Custom chrome webdriver with some modifications."""
@@ -171,7 +171,7 @@ def login(current_driver: CustomWebDriver, website: str,
     else:
         raise ValueError("Invalid website in login function...")
 
-    website_name = convert_to_readable_format(website)
+    website_name = website_to_readable_format(website)
     login_prompt = get_input(
         input_msg=f"\nDo you want to login to {website_name} (Y/n)?: ",
         inputs=("y", "n"),
@@ -275,7 +275,7 @@ def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
     Returns:
         None
     """
-    website_name = convert_to_readable_format(website)
+    website_name = website_to_readable_format(website)
     confirm_logout = get_input(
         input_msg=f"Do you want to logout from {website_name} (y/N)?: ",
         inputs=("y", "n"),
