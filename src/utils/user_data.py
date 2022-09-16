@@ -16,14 +16,14 @@ if (__name__ == "__main__"):
     from constants import CONSTANTS as C
     from spinner import Spinner
     from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
-    from functional import validate_schema, save_key_prompt
+    from functional import validate_schema, save_key_prompt, print_danger
 else:
     from .errors import APIServerError
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
     from .spinner import Spinner
     from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
-    from .functional import validate_schema, save_key_prompt
+    from .functional import validate_schema, save_key_prompt, print_danger
 
 # Import Third-party Libraries
 import httpx
@@ -531,14 +531,11 @@ def load_gdrive_api_key() -> Union[None, str]:
     """
     if (not C.GOOGLE_DRIVE_API_KEY_PATH.exists() or not C.GOOGLE_DRIVE_API_KEY_PATH.is_file()):
         return
-
-    with open(C.GOOGLE_DRIVE_API_KEY_PATH, "rb") as f:
-        encrypted_api_key = f.read()
-    return SecureGDriveAPIKey(encrypted_api_key).data
+    return SecureGDriveAPIKey().data
 
 class SaveCookieThread(threading.Thread):
     """Thread to securely save the cookie to a file."""
-    def __init__(self, cookie: dict, website: str, save_locally: bool):
+    def __init__(self, cookie: dict, website: str, save_locally: bool, **threading_kwargs) -> None:
         """Constructor for the SaveCookieThread class.
 
         Attributes:
@@ -548,8 +545,10 @@ class SaveCookieThread(threading.Thread):
                 The website to save the cookie for.
             save_locally (bool):
                 Whether to save the cookie locally or on Cultured Downloader API.
+            threading_kwargs (dict):
+                The keyword arguments for the threading.Thread class.
         """
-        super().__init__()
+        super().__init__(**threading_kwargs)
         self.cookie = cookie
         self.website = website
         self.readable_website = convert_to_readable_format(self.website)
@@ -568,14 +567,16 @@ class SaveCookieThread(threading.Thread):
 
 class LoadCookieThread(threading.Thread):
     """Thread to securely load the cookie from a file."""
-    def __init__(self, website: str):
+    def __init__(self, website: str, **threading_kwargs):
         """Constructor for the LoadCookieThread class.
 
         Attributes:
             website (str):
                 The website to load the cookie for.
+            threading_kwargs (dict):
+                The keyword arguments for the threading.Thread class.
         """
-        super().__init__()
+        super().__init__(**threading_kwargs)
         self.website = website
         self.readable_website = convert_to_readable_format(self.website)
         self.result = None
@@ -588,31 +589,74 @@ class LoadCookieThread(threading.Thread):
 
         self.result = secure_cookie.data
 
-def load_cookie(website: str) -> Union[None, LoadCookieThread]:
+def load_cookies(*websites: list[str]) -> list[LoadCookieThread]:
     """Loads the cookie from the user's machine.
 
     Args:
-        website (str):
-            The website to load the cookie for.
+        websites (list[str]):
+            The websites to load the cookies for.
 
     Returns:
-        dict | None:
-            The cookie data if it exists, otherwise None.
+        list[LoadCookieThread]:
+            The list of LoadCookieThread objects that have finished loading the cookies.
     """
-    cookie_path = convert_website_to_path(website)
-    if (not cookie_path.exists() or not cookie_path.is_file()):
-        return None
+    threads_arr = []
+    for website in websites:
+        cookie_path = convert_website_to_path(website)
+        if (not cookie_path.exists() or not cookie_path.is_file()):
+            continue
 
-    load_cookie_thread = LoadCookieThread(website=website)
-    load_cookie_thread.start()
-    return load_cookie_thread
+        thread = LoadCookieThread(website=website)
+        thread.start()
+        threads_arr.append(thread)
+
+    for thread in threads_arr:
+        thread.join()
+    return threads_arr
+
+def save_cookies(*login_results: Union[tuple[dict, str, bool], None]) -> None:
+    """Saves the cookies to the user's machine in separate threads if the user chose to do so.
+
+    Args:
+        login_results (list[tuple[dict, str, bool]]):
+            The login result from the website.
+
+    Returns:
+        None
+    """
+    threads_arr = []
+    for result in login_results:
+        if (not isinstance(result, tuple) or len(result) != 3):
+            continue
+
+        thread_task = SaveCookieThread(
+            cookie=result[0], 
+            website=result[1], 
+            save_locally=result[2]
+        )
+        thread_task.start()
+        threads_arr.append(thread_task)
+
+    with Spinner(
+        message="Saving cookies...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc"
+    ):
+        for thread in threads_arr:
+            thread.join()
+
+    for thread in threads_arr:
+        if (not thread.result):
+            print_danger(f"Failed to save {thread.readable_website} cookie.")
 
 __all__ = [
-    "load_cookie",
     "SecureCookie",
     "SecureGDriveAPIKey",
     "SaveCookieThread",
     "LoadCookieThread",
+    "save_cookies",
+    "load_cookies",
     "save_gdrive_api_key",
     "load_gdrive_api_key",
     "convert_website_to_path",

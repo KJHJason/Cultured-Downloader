@@ -347,3 +347,13 @@ def check_internet_connection() -> bool:
         except (httpx.ConnectTimeout):
             return False
     return True
+
+def user_has_saved_cookies() -> bool:
+    """Check if the user has saved cookies for Fantia and Pixiv Fanbox.
+
+    Returns:
+        bool: 
+            True if the user has saved any cookies, False otherwise.
+    """
+    return ((C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()) or \
+            (C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()))

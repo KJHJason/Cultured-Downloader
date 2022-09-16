@@ -21,13 +21,13 @@ if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
     from logger import logger
     from spinner import Spinner
-    from user_data import convert_to_readable_format
+    from user_data import convert_to_readable_format, load_cookies
     from functional import print_danger, get_input, save_key_prompt
 else:
     from .constants import CONSTANTS as C
     from .logger import logger
     from .spinner import Spinner
-    from .user_data import convert_to_readable_format
+    from .user_data import convert_to_readable_format, load_cookies
     from .functional import print_danger, get_input, save_key_prompt
 
 class CustomWebDriver(webdriver.Chrome):
@@ -161,11 +161,13 @@ def login(current_driver: CustomWebDriver, website: str,
         website_url = C.FANTIA_WEBSITE_URL
         login_url = C.FANTIA_LOGIN_URL
         url_verifier = C.FANTIA_VERIFY_LOGIN_URL
+        cookie_exists = C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()
     elif (website == "pixiv_fanbox"):
         cookie_name = C.PIXIV_FANBOX_COOKIE_NAME
         website_url = C.PIXIV_FANBOX_WEBSITE_URL
         login_url = C.PIXIV_FANBOX_LOGIN_URL
         url_verifier = C.PIXIV_FANBOX_VERIFY_LOGIN_URL
+        cookie_exists = C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()
     else:
         raise ValueError("Invalid website in login function...")
 
@@ -245,7 +247,11 @@ def login(current_driver: CustomWebDriver, website: str,
     login_status[website] = True
 
     save_cookie = get_input(
-        input_msg=f"Would you like to save the {website_name} session cookie for a faster login next time? (Y/n): ",
+        input_msg="Would you like to {action} the {website_name} session cookie {preposition} your computer for a faster login next time? (Y/n): ".format(
+            action="save" if (not cookie_exists) else "overwrite",
+            website_name=website_name,
+            preposition="to" if (not cookie_exists) else "on"
+        ),
         inputs=("y", "n"), 
         default="y"
     )
@@ -253,7 +259,7 @@ def login(current_driver: CustomWebDriver, website: str,
         return cookie
 
     save_key_locally = save_key_prompt()
-    return (cookie, save_key_locally)
+    return (cookie, website, save_key_locally)
 
 def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
     """Logout from a website.
@@ -313,32 +319,43 @@ def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
     if (timeout):
         print_danger(f"Timeout Error: Failed to logout from {website_name}...\n")
 
-def load_cookie_to_webdriver(driver: webdriver.Chrome, website: str, login_status: dict, cookie: dict) -> None:
-    """Loads the cookies to the webdriver instance.
+@Spinner(
+    message="Loading cookies if valid...",
+    colour="light_yellow",
+    spinner_position="left",
+    spinner_type="arc"
+)
+def load_cookies_to_webdriver(driver: webdriver.Chrome, login_status: dict) -> None:
+    """Decrypts the user's saved encrypted cookie and loads the cookies to the webdriver instance.
 
     Args:
         driver (webdriver.Chrome):
             The webdriver instance to load the cookies to.
-        website (str):
-            The website to load the cookies to.
         login_status (dict):
             The login status of the website to update for the user to read.
-        cookie (dict):
-            The cookie to load to the webdriver instance.
 
     Returns:
         None
     """
-    if (website == "fantia"):
-        website_url = C.FANTIA_WEBSITE_URL
-        verify_url = C.FANTIA_VERIFY_LOGIN_URL
-    elif (website == "pixiv_fanbox"):
-        website_url = C.PIXIV_FANBOX_WEBSITE_URL
-        verify_url = C.PIXIV_FANBOX_VERIFY_LOGIN_URL
-    else:
-        raise ValueError("Invalid website in load_cookie_to_webdriver function...")
+    # Load the encrypted cookies from the user's computer
+    loaded_cookies = load_cookies(*["fantia", "pixiv_fanbox"])
 
-    if (isinstance(cookie, dict)):
+    # process the loaded cookies
+    for thread in loaded_cookies:
+        cookie = thread.result
+        if (cookie is None):
+            continue
+
+        website = thread.website
+        if (website == "fantia"):
+            website_url = C.FANTIA_WEBSITE_URL
+            verify_url = C.FANTIA_VERIFY_LOGIN_URL
+        elif (website == "pixiv_fanbox"):
+            website_url = C.PIXIV_FANBOX_WEBSITE_URL
+            verify_url = C.PIXIV_FANBOX_VERIFY_LOGIN_URL
+        else:
+            raise ValueError("Invalid website in load_cookie_to_webdriver function...")
+
         # Add cookies to the driver
         driver.get(website_url)
         try:
@@ -355,15 +372,16 @@ def load_cookie_to_webdriver(driver: webdriver.Chrome, website: str, login_statu
                 EC.presence_of_element_located((By.XPATH, "/html/head/title"))
             )
         except (selenium_exceptions.TimeoutException):
-            logger.warning(f"The webdriver timed out while trying to load the {website} cookie.")
+            logger.warning(
+                f"The webdriver timed out while trying to load the user's {thread.readable_website} cookie."
+            )
             return
 
         if (driver.current_url != verify_url):
             driver.delete_all_cookies()
+            time.sleep(0.5)
         else:
             login_status[website] = True
-    else:
-        logger.warning(f"Invalid cookie type, '{type(cookie)}', for {website}...")
 
 # test codes
 if (__name__ == "__main__"):

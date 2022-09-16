@@ -107,46 +107,18 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         return
 
     with get_driver(download_path=webdriver_download_path) as driver:
-        has_fantia_cookie = C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()
-        has_pixiv_fanbox_cookie = C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()
-        if (has_fantia_cookie or has_pixiv_fanbox_cookie):
+        if (user_has_saved_cookies()):
             load_cookies = get_input(
                 input_msg="Do you want to load in saved cookies to the current webdriver instance? (Y/n): ",
                 inputs=("y", "n"),
                 default="y"
             )
             if (load_cookies == "y"):
-                with Spinner(
-                    message="Loading cookies if valid...",
-                    colour="light_yellow",
-                    spinner_position="left",
-                    spinner_type="arc"
-                ):
-                    load_tasks = (
-                        ("fantia", load_cookie("fantia")), 
-                        ("pixiv_fanbox", load_cookie("pixiv_fanbox"))
-                    )
-                    for tasks in load_tasks:
-                        thread = tasks[-1]
-                        if (thread is not None):
-                            thread.join()
+                load_cookies_to_webdriver(driver=driver, login_status=login_status)
 
-                    for website, task in load_tasks:
-                        if (task is None):
-                            continue
-
-                        cookie = task.result
-                        if (cookie is not None):
-                            load_cookie_to_webdriver(
-                                driver=driver, 
-                                website=website, 
-                                login_status=login_status, 
-                                cookie=cookie
-                            )
-
-        fantia_result = pixiv_fanbox_result = None
+        fantia_login_result = pixiv_fanbox_login_result = None
         if (not login_status.get("fantia", False)):
-            fantia_result = login(
+            fantia_login_result = login(
                 current_driver=driver,
                 website="fantia",
                 login_status=login_status
@@ -155,7 +127,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
             print_success("Successfully loaded Fantia cookies.")
 
         if (not login_status.get("pixiv_fanbox", False)):
-            pixiv_fanbox_result = login(
+            pixiv_fanbox_login_result = login(
                 current_driver=driver,
                 website="pixiv_fanbox",
                 login_status=login_status
@@ -163,41 +135,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         else:
             print_success("Successfully loaded Pixiv Fanbox cookies.")
 
-        save_fantia_cookie = isinstance(fantia_result, tuple)
-        save_pixiv_fanbox_cookie = isinstance(pixiv_fanbox_result, tuple)
-        if (save_fantia_cookie or save_pixiv_fanbox_cookie):
-            threads_arr = []
-            with Spinner(
-                message="Saving cookies...",
-                colour="light_yellow",
-                spinner_position="left",
-                spinner_type="arc"
-            ):
-                if (fantia_result is not None and save_fantia_cookie):
-                    fantia_thread = SaveCookieThread(
-                        cookie=fantia_result[0],
-                        website="fantia",
-                        save_locally=fantia_result[1]
-                    )
-                    fantia_thread.start()
-                    threads_arr.append(fantia_thread)
-
-                if (pixiv_fanbox_result is not None and save_pixiv_fanbox_cookie):
-                    pixiv_fanbox_thread = SaveCookieThread(
-                        cookie=pixiv_fanbox_result[0],
-                        website="pixiv_fanbox",
-                        save_locally=pixiv_fanbox_result[1]
-                    )
-                    pixiv_fanbox_thread.start()
-                    threads_arr.append(pixiv_fanbox_thread)
-
-                for thread in threads_arr:
-                    thread.join()
-
-            for thread in threads_arr:
-                if (not thread.result):
-                    print_danger(f"Failed to save {thread.readable_website} cookie.")
-
+        save_cookies(*[fantia_login_result, pixiv_fanbox_login_result])
         while (True):
             print_menu(login_status=login_status, gdrive_api_key=gdrive_api_key)
             user_action = get_input(
@@ -252,10 +190,18 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                     continue
 
                 if (not fantia_logged_in):
-                    login(current_driver=driver, website="fantia", login_status=login_status)
-
+                    fantia_login_result = login(
+                        current_driver=driver,
+                        website="fantia",
+                        login_status=login_status
+                    )
                 if (not pixiv_fanbox_logged_in):
-                    login(current_driver=driver, website="pixiv_fanbox", login_status=login_status)
+                    pixiv_fanbox_login_result = login(
+                        current_driver=driver,
+                        website="pixiv_fanbox",
+                        login_status=login_status
+                    )
+                save_cookies(*[fantia_login_result, pixiv_fanbox_login_result])
             elif (user_action == "8"):
                 # logout
                 fantia_logged_in = login_status.get("fantia", False)
