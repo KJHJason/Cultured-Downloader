@@ -8,16 +8,36 @@ from typing import Union, Optional, Any
 # import local files
 if (__package__ is None or __package__ == ""):
     from schemas.config import ConfigSchema
+    from errors import APIServerError
     from constants import CONSTANTS as C
+    from logger import logger
 else:
     from .schemas.config import ConfigSchema
+    from .errors import APIServerError
     from .constants import CONSTANTS as C
+    from .logger import logger
 
 # import third-party libraries
 import httpx
 from colorama import Fore as F
 from pydantic import BaseModel
 import pydantic.error_wrappers as pydantic_error_wrappers 
+
+def log_api_error(error_msg: str) -> None:
+    """Log any errors such as Cultured Downloader API's 5XX errors.
+
+    Args:
+        error_msg (str):
+            The error message to log.
+
+    Returns:
+        None
+
+    Raise:
+        APIServerError after logging the error message.
+    """
+    logger.error(f"API Server Error:\n{error_msg}")
+    raise APIServerError(error_msg)
 
 def validate_schema(schema: BaseModel, data: Union[dict, list], 
                     return_bool: Optional[bool] = True) -> Union[bool, BaseModel]:
@@ -41,7 +61,10 @@ def validate_schema(schema: BaseModel, data: Union[dict, list],
     try:
         pydantic_obj = schema(**data)
         return pydantic_obj if (not return_bool) else True
-    except (pydantic_error_wrappers.ValidationError):
+    except (pydantic_error_wrappers.ValidationError) as e:
+        logger.info(
+            f"Data is invalid when validated against the schema, {schema.__name__}: {e}\n\nData: {data}"
+        )
         return False
 
 def print_danger(message: Any, **kwargs) -> None:

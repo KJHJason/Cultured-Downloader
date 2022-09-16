@@ -14,16 +14,20 @@ if (__name__ == "__main__"):
     from errors import APIServerError
     from cryptography_operations import *
     from constants import CONSTANTS as C
+    from logger import logger
     from spinner import Spinner
-    from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
-    from functional import validate_schema, save_key_prompt, print_danger
+    from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken
+    from functional import  validate_schema, save_key_prompt, \
+                            print_danger, load_configs, edit_configs, log_api_error
 else:
     from .errors import APIServerError
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
+    from .logger import logger
     from .spinner import Spinner
-    from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse
-    from .functional import validate_schema, save_key_prompt, print_danger
+    from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken
+    from .functional import validate_schema, save_key_prompt, \
+                            print_danger, load_configs, edit_configs, log_api_error
 
 # Import Third-party Libraries
 import httpx
@@ -70,8 +74,7 @@ class UserData(abc.ABC):
         key_pair = generate_rsa_key_pair()
         self.__private_key = key_pair[0].decode("utf-8")
         self.__public_key = key_pair[1].decode("utf-8")
-        self.__client_digest_method = "sha512"  if (C.IS_64BITS) \
-                                                else "sha256"
+        self.__client_digest_method = self.__load_client_digest_method()
         self.__server_digest_method = "sha512"  if (self.__client_digest_method == "sha512") \
                                                 else "sha256"
 
@@ -85,13 +88,23 @@ class UserData(abc.ABC):
         else:
             self.data = data
 
+    def __load_client_digest_method(self) -> str:
+        """Loads the client's digest method from the configs file."""
+        configs = load_configs()
+        if (configs.client_digest_method is None):
+            configs.client_digest_method = "sha512" if (C.IS_64BITS) \
+                                                    else "sha256"
+            edit_configs(configs.dict())
+
+        return configs.client_digest_method
+
     def encrypt_data(self, data: Optional[Any] = None) -> None:
         """Encrypts the cookie data to the user's machine in a file."""
         self.__data_path.parent.mkdir(parents=True, exist_ok=True)
 
         if (data is None):
             data = self.data
-        encrypted_data, nonce = chacha_encrypt(plaintext=data, key=self.secret_key)
+        encrypted_data, nonce = chacha_encrypt(plaintext=data, key=self.__secret_key)
 
         encoded_data = base64.b64encode(encrypted_data)
         nonce = base64.b64encode(nonce)
@@ -127,24 +140,28 @@ class UserData(abc.ABC):
             return
 
         with open(self.__data_path, "r") as f:
-            try:
-                encrypted_data, nonce = f.read().split(sep=".")
-            except (ValueError):
-                raise APIServerError("Invalid data...")
+            encrypted_data_with_nonce = f.read()
+
+        try:
+            encrypted_data, nonce = encrypted_data_with_nonce.split(sep=".")
+        except (ValueError):
+            self.__data_path.unlink()
+            return
 
         try:
             encrypted_data = base64.b64decode(encrypted_data)
             nonce = base64.b64decode(nonce)
         except (binascii.Error, TypeError, ValueError):
-            raise APIServerError("Invalid data...")
+            self.__data_path.unlink()
+            return
 
         try:
             decrypted_data = chacha_decrypt(
                 ciphertext=encrypted_data, 
-                key=self.secret_key, 
+                key=self.__secret_key, 
                 nonce=nonce
             )
-        except (InvalidTag):
+        except (InvalidTag, ValueError):
             self.__data_path.unlink()
             return
 
@@ -192,7 +209,7 @@ class UserData(abc.ABC):
                 The encrypted data to sent to Cultured Downloader API for symmetric encryption.
         """
         return base64.b64encode(
-            rsa_encrypt(plaintext=data, digest_method=self.server_digest_method)
+            rsa_encrypt(plaintext=data, digest_method=self.__server_digest_method)
         ).decode("utf-8")
 
     def read_api_response(self, received_data: str) -> bytes:
@@ -204,14 +221,14 @@ class UserData(abc.ABC):
         """
         return rsa_decrypt(
             ciphertext=base64.b64decode(received_data), 
-            private_key=self.format_private_key(), 
-            digest_method=self.server_digest_method
+            private_key=self.__format_private_key(), 
+            digest_method=self.__client_digest_method
         )
 
-    def format_private_key(self) -> types.PRIVATE_KEY_TYPES:
+    def __format_private_key(self) -> types.PRIVATE_KEY_TYPES:
         """Formats the private key for use in the asymmetric encryption."""
         return serialization.load_pem_private_key(
-            data=self.private_key.encode("utf-8"),
+            data=self.__private_key.encode("utf-8"),
             password=None,
             backend=default_backend(),
         )
@@ -219,7 +236,7 @@ class UserData(abc.ABC):
     def format_public_key(self) -> types.PUBLIC_KEY_TYPES:
         """Formats the public key for use in the asymmetric encryption."""
         return serialization.load_pem_public_key(
-            data=self.publicKey.encode("utf-8"),
+            data=self.__public_key.encode("utf-8"),
             backend=default_backend(),
         )
 
@@ -230,17 +247,21 @@ class UserData(abc.ABC):
             The CSRF token (str) and the session cookie with the CSRF token.
         """
         with httpx.Client(http2=True, headers=C.REQ_HEADERS, timeout=30) as client:
-            res = client.get(f"{C.API_URL}/csrf-token")
+            try:
+                res = client.get(f"{C.API_URL}/csrf-token")
+            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                logger.error(f"httpx error while retrieving CSRF token from the API:\n{e}")
+                raise
 
         if (res.status_code not in (200, 404)):
-            raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
+            log_api_error(f"Received {res.status_code} response\n{res.text}")
 
         cookies = res.cookies
         json_data = res.json()
         if ("error" in json_data):
-            raise APIServerError(json_data["error"])
+            log_api_error(json_data["error"])
         if (not validate_schema(schema=APICsrfResponse, data=json_data)):
-            raise APIServerError("Invalid JSON format response from server...")
+            log_api_error("Invalid JSON format response from server...")
 
         return json_data["csrf_token"], cookies
 
@@ -249,16 +270,28 @@ class UserData(abc.ABC):
         secret_key_path = C.SECRET_KEY_PATH
         if (secret_key_path.exists() and secret_key_path.is_file()):
             with open(secret_key_path, "rb") as f:
-                return f.read()
+                secret_key = f.read()
 
-        key_id_token_path = C.KEY_ID_TOKEN_JSON_PATH
+            if (len(secret_key) == 32):
+                return secret_key
+
         key_id_token = None
+        key_id_token_path = C.KEY_ID_TOKEN_JSON_PATH
         if (key_id_token_path.exists() and key_id_token_path.is_file()):
             with open(key_id_token_path, "r") as f:
                 try:
-                    key_id_token = json.load(f).get("key_id_token")
+                    key_id_token_json = json.load(f)
                 except (json.JSONDecodeError, TypeError):
-                    pass
+                    key_id_token_json = None
+
+            if (key_id_token_json is not None):
+                key_id_token_obj: KeyIdToken = validate_schema(
+                    schema=KeyIdToken,
+                    data=key_id_token_json,
+                    return_bool=False
+                )
+                if (key_id_token_obj is not False):
+                    key_id_token = key_id_token_obj.key_id_token
 
         if (key_id_token is None):
             return generate_chacha20_key()
@@ -279,10 +312,14 @@ class UserData(abc.ABC):
                 )
         }
         with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
-            res = client.post(f"{C.API_URL}/get-key", json=json_data)
+            try:
+                res = client.post(f"{C.API_URL}/get-key", json=json_data)
+            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                logger.error(f"httpx error while loading key from API:\n{e}")
+                raise
 
         if (res.status_code not in (200, 404, 400)):
-            raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
+            log_api_error(f"Received {res.status_code} response\n{res.text}")
 
         if (res.status_code == 404):
             # happens when the key_id_token 
@@ -292,9 +329,9 @@ class UserData(abc.ABC):
 
         json_data = res.json()
         if ("error" in json_data):
-            raise APIServerError(json_data["error"])
+            log_api_error(json_data["error"])
         if (not validate_schema(schema=APIKeyResponse, data=json_data)):
-            raise APIServerError("Invalid JSON format response from server...")
+            log_api_error("Invalid JSON format response from server...")
 
         secret_key = self.read_api_response(json_data["secret_key"])
         return secret_key
@@ -312,7 +349,7 @@ class UserData(abc.ABC):
         # Check if the key was already saved locally
         if (C.SECRET_KEY_PATH.exists() and C.SECRET_KEY_PATH.is_file()):
             with open(C.SECRET_KEY_PATH, "rb") as f:
-                if (f.read() == self.secret_key):
+                if (f.read() == self.__secret_key):
                     return
 
         # Check if the key was already saved on the API
@@ -340,45 +377,29 @@ class UserData(abc.ABC):
         }
 
         with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
-            res = client.post(f"{C.API_URL}/save-key", json=json_data)
+            try:
+                res = client.post(f"{C.API_URL}/save-key", json=json_data)
+            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                logger.error(f"httpx error while saving key from API:\n{e}")
+                raise
 
         if (res.status_code not in (200, 400)):
-            raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")
+            log_api_error(f"Received {res.status_code} response\n{res.text}")
 
         res = res.json()
         if ("error" in res):
-            raise APIServerError(res["error"])
+            log_api_error(res["error"])
         if (not validate_schema(schema=APIKeyIDResponse, data=res)):
-            raise APIServerError("Invalid JSON format response from server...")
+            log_api_error("Invalid JSON format response from server...")
 
         key_id_token = rsa_decrypt(
             ciphertext=base64.b64decode(res["key_id_token"]),
-            private_key=self.format_private_key(),
-            digest_method=self.client_digest_method,
+            private_key=self.__format_private_key(),
+            digest_method=self.__client_digest_method,
             decode=True
         )
         with open(C.KEY_ID_TOKEN_JSON_PATH, "w") as f:
             json.dump({"key_id_token": key_id_token}, f, indent=4)
-
-    @property
-    def secret_key(self) -> bytes:
-        return self.__secret_key
-
-    @property
-    def private_key (self) -> str:
-        return self.__private_key
-
-    @property
-    def public_key(self) -> str:
-        return self.__public_key
-
-    @property
-    def client_digest_method(self) -> str:
-        return self.__client_digest_method
-
-    @property
-    def server_digest_method(self) -> str:
-        return self.__server_digest_method
 
     @abc.abstractmethod
     def __str__(self) -> str:
@@ -423,10 +444,9 @@ class SecureCookie(UserData):
         if (not isinstance(cookie_data, Union[None, dict])):
             raise TypeError("cookie_data must be of type dict or None")
 
-        self.__website = website
         super().__init__(
             data=cookie_data, 
-            data_path=convert_website_to_path(self.__website)
+            data_path=convert_website_to_path(website)
         )
 
     def save_data(self) -> None:
@@ -505,6 +525,7 @@ def save_gdrive_api_key(api_key: str) -> None:
     Returns:
         None
     """
+    could_not_save = False
     save_key_locally = save_key_prompt()
     with Spinner(
         message="Saving Google Drive API Key...",
@@ -512,16 +533,20 @@ def save_gdrive_api_key(api_key: str) -> None:
         spinner_position="left",
         spinner_type="arc"
     ):
-        gdrive_api_key_obj = SecureGDriveAPIKey(api_key)
-        gdrive_api_key_obj.save_key(save_locally=save_key_locally)
-        gdrive_api_key_obj.save_data()
+        try:
+            gdrive_api_key_obj = SecureGDriveAPIKey(api_key)
+            gdrive_api_key_obj.save_key(save_locally=save_key_locally)
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
+            could_not_save = True
+        else:
+            gdrive_api_key_obj.save_data()
 
-@Spinner(
-    message="Loading Google Drive API Key...",
-    colour="light_yellow",
-    spinner_position="left",
-    spinner_type="arc"
-)
+    if (could_not_save):
+        print_danger(
+            "Could not save Google Drive API Key either due to " \
+            "connectivity issues or a problem with Cultured Downloader API."
+        )
+
 def load_gdrive_api_key() -> Union[None, str]:
     """Load the Google Drive API key.
 
@@ -531,7 +556,25 @@ def load_gdrive_api_key() -> Union[None, str]:
     """
     if (not C.GOOGLE_DRIVE_API_KEY_PATH.exists() or not C.GOOGLE_DRIVE_API_KEY_PATH.is_file()):
         return
-    return SecureGDriveAPIKey().data
+
+    try:
+        with Spinner(
+            message="Loading Google Drive API Key...",
+            colour="light_yellow",
+            spinner_position="left",
+            spinner_type="arc"
+        ):
+            return SecureGDriveAPIKey().data
+    except (APIServerError, httpx.ReadTimeout):
+        print_danger(
+            "Could not load Google Drive API Key as " \
+            "there was a problem with Cultured Downloader API's response..."
+        )
+    except (httpx.ConnectTimeout):
+        print_danger(
+            "Could not decrypt your Google Drive API Key as " \
+            "there is connectivity issue either with your internet or Cultured Downloader API..."
+        )
 
 class SaveCookieThread(threading.Thread):
     """Thread to securely save the cookie to a file."""
@@ -561,9 +604,9 @@ class SaveCookieThread(threading.Thread):
             secure_cookie.save_key(save_locally=self.save_locally)
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
             self.result = False
-
-        secure_cookie.save_data()
-        self.result = True
+        else:
+            secure_cookie.save_data()
+            self.result = True
 
 class LoadCookieThread(threading.Thread):
     """Thread to securely load the cookie from a file."""
@@ -586,8 +629,8 @@ class LoadCookieThread(threading.Thread):
             secure_cookie = SecureCookie(website=self.website)
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
             self.result = False
-
-        self.result = secure_cookie.data
+        else:
+            self.result = secure_cookie.data
 
 def load_cookies(*websites: list[str]) -> list[LoadCookieThread]:
     """Loads the cookie from the user's machine.

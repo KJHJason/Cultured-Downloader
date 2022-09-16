@@ -4,12 +4,14 @@ from typing import Union, Optional, Callable
 
 # import local files
 if (__package__ is None or __package__ == ""):
+    from logger import logger
     from errors import APIServerError
     from crucial import install_dependency
     from constants import CONSTANTS as C
     from schemas.api_response import APIPublicKeyResponse
     from functional import validate_schema
 else:
+    from .logger import logger
     from .errors import APIServerError
     from .crucial import install_dependency
     from .constants import CONSTANTS as C
@@ -110,7 +112,11 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
         "digest_method": digest_method.name,
     }
     with httpx.Client(headers=C.JSON_REQ_HEADERS, http2=True, timeout=30) as client:
-        res = client.post(f"{C.API_URL}/public-key", json=json_data)
+        try:
+            res = client.post(f"{C.API_URL}/public-key", json=json_data)
+        except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            logger.error(f"httpx error while saving key:\n{e}")
+            raise
 
     if (res.status_code != 200):
         raise APIServerError(f"Server Response: {res.status_code}\n{res.text}")

@@ -6,11 +6,12 @@ from typing import Optional, NoReturn, Type
 
 # import local files
 if (__package__ is None or __package__ == ""):
-    from functional import print_danger
     from constants import CONSTANTS as C
 else:
-    from .functional import print_danger
     from .constants import CONSTANTS as C
+
+# import third-party libraries
+from colorama import Fore as F, Style as S
 
 def get_logger() -> logging.Logger:
     """Get the logger."""
@@ -35,8 +36,8 @@ def exception_handler(
     traceback: Optional[types.TracebackType]) -> NoReturn:
     """Use a custom logger to log exceptions to a file."""
     logger.exception(f"Uncaught {exc_type.__name__}", exc_info=(exc_type, exc, traceback))
-    print_danger(f"\nUncaught {exc_type.__name__}")
-    print_danger(f"Please provide the developer with the error log generated at\n{logger.handlers[0].baseFilename}")
+    print(f"\n{F.LIGHTRED_EX}Uncaught {exc_type.__name__}")
+    print(f"Please provide the developer with the error log generated at\n{logger.handlers[0].baseFilename}{S.RESET_ALL}")
 
     input("Please press ENTER to exit...")
     return sys.exit(1)

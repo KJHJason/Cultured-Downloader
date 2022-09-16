@@ -159,6 +159,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
             elif (user_action == "5"):
                 # Change Default Download Folder
                 change_download_directory(configs=configs, print_message=True)
+
             elif (user_action == "6"):
                 # Google Drive API key configurations
                 if (gdrive_api_key is None):
@@ -202,6 +203,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                         login_status=login_status
                     )
                 save_cookies(*[fantia_login_result, pixiv_fanbox_login_result])
+
             elif (user_action == "8"):
                 # logout
                 fantia_logged_in = login_status.get("fantia", False)
@@ -215,6 +217,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
 
                 if (pixiv_fanbox_logged_in):
                     logout(driver=driver, website="pixiv_fanbox", login_status=login_status)
+
             else:
                 # Report a bug
                 opened_tab = webbrowser.open(C.ISSUE_PAGE, new=2)
