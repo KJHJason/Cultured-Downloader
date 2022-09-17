@@ -463,7 +463,7 @@ class SecureCookie(UserData):
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
 
-class SecureGDriveAPIKey(UserData):
+class SecureGoogleOAuth2ClientSecret(UserData):
     """Creates a way to securely deal with the user's saved
     Google Drive API key that is stored on the user's machine."""
     def __init__(self, api_key: Optional[str] = None) -> None:

@@ -61,7 +61,8 @@ except (ModuleNotFoundError, ImportError):
     schemas_files = ("__init__.py", "api_response.py", "config.py", "cookies.py")
     json_files = ("spinners.json",)
 
-    for filenames, folder_name in zip([py_files, schemas_files, json_files], ["utils", "utils/schemas", "json"]):
+    files_arr = [py_files, schemas_files, json_files]
+    for filenames, folder_name in zip(files_arr, ["utils", "utils/schemas", "json"], strict=True):
         folder_path = FILE_PATH.joinpath(*folder_name.split(sep="/"))
         for filename in filenames:
             download_github_files(filename=filename, folder=folder_path, folder_name=folder_name)
@@ -146,19 +147,49 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
                 return
             elif (user_action == "1"):
                 # Download images from Fantia post(s)
-                user_urls_arr = get_user_urls(website="fantia", creator_page=False)
+                asyncio.run(execute_download_process(
+                    website="fantia",
+                    creator_page=False,
+                    download_path=webdriver_download_path,
+                    driver=driver,
+                    login_status=login_status
+                ))
+
             elif (user_action == "2"):
                 # Download all Fantia posts from creator(s)
-                user_urls_arr = get_user_urls(website="fantia", creator_page=True)
+                asyncio.run(execute_download_process(
+                    website="fantia",
+                    creator_page=True,
+                    download_path=webdriver_download_path,
+                    driver=driver,
+                    login_status=login_status
+                ))
+
             elif (user_action == "3"):
                 # Download images from pixiv Fanbox post(s)
-                user_urls_arr = get_user_urls(website="pixiv_fanbox", creator_page=False)
+                asyncio.run(execute_download_process(
+                    website="pixiv_fanbox",
+                    creator_page=False,
+                    download_path=webdriver_download_path,
+                    driver=driver,
+                    login_status=login_status
+                ))
+
             elif (user_action == "4"):
                 # Download all pixiv Fanbox posts from a creator(s)
-                user_urls_arr = get_user_urls(website="pixiv_fanbox", creator_page=True)
+                asyncio.run(execute_download_process(
+                    website="pixiv_fanbox",
+                    creator_page=True,
+                    download_path=webdriver_download_path,
+                    driver=driver,
+                    login_status=login_status
+                ))
+
             elif (user_action == "5"):
                 # Change Default Download Folder
-                change_download_directory(configs=configs, print_message=True)
+                change_download_directory(configs=configs, print_message=False)
+                configs = load_configs()
+                webdriver_download_path = configs.download_directory
 
             elif (user_action == "6"):
                 # Google Drive API key configurations

@@ -1,4 +1,5 @@
 # import third-party libraries
+import httpx
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,22 +14,31 @@ import time
 import types
 import logging
 import pathlib
+import asyncio
 from os import environ
 from typing import Optional, Union, Type
 
 # import local files
 if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
+    from errors import ChangedHTMLStructureError
     from logger import logger
     from spinner import Spinner
     from user_data import load_cookies
-    from functional import print_danger, get_input, save_key_prompt, website_to_readable_format
+    from download import get_fantia_post_details, get_pixiv_fanbox_post_details, \
+                         log_critical_details_for_post, async_download_file
+    from functional import print_danger, get_input, save_key_prompt, \
+                           website_to_readable_format, get_user_urls, get_user_download_choices
 else:
     from .constants import CONSTANTS as C
+    from .errors import ChangedHTMLStructureError
     from .logger import logger
     from .spinner import Spinner
     from .user_data import load_cookies
-    from .functional import print_danger, get_input, save_key_prompt, website_to_readable_format
+    from .download import get_fantia_post_details, get_pixiv_fanbox_post_details, \
+                          log_critical_details_for_post, async_download_file
+    from .functional import print_danger, get_input, save_key_prompt, \
+                            website_to_readable_format
 
 class CustomWebDriver(webdriver.Chrome):
     """Custom chrome webdriver with some modifications."""
@@ -136,6 +146,27 @@ def get_driver(
     driver.set_window_size(*window_size)
     return driver
 
+def wait_for_page_load(driver: webdriver.Chrome, timeout: Optional[int] = 15) -> None:
+    """Wait for a page to load.
+
+    Args:
+        driver (webdriver.Chrome): 
+            The webdriver instance.
+        timeout (int, optional):
+            The maximum time to wait for the page to load. Defaults to 15.
+
+    Returns:
+        None
+
+    Raises:
+        selenium_exceptions.TimeoutException:
+            If the page does not load within the specified timeout.
+    """
+    time.sleep(0.5)
+    WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.XPATH, "/html/head/title"))
+    )
+
 def login(current_driver: CustomWebDriver, website: str,
           login_status: dict) -> Union[None, dict, tuple[dict, bool]]:
     """Login to the both Fantia and Pixiv Fanbox.
@@ -205,9 +236,7 @@ def login(current_driver: CustomWebDriver, website: str,
                 spinner_position="left"
             ):
                 driver.get(url_verifier)
-                WebDriverWait(driver, 30).until(
-                    EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-                )
+                wait_for_page_load(driver)
 
             if (driver.current_url == url_verifier):
                 cookie = driver.get_cookie(cookie_name)
@@ -244,7 +273,7 @@ def login(current_driver: CustomWebDriver, website: str,
 
     # update the login status
     # to indicate a successful login
-    login_status[website] = True
+    login_status[website] = cookie
 
     save_cookie = get_input(
         input_msg="Would you like to {action} the {website_name} session cookie {preposition} your computer for a faster login next time? (Y/n): ".format(
@@ -303,9 +332,7 @@ def logout(driver: webdriver.Chrome, website: str, login_status: dict) -> None:
         if (not driver.current_url.startswith(website_url)):
             driver.get(website_url)
             try:
-                WebDriverWait(driver, 30).until(
-                    EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-                )
+                wait_for_page_load(driver)
             except (selenium_exceptions.TimeoutException):
                 logger.warning(f"The webdriver timed out while trying to logout from {website}.")
                 timeout = True
@@ -359,18 +386,14 @@ def load_cookies_to_webdriver(driver: webdriver.Chrome, login_status: dict) -> N
         # Add cookies to the driver
         driver.get(website_url)
         try:
-            WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-            )
+            wait_for_page_load(driver)
 
             driver.delete_all_cookies()
             driver.add_cookie(cookie)
 
             # verify if the cookies are valid
             driver.get(verify_url)
-            WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.XPATH, "/html/head/title"))
-            )
+            wait_for_page_load(driver)
         except (selenium_exceptions.TimeoutException):
             logger.warning(
                 f"The webdriver timed out while trying to load the user's {thread.readable_website} cookie."
@@ -381,7 +404,167 @@ def load_cookies_to_webdriver(driver: webdriver.Chrome, login_status: dict) -> N
             driver.delete_all_cookies()
             time.sleep(0.5)
         else:
-            login_status[website] = True
+            login_status[website] = cookie
+
+def get_creator_posts(driver: webdriver.Chrome, url: str, website: str) -> list[str]:
+    """Gets the URL(s) of the creator's posts.
+
+    Args:
+        driver (webdriver.Chrome):
+            The webdriver instance to use.
+        url (str):
+            The url of the creator's page to get the post(s) from.
+        website (str):
+            The website to download the post from.
+
+    Returns:
+        A list of every posts' URL(s) in the given URL.
+    """
+    driver.get(url)
+    wait_for_page_load(driver)
+
+    if (website == "fantia"):
+        post_xpath = "//a[@class='link-block']"
+    elif (website == "pixiv_fanbox"):
+        post_xpath = "//a[starts-with(@href, '/posts/')]"
+    else:
+        raise ValueError("Invalid website in get_creator_posts function...")
+
+    try:
+        posts = driver.find_elements(By.XPATH, post_xpath)
+    except (selenium_exceptions.NoSuchElementException):
+        logger.warning(f"No posts found for {url}...\n\n{driver.page_source}")
+        raise ChangedHTMLStructureError(
+            "Please raise an issue on GitHub with your log files as " \
+            f"{website_to_readable_format(website)}'s HTML structure has possibly changed."
+        )
+
+    post_urls = [post.get_attribute("href") for post in posts]
+    if (website != "pixiv_fanbox"):
+        return post_urls
+
+    # Since the xpath will return two exact same links for a post
+    # (One for the image anchor and another for the card anchor),
+    # Remove the duplicate links 
+    # with the order of the links being preserved.
+    return list(dict.fromkeys(post_urls))
+
+async def execute_download_process(website: str, creator_page: bool, download_path: str,
+                             driver: webdriver.Chrome, login_status: dict) -> None:
+    """Executes the download process for the given website.
+
+    Args:
+        website (str): 
+            The website the user wishes to download from.
+        creator_page (bool): 
+            Whether the user wishes to download from a creator's page.
+        download_path (str):
+            The path to the download directory loaded from the configs file.
+        driver (webdriver.Chrome): 
+            The webdriver instance to use.
+        login_status (dict):
+            The current login status of the user to retrieve the 
+            user's cookies, if any, to use to get access to paywall restricted posts.
+
+    Returns:
+        None
+    """
+    urls_arr = get_user_urls(website=website, creator_page=creator_page)
+    if (urls_arr is None):
+        return
+
+    download_flags = get_user_download_choices(website)
+    if (download_flags is None):
+        return
+
+    if (creator_page):
+        posts_url_arr = []
+        for creator_page_url in urls_arr:
+            posts_url_arr.extend(
+                get_creator_posts(driver=driver, url=creator_page_url, website=website)
+            )
+        urls_arr = posts_url_arr
+
+    urls_to_download: list[tuple[pathlib.Path, list[tuple[str, str]]]] = []
+    cookie = login_status.get(website)
+    readable_website_name = website_to_readable_format(website)
+    download_path = pathlib.Path(download_path).joinpath(readable_website_name.replace(" ", "-"))
+    for post_url in urls_arr:
+        # Not using async here to prevent API rate limiting
+        post_id = post_url.rsplit(sep="/", maxsplit=1)[1]
+        retry_counter = 0
+        while (retry_counter < C.MAX_RETRIES):
+            try:
+                if (website == "fantia"):
+                    download_path_and_post_content_urls = get_fantia_post_details(
+                        cookie=cookie,
+                        post_id=post_id,
+                        download_path=download_path,
+                        download_flags=download_flags
+                    )
+                elif (website == "pixiv_fanbox"):
+                    download_path_and_post_content_urls = get_pixiv_fanbox_post_details(
+                        cookie=cookie,
+                        post_id=post_id,
+                        post_url=post_url,
+                        download_path=download_path,
+                        download_flags=download_flags
+                    )
+                else:
+                    raise ValueError("Invalid website in get_user_downloads_needs function...")
+            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError):
+                print_danger(
+                    f"The request to {readable_website_name}'s API failed. " \
+                    f"Retrying for {C.MAX_RETRIES - retry_counter}..."
+                )
+                time.sleep(1)
+                retry_counter += 1
+            else:
+                if (download_path_and_post_content_urls is not None):
+                    urls_to_download.append(download_path_and_post_content_urls)
+                break
+        else:
+            log_critical_details_for_post(
+                post_folder=download_path,
+                message=f"Failed to get the details of '{post_url}' after {C.MAX_RETRIES} requests.\n",
+                log_filename="download_failures.log"
+            )
+
+    # start downloading the urls
+    # concurrency limiting based on:
+    #   https://stackoverflow.com/a/48484593/16377492
+    download_tasks = set()
+    gdrive_urls_arr: list[str] = []
+    max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
+    for post_folder_path, post_content_urls_info in urls_to_download:
+        for content_url_info in post_content_urls_info:
+            if (content_url_info[1] == C.GDRIVE_FILE):
+                gdrive_urls_arr.append(content_url_info[0])
+                continue
+
+            if (len(download_tasks) >= max_concurrent_downloads):
+                # Wait for some download to finish before adding a new task
+                _done, download_tasks = await asyncio.wait(
+                    download_tasks,
+                    return_when=asyncio.FIRST_COMPLETED
+                )
+
+            download_tasks.add(
+                asyncio.create_task(
+                    async_download_file(
+                        url_info=content_url_info,
+                        folder_path=post_folder_path,
+                        website=website
+                    )
+                )
+            )
+
+    # Wait for the remaining downloads to finish
+    await asyncio.wait(download_tasks)
+
+    # TODO: finish GDrive downloads
+    for gdrive_url in gdrive_urls_arr:
+        pass
 
 # test codes
 if (__name__ == "__main__"):

@@ -9,13 +9,13 @@ from typing import Union, Optional, Any
 if (__package__ is None or __package__ == ""):
     from spinner import Spinner
     from schemas.config import ConfigSchema
-    from errors import APIServerError, CulturedDownloaderBaseError
+    from errors import APIServerError
     from constants import CONSTANTS as C
     from logger import logger
 else:
     from .spinner import Spinner
     from .schemas.config import ConfigSchema
-    from .errors import APIServerError, CulturedDownloaderBaseError
+    from .errors import APIServerError
     from .constants import CONSTANTS as C
     from .logger import logger
 
@@ -365,6 +365,78 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         else:
             print_danger(f"Sorry, please enter a valid input." if (warning is None) else warning)
 
+def get_user_download_choices(website: str) -> Union[tuple[bool, bool, bool], tuple[bool, bool, bool, bool, bool], None]:
+    """Prompt the user and get their download preferences.
+
+    Args:
+        website (str):
+            The website to get the download preferences for.
+            If the website is "fantia", gdrive and detection of 
+            other file hosting provider links will be disabled.
+
+    Returns:
+        A tuple of boolean or None if the user cancels the download process:
+            (download_images, download_thumbnail, download_attachment).\n
+            If the website is not "fantia", the tuple will have an additional last 2 booleans:
+                download_gdrive_links, detect_other_download_links
+    """
+    while (True):
+        download_images = get_input(
+            input_msg="Download images? (Y/n/x to cancel): ",
+            inputs=("y", "n", "x"),
+            default="y"
+        )
+        if (download_images == "x"):
+            return
+
+        download_thumbnail = get_input(
+            input_msg="Download thumbnail? (Y/n/x to cancel): ",
+            inputs=("y", "n", "x"),
+            default="y"
+        )
+        if (download_thumbnail == "x"):
+            return
+
+        download_attachments = get_input(
+            input_msg="Download attachments? (Y/n/x to cancel): ",
+            inputs=("y", "n", "x"),
+            default="y"
+        )
+        if (download_attachments == "x"):
+            return
+
+        download_flags = [
+            download_images == "y", 
+            download_thumbnail == "y",
+            download_attachments == "y"
+        ]
+        if (website != "fantia"):
+            download_gdrive_links = get_input(
+                input_msg="Download Google Drive links? (Y/n/x to cancel): ",
+                inputs=("y", "n", "x"),
+                default="y"
+            )
+            if (download_gdrive_links == "x"):
+                return
+
+            detect_other_download_links = get_input(
+                input_msg="Detect other download links such as MEGA links? (Y/n/x to cancel): ",
+                inputs=("y", "n", "x"),
+                default="y"
+            )
+            if (detect_other_download_links == "x"):
+                return
+
+            download_flags.extend([
+                download_gdrive_links == "y", 
+                detect_other_download_links == "y"
+            ])
+
+        if (not any(download_flags)):
+            print_danger("Please select at least one download option...\n")
+        else:
+            return tuple(download_flags)
+
 def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
     """Get the URLs from the user.
 
@@ -397,7 +469,6 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
     url_guide, input_regex = url_guide_and_regex_table[website][creator_page]
     extra_info += url_guide
     extra_info += "\nAdditionally, you can enter multiple URLs separated by a comma."
-
     while (True):
         print_warning(extra_info)
         user_input = input("\nEnter URL(s) (X to cancel): ").strip()
@@ -421,6 +492,8 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
                 url = url[:-1]
 
             if (input_regex.fullmatch(url) is not None):
+                if (creator_page and not url.endswith("/posts")):
+                    url += "/posts"
                 formatted_urls.append(url)
                 continue
 
@@ -455,74 +528,53 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
                 break
 
     # get page number from user
+    print_warning(
+        "\nPlease enter the page numbers you wish to download from corresponding to the URLs you entered." \
+        "\nFor example, if you entered 2 URLs, you will enter something like '1, 1-3' to indicate " \
+        "that you wish to download from the 1st page of the first URL and the 1st to 3rd page of the second URL."
+    )
     page_num_prompt = "\nPlease enter {} (X to cancel): ".format(
         f"{len(formatted_urls)} page numbers corresponding to the entered URLs" \
         if (len(formatted_urls > 1)) \
         else "a page number"
     )
     while (True):
-        print_warning(
-            "\nPlease enter the page numbers you wish to download from corresponding to the URLs you entered." \
-            "\nFor example, if you entered 2 URLs, you will enter something like '1, 1-3' to indicate " \
-            "that you wish to download from the 1st page of the first URL and the 1st to 3rd page of the second URL."
-        )
         page_inputs = input(page_num_prompt).strip()
         if (page_inputs == ""):
             print_danger("User Error: Please enter a page number")
             continue
+        elif (user_input in ("X", "x")):
+            return
 
-        page_nums_arr = [page_num.strip() for page_num in page_inputs.split(",")]
-        if (len(page_nums_arr) != len(unique_urls)):
+        page_nums_arr = page_inputs.split(sep=",")
+        if (len(page_nums_arr) != len(formatted_urls)):
             print_danger(
                 "User Error: The number of page numbers entered does not match the number of URLs entered"
             )
             continue
 
-        for page_num in page_nums_arr:
+        url_with_page_nums_arr = []
+        for idx, page_num in enumerate(page_nums_arr):
+            page_num = page_num.strip()
             if (C.PAGE_NUM_REGEX.fullmatch(page_num) is None):
                 print_danger(f"User Error: The page number, {page_num}, is invalid.")
                 print_danger("Please enter in the correct format such as '1, 1-3' and try again.")
                 break
+
+            page_nums = page_num.split(sep="-", maxsplit=1)
+            if (len(page_nums) == 1):
+                url_with_page_nums_arr.append(formatted_urls[idx] + f"?page={page_nums[0]}")
+                continue
+
+            # if a range was given, make sure the range is valid
+            page_nums = [int(page_num) for page_num in page_nums]
+            if (page_nums[0] > page_nums[1]):
+                page_nums[0], page_nums[1] = page_nums[1], page_nums[0]
+
+            for page_num in range(page_nums[0], page_nums[1] + 1):
+                url_with_page_nums_arr.append(formatted_urls[idx] + f"?page={page_num}")
         else:
-            # TODO: process the page numbers and append them to the URLs as GET parameters
-            pass
-
-def format_post_page_title(title: str, website: str) -> tuple[str, str]:
-    """Formats post page title to get the post title and creator name.
-
-    Args:
-        title (str):
-            The post page title.
-        website (str):
-            The website the post is from.
-
-    Returns:
-        tuple[str, str]:
-            The post title and the creator name (post_title, creator_name).
-
-    Raises:
-        CulturedDownloaderBaseError:
-            If the website's post page title format has likely changed.
-    """
-    regex_table = {
-        "fantia":
-            C.FANTIA_POST_TITLE_REGEX,
-        "pixiv_fanbox":
-            C.PIXIV_FANBOX_POST_TITLE_REGEX
-    }
-    if (website not in regex_table):
-        raise ValueError(f"Invalid website: {website}")
-
-    title_regex = regex_table[website]
-    match = title_regex.fullmatch(title)
-    if (match is not None):
-        # Returns in the format (post_title, creator_name)
-        return (match.group(1), match.group(2))
-
-    raise CulturedDownloaderBaseError(
-        f"{website_to_readable_format(website)}'s post page title format has likely changed, " \
-        "please raise an issue on Cultured Downloader's GitHub repository page."
-    )
+            return url_with_page_nums_arr
 
 def delete_empty_and_old_logs() -> None:
     """Delete all empty log files and log files
@@ -535,7 +587,10 @@ def delete_empty_and_old_logs() -> None:
         if (log_file.is_file() and log_file != C.TODAYS_LOG_FILE_PATH):
             file_info = log_file.stat()
             if (file_info.st_size == 0 or file_info.st_mtime < (time.time() - 2592000)):
-                log_file.unlink()
+                try:
+                    log_file.unlink()
+                except (PermissionError, FileNotFoundError):
+                    pass
 
 @Spinner(
     message="Checking for an active internet connection...",
@@ -550,7 +605,7 @@ def check_internet_connection() -> bool:
         bool: 
             True if the user has an internet connection, False otherwise.
     """
-    with httpx.Client(http2=True, headers=C.REQ_HEADERS, timeout=5) as client:
+    with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS, timeout=5) as client:
         try:
             client.head("https://www.google.com")
         except (httpx.ConnectTimeout):

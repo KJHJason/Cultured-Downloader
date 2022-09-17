@@ -19,9 +19,17 @@ else:
 
 # Code to be executed upon import of this module
 USER_PLATFORM = platform.system()
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
-             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
 
+# User agent from https://www.whatismybrowser.com/guides/the-latest-user-agent/chrome
+CHROME_USER_AGENT = " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+OS_USER_AGENTS = {
+    "Windows":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Linux":
+        "Mozilla/5.0 (X11; Linux x86_64)",
+    "Darwin":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_6)"
+}
 DIRECTORIES = {
     "Windows": "AppData/Roaming/Cultured-Downloader",
     "Linux": ".config/Cultured-Downloader",
@@ -35,6 +43,7 @@ if (USER_PLATFORM in DIRECTORIES):
             message="Your operating system has not been tested so you may experience issues.", 
             category=RuntimeWarning
         )
+    USER_AGENT = OS_USER_AGENTS[USER_PLATFORM] + CHROME_USER_AGENT
     appDir = appDir.joinpath(DIRECTORIES[USER_PLATFORM])
     appDir.mkdir(parents=True, exist_ok=True)
 else:
@@ -93,9 +102,19 @@ class Constants:
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
 
+    # For Google Drive API if 
+    # the user has added their credentials.json file
+    # If modifying the scopes, you will need to 
+    # delete the old token.json file.
+    # Google Drive API v3 scopes:
+    #   https://developers.google.com/identity/protocols/oauth2/scopes#drive
+    GOOGLE_OAUTH_SCOPES: list[str] = [
+        "https://www.googleapis.com/auth/drive.readonly"
+    ]
+
     # For downloading
     USER_AGENT: str = USER_AGENT
-    REQ_HEADERS: dict[str, str] = field(
+    BASE_REQ_HEADERS: dict[str, str] = field(
         default_factory=lambda: {
             "User-Agent": 
                 USER_AGENT,
@@ -109,18 +128,46 @@ class Constants:
                 "application/json"
         }
     )
+    PIXIV_API_HEADER: dict[str, str] = field(
+        default_factory=lambda: {
+            "User-Agent":
+                USER_AGENT,
+            "Accept": 
+                "application/json",
+            "Origin": 
+                "https://www.fanbox.cc",
+        }
+    )
+    MAX_RETRIES: int = 5
+    RETRY_DELAY: int = 1 # 1 second
+    CHUNK_SIZE: int = 1024 * 1024 # 1 MB
+    IMAGE_FILE: str = "image"
+    THUMBNAIL_IMAGE: str = "thumbnail"
+    ATTACHMENT_FILE: str = "attachment"
+    GDRIVE_FILE: str = "gdrive"
+    PASSWORD_TEXTS: tuple = ("パス", "Pass", "pass", "密码")
+    OTHER_FILE_HOSTING_PROVIDERS: tuple = ("mega",)
     PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"^[1-9]\d*(-[1-9]\d*)?$")
+    MAX_CONCURRENT_DOWNLOADS_TABLE: dict[str, int] = field(
+        default_factory=lambda: {
+            "pixiv_fanbox":
+                2,
+            "fantia":
+                4
+        }
+    )
 
     # For Fantia URLs
+    FANTIA_API_URL: str = "https://fantia.jp/api/v1/posts"
     FANTIA_COOKIE_NAME: str = "_session_id"
     FANTIA_WEBSITE_URL: str = "https://fantia.jp/"
     FANTIA_LOGIN_URL: str = "https://fantia.jp/sessions/signin"
     FANTIA_VERIFY_LOGIN_URL: str = "https://fantia.jp/mypage/users/plans"
     FANTIA_POST_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/posts/\d+$")
     FANTIA_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/fanclubs/\d+(/posts)?$")
-    FANTIA_POST_TITLE_REGEX: re.Pattern[str] = re.compile(r"^(.*) - (.*)の投稿｜ファンティア\[Fantia\]$")
 
     # For Pixiv Fanbox URLs
+    PIXIV_FANBOX_API_URL: str = "https://api.fanbox.cc/post.info?postId="
     PIXIV_FANBOX_COOKIE_NAME: str = "FANBOXSESSID"
     PIXIV_FANBOX_WEBSITE_URL: str = "https://www.fanbox.cc/"
     PIXIV_FANBOX_LOGIN_URL: str = "https://www.fanbox.cc/login"
@@ -131,7 +178,6 @@ class Constants:
     PIXIV_FANBOX_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(
         r"^https://(www\.fanbox\.cc/@[\w&.-]+|[\w&.-]+\.fanbox\.cc)(/posts)?$"
     )
-    PIXIV_FANBOX_POST_TITLE_REGEX: re.Pattern[str] = re.compile(r"^(.*)｜(.*)｜pixivFANBOX$")
 
 CONSTANTS = Constants()
 

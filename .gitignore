@@ -7,3 +7,4 @@ set_exe_info.py
 test.py
 src/build/*
 ExperimentalCulturedDownloader.py
+gdrive.py
