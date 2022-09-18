@@ -1,5 +1,10 @@
 # import Python's standard libraries
 import sys
+# Check user's Python version
+if (sys.version_info[0] < 3 or sys.version_info[1] < 9):
+    print("This program requires Python version 3.9 or higher!")
+    input("Please press ENTER to exit...")
+    sys.exit(1)
 import pathlib
 import asyncio
 import urllib.request as urllib_request
@@ -41,28 +46,40 @@ def download_github_files(filename: str, folder: pathlib.Path, folder_name: str)
     print(f"Missing {filename}, downloading from CulturedDownloader GitHub repository...")
 
     # TODO: change the url branch to main when the dev branch is merged to main
-    code = urllib_request.urlopen(
-        urllib_request.Request(
-            f"https://raw.githubusercontent.com/KJHJason/Cultured-Downloader/dev/src/{folder_name}/{filename}"
-        ),
-        timeout=10
-    )
-
-    with open(file_path, "w") as f:
-        for line in code:
-            f.write(line.decode("utf-8"))
-    print(f"{filename} downloaded.\n")
+    try:
+        code = urllib_request.urlopen(
+            urllib_request.Request(
+                f"https://raw.githubusercontent.com/KJHJason/Cultured-Downloader/dev/src/{folder_name}/{filename}"
+            ),
+            timeout=10
+        )
+    except (urllib_request.HTTPError) as e:
+        print(f"Error downloading {filename} from CulturedDownloader GitHub repository:\n{e}")
+        print("Please check your internet connection and try again.")
+        input("Press ENTER to exit...")
+        sys.exit(1)
+    except (urllib_request.URLError) as e:
+        print(f"Error downloading {filename} from CulturedDownloader GitHub repository:\n{e}")
+        print("Please check your internet connection and try again.")
+        input("Press ENTER to exit...")
+        sys.exit(1)
+    else:
+        with open(file_path, "w") as f:
+            for line in code:
+                f.write(line.decode("utf-8"))
+        print(f"{filename} downloaded.\n")
 
 try:
     from utils import *
 except (ModuleNotFoundError, ImportError):
     py_files = ("__init__.py", "constants.py", "crucial.py", "cryptography_operations.py", "download.py",
-                "errors.py", "functional.py", "logger.py", "spinner.py", "user_data.py", "web_driver.py")
+                "errors.py", "functional.py", "logger.py", "spinner.py", "user_data.py", "web_driver.py", "google_client.py")
     schemas_files = ("__init__.py", "api_response.py", "config.py", "cookies.py")
     json_files = ("spinners.json",)
+    helper_programs = ("google_oauth.py",)
 
-    files_arr = [py_files, schemas_files, json_files]
-    for filenames, folder_name in zip(files_arr, ["utils", "utils/schemas", "json"], strict=True):
+    files_arr = [py_files, schemas_files, json_files, helper_programs]
+    for filenames, folder_name in zip(files_arr, ["utils", "utils/schemas", "json", "helper"], strict=True):
         folder_path = FILE_PATH.joinpath(*folder_name.split(sep="/"))
         for filename in filenames:
             download_github_files(filename=filename, folder=folder_path, folder_name=folder_name)
@@ -73,10 +90,54 @@ from utils import __version__, __author__, __license__
 # import third-party libraries
 from colorama import Fore as F, init as colorama_init
 
+def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, None]) -> None:
+    """Print the menu for the user to read and enter their desired action.
+
+    Args:
+        login_status (dict[str, bool]):
+            The login status of the user,
+            E.g. {"pixiv_fanbox": False, "fantia": True}
+        drive_service (Any | None):
+            The Google Drive API Service Object if it exists, None otherwise.
+
+    Returns:
+        None
+    """
+    fantia_status = login_status.get("fantia")
+    pixiv_status = login_status.get("pixiv_fanbox")
+    print(f"""{F.LIGHTYELLOW_EX}
+> Login Status...
+> Fantia: {'Logged In' if (fantia_status) else 'Guest (Not logged in)'}
+> Pixiv: {'Logged In' if (pixiv_status) else 'Guest (Not logged in)'}
+{C.END}
+--------------------- {F.LIGHTYELLOW_EX}Download Options{C.END} --------------------
+      {F.GREEN}1. Download images from Fantia post(s){C.END}
+      {F.GREEN}2. Download all Fantia posts from creator(s){C.END}
+      {F.LIGHTCYAN_EX}3. Download images from pixiv Fanbox post(s){C.END}
+      {F.LIGHTCYAN_EX}4. Download all pixiv Fanbox posts from a creator(s){C.END}
+
+---------------------- {F.LIGHTYELLOW_EX}Config Options{C.END} ----------------------
+      {F.LIGHTBLUE_EX}5. Change Default Download Folder{C.END}""")
+
+    if (drive_service is None):
+        print(f"""      {F.LIGHTBLUE_EX}6. Configure Google OAuth2 for Google Drive API{C.END}""")
+    else:
+        print(f"""      {F.LIGHTBLUE_EX}6. Remove Saved Google OAuth2 files{C.END}""")
+
+    if (not fantia_status or not pixiv_status):
+        print(f"      {F.LIGHTBLUE_EX}7. Login{C.END}")
+    if (fantia_status or pixiv_status):
+        print(f"      {F.LIGHTBLUE_EX}8. Logout{C.END}")
+
+    print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{C.END} ----------------------")
+    print(f"      {F.LIGHTRED_EX}Y. Report a bug{C.END}")
+    print(f"      {F.RED}X. Shutdown the program{C.END}")
+    print()
+
 async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
     """Main program function."""
     login_status = {}
-    gdrive_api_key = load_gdrive_api_key()
+    drive_service = get_gdrive_service()
 
     if (user_has_saved_cookies()):
         load_cookies = get_input(
@@ -108,7 +169,7 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
 
     save_cookies(*[fantia_login_result, pixiv_fanbox_login_result])
     while (True):
-        print_menu(login_status=login_status, gdrive_api_key=gdrive_api_key)
+        print_menu(login_status=login_status, drive_service=drive_service)
         user_action = get_input(
             "Enter command: ", regex=C.CMD_REGEX, 
             warning="Invalid command input, please enter a valid command from the menu above."
@@ -124,7 +185,8 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                     creator_page=False,
                     download_path=configs.download_directory,
                     driver=driver,
-                    login_status=login_status
+                    login_status=login_status,
+                    drive_service=drive_service
                 )
             except (KeyboardInterrupt):
                 continue
@@ -137,7 +199,8 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                     creator_page=True,
                     download_path=configs.download_directory,
                     driver=driver,
-                    login_status=login_status
+                    login_status=login_status,
+                    drive_service=drive_service
                 )
             except (KeyboardInterrupt):
                 continue
@@ -150,7 +213,8 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                     creator_page=False,
                     download_path=configs.download_directory,
                     driver=driver,
-                    login_status=login_status
+                    login_status=login_status,
+                    drive_service=drive_service
                 )
             except (KeyboardInterrupt):
                 continue
@@ -163,7 +227,8 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                     creator_page=True,
                     download_path=configs.download_directory,
                     driver=driver,
-                    login_status=login_status
+                    login_status=login_status,
+                    drive_service=drive_service
                 )
             except (KeyboardInterrupt):
                 continue
@@ -174,26 +239,26 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             configs = load_configs()
 
         elif (user_action == "6"):
-            # Google Drive API key configurations
-            if (gdrive_api_key is None):
-                # Setup Google Drive API key
-                gdrive_api_key = get_input(
-                    input_msg="Enter Google Drive API key (X to cancel): ",
-                    regex=C.GOOGLE_API_KEY_REGEX,
-                    is_case_sensitive=True,
-                    warning="Invalid Google Drive API key. Please enter a valid Google Drive API key."
+            # Google OAuth2 Configurations
+            if (drive_service is None):
+                # Setup Google OAuth2
+                drive_service = start_google_oauth2_flow()
+                if (drive_service is not None):
+                    print_success("Successfully set up Google OAuth2 and saved the JSON files.")
+            else:
+                # Remove Saved Google OAuth2 files
+                confirm = get_input(
+                    input_msg="Are you sure you want to remove your saved Google OAuth2 files? (y/N): ",
+                    inputs=("y", "n"),
+                    default="n"
                 )
-                if (gdrive_api_key in ("x", "X")):
+                if (confirm == "n"):
                     continue
 
-                save_gdrive_api_key(api_key=gdrive_api_key)
-                print_success("Successfully saved Google Drive API key.")
-            else:
-                # Remove Google Drive API key
-                if (C.GOOGLE_DRIVE_API_KEY_PATH.exists() and C.GOOGLE_DRIVE_API_KEY_PATH.is_file()):
-                    C.GOOGLE_DRIVE_API_KEY_PATH.unlink()
-                gdrive_api_key = None
-                print_success("Successfully removed Google Drive API key.")
+                C.GOOGLE_OAUTH_CLIENT_SECRET.unlink(missing_ok=True)
+                C.GOOGLE_OAUTH_CLIENT_TOKEN.unlink(missing_ok=True)
+                drive_service = None
+                print_success("Successfully removed saved Google OAuth2 files.")
 
         elif (user_action == "7"):
             # Login
@@ -283,7 +348,7 @@ if (__name__ == "__main__"):
     try:
         asyncio.run(initialise())
     except (KeyboardInterrupt, EOFError):
-        print_warning("\nProgram terminated by user.")
+        print_danger("\n\nProgram terminated by user.")
         input("Please press ENTER to quit.")
 
     delete_empty_and_old_logs()

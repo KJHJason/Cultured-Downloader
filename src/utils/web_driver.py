@@ -24,6 +24,7 @@ if (__package__ is None or __package__ == ""):
     from logger import logger
     from spinner import Spinner
     from user_data import load_cookies
+    from google_client import GoogleDrive
     from download import *
     from functional import print_danger, get_input, save_key_prompt, \
                            website_to_readable_format, get_user_urls, get_user_download_choices
@@ -33,6 +34,7 @@ else:
     from .logger import logger
     from .spinner import Spinner
     from .user_data import load_cookies
+    from .google_client import GoogleDrive
     from .download import *
     from .functional import print_danger, get_input, save_key_prompt, \
                             website_to_readable_format, get_user_urls, get_user_download_choices
@@ -441,8 +443,7 @@ def get_creator_posts(driver: webdriver.Chrome, url: str, website: str) -> list[
     except (selenium_exceptions.NoSuchElementException):
         logger.warning(f"No posts found for {url}...\n\n{driver.page_source}")
         raise ChangedHTMLStructureError(
-            "Please raise an issue on GitHub with your log files as " \
-            f"{website_to_readable_format(website)}'s HTML structure has possibly changed."
+            "Possible changes to the HTML structure of the website. "
         )
 
     post_urls = [post.get_attribute("href") for post in posts]
@@ -456,7 +457,7 @@ def get_creator_posts(driver: webdriver.Chrome, url: str, website: str) -> list[
     return list(dict.fromkeys(post_urls))
 
 async def execute_download_process(website: str, creator_page: bool, download_path: str,
-                             driver: webdriver.Chrome, login_status: dict) -> None:
+                             driver: webdriver.Chrome, login_status: dict, drive_service: GoogleDrive) -> None:
     """Executes the download process for the given website.
 
     Args:
@@ -471,6 +472,8 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         login_status (dict):
             The current login status of the user to retrieve the 
             user's cookies, if any, to use to get access to paywall restricted posts.
+        drive_service (GoogleDrive):
+            The Google Drive service to use to download the files from Google Drive.
 
     Returns:
         None
@@ -484,6 +487,9 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         return
     print()
 
+    download_path = pathlib.Path(download_path).joinpath(
+        readable_website_name.replace(" ", "-", 1)
+    )
     if (creator_page):
         with Spinner(
             message="Retrieving post(s) from creator's page...",
@@ -493,9 +499,19 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         ):
             posts_url_arr = []
             for creator_page_url in urls_arr:
-                posts_url_arr.extend(
-                    get_creator_posts(driver=driver, url=creator_page_url, website=website)
-                )
+                try:
+                    posts_url_arr.extend(
+                        get_creator_posts(driver=driver, url=creator_page_url, website=website)
+                    )
+                except (ChangedHTMLStructureError):
+                    log_critical_details_for_post(
+                        post_folder=download_path,
+                        message=f"Could not retrieve any post from\n{creator_page_url}.\n\n" \
+                                "You may raise an issue on GitHub with your log files as " \
+                                f"{website_to_readable_format(website)}'s HTML structure possibly has changed " \
+                                "if there are in fact posts in the URL above.",
+                        log_filename="possible_errors.log"
+                    )
             urls_arr = posts_url_arr
 
     urls_to_download: list[tuple[pathlib.Path, list[tuple[str, str]]]] = []
@@ -503,9 +519,6 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         login_status.get(website)
     )
     readable_website_name = website_to_readable_format(website)
-    download_path = pathlib.Path(download_path).joinpath(
-        readable_website_name.replace(" ", "-", 1)
-    )
     base_spinner_msg = " ".join([
         "Retrieved and processed {progress}",
         f"out of {len(urls_arr)}",
@@ -604,7 +617,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         for post_folder_path, post_content_urls_info in urls_to_download:
             for content_url_info in post_content_urls_info:
                 if (content_url_info[1] == C.GDRIVE_FILE):
-                    gdrive_urls_arr.append(content_url_info[0])
+                    gdrive_urls_arr.append((content_url_info[0], post_folder_path))
                     continue
 
                 if (len(download_tasks) >= max_concurrent_downloads):
@@ -648,7 +661,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
 
     # TODO: finish GDrive downloads
     failed_downloads_arr = []
-    for gdrive_url in gdrive_urls_arr:
+    for gdrive_url, post_folder_path in gdrive_urls_arr:
         pass
 
 # test codes

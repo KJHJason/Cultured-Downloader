@@ -60,14 +60,14 @@ def log_api_error(error_msg: str) -> None:
     logger.error(f"API Server Error:\n{error_msg}")
     raise APIServerError(error_msg)
 
-def validate_schema(schema: BaseModel, data: Union[dict, list], 
+def validate_schema(schema: BaseModel, data: Union[str, dict, list], 
                     return_bool: Optional[bool] = True) -> Union[bool, BaseModel]:
     """Validates the data against the schema
 
     Args:
         schema (BaseModel): 
             The pydantic base model object to validate against
-        data (dict | list):
+        data (str | dict | list):
             The data to validate
         return_bool (bool, optional):
             Whether to return a boolean or the pydantic base model object.
@@ -76,11 +76,14 @@ def validate_schema(schema: BaseModel, data: Union[dict, list],
         Union[bool, BaseModel]:
             False if the data is invalid, otherwise the pydantic base model object with the data or a boolean.
     """
-    if (not isinstance(data, Union[dict, list])):
+    if (not isinstance(data, Union[str, dict, list])):
         return False
 
     try:
-        pydantic_obj = schema(**data)
+        if (isinstance(data, str)):
+            pydantic_obj = schema.parse_raw(data)
+        else:
+            pydantic_obj = schema.parse_obj(data)
         return pydantic_obj if (not return_bool) else True
     except (pydantic_error_wrappers.ValidationError) as e:
         logger.info(
@@ -259,54 +262,10 @@ def change_download_directory(configs: Optional[ConfigSchema] = None,
             if (print_message):
                 print_danger(
                     "\nNotice: You will need to re-run the program for the changes to take effect in the current webdriver instance." \
-                    "\nHowever, as of now, the changes does not affect the download process "
+                    "\nHowever, as of now, the changes does not affect the download process and you can continue to download as usual."
                 )
 
             break
-    print()
-
-def print_menu(login_status: dict[str, bool], gdrive_api_key: Union[str, None]) -> None:
-    """Print the menu for the user to read and enter their desired action.
-
-    Args:
-        login_status (dict[str, bool]):
-            The login status of the user,
-            E.g. {"pixiv_fanbox": False, "fantia": True}
-        gdrive_api_key (str | None):
-            The Google Drive API key if it exists, None otherwise.
-
-    Returns:
-        None
-    """
-    fantia_status = login_status.get("fantia")
-    pixiv_status = login_status.get("pixiv_fanbox")
-    print(f"""{F.LIGHTYELLOW_EX}
-> Login Status...
-> Fantia: {'Logged In' if (fantia_status) else 'Guest (Not logged in)'}
-> Pixiv: {'Logged In' if (pixiv_status) else 'Guest (Not logged in)'}
-{C.END}
---------------------- {F.LIGHTYELLOW_EX}Download Options{C.END} --------------------
-      {F.GREEN}1. Download images from Fantia post(s){C.END}
-      {F.GREEN}2. Download all Fantia posts from creator(s){C.END}
-      {F.LIGHTCYAN_EX}3. Download images from pixiv Fanbox post(s){C.END}
-      {F.LIGHTCYAN_EX}4. Download all pixiv Fanbox posts from a creator(s){C.END}
-
----------------------- {F.LIGHTYELLOW_EX}Config Options{C.END} ----------------------
-      {F.LIGHTBLUE_EX}5. Change Default Download Folder{C.END}""")
-
-    if (gdrive_api_key is None):
-        print(f"""      {F.LIGHTBLUE_EX}6. Set Google Drive API Key{C.END}""")
-    else:
-        print(f"""      {F.LIGHTBLUE_EX}6. Remove Google Drive API Key{C.END}""")
-
-    if (not fantia_status or not pixiv_status):
-        print(f"      {F.LIGHTBLUE_EX}7. Login{C.END}")
-    if (fantia_status or pixiv_status):
-        print(f"      {F.LIGHTBLUE_EX}8. Logout{C.END}")
-
-    print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{C.END} ----------------------")
-    print(f"      {F.LIGHTRED_EX}Y. Report a bug{C.END}")
-    print(f"      {F.RED}X. Shutdown the program{C.END}")
     print()
 
 def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = None, 

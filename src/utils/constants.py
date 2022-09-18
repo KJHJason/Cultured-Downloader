@@ -58,9 +58,6 @@ class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-8xy]$")
-    GOOGLE_API_KEY_REGEX: re.Pattern[str] = re.compile(
-        r"^AIza[\w-]{35}$|^[xX]$" # based on https://github.com/odomojuli/RegExAPI
-    )
 
     # Debug mode (For requesting to the web application hosted on localhost)
     DEBUG_MODE: bool = False
@@ -91,7 +88,8 @@ class Constants:
     # Applications configuration, Google Drive API key, and cookies file paths
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
-    GOOGLE_DRIVE_API_KEY_PATH: pathlib.Path = appDir.joinpath("gdrive-api-key")
+    GOOGLE_OAUTH_CLIENT_SECRET: pathlib.Path = appDir.joinpath("google-client-secret.json")
+    GOOGLE_OAUTH_CLIENT_TOKEN: pathlib.Path = appDir.joinpath("google-client-token")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
     SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
@@ -101,18 +99,6 @@ class Constants:
 
     # GitHub issue page
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
-
-    # For Google Drive API if 
-    # the user has added their credentials.json file
-    # If modifying the scopes, you will need to 
-    # delete the old token.json file.
-    # Google Drive API v3 scopes:
-    #   https://developers.google.com/identity/protocols/oauth2/scopes#drive
-    GOOGLE_OAUTH_SCOPES: list[str] = field(
-        default_factory=lambda: [
-            "https://www.googleapis.com/auth/drive.readonly"
-        ]
-    )
 
     # For downloading
     USER_AGENT: str = USER_AGENT
