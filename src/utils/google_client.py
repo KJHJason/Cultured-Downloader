@@ -165,14 +165,7 @@ class GoogleDrive(GoogleOAuth2):
 
 def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
     """Starts the Google OAuth2 flow and returns the GoogleDrive object if successful, else None."""
-    loaded_json = load_google_oauth_json()
-    google_token = google_client = None
-    for thread in loaded_json:
-        if (thread.is_token and thread.result):
-            google_token = thread.result
-        elif (not thread.is_token and thread.result):
-            google_client = thread.result
-
+    google_token, google_client = load_google_oauth_json()
     if (google_token is not None):
         try:
             return Credentials.from_authorized_user_info(google_token, GOOGLE_OAUTH_SCOPE)
@@ -206,7 +199,8 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         cmd, str(C.ROOT_PY_FILE_PATH.joinpath("helper", "google_oauth.py")),
         "-j", google_client,
         "-s", " ".join(GOOGLE_OAUTH_SCOPE), 
-        "-tp", str(temp_saved_token_json)
+        "-tp", str(temp_saved_token_json),
+        "-p", "8080"
     ]
 
     while (True):
@@ -236,7 +230,7 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
             to_save.append((google_client, False))
 
         save_google_oauth_json(*to_save)
-        return GoogleDrive(token_json)
+        return GoogleDrive(json.loads(token_json))
 
 def get_gdrive_service() -> Union[GoogleDrive, None]:
     """Returns the Google Drive service object if possible."""

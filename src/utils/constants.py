@@ -88,7 +88,7 @@ class Constants:
     # Applications configuration, Google Drive API key, and cookies file paths
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
-    GOOGLE_OAUTH_CLIENT_SECRET: pathlib.Path = appDir.joinpath("google-client-secret.json")
+    GOOGLE_OAUTH_CLIENT_SECRET: pathlib.Path = appDir.joinpath("google-client-secret")
     GOOGLE_OAUTH_CLIENT_TOKEN: pathlib.Path = appDir.joinpath("google-client-token")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")

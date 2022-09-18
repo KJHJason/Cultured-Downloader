@@ -865,12 +865,12 @@ def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optiona
         elif (not thread.is_token and thread.result):
             google_client = thread.result
 
-    if (get_token and not google_client):
-        return google_token
-    elif (not get_token and google_client):
-        return google_client
-    else:
+    if (get_token and get_client):
         return (google_token, google_client)
+    elif (get_token and not get_client):
+        return google_token
+    else:
+        return google_client
 
 __all__ = [
     "SecureCookie",
@@ -891,7 +891,7 @@ __all__ = [
 # test codes
 if (__name__ == "__main__"):
     # Google API key from random repo on GitHub
-    # t = SecureGDriveAPIKey("AIzaSyBxZMqLD3wMDMItNtV45E7aPVZCPsS2jGg")
+    # t = SecureCookie("pixiv_fanbox")
     # t.save_key(save_locally=False)
     # t.save_data()
 

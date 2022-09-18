@@ -35,6 +35,13 @@ def main() -> None:
         required=True,
         help="The path to save the OAuth2 token"
     )
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=8080,
+        help="The port to use for the OAuth2 flow"
+    )
     args = vars(parser.parse_args())
 
     try:
@@ -44,7 +51,7 @@ def main() -> None:
 
     flow = InstalledAppFlow.from_client_config(parsed_json, args["scopes"])
     try:
-        creds = flow.run_local_server(port=8080)
+        creds = flow.run_local_server(port=args["port"])
     except (KeyboardInterrupt):
         print("Cancelled by user.")
     else:
