@@ -2,6 +2,7 @@
 import re
 import abc
 import json
+import time
 import base64
 import pathlib
 import warnings
@@ -496,6 +497,51 @@ class SecureGDriveAPIKey(UserData):
     def __repr__(self) -> str:
         return f"GDriveAPIKey<{self.data}>"
 
+def save_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], save_key_locally: bool) -> bool:
+    """Saves the user's key to the API server.
+
+    Args:
+        obj (SecureCookie | SecureGDriveAPIKey): 
+            The UserData object to save the key with.
+        save_key_locally (bool):
+            Whether or not to save the key locally.
+
+    Returns:
+        Boolean to indicate whether or not the key was saved successfully.
+    """
+    for _ in range(C.MAX_RETRIES):
+        try:
+            obj.save_key(save_locally=save_key_locally)
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+            time.sleep(C.RETRY_WAIT_TIME)
+        else:
+            return True
+    else:
+        return False
+
+def load_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], *args: Any, **kwargs: Any) -> Union[SecureCookie, SecureGDriveAPIKey, None]:
+    """Loads the user's key from the API server.
+
+    Args:
+        obj (UserData): 
+            The UserData object to load the key with.
+        *args (Any):
+            The arguments to pass to the object.
+        **kwargs (Any):
+            The keyword arguments to pass to the object.
+
+    Returns:
+        SecureCookie | SecureGDriveAPIKey | None:
+            The UserData object that was passed in or None if the key could not be loaded.
+    """
+    for _ in range(C.MAX_RETRIES):
+        try:
+            return obj(*args, **kwargs)
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+            time.sleep(C.RETRY_WAIT_TIME)
+    else:
+        return None
+
 def save_gdrive_api_key(api_key: str) -> None:
     """Save the Google Drive API key.
 
@@ -506,7 +552,7 @@ def save_gdrive_api_key(api_key: str) -> None:
     Returns:
         None
     """
-    could_not_save = False
+    could_not_save = True
     save_key_locally = save_key_prompt()
     with Spinner(
         message="Saving Google Drive API Key...",
@@ -514,13 +560,11 @@ def save_gdrive_api_key(api_key: str) -> None:
         spinner_position="left",
         spinner_type="arc"
     ):
-        try:
-            gdrive_api_key_obj = SecureGDriveAPIKey(api_key)
-            gdrive_api_key_obj.save_key(save_locally=save_key_locally)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
-            could_not_save = True
-        else:
-            gdrive_api_key_obj.save_data()
+        gdrive_api_key_obj = load_key_with_retries(SecureCookie, api_key)
+        if (gdrive_api_key_obj is not None):
+            if (save_key_with_retries(gdrive_api_key_obj, save_key_locally=save_key_locally)):
+                gdrive_api_key_obj.save_data()
+                could_not_save = False
 
     if (could_not_save):
         print_danger(
@@ -538,24 +582,20 @@ def load_gdrive_api_key() -> Union[None, str]:
     if (not C.GOOGLE_DRIVE_API_KEY_PATH.exists() or not C.GOOGLE_DRIVE_API_KEY_PATH.is_file()):
         return
 
-    try:
-        with Spinner(
-            message="Loading Google Drive API Key...",
-            colour="light_yellow",
-            spinner_position="left",
-            spinner_type="arc"
-        ):
-            return SecureGDriveAPIKey().data
-    except (APIServerError, httpx.ReadTimeout):
-        print_danger(
-            "Could not load Google Drive API Key as " \
-            "there was a problem with Cultured Downloader API's response..."
-        )
-    except (httpx.ConnectTimeout):
-        print_danger(
-            "Could not decrypt your Google Drive API Key as " \
-            "there is connectivity issue either with your internet or Cultured Downloader API..."
-        )
+    with Spinner(
+        message="Loading Google Drive API Key...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc"
+    ):
+        gdrive_api_key_obj = load_key_with_retries(SecureGDriveAPIKey)
+        if (gdrive_api_key_obj is not None):
+            return gdrive_api_key_obj.data 
+
+    print_danger(
+        "Could not load Google Drive API Key as " \
+        "there was a problem with your internet connection or with Cultured Downloader API..."
+    )
 
 class SaveCookieThread(threading.Thread):
     """Thread to securely save the cookie to a file."""
@@ -580,14 +620,16 @@ class SaveCookieThread(threading.Thread):
         self.result = None
 
     def run(self) -> None:
-        try:
-            secure_cookie = SecureCookie(website=self.website, cookie_data=self.cookie)
-            secure_cookie.save_key(save_locally=self.save_locally)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
+        secure_cookie = load_key_with_retries(SecureCookie, website=self.website, cookie_data=self.cookie)
+        if (secure_cookie is None):
             self.result = False
-        else:
-            secure_cookie.save_data()
+            return
+
+        if (save_key_with_retries(secure_cookie, save_key_locally=self.save_locally)):
+            self.result = secure_cookie.save_data()
             self.result = True
+        else:
+            self.result = False
 
 class LoadCookieThread(threading.Thread):
     """Thread to securely load the cookie from a file."""
@@ -606,9 +648,8 @@ class LoadCookieThread(threading.Thread):
         self.result = None
 
     def run(self) -> None:
-        try:
-            secure_cookie = SecureCookie(website=self.website)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout):
+        secure_cookie = load_key_with_retries(SecureCookie, website=self.website)
+        if (secure_cookie is None):
             self.result = False
         else:
             self.result = secure_cookie.data
@@ -624,7 +665,7 @@ def load_cookies(*websites: list[str]) -> list[LoadCookieThread]:
         list[LoadCookieThread]:
             The list of LoadCookieThread objects that have finished loading the cookies.
     """
-    threads_arr = []
+    threads_arr: list[SaveCookieThread] = []
     for website in websites:
         cookie_path = convert_website_to_path(website)
         if (not cookie_path.exists() or not cookie_path.is_file()):
@@ -648,7 +689,7 @@ def save_cookies(*login_results: Union[tuple[dict, str, bool], None]) -> None:
     Returns:
         None
     """
-    threads_arr = []
+    threads_arr: list[SaveCookieThread] = []
     for result in login_results:
         if (not isinstance(result, tuple) or len(result) != 3):
             continue
