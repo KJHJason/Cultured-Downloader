@@ -226,7 +226,14 @@ def change_download_directory(configs: Optional[ConfigSchema] = None,
     )
     if (change_download_directory == "y"):
         while (True):
-            download_directory_path = input("Enter your new download directory (X to cancel): ").strip()
+            try:
+                download_directory_path = input("Enter your new download directory (X to cancel): ").strip()
+            except (EOFError):
+                continue
+            except (KeyboardInterrupt):
+                print_danger("Changing of download directory has been cancelled.")
+                return
+
             if (download_directory_path == ""):
                 print_danger("Please enter a valid download directory.\n")
                 continue
@@ -250,7 +257,10 @@ def change_download_directory(configs: Optional[ConfigSchema] = None,
             print_success(f"Download directory successfully changed to\n{download_directory_path}")
 
             if (print_message):
-                print_danger("\nImportant: You will need to re-run the program for the changes to take effect.")
+                print_danger(
+                    "\nNotice: You will need to re-run the program for the changes to take effect in the current webdriver instance." \
+                    "\nHowever, as of now, the changes does not affect the download process "
+                )
 
             break
     print()
@@ -352,7 +362,11 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         if (extra_information is not None):
             print_warning(extra_information)
 
-        user_input = input(input_msg).strip()
+        try:
+            user_input = input(input_msg).strip()
+        except (EOFError):
+            continue
+
         if (not is_case_sensitive):
             user_input = user_input.lower()
 
@@ -469,9 +483,14 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
     url_guide, input_regex = url_guide_and_regex_table[website][creator_page]
     extra_info += url_guide
     extra_info += "\nAdditionally, you can enter multiple URLs separated by a comma."
+    print_warning(extra_info)
+
     while (True):
-        print_warning(extra_info)
-        user_input = input("\nEnter URL(s) (X to cancel): ").strip()
+        try:
+            user_input = input("\nEnter URL(s) (X to cancel): ").strip()
+        except (EOFError):
+            continue
+
         if (user_input == ""):
             print_danger("User Error: Please enter a URL")
             continue
@@ -535,11 +554,15 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
     )
     page_num_prompt = "\nPlease enter {} (X to cancel): ".format(
         f"{len(formatted_urls)} page numbers corresponding to the entered URLs" \
-        if (len(formatted_urls > 1)) \
+        if (len(formatted_urls) > 1) \
         else "a page number"
     )
     while (True):
-        page_inputs = input(page_num_prompt).strip()
+        try:
+            page_inputs = input(page_num_prompt).strip()
+        except (EOFError):
+            continue
+
         if (page_inputs == ""):
             print_danger("User Error: Please enter a page number")
             continue

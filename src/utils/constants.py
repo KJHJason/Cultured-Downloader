@@ -108,9 +108,11 @@ class Constants:
     # delete the old token.json file.
     # Google Drive API v3 scopes:
     #   https://developers.google.com/identity/protocols/oauth2/scopes#drive
-    GOOGLE_OAUTH_SCOPES: list[str] = [
-        "https://www.googleapis.com/auth/drive.readonly"
-    ]
+    GOOGLE_OAUTH_SCOPES: list[str] = field(
+        default_factory=lambda: [
+            "https://www.googleapis.com/auth/drive.readonly"
+        ]
+    )
 
     # For downloading
     USER_AGENT: str = USER_AGENT
@@ -128,7 +130,7 @@ class Constants:
                 "application/json"
         }
     )
-    PIXIV_API_HEADER: dict[str, str] = field(
+    PIXIV_FANBOX_API_HEADERS: dict[str, str] = field(
         default_factory=lambda: {
             "User-Agent":
                 USER_AGENT,
@@ -139,7 +141,7 @@ class Constants:
         }
     )
     MAX_RETRIES: int = 5
-    RETRY_DELAY: int = 1 # 1 second
+    RETRY_DELAY: int = 1.5 # 1.5 second
     CHUNK_SIZE: int = 1024 * 1024 # 1 MB
     IMAGE_FILE: str = "image"
     THUMBNAIL_IMAGE: str = "thumbnail"
@@ -148,6 +150,7 @@ class Constants:
     PASSWORD_TEXTS: tuple = ("パス", "Pass", "pass", "密码")
     OTHER_FILE_HOSTING_PROVIDERS: tuple = ("mega",)
     PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"^[1-9]\d*(-[1-9]\d*)?$")
+    API_MAX_CONCURRENT_REQUESTS: int = 5
     MAX_CONCURRENT_DOWNLOADS_TABLE: dict[str, int] = field(
         default_factory=lambda: {
             "pixiv_fanbox":
@@ -158,7 +161,7 @@ class Constants:
     )
 
     # For Fantia URLs
-    FANTIA_API_URL: str = "https://fantia.jp/api/v1/posts"
+    FANTIA_API_URL: str = "https://fantia.jp/api/v1/posts/"
     FANTIA_COOKIE_NAME: str = "_session_id"
     FANTIA_WEBSITE_URL: str = "https://fantia.jp/"
     FANTIA_LOGIN_URL: str = "https://fantia.jp/sessions/signin"

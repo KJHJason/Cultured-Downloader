@@ -1,4 +1,5 @@
 # import Python's standard libraries
+import json
 import pathlib
 import asyncio
 from typing import Union, Optional
@@ -6,13 +7,9 @@ from typing import Union, Optional
 # import local files
 if (__package__ is None or __package__ == ""):
     from crucial import install_dependency, __version__
-    from errors import FailedToDownloadError
-    from functional import print_danger
     from constants import CONSTANTS as C
 else:
     from .crucial import install_dependency, __version__
-    from .errors import FailedToDownloadError
-    from .functional import print_danger
     from .constants import CONSTANTS as C
 
 # import third-party libraries
@@ -48,7 +45,7 @@ def log_critical_details_for_post(post_folder: pathlib.Path, message: str,
         f.write(message)
         f.write("\n")
 
-async def log_failed_downloads(url_info: tuple[str, str], website: str, folder_path: pathlib.Path) -> None:
+def log_failed_downloads(url_info: tuple[str, str], website: str, folder_path: pathlib.Path) -> None:
     """Log failed downloads to a log file.
 
     Args:
@@ -62,7 +59,7 @@ async def log_failed_downloads(url_info: tuple[str, str], website: str, folder_p
     Returns:
         None
     """
-    async with aiofiles.open(folder_path.joinpath("failed_downloads.log"), "a") as f:
+    with open(folder_path.joinpath("failed_downloads.log"), "a") as f:
         url, content_type = url_info
         if (website == "fantia"):
             if (content_type == C.IMAGE_FILE):
@@ -70,18 +67,18 @@ async def log_failed_downloads(url_info: tuple[str, str], website: str, folder_p
 
                 # get post id from folder name, f"[{post_id}] {post_title}"
                 post_id = folder_path.name.split(sep="]", maxsplit=1)[0].replace("[", "")
-                await f.write(f"https://fantia.jp/posts/{post_id}/post_content_photo/{image_id}\n")
+                f.write(f"https://fantia.jp/posts/{post_id}/post_content_photo/{image_id}\n")
                 return
 
-            await f.write(url + "\n")
+            f.write(url + "\n")
         elif (website == "pixiv_fanbox"):
-            await f.write(url + "\n")
+            f.write(url + "\n")
         else:
             raise ValueError(f"Invalid website: {website}")
 
-        await f.write("\n")
+        f.write("\n")
 
-async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Path, website: str) -> None:
+async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Path, website: str, failed_downloads_arr: list, cookie: Optional[CookieJar] = None) -> None:
     """Download a file asynchronously from the given url.
 
     Args:
@@ -91,24 +88,34 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
             The folder path to the file to download.
         website (str):
             The website the url belongs to.
+        failed_downloads_arr (list):
+            The array to append failed downloads to.
+        cookie (CookieJar, Optional):
+            The cookie to use for the request, if any.
 
     Returns:
         None
     """
-    retries = 0
     url, content_type = url_info
     follow_redirects = (content_type == C.ATTACHMENT_FILE)
+
+    if (follow_redirects):
+        folder_path = folder_path.joinpath("attachments")
+    elif (content_type == C.IMAGE_FILE):
+        folder_path = folder_path.joinpath("images")
+    folder_path.mkdir(parents=True, exist_ok=True)
+
     async with httpx.AsyncClient(
         headers=C.BASE_REQ_HEADERS, 
         http2=True, 
         timeout=60, 
-        follow_redirects=follow_redirects
+        follow_redirects=follow_redirects,
+        cookies=cookie
     ) as client:
-        while (retries < C.MAX_RETRIES):
+        for _ in range(C.MAX_RETRIES):
             try:
                 async with client.stream(method="GET", url=url) as response:
-                    if (response.status_code != 200):
-                        raise FailedToDownloadError(f"Failed to download {url}")
+                    response.raise_for_status()
 
                     file_path = folder_path.joinpath(
                         response.url.path.rsplit(sep="/", maxsplit=1)[1]
@@ -123,31 +130,27 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                 httpx.RequestError,
                 httpx.HTTPStatusError,
                 httpx.HTTPError,
-                httpx.StreamError,
-                FailedToDownloadError
+                httpx.StreamError
             ):
-                retries += 1
                 file_path.unlink(missing_ok=True)
                 await asyncio.sleep(C.RETRY_DELAY)
             else:
                 break
         else:
-            await log_failed_downloads(
-                url_info=url_info, 
-                website=website,
-                folder_path=folder_path
+            failed_downloads_arr.append(
+                (url_info, website, folder_path)
             )
 
-def format_cookie_to_cookiejar(cookie: dict) -> CookieJar:
+def format_cookie_to_cookiejar(cookie:  Union[dict, CookieJar, None]) -> Union[CookieJar, None]:
     """Format a cookie string to a CookieJar object for httpx requests.
 
     Args:
-        cookie (dict):
+        cookie (dict | CookieJar | None):
             The cookie to convert to a CookieJar object.
 
     Returns:
-        CookieJar:
-            The CookieJar object of the cookie.
+        CookieJar | None:
+            The CookieJar object of the cookie or None if the cookie is None.
     """
     if (cookie is None or isinstance(cookie, CookieJar)):
         return cookie
@@ -202,17 +205,67 @@ def create_post_folder(download_path: pathlib.Path,
     post_folder_path.mkdir(parents=True, exist_ok=True)
     return post_folder_path
 
-def get_fantia_post_details(cookie: dict, download_path: pathlib.Path, post_id: str, 
-                            download_flags: tuple[bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
-    """Get the details of a Fantia post using Fantia's API.
+async def get_post_details(download_path: pathlib.Path, website: str, post_id: str, post_url: str, json_arr: list, cookie: Optional[CookieJar] = None) -> None:
+    """Get the details of a post using the respective API of the given website.
 
     Args:
-        cookie (dict):
-            The user's cookie to use to get access to the paywall-restricted post contents.
         download_path (pathlib.Path):
-            The path to the folder where the post will be downloaded.
+            The path to the folder where the post will be downloaded (used for logging failed API requests).
+        website (str):
+            The website the post belongs to.
         post_id (str):
             The post ID of the post to download.
+        post_url (str):
+            The post URL to add to the request header as Referer and for logging failed API requests.
+        json_arr (list):
+            The array to append the JSON response to.
+        cookie (CookieJar, Optional):
+            The user's cookie to use to get access to the paywall-restricted post contents.
+
+    Returns:
+        The JSON response of the post details.
+    """
+    if (website == "fantia"):
+        headers = C.BASE_REQ_HEADERS.copy()
+        api_url = C.FANTIA_API_URL
+        main_json = "post"
+    elif (website == "pixiv_fanbox"):
+        headers = C.PIXIV_FANBOX_API_HEADERS.copy()
+        api_url = C.PIXIV_FANBOX_API_URL
+        main_json = "body"
+    else:
+        raise ValueError(f"Invalid website: {website}")
+
+    headers["Referer"] = post_url
+    async with httpx.AsyncClient(http2=True, cookies=cookie, timeout=30, headers=headers) as client:
+        for _ in range(C.MAX_RETRIES):
+            try:
+                response = await client.get(api_url + post_id)
+                response.raise_for_status()
+                json_response = response.json()
+            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, json.decoder.JSONDecodeError):
+                await asyncio.sleep(C.RETRY_DELAY)
+            else:
+                break
+        else:
+            log_critical_details_for_post(
+                post_folder=download_path,
+                message=f"Failed to get the details of '{post_url}' after {C.MAX_RETRIES} requests.\n",
+                log_filename="download_failures.log"
+            )
+            return
+
+    json_arr.append(json_response.get(main_json))
+
+def process_fantia_json(json_response: Union[dict, None], download_path: pathlib.Path, 
+                        download_flags: tuple[bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
+    """Process the json response from Fantia's API and get the post's content urls.
+
+    Args:
+        json_response (dict, None):
+            The json response from Fantia's API.
+        download_path (pathlib.Path):
+            The path to the folder where the post will be downloaded.
         download_flags (tuple[bool, bool, bool]):
             A tuple of booleans that represent whether to download
             the post's images, thumbnail, and attachments such as videos.
@@ -222,18 +275,15 @@ def get_fantia_post_details(cookie: dict, download_path: pathlib.Path, post_id: 
         that contains the post's content urls and its content type.
         Otherwise, None if the post is not found.
     """
+    if (json_response is None):
+        return
+
     download_images, download_thumbnail, \
         download_attachments = download_flags
 
-    with httpx.Client(http2=True, cookies=format_cookie_to_cookiejar(cookie), timeout=15) as client:
-        response = client.get(C.FANTIA_API_URL + post_id)
-        post_info: dict = response.json().get("post")
-
-    if (post_info is None):
-        return
-
-    post_title: str = post_info["title"]
-    creator_name: str = post_info["fanclub"]["user"]["name"]
+    post_id: str = json_response["id"]
+    post_title: str = json_response["title"]
+    creator_name: str = json_response["fanclub"]["user"]["name"]
     post_folder_path = create_post_folder(
         download_path=download_path,
         creator_name=creator_name,
@@ -243,45 +293,36 @@ def get_fantia_post_details(cookie: dict, download_path: pathlib.Path, post_id: 
 
     urls_to_download_arr = []
     if (download_thumbnail):
-        thumbnail: Union[str, None] = post_info.get("thumb")
+        thumbnail: Union[str, None] = json_response.get("thumb")
         if (thumbnail is not None):
             urls_to_download_arr.append((thumbnail["original"], C.THUMBNAIL_IMAGE))
 
     if (download_images or download_attachments):
-        post_contents: list[dict] = post_info.get("post_contents", [])
+        post_contents: list[dict] = json_response.get("post_contents", [])
         for post_content in post_contents:
             if (download_images):
-                post_images: Union[dict, None] = post_content.get("post_content_photos")
-                if (post_images is not None):
-                    for post_image in post_images:
-                        image_url = post_image["url"]["original"]
-                        urls_to_download_arr.append((image_url, C.IMAGE_FILE))
+                post_images: dict = post_content.get("post_content_photos", {})
+                for post_image in post_images:
+                    image_url = post_image["url"]["original"]
+                    urls_to_download_arr.append((image_url, C.IMAGE_FILE))
 
             if (download_attachments):
-                attachment_url: str = post_content.get("download_uri")
+                attachment_url: Union[str, None] = post_content.get("download_uri")
                 if (attachment_url is not None):
                     attachment_url = "https://fantia.jp" + attachment_url
                     urls_to_download_arr.append((attachment_url, C.ATTACHMENT_FILE))
 
     return (post_folder_path, urls_to_download_arr)
 
-def get_pixiv_fanbox_post_details(
-    cookie: dict, 
-    download_path: pathlib.Path,
-    post_id: str, 
-    post_url: str,
-    download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
+def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: pathlib.Path, 
+                              download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
     """Get the details of a Pixiv Fanbox post using Pixiv Fanbox's API.
 
     Args:
-        cookie (dict):
-            The user's cookie to use to get access to the paywall-restricted post contents.
+        json_response (dict, None):
+            The json response from Pixiv Fanbox's API.
         download_path (pathlib.Path):
             The path to the folder where the post will be downloaded.
-        post_id (str): 
-            The post ID of the post to download.
-        post_url (str):
-            The post URL of the post to download.
         download_flags (tuple[bool, bool, bool, bool, bool]):
             A tuple of booleans that represent whether to download
             the post's images, thumbnail, attachments such as videos,
@@ -292,20 +333,15 @@ def get_pixiv_fanbox_post_details(
         that contains the post's content urls and its content type.
         Otherwise, None if the post is not found.
     """
+    if (json_response is None):
+        return
+
     download_images, download_thumbnail, download_attachments, \
         download_gdrive_links, detect_other_download_links = download_flags
 
-    headers = C.PIXIV_API_HEADERS.copy()
-    headers["Referer"] = post_url
-    with httpx.Client(http2=True, cookies=format_cookie_to_cookiejar(cookie), headers=headers, timeout=15) as client:
-        response = client.get(C.PIXIV_FANBOX_API_URL + post_id)
-        post_info: dict = response.json().get("body")
-
-    if (post_info is None):
-        return
-
-    post_title: str = post_info["title"]
-    creator_name: str = post_info["creatorId"]
+    post_id: str = json_response["id"]
+    post_title: str = json_response["title"]
+    creator_name: str = json_response["creatorId"]
     post_folder_path = create_post_folder(
         download_path=download_path,
         creator_name=creator_name,
@@ -315,11 +351,11 @@ def get_pixiv_fanbox_post_details(
 
     urls_to_download_arr = []
     if (download_thumbnail):
-        thumbnail: str = post_info.get("coverImageUrl")
+        thumbnail: str = json_response.get("coverImageUrl")
         if (thumbnail is not None):
             urls_to_download_arr.append((thumbnail, C.THUMBNAIL_IMAGE))
 
-    post_contents: dict = post_info["body"]
+    post_contents: dict = json_response["body"]
     if (download_gdrive_links or detect_other_download_links):
         article_content: list[dict] = post_contents.get("blocks", [])
         for article_block in article_content:
@@ -330,7 +366,7 @@ def get_pixiv_fanbox_post_details(
                         log_critical_details_for_post(
                             post_folder=post_folder_path,
                             message="Detected a possible password-protected " \
-                                    f"content in the post: {password_text}\n",
+                                    f"content in the post: {text}\n",
                             log_filename="detected_passwords.txt"
                         )
 

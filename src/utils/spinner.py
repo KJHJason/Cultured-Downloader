@@ -66,7 +66,9 @@ class Spinner:
         message: str,
         colour: Optional[str] = None,
         spinner_type: str = "dots",
-        spinner_position: Optional[str] = "left") -> None:
+        spinner_position: Optional[str] = "left",
+        completion_msg: Optional[str] = None,
+        cancelled_msg: Optional[str] = None) -> None:
         """Constructs the spinner object.
 
         Attributes:
@@ -78,12 +80,18 @@ class Spinner:
                 The type of spinner to display. (default: "dots")
             spinner_position (str | None):
                 The position of the spinner. (default: "left")
+            completion_msg (str | None):
+                The message to display when the spinner has stopped. (default: None which will clear the line that the spinner was on)
+            cancelled_msg (str | None):
+                The message to display when the spinner has stopped due to a KeyboardInterrupt error. (default: None which will clear the line that the spinner was on)
         """
         # Spinner configurations below
         spinner_info = self.load_spinner(spinner_type=spinner_type)
         self.__spinner = itertools.cycle(spinner_info["frames"])
         self.__interval = 0.001 * spinner_info["interval"]
-        self.__message = message
+        self.message = message
+        self.completion_msg = completion_msg
+        self.cancelled_msg = cancelled_msg
         self.__colour = convert_str_to_ansi(colour)
         self.__position = spinner_position.lower()
         if (self.__position not in ("left", "right")):
@@ -113,11 +121,11 @@ class Spinner:
         while (not self.__stop_event.is_set()):
             print(
                 f"\r{self.__colour}",
-                "{} {}".format(
+                "{}  {}".format(
                     *(
-                        (self.__message, next(self.__spinner)) 
+                        (self.message, next(self.__spinner)) 
                         if (self.__position == "right") 
-                        else (next(self.__spinner), self.__message)
+                        else (next(self.__spinner), self.message)
                     ,)[0]
                 ),
                 S.RESET_ALL,
@@ -133,13 +141,33 @@ class Spinner:
         self.__spinner_thread.start()
         return self
 
-    def stop(self) -> None:
-        """Stop the spinner."""
+    def stop(self, manually_stopped: Optional[bool] = False, error: Optional[bool] = False) -> None:
+        """Stop the spinner.
+
+        Args:
+            manually_stopped (bool):
+                Whether the spinner was stopped manually. (default: False)
+            error (bool):
+                Whether the spinner was stopped due to an error. (default: False)
+
+        Returns:
+            None
+        """
         if (self.__spinner_thread is not None and self.__spinner_thread.is_alive()):
             self.__stop_event.set()
             self.__spinner_thread.join()
 
-        print("\r", self.CLEAR_LINE, end="", sep="")
+        if (not error):
+            if (manually_stopped):
+                if (self.cancelled_msg is not None):
+                    print(f"\r❌  {F.LIGHTRED_EX}", self.CLEAR_LINE, self.cancelled_msg, sep="", end=S.RESET_ALL)
+                    return
+            else:
+                if (self.completion_msg is not None):
+                    print(f"\r✔️  {F.LIGHTGREEN_EX}", self.CLEAR_LINE, self.completion_msg, sep="", end=S.RESET_ALL)
+                    return
+
+        print("\r", self.CLEAR_LINE, end=S.RESET_ALL, sep="")
 
     def __enter__(self):
         """Start the spinner object and to be used in a context manager and returns self."""
@@ -150,7 +178,12 @@ class Spinner:
         exc: Optional[BaseException],
         traceback: Optional[types.TracebackType]) -> None:
         """Stops the spinner when used in a context manager."""
-        self.stop()
+        if (exc_type is KeyboardInterrupt):
+            self.stop(manually_stopped=True)
+        elif (exc_type is not None):
+            self.stop(error=True)
+        else:
+            self.stop()
 
     def __call__(self, func: Callable):
         """Allow the spinner object to be used as a regular function decorator."""
@@ -164,12 +197,5 @@ class Spinner:
 if (__name__ == "__main__"):
     import time
 
-    @Spinner("loading", colour="yellow", spinner_position="left", spinner_type="aesthetic")
-    def test():
-        time.sleep(5)
-
-    try:
-        input("test 1231231231231231231231 : ")
-    except (KeyboardInterrupt, EOFError):
-        pass
-    test()
+    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="aesthetic", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
+        time.sleep(1)

@@ -1,5 +1,4 @@
 # import third-party libraries
-import httpx
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,8 +24,7 @@ if (__package__ is None or __package__ == ""):
     from logger import logger
     from spinner import Spinner
     from user_data import load_cookies
-    from download import get_fantia_post_details, get_pixiv_fanbox_post_details, \
-                         log_critical_details_for_post, async_download_file
+    from download import *
     from functional import print_danger, get_input, save_key_prompt, \
                            website_to_readable_format, get_user_urls, get_user_download_choices
 else:
@@ -35,10 +33,9 @@ else:
     from .logger import logger
     from .spinner import Spinner
     from .user_data import load_cookies
-    from .download import get_fantia_post_details, get_pixiv_fanbox_post_details, \
-                          log_critical_details_for_post, async_download_file
+    from .download import *
     from .functional import print_danger, get_input, save_key_prompt, \
-                            website_to_readable_format
+                            website_to_readable_format, get_user_urls, get_user_download_choices
 
 class CustomWebDriver(webdriver.Chrome):
     """Custom chrome webdriver with some modifications."""
@@ -227,13 +224,22 @@ def login(current_driver: CustomWebDriver, website: str,
         try:
             if (driver.current_url != login_url):
                 driver.get(login_url)
-            input("Press ENTER to continue after logging in...")
+
+            try:
+                input("Press ENTER to continue after logging in...")
+            except (EOFError):
+                continue
+            except (KeyboardInterrupt):
+                driver.quit_with_message()
+                print_danger(message="Cancelled login...")
+                return
 
             with Spinner(
                 message="Verifying login...",
                 colour="light_yellow",
                 spinner_type="arc",
-                spinner_position="left"
+                spinner_position="left",
+                completion_msg="Login verified!"
             ):
                 driver.get(url_verifier)
                 wait_for_page_load(driver)
@@ -476,99 +482,189 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
     download_flags = get_user_download_choices(website)
     if (download_flags is None):
         return
+    print()
 
     if (creator_page):
-        posts_url_arr = []
-        for creator_page_url in urls_arr:
-            posts_url_arr.extend(
-                get_creator_posts(driver=driver, url=creator_page_url, website=website)
-            )
-        urls_arr = posts_url_arr
+        with Spinner(
+            message="Retrieving post(s) from creator's page...",
+            colour="light_yellow",
+            spinner_position="left",
+            spinner_type="arc"
+        ):
+            posts_url_arr = []
+            for creator_page_url in urls_arr:
+                posts_url_arr.extend(
+                    get_creator_posts(driver=driver, url=creator_page_url, website=website)
+                )
+            urls_arr = posts_url_arr
 
     urls_to_download: list[tuple[pathlib.Path, list[tuple[str, str]]]] = []
-    cookie = login_status.get(website)
+    cookie = format_cookie_to_cookiejar(
+        login_status.get(website)
+    )
     readable_website_name = website_to_readable_format(website)
-    download_path = pathlib.Path(download_path).joinpath(readable_website_name.replace(" ", "-"))
-    for post_url in urls_arr:
-        # Not using async here to prevent API rate limiting
-        post_id = post_url.rsplit(sep="/", maxsplit=1)[1]
-        retry_counter = 0
-        while (retry_counter < C.MAX_RETRIES):
-            try:
-                if (website == "fantia"):
-                    download_path_and_post_content_urls = get_fantia_post_details(
-                        cookie=cookie,
-                        post_id=post_id,
-                        download_path=download_path,
-                        download_flags=download_flags
-                    )
-                elif (website == "pixiv_fanbox"):
-                    download_path_and_post_content_urls = get_pixiv_fanbox_post_details(
-                        cookie=cookie,
-                        post_id=post_id,
-                        post_url=post_url,
-                        download_path=download_path,
-                        download_flags=download_flags
-                    )
-                else:
-                    raise ValueError("Invalid website in get_user_downloads_needs function...")
-            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError):
-                print_danger(
-                    f"The request to {readable_website_name}'s API failed. " \
-                    f"Retrying for {C.MAX_RETRIES - retry_counter}..."
-                )
-                time.sleep(1)
-                retry_counter += 1
-            else:
-                if (download_path_and_post_content_urls is not None):
-                    urls_to_download.append(download_path_and_post_content_urls)
-                break
-        else:
-            log_critical_details_for_post(
-                post_folder=download_path,
-                message=f"Failed to get the details of '{post_url}' after {C.MAX_RETRIES} requests.\n",
-                log_filename="download_failures.log"
-            )
-
-    # start downloading the urls
-    # concurrency limiting based on:
-    #   https://stackoverflow.com/a/48484593/16377492
-    download_tasks = set()
-    gdrive_urls_arr: list[str] = []
-    max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
-    for post_folder_path, post_content_urls_info in urls_to_download:
-        for content_url_info in post_content_urls_info:
-            if (content_url_info[1] == C.GDRIVE_FILE):
-                gdrive_urls_arr.append(content_url_info[0])
-                continue
-
-            if (len(download_tasks) >= max_concurrent_downloads):
-                # Wait for some download to finish before adding a new task
-                _done, download_tasks = await asyncio.wait(
-                    download_tasks,
+    download_path = pathlib.Path(download_path).joinpath(
+        readable_website_name.replace(" ", "-", 1)
+    )
+    base_spinner_msg = " ".join([
+        "Retrieved and processed {progress}",
+        f"out of {len(urls_arr)}",
+        "posts'" if (len(urls_arr) > 1) else "post's",
+        f"content details from {readable_website_name}'s API..."
+    ])
+    with Spinner(
+        message=base_spinner_msg.format(
+            progress=0
+        ),
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc",
+        completion_msg=f"Finished processing all {len(urls_arr)} post(s)'s JSON response(s) from {readable_website_name}'s API!",
+        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!",
+    ) as spinner:
+        json_to_process = []
+        api_request_tasks = set()
+        finished_api_requests = 0
+        for post_url in urls_arr:
+            if (len(api_request_tasks) >= C.API_MAX_CONCURRENT_REQUESTS):
+                # Wait for some API requests to finish before adding a new task
+                done, api_request_tasks = await asyncio.wait(
+                    api_request_tasks,
                     return_when=asyncio.FIRST_COMPLETED
                 )
+                finished_api_requests += len(done)
+                spinner.message = base_spinner_msg.format(
+                    progress=finished_api_requests
+                )
 
-            download_tasks.add(
+            post_id = post_url.rsplit(sep="/", maxsplit=1)[1]
+            api_request_tasks.add(
                 asyncio.create_task(
-                    async_download_file(
-                        url_info=content_url_info,
-                        folder_path=post_folder_path,
-                        website=website
+                    get_post_details(
+                        cookie=cookie,
+                        post_id=post_id,
+                        website=website,
+                        post_url=post_url,
+                        json_arr=json_to_process,
+                        download_path=download_path,
                     )
                 )
             )
 
-    # Wait for the remaining downloads to finish
-    await asyncio.wait(download_tasks)
+        # Wait for any remaining downloads to finish
+        if (api_request_tasks):
+            await asyncio.wait(api_request_tasks)
+
+        for json_response in json_to_process:
+            if (website == "fantia"):
+                processed_json = process_fantia_json(
+                    json_response=json_response,
+                    download_path=download_path,
+                    download_flags=download_flags
+                )
+            elif (website == "pixiv_fanbox"):
+                processed_json = process_pixiv_fanbox_json(
+                    json_response=json_response,
+                    download_path=download_path,
+                    download_flags=download_flags
+                )
+            else:
+                raise ValueError(f"Invalid website, {website}, in execute_download_process function...")
+
+            if (processed_json is not None):
+                urls_to_download.append(processed_json)
+
+    # Calculate the total number of urls to download
+    total_urls_to_download = 0
+    for _, post_content_urls in urls_to_download:
+        for _, content_type in post_content_urls:
+            if (content_type != C.GDRIVE_FILE):
+                total_urls_to_download += 1
+
+    failed_downloads_arr = []
+    gdrive_urls_arr: list[str] = []
+    max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
+    base_spinner_msg = " ".join([
+        "Downloaded {progress} out of",
+        f"{total_urls_to_download} URL(s) from {len(urls_arr)} posts on {readable_website_name}..."
+    ])
+    with Spinner(
+        message=base_spinner_msg.format(
+            progress=0,
+            website=readable_website_name
+        ),
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc",
+        completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}!",
+        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!"
+    ) as spinner:
+        download_tasks = set()
+        finished_downloads = 0
+        for post_folder_path, post_content_urls_info in urls_to_download:
+            for content_url_info in post_content_urls_info:
+                if (content_url_info[1] == C.GDRIVE_FILE):
+                    gdrive_urls_arr.append(content_url_info[0])
+                    continue
+
+                if (len(download_tasks) >= max_concurrent_downloads):
+                    # Wait for some download to finish before adding a new task
+                    done, download_tasks = await asyncio.wait(
+                        download_tasks,
+                        return_when=asyncio.FIRST_COMPLETED
+                    )
+                    finished_downloads += len(done)
+                    spinner.message = base_spinner_msg.format(
+                        progress=finished_downloads
+                    )
+
+                download_tasks.add(
+                    asyncio.create_task(
+                        async_download_file(
+                            url_info=content_url_info,
+                            folder_path=post_folder_path,
+                            website=website,
+                            cookie=cookie,
+                            failed_downloads_arr=failed_downloads_arr
+                        )
+                    )
+                )
+
+        # Wait for any remaining downloads to finish
+        if (download_tasks):
+            await asyncio.wait(download_tasks)
+
+    for url_info, website, folder_path in failed_downloads_arr:
+        log_failed_downloads(
+            url_info=url_info, 
+            website=website,
+            folder_path=folder_path
+        )
+    if (failed_downloads_arr):
+        print_danger(
+            f"{len(failed_downloads_arr)} download(s) failed. "
+            "Please check the generated logs in each of the post's folders."
+        )
 
     # TODO: finish GDrive downloads
+    failed_downloads_arr = []
     for gdrive_url in gdrive_urls_arr:
         pass
 
 # test codes
 if (__name__ == "__main__"):
+    async def test(driver: webdriver.Chrome) -> None:
+        await execute_download_process(
+            website="pixiv_fanbox",
+            creator_page=True,
+            driver=driver,
+            download_path=pathlib.Path(__file__).parent.absolute(),
+            login_status={
+                "pixiv_fanbox":
+                    None,
+                "fantia":
+                    None
+            }
+        )
     with get_driver(".") as driver:
-        driver.get("https://www.google.com")
-        print(driver.title)
-        # print(driver.page_source)
+        asyncio.run(test(driver))

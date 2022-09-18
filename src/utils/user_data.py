@@ -10,7 +10,7 @@ import threading
 from typing import Optional, Any, Union
 
 # import local files
-if (__name__ == "__main__"):
+if (__package__ is None or __package__ == ""):
     from errors import APIServerError
     from cryptography_operations import *
     from constants import CONSTANTS as C
@@ -463,7 +463,7 @@ class SecureCookie(UserData):
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
 
-class SecureGoogleOAuth2ClientSecret(UserData):
+class SecureGDriveAPIKey(UserData):
     """Creates a way to securely deal with the user's saved
     Google Drive API key that is stored on the user's machine."""
     def __init__(self, api_key: Optional[str] = None) -> None:
@@ -693,5 +693,5 @@ if (__name__ == "__main__"):
     # t.save_key(save_locally=False)
     # t.save_data()
 
-    s = SecureGDriveAPIKey()
+    s = SecureCookie("pixiv_fanbox")
     print(s.data)
