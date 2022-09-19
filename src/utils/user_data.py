@@ -894,10 +894,5 @@ __all__ = [
 
 # test codes
 if (__name__ == "__main__"):
-    # Google API key from random repo on GitHub
-    # t = SecureCookie("pixiv_fanbox")
-    # t.save_key(save_locally=False)
-    # t.save_data()
-
     s = SecureCookie("pixiv_fanbox")
     print(s.data)

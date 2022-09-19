@@ -51,7 +51,7 @@ In the end, I spent about 2-4 weeks learning concepts such as web scraping, asyn
   ```
   pip install -r requirements.txt
   ```
-- Run cultured_downloader.py and enjoy!
+- Run [launcher.py](src/launcher.py) and enjoy!
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.

@@ -197,5 +197,5 @@ class Spinner:
 if (__name__ == "__main__"):
     import time
 
-    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="bouncingBar", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
+    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="material", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
         time.sleep(12)
