@@ -1,7 +1,11 @@
-requests>=2.27.1
+# Main libraries used
 selenium>=4.1.2,<5.0.0
 webdriver-manager==3.5.3
-pycryptodome>=3.14.1
-dill>=0.3.4
+httpx[http2]>=0.23.0
 colorama>=0.4.4
-gdown>=4.4.0
+cryptography>=37.0.4
+pydantic>=1.10.2
+
+# For Google Cloud Platform APIs
+# (Used for GDrive API calls)
+google-api-python-client>=2.51.0
