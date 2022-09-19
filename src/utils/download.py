@@ -8,9 +8,11 @@ from typing import Union, Optional
 if (__package__ is None or __package__ == ""):
     from crucial import install_dependency, __version__
     from constants import CONSTANTS as C
+    from google_client import GoogleDrive
 else:
     from .crucial import install_dependency, __version__
     from .constants import CONSTANTS as C
+    from .google_client import GoogleDrive
 
 # import third-party libraries
 import httpx
@@ -112,7 +114,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         follow_redirects=follow_redirects,
         cookies=cookie
     ) as client:
-        for _ in range(C.MAX_RETRIES):
+        for retry_counter in range(C.MAX_RETRIES):
             try:
                 async with client.stream(method="GET", url=url) as response:
                     response.raise_for_status()
@@ -126,20 +128,16 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     async with aiofiles.open(file_path, "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
                             await f.write(chunk)
-            except (
-                httpx.RequestError,
-                httpx.HTTPStatusError,
-                httpx.HTTPError,
-                httpx.StreamError
-            ):
+            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, httpx.StreamError):
                 file_path.unlink(missing_ok=True)
+                if (retry_counter == C.MAX_RETRIES_CHECK):
+                    failed_downloads_arr.append(
+                        (url_info, website, folder_path)
+                    )
+                    return
                 await asyncio.sleep(C.RETRY_DELAY)
             else:
                 break
-        else:
-            failed_downloads_arr.append(
-                (url_info, website, folder_path)
-            )
 
 def format_cookie_to_cookiejar(cookie:  Union[dict, CookieJar, None]) -> Union[CookieJar, None]:
     """Format a cookie string to a CookieJar object for httpx requests.
@@ -205,6 +203,25 @@ def create_post_folder(download_path: pathlib.Path,
     post_folder_path.mkdir(parents=True, exist_ok=True)
     return post_folder_path
 
+def log_failed_post_api_call(download_path: pathlib.Path, post_url: str) -> None:
+    """Log a failed post API call to a log file.
+
+    Args:
+        download_path (pathlib.Path):
+            The path to the folder where the log file will be created.
+        post_url (str):
+            The url of the post that failed to be downloaded.
+
+    Returns:
+        None
+    """
+    log_critical_details_for_post(
+        post_folder=download_path,
+        message="Failed to get the details of " \
+                f"'{post_url}' after {C.MAX_RETRIES} requests.\n",
+        log_filename="download_failures.log"
+    )
+
 async def get_post_details(download_path: pathlib.Path, website: str, post_id: str, post_url: str, json_arr: list, cookie: Optional[CookieJar] = None) -> None:
     """Get the details of a post using the respective API of the given website.
 
@@ -238,22 +255,28 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
 
     headers["Referer"] = post_url
     async with httpx.AsyncClient(http2=True, cookies=cookie, timeout=30, headers=headers) as client:
-        for _ in range(C.MAX_RETRIES):
+        for retry_counter in range(C.MAX_RETRIES):
             try:
                 response = await client.get(api_url + post_id)
+                if (response.status_code == 404):
+                    log_failed_post_api_call(
+                        download_path=download_path, 
+                        post_url=post_url
+                    )
+                    return
+
                 response.raise_for_status()
                 json_response = response.json()
             except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, json.decoder.JSONDecodeError):
+                if (retry_counter == C.MAX_RETRIES_CHECK):
+                    log_failed_post_api_call(
+                        download_path=download_path, 
+                        post_url=post_url
+                    )
+                    return
                 await asyncio.sleep(C.RETRY_DELAY)
             else:
                 break
-        else:
-            log_critical_details_for_post(
-                post_folder=download_path,
-                message=f"Failed to get the details of '{post_url}' after {C.MAX_RETRIES} requests.\n",
-                log_filename="download_failures.log"
-            )
-            return
 
     json_arr.append(json_response.get(main_json))
 
@@ -314,6 +337,98 @@ def process_fantia_json(json_response: Union[dict, None], download_path: pathlib
 
     return (post_folder_path, urls_to_download_arr)
 
+def detect_password_in_text(post_folder_path: pathlib.Path, text: str) -> bool:
+    """Detect if the given text contains a password and logs it to the post's folder.
+
+    Args:
+        post_folder_path (pathlib.Path):
+            The path to the folder where the password will be logged.
+        text (str):
+            The text to check for a password.
+
+    Returns:
+        Bool: True if the text contains a password, otherwise False.
+    """
+    password_filename = "detected_passwords.txt"
+    password_text_path = post_folder_path.joinpath(password_filename)
+    if (password_text_path.exists() and password_text_path.is_file() and password_text_path.stat().st_size > 0):
+        return False
+
+    for password_text in C.PASSWORD_TEXTS:
+        if (password_text in text):
+            log_critical_details_for_post(
+                post_folder=post_folder_path,
+                message="Detected a possible password-protected " \
+                        f"content in the post: {text}\n",
+                log_filename=password_filename
+            )
+            return True
+    return False
+
+def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]) -> bool:
+    """Detect if the given text contains a Google Drive link.
+
+    Args:
+        text (str):
+            The text to check for a Google Drive link.
+        is_url (bool):
+            Whether the text is a URL or not.
+        urls_to_download_arr (list[str]):
+            The array of URLs to download to append the Google Drive link to.
+
+    Returns:
+        Bool: True if the text contains a Google Drive link, otherwise False.
+    """
+    DRIVE_LINK = "https://drive.google.com"
+    if (is_url):
+        if (text.startswith(DRIVE_LINK)):
+            urls_to_download_arr.append((text, C.GDRIVE_FILE))
+            return True
+        return False
+
+    if (DRIVE_LINK in text):
+        urls_to_download_arr.append((text, C.GDRIVE_FILE))
+        return True
+    return False
+
+def detect_other_external_download_links(text: str, is_url: bool, 
+                                         post_folder_path: pathlib.Path) -> bool:
+    """Detect if the given text contains a download link
+    to an external website, other than GDrive, and logs it to the post's folder.
+
+    Args:
+        text (str):
+            The text to check for an external link.
+        is_url (bool):
+            Whether the text is a URL or not.
+        post_folder_path (pathlib.Path):
+            The path to the folder where the external link will be logged.
+
+    Returns:
+        Bool: True if the text contains an external link, otherwise False.
+    """
+    filename = "detected_external_links.txt"
+    text_path = post_folder_path.joinpath(filename)
+    if (text_path.exists() and text_path.is_file() and text_path.stat().st_size > 0):
+        return False
+
+    for url in C.OTHER_FILE_HOSTING_PROVIDERS:
+        if (url in text):
+            if (is_url):
+                message = "Detected a link that points to an external file hosting " \
+                           f"provider in the post: {text}\n"
+            else:
+                message = "Detected a link that points to an external file hosting " \
+                           f"provider in the post's description:\n{text}\n"
+
+            log_critical_details_for_post(
+                post_folder=post_folder_path,
+                message=message,
+                log_filename=filename
+            )
+            return True
+    return False
+
 def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: pathlib.Path, 
                               download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
     """Get the details of a Pixiv Fanbox post using Pixiv Fanbox's API.
@@ -355,51 +470,205 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
         if (thumbnail is not None):
             urls_to_download_arr.append((thumbnail, C.THUMBNAIL_IMAGE))
 
+    # Note that Pixiv Fanbox posts have 2 types of formatting (as of now):
+    #   1. With proper formatting and mapping of post content elements ("article")
+    #   2. With a simple formatting that obly contains info about the text and files ("file")
+    post_type: str = json_response["type"]
     post_contents: dict = json_response["body"]
-    if (download_gdrive_links or detect_other_download_links):
-        article_content: list[dict] = post_contents.get("blocks", [])
-        for article_block in article_content:
-            text: str = article_block.get("text", "")
-            if (text != ""):
-                for password_text in C.PASSWORD_TEXTS:
-                    if (password_text in text):
-                        log_critical_details_for_post(
-                            post_folder=post_folder_path,
-                            message="Detected a possible password-protected " \
-                                    f"content in the post: {text}\n",
-                            log_filename="detected_passwords.txt"
-                        )
 
-            external_links_info_arr: list[dict] = article_block.get("links", [])
-            for external_link_info in external_links_info_arr:
-                external_link: str = external_link_info.get("url")
-                if (external_link is not None):
-                    if (download_gdrive_links and external_link.lower().startswith("https://drive.google.com/")):
-                        urls_to_download_arr.append((external_link, C.GDRIVE_FILE))
-                        continue
+    # Retrieves the post's gdrive links or log external download links such as MEGA links, if any.
+    # Will also detect if the post contains a password for the user to use.
+    if (download_gdrive_links or detect_other_download_links):
+        if (post_type == "file"):
+            post_body: str = post_contents.get("text")
+            if (post_body is not None):
+                # If the post follow a simple format,
+                post_body: list[str] = post_body.split()
+                for idx, text in enumerate(post_body):
+                    if (detect_password_in_text(post_folder_path, text)):
+                        try:
+                            log_critical_details_for_post(
+                                post_folder=post_folder_path,
+                                message="Note: If the password was not present in the text above,\n"\
+                                        "the next block of text might contain the password:\n" \
+                                        f"{post_body[idx + 1]}\n",
+                                log_filename="detected_passwords.txt"
+                            )
+                        except (IndexError):
+                            pass
 
                     if (detect_other_download_links):
-                        for other_file_hosting_service in C.OTHER_FILE_HOSTING_PROVIDERS:
-                            if (other_file_hosting_service in external_link.lower()):
-                                if (text != ""):
-                                    text = f"[{text}] "
-                                log_critical_details_for_post(
-                                    post_folder=post_folder_path,
-                                    message="Detected a link that points to an external file hosting " \
-                                            f"provider in the post: {text}{external_link}\n",
-                                    log_filename="detected_external_links.txt"
-                                )
+                        detect_other_external_download_links(
+                            text=text, 
+                            is_url=False, 
+                            post_folder_path=post_folder_path
+                        )
 
-    if (download_images):
-        image_files: dict[str, dict[str, Union[str, int]]] = post_contents.get("imageMap", {})
-        for image_file in image_files.values():
-            image_file_url: str = image_file["originalUrl"]
-            urls_to_download_arr.append((image_file_url, C.IMAGE_FILE))
+                    if (download_gdrive_links):
+                        detect_gdrive_links(
+                            text=text,
+                            is_url=False,
+                            urls_to_download_arr=urls_to_download_arr
+                        )
 
-    if (download_attachments):
-        attachment_files: dict[str, dict[str, Union[str, int]]] = post_contents.get("fileMap", {})
-        for attachments in attachment_files.values():
-            attachment_url: str = attachments["url"]
-            urls_to_download_arr.append((attachment_url, C.ATTACHMENT_FILE))
+        elif (post_type == "article"):
+            # If the post have proper formatting and mappings,
+            article_content: list[dict] = post_contents.get("blocks", [])
+            for idx, article_block in enumerate(article_content):
+                text: str = article_block.get("text", "")
+                if (text != ""):
+                    if (download_gdrive_links):
+                        detect_gdrive_links(
+                            text=text,
+                            is_url=False,
+                            urls_to_download_arr=urls_to_download_arr
+                        )
+
+                    if (detect_other_download_links):
+                        detect_other_external_download_links(
+                            text=text, 
+                            is_url=False, 
+                            post_folder_path=post_folder_path
+                        )
+
+                    if (detect_password_in_text(post_folder_path, text)):
+                        # Get the next 2 blocks of text
+                        no_of_blocks = 0
+                        try:
+                            next_text = article_content[idx + 1].get("text", "")
+                        except (IndexError):
+                            next_text = ""
+                        try:
+                            next_next_text = article_content[idx + 2].get("text", "")
+                        except (IndexError):
+                            next_next_text = ""
+
+                        # Increment the number of blocks if the next block of text is not empty
+                        next_text_is_not_empty = (next_text != "")
+                        if (next_text_is_not_empty):
+                            no_of_blocks += 1
+                        next_next_text_is_not_empty = (next_next_text != "")
+                        if (next_next_text_is_not_empty):
+                            no_of_blocks += 1
+
+                        # log the obtained text
+                        if (next_text_is_not_empty):
+                            next_text += "\n"
+                        if (next_text_is_not_empty or next_next_text_is_not_empty):
+                            log_critical_details_for_post(
+                                post_folder=post_folder_path,
+                                message="Note: If the password was not present in the text above,\n"\
+                                        f"the next {no_of_blocks} block of text might contain " \
+                                        f"the password:\n{next_text}{next_next_text}\n",
+                                log_filename="detected_passwords.txt"
+                            )
+
+                external_links_info_arr: list[dict] = article_block.get("links", [])
+                for external_link_info in external_links_info_arr:
+                    external_link: str = external_link_info.get("url")
+                    if (external_link is None):
+                        continue
+
+                    if (download_gdrive_links):
+                        detected_gdrive = detect_gdrive_links(
+                            text=external_link,
+                            is_url=True,
+                            urls_to_download_arr=urls_to_download_arr
+                        )
+                        if (detected_gdrive):
+                            continue
+
+                    if (detect_other_download_links):
+                        detect_other_external_download_links(
+                            text=external_link, 
+                            is_url=True, 
+                            post_folder_path=post_folder_path
+                        )
+
+    # Get images and attachments URL(s) from the post
+    if (post_type == "file" and (download_images or download_attachments)):
+        # If the post follows a simple format,
+        image_and_attachment_files: list[dict] = post_contents.get("files", [])
+        for file_info in image_and_attachment_files:
+            file_url = file_info["url"]
+            extension = file_info["extension"]
+            if (download_images and extension in C.PIXIV_FANBOX_ALLOWED_IMAGE_FORMATS):
+                urls_to_download_arr.append((file_url, C.IMAGE))
+            elif (download_attachments):
+                urls_to_download_arr.append((file_url, C.ATTACHMENT))
+
+    elif (post_type == "article"):
+        if (download_images):
+            # If the post have proper formatting and mappings,
+            image_files: dict[str, dict[str, Union[str, int]]] = post_contents.get("imageMap", {})
+            for image_file in image_files.values():
+                image_file_url: str = image_file["originalUrl"]
+                urls_to_download_arr.append((image_file_url, C.IMAGE_FILE))
+
+        if (download_attachments):
+            # If the post have proper formatting and mappings,
+            attachment_files: dict[str, dict[str, Union[str, int]]] = post_contents.get("fileMap", {})
+            for attachments in attachment_files.values():
+                attachment_url: str = attachments["url"]
+                urls_to_download_arr.append((attachment_url, C.ATTACHMENT_FILE))
 
     return (post_folder_path, urls_to_download_arr)
+
+async def get_gdrive_folder_contents(
+    drive_service: GoogleDrive, 
+    gdrive_folder_arr: C.GDRIVE_HINT_TYPING,
+    failed_requests_arr: list, 
+    headers: Optional[dict] = None) -> list[tuple[str, tuple[str, pathlib.Path]]]:
+    """Get the folder contents of a Google Drive folder.
+
+    Args:
+        drive_service (GoogleDrive): 
+            The Google Drive service object.
+        gdrive_folder_arr (list[tuple[str, tuple[str, pathlib.Path]]]): 
+            The Google Drive folder(s) to get the contents of.
+        failed_requests_arr (list): 
+            The array to append the failed requests to.
+        headers (dict, optional): 
+            The headers to use for the requests. Defaults to None.
+
+    Returns:
+        list[tuple[str, tuple[str, pathlib.Path]]]:
+            A list of tuples containing the file ID(s) and
+            a tuple of the original gdrive URL and the post folder that the gdrive URL was found in.
+    """
+    if (drive_service is None):
+        return
+
+    gdrive_folder_api_response = await asyncio.gather(*[
+        drive_service.get_folder_contents(
+            folder_id=folder_id,
+            gdrive_info=gdrive_info,
+            failed_requests_arr=failed_requests_arr,
+            headers=headers
+        )
+        for folder_id, gdrive_info in gdrive_folder_arr
+    ])
+
+    nested_folders_arr = []
+    gdrive_files_arr = []
+    for response, gdrive_info in gdrive_folder_api_response:
+        if (response is None):
+            continue
+
+        for file in response:
+            to_append = (file["id"], file["name"], gdrive_info)
+            if (file["mimeType"] == "application/vnd.google-apps.folder"):
+                nested_folders_arr.append(to_append)
+            else:
+                gdrive_files_arr.append(to_append)
+
+    if (len(nested_folders_arr) > 0):
+        nested_files_arr = await get_gdrive_folder_contents(
+            drive_service=drive_service,
+            gdrive_folder_arr=nested_folders_arr,
+            failed_requests_arr=failed_requests_arr,
+            headers=headers
+        )
+        gdrive_files_arr.extend(nested_files_arr)
+
+    return gdrive_files_arr

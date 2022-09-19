@@ -61,7 +61,7 @@ def log_api_error(error_msg: str) -> None:
     raise APIServerError(error_msg)
 
 def validate_schema(schema: BaseModel, data: Union[str, dict, list], 
-                    return_bool: Optional[bool] = True) -> Union[bool, BaseModel]:
+                    return_bool: Optional[bool] = True, log_failure: Optional[bool] = True) -> Union[bool, BaseModel]:
     """Validates the data against the schema
 
     Args:
@@ -70,7 +70,9 @@ def validate_schema(schema: BaseModel, data: Union[str, dict, list],
         data (str | dict | list):
             The data to validate
         return_bool (bool, optional):
-            Whether to return a boolean or the pydantic base model object.
+            Whether to return a boolean or the pydantic base model object. Defaults to True.
+        log_failure (bool, optional):
+            Whether to log the failure of validation. Defaults to True.
 
     Returns:
         Union[bool, BaseModel]:
@@ -86,9 +88,11 @@ def validate_schema(schema: BaseModel, data: Union[str, dict, list],
             pydantic_obj = schema.parse_obj(data)
         return pydantic_obj if (not return_bool) else True
     except (pydantic_error_wrappers.ValidationError) as e:
-        logger.info(
-            f"Data is invalid when validated against the schema, {schema.__name__}: {e}\n\nData: {data}"
-        )
+        if (log_failure):
+            logger.info(
+                "Data is invalid when validated against the schema, " \
+                f"{schema.__name__}: {e}\n\nData: {data}"
+            )
         return False
 
 def print_danger(message: Any, **kwargs) -> None:
@@ -334,11 +338,12 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         elif (regex is not None and regex.match(user_input)):
             return user_input
         elif (default is not None and user_input == ""):
+            print("\033[A", input_msg, default, sep="")
             return default
         else:
             print_danger(f"Sorry, please enter a valid input." if (warning is None) else warning)
 
-def get_user_download_choices(website: str) -> Union[tuple[bool, bool, bool], tuple[bool, bool, bool, bool, bool], None]:
+def get_user_download_choices(website: str, block_gdrive: bool) -> Union[tuple[bool, bool, bool], tuple[bool, bool, bool, bool, bool], None]:
     """Prompt the user and get their download preferences.
 
     Args:
@@ -346,6 +351,9 @@ def get_user_download_choices(website: str) -> Union[tuple[bool, bool, bool], tu
             The website to get the download preferences for.
             If the website is "fantia", gdrive and detection of 
             other file hosting provider links will be disabled.
+        block_gdrive (bool):
+            Whether to block gdrive links from being downloaded.
+            If so, the user would not be prompted if they would like to download gdrive links.
 
     Returns:
         A tuple of boolean or None if the user cancels the download process:
@@ -384,13 +392,16 @@ def get_user_download_choices(website: str) -> Union[tuple[bool, bool, bool], tu
             download_attachments == "y"
         ]
         if (website != "fantia"):
-            download_gdrive_links = get_input(
-                input_msg="Download Google Drive links? (Y/n/x to cancel): ",
-                inputs=("y", "n", "x"),
-                default="y"
-            )
-            if (download_gdrive_links == "x"):
-                return
+            if (not block_gdrive):
+                download_gdrive_links = get_input(
+                    input_msg="Download Google Drive links? (Y/n/x to cancel): ",
+                    inputs=("y", "n", "x"),
+                    default="y"
+                )
+                if (download_gdrive_links == "x"):
+                    return
+            else:
+                download_gdrive_links = "n"
 
             detect_other_download_links = get_input(
                 input_msg="Detect other download links such as MEGA links? (Y/n/x to cancel): ",
@@ -543,9 +554,15 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
                 print_danger("Please enter in the correct format such as '1, 1-3' and try again.")
                 break
 
+            is_fantia = (website == "fantia")
             page_nums = page_num.split(sep="-", maxsplit=1)
             if (len(page_nums) == 1):
-                url_with_page_nums_arr.append(formatted_urls[idx] + f"?page={page_nums[0]}")
+                formatted_url = formatted_urls[idx] + f"?page={page_nums[0]}"
+                if (is_fantia):
+                    # Ensure that the pages go by newest to oldest
+                    formatted_url += "&q[s]=newer&q[tag]="
+
+                url_with_page_nums_arr.append(formatted_url)
                 continue
 
             # if a range was given, make sure the range is valid
@@ -554,7 +571,12 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
                 page_nums[0], page_nums[1] = page_nums[1], page_nums[0]
 
             for page_num in range(page_nums[0], page_nums[1] + 1):
-                url_with_page_nums_arr.append(formatted_urls[idx] + f"?page={page_num}")
+                formatted_url = formatted_urls[idx] + f"?page={page_num}"
+                if (is_fantia):
+                    # Ensure that the pages go by newest to oldest
+                    formatted_url += "&q[s]=newer&q[tag]="
+
+                url_with_page_nums_arr.append(formatted_url)
         else:
             return url_with_page_nums_arr
 

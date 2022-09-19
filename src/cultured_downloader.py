@@ -258,7 +258,7 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                 C.GOOGLE_OAUTH_CLIENT_SECRET.unlink(missing_ok=True)
                 C.GOOGLE_OAUTH_CLIENT_TOKEN.unlink(missing_ok=True)
                 drive_service = None
-                print_success("Successfully removed saved Google OAuth2 files.")
+                print_success("Successfully removed your saved Google OAuth2 files.")
 
         elif (user_action == "7"):
             # Login
@@ -298,7 +298,7 @@ async def main(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
 
         else:
             # Report a bug
-            opened_tab = webbrowser.open(C.ISSUE_PAGE, new=2)
+            opened_tab = webbrowser.open(C.ISSUE_PAGE, new=1)
             if (not opened_tab):
                 print_warning(f"\nFailed to open web browser. Please visit the issue page manually and create an issue to report the bug at\n{C.ISSUE_PAGE}")
             else:
@@ -320,7 +320,14 @@ Note:    Requires the user to login via this program for images that requires a 
 Warning:
 Please read the term of use at https://github.com/KJHJason/Cultured-Downloader before using this program.{C.END}
 """)
-    configs = load_configs()
+    with Spinner(
+        message="Loading saved configs...",
+        spinner_type="arc",
+        colour="light_yellow",
+        spinner_position="left",
+        completion_msg="Successfully loaded saved configs!\n\n"
+    ):
+        configs = load_configs()
 
     # Ask before initialising the webdriver since
     # a change in the webdriver download path will
@@ -337,11 +344,12 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         await main(driver=driver, configs=configs)
 
 if (__name__ == "__main__"):
-    # sys.excepthook = exception_handler
+    if (not C.DEBUG_MODE):
+        sys.excepthook = exception_handler
+
     if (C.USER_PLATFORM == "Windows"):
         # escape ansi escape sequences on Windows cmd
         colorama_init(autoreset=False, convert=True)
-
         # A temporary fix for ProactorBasePipeTransport issues on Windows OS Machines
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 

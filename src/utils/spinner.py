@@ -71,7 +71,7 @@ class Spinner:
         cancelled_msg: Optional[str] = None) -> None:
         """Constructs the spinner object.
 
-        Attributes:
+        Args:
             message (str):
                 The message to display along with the spinner.
             colour (str | None):
@@ -121,7 +121,7 @@ class Spinner:
         while (not self.__stop_event.is_set()):
             print(
                 f"\r{self.__colour}",
-                "{}  {}".format(
+                "{} {}".format(
                     *(
                         (self.message, next(self.__spinner)) 
                         if (self.__position == "right") 
@@ -197,5 +197,5 @@ class Spinner:
 if (__name__ == "__main__"):
     import time
 
-    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="aesthetic", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
-        time.sleep(1)
+    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="bouncingBar", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
+        time.sleep(12)

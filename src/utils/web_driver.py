@@ -241,7 +241,7 @@ def login(current_driver: CustomWebDriver, website: str,
                 colour="light_yellow",
                 spinner_type="arc",
                 spinner_position="left",
-                completion_msg="Login verified!"
+                completion_msg="Login verified!\n"
             ):
                 driver.get(url_verifier)
                 wait_for_page_load(driver)
@@ -482,11 +482,16 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
     if (urls_arr is None):
         return
 
-    download_flags = get_user_download_choices(website)
+    block_gdrive_downloads = (drive_service is None)
+    download_flags = get_user_download_choices(
+        website=website,
+        block_gdrive=block_gdrive_downloads
+    )
     if (download_flags is None):
         return
     print()
 
+    readable_website_name = website_to_readable_format(website)
     download_path = pathlib.Path(download_path).joinpath(
         readable_website_name.replace(" ", "-", 1)
     )
@@ -495,7 +500,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
             message="Retrieving post(s) from creator's page...",
             colour="light_yellow",
             spinner_position="left",
-            spinner_type="arc"
+            spinner_type="bouncingBar"
         ):
             posts_url_arr = []
             for creator_page_url in urls_arr:
@@ -518,7 +523,6 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
     cookie = format_cookie_to_cookiejar(
         login_status.get(website)
     )
-    readable_website_name = website_to_readable_format(website)
     base_spinner_msg = " ".join([
         "Retrieved and processed {progress}",
         f"out of {len(urls_arr)}",
@@ -531,9 +535,9 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         ),
         colour="light_yellow",
         spinner_position="left",
-        spinner_type="arc",
-        completion_msg=f"Finished processing all {len(urls_arr)} post(s)'s JSON response(s) from {readable_website_name}'s API!",
-        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!",
+        spinner_type="pong",
+        completion_msg=f"Finished processing all {len(urls_arr)} post(s)'s JSON response(s) from {readable_website_name}'s API!\n",
+        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!\n",
     ) as spinner:
         json_to_process = []
         api_request_tasks = set()
@@ -608,9 +612,9 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         ),
         colour="light_yellow",
         spinner_position="left",
-        spinner_type="arc",
-        completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}!",
-        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!"
+        spinner_type="material",
+        completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}\n!",
+        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!\n"
     ) as spinner:
         download_tasks = set()
         finished_downloads = 0
@@ -660,9 +664,101 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         )
 
     # TODO: finish GDrive downloads
-    failed_downloads_arr = []
-    for gdrive_url, post_folder_path in gdrive_urls_arr:
-        pass
+    if (block_gdrive_downloads):
+        return
+
+    with Spinner(
+        message="Processing GDrive URLs (if any)...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="pong",
+        completion_msg="Finished processing all GDrive URLs!\n",
+        cancelled_msg="GDrive download process has been cancelled!\n"
+    ) as spinner:
+        if (len(gdrive_urls_arr) < 1):
+            spinner.completion_msg = "No GDrive URL found. Skipping GDrive download process..."
+            return # Return since this is the last step of the download process
+
+        gdrive_folder_arr: C.GDRIVE_HINT_TYPING = []
+        gdrive_files_arr: C.GDRIVE_HINT_TYPING = []
+        for gdrive_url, post_folder_path in gdrive_urls_arr:
+            matched = C.GDRIVE_URL_REGEX.search(gdrive_url)
+            drive_id = matched.group(3)
+            if (drive_id is None):
+                log_critical_details_for_post(
+                    post_folder=post_folder_path,
+                    message=f"Failed to extract GDrive ID from the URL,\n{gdrive_url}",
+                    log_filename="gdrive_download.log"
+                )
+                continue
+
+            element_to_append = (drive_id, (gdrive_url, post_folder_path))
+            if ("file" in matched.group(1)):
+                gdrive_files_arr.append(element_to_append)
+            else:
+                gdrive_folder_arr.append(element_to_append)
+
+        processed_json_arr = []
+        failed_requests_arr = []
+        headers = C.BASE_REQ_HEADERS.copy()
+        headers["Authorization"] = f"Bearer {drive_service.get_oauth_access_token()}"
+        if (len(gdrive_folder_arr) > 0):
+            gdrive_api_calls_arr = await get_gdrive_folder_contents(
+                drive_service=drive_service,
+                gdrive_folder_arr=gdrive_folder_arr,
+                failed_requests_arr=failed_requests_arr,
+                headers=headers
+            )
+            processed_json_arr = gdrive_api_calls_arr
+
+        if (len(gdrive_files_arr) > 0):
+            gdrive_api_calls_arr = await asyncio.gather(*[
+                drive_service.get_file_details(
+                    file_id=file_id,
+                    gdrive_info=gdrive_info,
+                    failed_requests_arr=failed_requests_arr,
+                    headers=headers
+                )
+                for file_id, gdrive_info in gdrive_files_arr
+            ])
+            for file_info, gdrive_info in gdrive_api_calls_arr:
+                if (file_info is None):
+                    continue
+
+                processed_json_arr.append(
+                    (file_info["id"], file_info["name"], gdrive_info)
+                )
+
+        for gdrive_id, post_folder, drive_type, error in failed_requests_arr:
+            if (drive_type == "file"):
+                gdrive_url = f"https://drive.google.com/file/d/{gdrive_id}/view?usp=sharing"
+            else:
+                gdrive_url = f"https://drive.google.com/drive/folders/{gdrive_id}?usp=sharing"
+
+            log_critical_details_for_post(
+                post_folder=post_folder,
+                message=f"Failed to get {drive_type} details from GDrive API.\n" \
+                        f"GDrive URL: {gdrive_url}\n" \
+                        f"Error: {error}\n",
+                log_filename="gdrive_download.log"
+            )
+
+    if (len(processed_json_arr) > 0):
+        failed_downloads_arr = []
+        for file_id, file_name, gdrive_info in processed_json_arr:
+            drive_service.download_file_id(
+                file_id=file_id,
+                file_name=file_name,
+                folder_path=gdrive_info[1],
+                failed_downloads_arr=failed_downloads_arr
+            )
+
+        for folder_path, error_msg in failed_downloads_arr:
+            log_critical_details_for_post(
+                post_folder=folder_path,
+                message=error_msg,
+                log_filename="gdrive_download.log"
+            )
 
 # test codes
 if (__name__ == "__main__"):

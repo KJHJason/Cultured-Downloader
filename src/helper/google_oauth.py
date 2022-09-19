@@ -1,24 +1,18 @@
 # import Python's standard libraries
 import json
-import pathlib
 from argparse import ArgumentParser
 
 # import third-party libraries
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-def save_google_oauth_json(json_data: str, file_path: str) -> None:
-    """Saves the json data to a file"""
-    with open(pathlib.Path(file_path), "w") as json_file:
-        json_file.write(json_data)
-
 def main() -> None:
     parser = ArgumentParser()
     parser.add_argument(
-        "-j",
-        "--json",
+        "-cp",
+        "--client-path",
         type=str,
         required=True,
-        help="The client secret JSON value"
+        help="The client secret JSON file path",
     )
     parser.add_argument(
         "-s",
@@ -44,20 +38,16 @@ def main() -> None:
     )
     args = vars(parser.parse_args())
 
-    try:
-        parsed_json = json.loads(args["json"])
-    except (TypeError, json.JSONDecodeError):
-        raise TypeError("client_json_value must be a valid json string")
+    with open(args["client_path"], "r") as f:
+        client_json_data = json.load(f)
 
-    flow = InstalledAppFlow.from_client_config(parsed_json, args["scopes"])
-    try:
-        creds = flow.run_local_server(port=args["port"])
-    except (KeyboardInterrupt):
-        print("Cancelled by user.")
-    else:
-        save_google_oauth_json(
-            json_data=creds.to_json(), file_path=args["token_path"]
-        )
+    flow = InstalledAppFlow.from_client_config(
+        client_config=client_json_data,
+        scopes=args["scopes"]
+    )
+    creds = flow.run_local_server(port=args["port"])
+    with open(args["token_path"], "w") as json_file:
+        json_file.write(creds.to_json())
 
 if (__name__ == "__main__"):
     main()

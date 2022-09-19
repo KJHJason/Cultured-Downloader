@@ -7,7 +7,5 @@ cryptography>=37.0.4
 pydantic>=1.10.2
 
 # For Google Cloud Platform APIs
+# (Used for GDrive API calls)
 google-api-python-client>=2.51.0
-
-# For GDrive downloads
-gdown>=4.4.0

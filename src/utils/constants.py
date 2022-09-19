@@ -5,6 +5,7 @@ import struct
 import pathlib
 import platform
 import warnings
+from typing import TypeAlias
 from datetime import datetime
 from dataclasses import dataclass, field
 
@@ -59,11 +60,12 @@ class Constants:
     # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-8xy]$")
 
-    # Debug mode (For requesting to the web application hosted on localhost)
-    DEBUG_MODE: bool = False
+    # Debug mode
+    DEBUG_MODE: bool = False # For logger
+    API_DEBUG_MODE: bool = False # (For requesting to the web application hosted on localhost)
 
     # For cryptographic operations with the user's saved cookies
-    API_URL: str = "http://127.0.0.1:8080/api/v1" if (DEBUG_MODE) else "https://cultureddownloader.com/api/v1"
+    API_URL: str = "http://127.0.0.1:8080/api/v1" if (API_DEBUG_MODE) else "https://cultureddownloader.com/api/v1"
     TAG: bytes = " ".join(platform.uname()).encode("utf-8")
 
     # Application constants
@@ -97,10 +99,12 @@ class Constants:
     # Spinner JSON path
     SPINNERS_JSON_PATH: pathlib.Path = ROOT_PY_FILE_PATH.joinpath("json", "spinners.json")
 
-    # GitHub issue page
+    # GitHub URLs
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
+    OAUTH2_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth2_guide.md"
 
     # For downloading
+    GDRIVE_HINT_TYPING: TypeAlias = list[tuple[str, tuple[str, pathlib.Path]]]
     USER_AGENT: str = USER_AGENT
     BASE_REQ_HEADERS: dict[str, str] = field(
         default_factory=lambda: {
@@ -127,14 +131,18 @@ class Constants:
         }
     )
     MAX_RETRIES: int = 5
+    MAX_RETRIES_CHECK: int = MAX_RETRIES - 1
     RETRY_DELAY: int = 1.5 # 1.5 second
     CHUNK_SIZE: int = 1024 * 1024 # 1 MB
     IMAGE_FILE: str = "image"
     THUMBNAIL_IMAGE: str = "thumbnail"
     ATTACHMENT_FILE: str = "attachment"
     GDRIVE_FILE: str = "gdrive"
-    PASSWORD_TEXTS: tuple = ("パス", "Pass", "pass", "密码")
-    OTHER_FILE_HOSTING_PROVIDERS: tuple = ("mega",)
+    GDRIVE_URL_REGEX: re.Pattern[str] = re.compile(
+        r"https://drive\.google\.com/(file/d|drive/(u/\d+/)?folders)/([\w-]+)"
+    )
+    PASSWORD_TEXTS: tuple[str] = ("パス", "Pass", "pass", "密码")
+    OTHER_FILE_HOSTING_PROVIDERS: tuple[str] = ("mega",)
     PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"^[1-9]\d*(-[1-9]\d*)?$")
     API_MAX_CONCURRENT_REQUESTS: int = 5
     MAX_CONCURRENT_DOWNLOADS_TABLE: dict[str, int] = field(
@@ -162,11 +170,14 @@ class Constants:
     PIXIV_FANBOX_LOGIN_URL: str = "https://www.fanbox.cc/login"
     PIXIV_FANBOX_VERIFY_LOGIN_URL: str = "https://www.fanbox.cc/creators/supporting"
     PIXIV_FANBOX_POST_REGEX: re.Pattern[str] = re.compile(
-        r"^https://(www\.fanbox\.cc/@[\w&.-]+|[\w&.-]+\.fanbox\.cc)/posts/\d+$"
+        r"^https://(www\.fanbox\.cc/@[\w.-]+|[\w.-]+\.fanbox\.cc)/posts/\d+$"
     )
     PIXIV_FANBOX_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(
-        r"^https://(www\.fanbox\.cc/@[\w&.-]+|[\w&.-]+\.fanbox\.cc)(/posts)?$"
+        r"^https://(www\.fanbox\.cc/@[\w.-]+|[\w.-]+\.fanbox\.cc)(/posts)?$"
     )
+    # Pixiv Fanbox permitted file extensions based on
+    #   https://fanbox.pixiv.help/hc/en-us/articles/360011057793-What-types-of-attachments-can-I-post-
+    PIXIV_FANBOX_ALLOWED_IMAGE_FORMATS: tuple[str] = ("jpg", "jpeg", "png", "gif")
 
 CONSTANTS = Constants()
 

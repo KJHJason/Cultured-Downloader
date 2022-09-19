@@ -18,7 +18,7 @@ if (__package__ is None or __package__ == ""):
     from logger import logger
     from spinner import Spinner
     from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken, ClientSecret, ClientToken
-    from functional import  validate_schema, save_key_prompt, \
+    from functional import  validate_schema, save_key_prompt, print_success, \
                             print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 else:
     from .errors import APIServerError
@@ -27,7 +27,7 @@ else:
     from .logger import logger
     from .spinner import Spinner
     from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken, ClientSecret, ClientToken
-    from .functional import validate_schema, save_key_prompt, \
+    from .functional import validate_schema, save_key_prompt, print_success, \
                             print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 
 # Import Third-party Libraries
@@ -64,7 +64,7 @@ class UserData(abc.ABC):
     def __init__(self, data_path: pathlib.Path, data: Optional[Any] = None) -> None:
         """Constructor for the UserData class.
 
-        Attributes:
+        Args:
             data_path (pathlib.Path):
                 The path to the file where the data is stored.
             data (Any, Optional): 
@@ -247,7 +247,7 @@ class UserData(abc.ABC):
         Returns:
             The CSRF token (str) and the session cookie with the CSRF token.
         """
-        with httpx.Client(http2=True, headers=C.REQ_HEADERS, timeout=30) as client:
+        with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS, timeout=30) as client:
             try:
                 res = client.get(f"{C.API_URL}/csrf-token")
             except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
@@ -470,7 +470,7 @@ class SecureGoogleOAuth2(UserData):
     def __init__(self, is_token: bool, client_data: Optional[Union[str, dict]] = None) -> None:
         """Initializes the SecureGDriveAPIKey class.
 
-        Attributes:
+        Args:
             is_token (bool):
                 Whether the data is the secret token or not.
             client_data (str | dict, Optional): 
@@ -525,15 +525,15 @@ def save_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key
     Returns:
         Boolean to indicate whether or not the key was saved successfully.
     """
-    for _ in range(C.MAX_RETRIES):
+    for retry_counter in range(C.MAX_RETRIES):
         try:
             obj.save_key(save_locally=save_key_locally)
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+            if (retry_counter == C.MAX_RETRIES_CHECK):
+                return False
             time.sleep(C.RETRY_WAIT_TIME)
         else:
             return True
-    else:
-        return False
 
 def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: Any, **kwargs: Any) -> Union[SecureCookie, SecureGoogleOAuth2, None]:
     """Loads the user's key from the API server.
@@ -550,13 +550,13 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: A
         SecureCookie | SecureGoogleOAuth2 | None:
             The UserData object that was passed in or None if the key could not be loaded.
     """
-    for _ in range(C.MAX_RETRIES):
+    for retry_counter in range(C.MAX_RETRIES):
         try:
             return obj(*args, **kwargs)
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+            if (retry_counter == C.MAX_RETRIES_CHECK):
+                return None
             time.sleep(C.RETRY_WAIT_TIME)
-    else:
-        return None
 
 def save_data(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key_locally: bool, *args, **kwargs) -> bool:
     """Saves the data to the user's machine.
@@ -612,7 +612,7 @@ class SaveGoogleOAuth2Thread(threading.Thread):
     def __init__(self, client_data: Union[dict, str], is_token: bool, save_locally: bool, **threading_kwargs) -> None:
         """Constructor for the SaveCookieThread class.
 
-        Attributes:
+        Args:
             client_data (dict | str):
                 The client data to save.
             is_token (bool):
@@ -641,7 +641,7 @@ class LoadGoogleOAuth2Thread(threading.Thread):
     def __init__(self, is_token: bool, **threading_kwargs) -> None:
         """Constructor for the LoadCookieThread class.
 
-        Attributes:
+        Args:
             is_token (bool):
                 Whether the data is the secret token or not.
             threading_kwargs (dict):
@@ -662,7 +662,7 @@ class SaveCookieThread(threading.Thread):
     def __init__(self, cookie: dict, website: str, save_locally: bool, **threading_kwargs) -> None:
         """Constructor for the SaveCookieThread class.
 
-        Attributes:
+        Args:
             cookie (dict):
                 The cookie to save.
             website (str):
@@ -693,7 +693,7 @@ class LoadCookieThread(threading.Thread):
     def __init__(self, website: str, **threading_kwargs):
         """Constructor for the LoadCookieThread class.
 
-        Attributes:
+        Args:
             website (str):
                 The website to load the cookie for.
             threading_kwargs (dict):
@@ -771,6 +771,8 @@ def save_cookies(*login_results: Union[tuple[dict, str, bool], None]) -> None:
     for thread in threads_arr:
         if (not thread.result):
             print_danger(f"Failed to save {thread.readable_website} cookie.")
+        else:
+            print_success(f"Successfully saved {thread.readable_website} cookie.")
 
 def save_google_oauth_json(*json_data: tuple[tuple[Union[dict, str]], bool]) -> None:
     """Save the Google OAuth2 JSON data to the user's machine.
@@ -806,19 +808,21 @@ def save_google_oauth_json(*json_data: tuple[tuple[Union[dict, str]], bool]) -> 
             thread.join()
 
     for thread in threads_arr:
-        if (not thread.result):
-            if (thread.is_token):
-                file_type = "Secret Token"
-            else:
-                file_type = "Client Secret"
+        if (thread.is_token):
+            file_type = "Secret Token"
+        else:
+            file_type = "Client Secret"
 
+        if (not thread.result):
             print_danger(
                 f"Could not save your Google OAuth2 {file_type} JSON data either due to " \
                 "connectivity issues or a problem with Cultured Downloader API."
             )
+        else:
+            print_success(f"Successfully saved Google OAuth2 {file_type} JSON data.")
 
 @Spinner(
-    message="Loading Google OAuth2 JSON...",
+    message="Loading Google OAuth2 JSON (if found)...",
     colour="light_yellow",
     spinner_position="left",
     spinner_type="arc"
