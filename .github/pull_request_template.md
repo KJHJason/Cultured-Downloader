@@ -1,6 +1,6 @@
 # Addition to code
 
-## Type of additions (Tick those that applies):
+## Type of additions (Tick those that apply):
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
@@ -14,7 +14,7 @@ Version: <!-- 2.0.1 or based on my latest commit [dfd198b](https://github.com/KJ
 
 Please add your summary here...
 
-## Checklist (Tick those that applies):
+## Checklist (Tick those that apply):
 
 - [ ] I have read the [contribution guidelines](https://github.com/KJHJason/Cultured-Downloader/blob/main/CONTRIBUTING.md) and have adhered to it
 - [ ] My code follows the style guidelines of this project
