@@ -1,6 +1,5 @@
 # import Python's standard libraries
 import sys
-# Check user's Python version
 if (sys.version_info[0] < 3 or sys.version_info[1] < 9):
     print("This program requires Python version 3.9 or higher!")
     input("Please press ENTER to exit...")
@@ -229,15 +228,16 @@ async def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             else:
                 print_success(f"\nA new tab has been opened in your web browser, please create an issue there to report the bug.")
 
-def main() -> None:
-    """Main function that will run the program."""
+def initialise() -> None:
+    """Initialises the program and run the main program afterwards."""
     if (not C.DEBUG_MODE):
         sys.excepthook = exception_handler
 
     if (C.USER_PLATFORM == "Windows"):
-        # escape ansi escape sequences on Windows cmd
+        # escape ansi escape sequences on Windows terminal
         colorama_init(autoreset=False, convert=True)
-        # A temporary fix for ProactorBasePipeTransport issues on Windows OS Machines
+        # A temporary fix for ProactorBasePipeTransport issues on
+        # Windows OS Machines that may appear for older versions of Python
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     print(f"""
@@ -274,9 +274,13 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         print_danger("No internet connection detected. Please check your internet connection and try again.")
         return
 
+    with get_driver(download_path=configs.download_directory) as driver:
+        asyncio.run(main_program(driver=driver, configs=configs))
+
+def main() -> None:
+    """Main function that will run the program."""
     try:
-        with get_driver(download_path=configs.download_directory) as driver:
-            asyncio.run(main_program(driver=driver, configs=configs))
+        initialise()
     except (KeyboardInterrupt, EOFError):
         print_danger("\n\nProgram terminated by user.")
         input("Please press ENTER to quit.")

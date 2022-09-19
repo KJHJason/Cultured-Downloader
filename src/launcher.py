@@ -55,12 +55,6 @@ def download_github_files(filename: str, folder: pathlib.Path, folder_name: str)
     if (not folder.exists() or not folder.is_dir()):
         folder.mkdir(parents=True)
 
-    file_path = folder.joinpath(filename)
-    if (file_path.exists() and file_path.is_file()):
-        return
-
-    print(f"Missing {filename}, downloading from CulturedDownloader GitHub repository...")
-
     try:
         code = urllib_request.urlopen(
             urllib_request.Request(
@@ -77,17 +71,20 @@ def download_github_files(filename: str, folder: pathlib.Path, folder_name: str)
             f"Error downloading {filename} from CulturedDownloader GitHub repository:\n{e}"
         )
     else:
-        with open(file_path, "w") as f:
+        file_path = folder.joinpath(filename)
+        with open(file_path, "w", encoding="utf-8") as f:
             for line in code:
                 f.write(line.decode("utf-8"))
-        print(f"{filename} downloaded.\n")
+        print(f"Downloaded {filename} to {file_path}.")
 
 if (__name__ == "__main__"):
     try:
         release_info = urllib_request.urlopen(
-                urllib_request.Request("https://api.github.com/repos/KJHJason/Cultured-Downloader/releases/latest"),
-                timeout=10
-            )
+            urllib_request.Request(
+                "https://api.github.com/repos/KJHJason/Cultured-Downloader/releases/latest"
+            ),
+            timeout=10
+        )
     except (urllib_request.URLError, urllib_request.HTTPError):
         print_failed_download_messages(
             "Failed to fetch release information from GitHub."
@@ -101,14 +98,15 @@ if (__name__ == "__main__"):
         schemas_files = ("__init__.py", "api_response.py", "config.py", "cookies.py", "google_oauth2_client.py", "key_id_token.py")
         json_files = ("spinners.json",)
         helper_programs = ("google_oauth.py",)
+        main_program = ("cultured_downloader.py",)
 
-        files_arr = [py_files, schemas_files, json_files, helper_programs]
-        for filenames, folder_name in zip(files_arr, ["utils", "utils/schemas", "json", "helper"], strict=True):
+        files_arr = [main_program, py_files, schemas_files, json_files, helper_programs]
+        for filenames, folder_name in zip(files_arr, ["", "utils", "utils/schemas", "json", "helper"], strict=True):
             folder_path = FILE_PATH.joinpath(*folder_name.split(sep="/"))
             for filename in filenames:
                 download_github_files(filename=filename, folder=folder_path, folder_name=folder_name)
 
-        print("Update completed...\n")
+        print("\nUpdate completed...")
 
     from utils.crucial import __version__
     from cultured_downloader import main as cultured_downloader_main
