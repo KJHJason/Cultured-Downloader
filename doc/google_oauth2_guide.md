@@ -9,56 +9,56 @@ You will need the credentials to use the Google Drive API to download files from
 
 ### Step 1: Create a Google Cloud Platform Project and enable the Google Drive API
 
-<img src="res/guide/gcp-oauth2/step-1.1.jpg" alt="step 1.1" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-1.1.jpg" alt="step 1.1" style="width: 70%;">
 
 1. Go to the [Google Cloud Platform Console](https://console.cloud.google.com/).
 
-<img src="res/guide/gcp-oauth2/step-1.2-1.3.gif" alt="step 1.2 to 1.3" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-1.2-1.3.gif" alt="step 1.2 to 1.3" style="width: 70%;">
 
 2. Create a new project.
 3. Give the project a name (any will do) and click **Create**.
 
-<img src="res/guide/gcp-oauth2/step-1.4.jpg" alt="step 1.4" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-1.4.jpg" alt="step 1.4" style="width: 70%;">
 
 4. **IMPORTANT**: Please make sure to enable [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com) for the project. Otherwise, you will get a 403 Forbidden error when calling the Google Drive API.
 
 ### Step 2: Configure OAuth2 Consent Screen
 
-<img src="res/guide/gcp-oauth2/step-2.1.jpg" alt="step 2.1" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-2.1.jpg" alt="step 2.1" style="width: 70%;">
 
 1. Go to the [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent) page under the **APIs & Services** section of the side navigation bar.
 
-<img src="res/guide/gcp-oauth2/step-2.2.jpg" alt="step 2.2" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-2.2.jpg" alt="step 2.2" style="width: 70%;">
 
 2. Select "**External**" for the user type.
 
-<img src="res/guide/gcp-oauth2/step-2.3-2.5.gif" alt="step 2.3 to 2.5" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-2.3-2.5.gif" alt="step 2.3 to 2.5" style="width: 70%;">
 
 3. Enter a name such as `Cultured Downloader` under the **App name** field.
 4. Select your own email address under the **User support email** field.
 5. Enter your own email address under the **Developer contact information** field and click **SAVE AND CONTINUE**
 6. Continue clicking **SAVE AND CONTINUE** until you reach the **Test users** page.
 
-<img src="res/guide/gcp-oauth2/step-2.7.gif" alt="step 2.7" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-2.7.gif" alt="step 2.7" style="width: 70%;">
 
 7. Under the **Test users** page, click **ADD USERS** and enter your own email address.
 8. Once you are on the **Summary** page, click **BACK TO DASHBOARD** on the bottom of the page.
 
 ### Step 3: Create OAuth2 Credentials
 
-<img src="res/guide/gcp-oauth2/step-3.1.jpg" alt="step 3.1" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-3.1.jpg" alt="step 3.1" style="width: 70%;">
 
 1. Go to the **Credentials** page of your project under the **APIs & Services** tab.
 
-<img src="res/guide/gcp-oauth2/step-3.2.jpg" alt="step 3.2" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-3.2.jpg" alt="step 3.2" style="width: 70%;">
 
 2. Click on **CREATE CREDENTIALS** and select **OAuth client ID**.
 
-<img src="res/guide/gcp-oauth2/step-3.3.jpg" alt="step 3.3" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-3.3.jpg" alt="step 3.3" style="width: 70%;">
 
 3. Under the **Application type** section, select **Web application**.
 
-<img src="res/guide/gcp-oauth2/step-3.4-3.6.jpg" alt="step 3.4 to 3.6" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-3.4-3.6.jpg" alt="step 3.4 to 3.6" style="width: 70%;">
 
 4. For the **Name** field, enter any name such as `cultured-downloader`.
 5. Under the **Authorized redirect URIs** section, enter the following URL: `http://localhost:8080/`
@@ -66,11 +66,11 @@ You will need the credentials to use the Google Drive API to download files from
 
 Prompt:
 
-<img src="res/guide/gcp-oauth2/step-3.7.png" alt="step 3.7" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-3.7.png" alt="step 3.7" style="width: 70%;">
 
 Alternative:
 
-<img src="res/guide/gcp-oauth2/step-3.7-alternative.jpg" alt="step 3.7 alternative" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-3.7-alternative.jpg" alt="step 3.7 alternative" style="width: 70%;">
 
 7. After being redirected, you should see a prompt, click on the **Download JSON** button on the prompt.
    1. Alternatively, under the **OAuth 2.0 client IDs** section, click on the download icon on the right side of the client ID you just created.
@@ -79,12 +79,12 @@ Alternative:
 
 *You are almost there!*
 
-<img src="res/guide/gcp-oauth2/step-4.1-4.2.jpg" alt="step 4.1 to 4.2" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-4.1-4.2.jpg" alt="step 4.1 to 4.2" style="width: 70%;">
 
 1. Run the [cultured_downloader.py](src/cultured_downloader.py) script and enter the command option for **Configure Google OAuth2 for Google Drive API**.
 2. Copy the contents of the downloaded JSON file and paste it when asked for the **client secret JSON**.
 
-<img src="res/guide/gcp-oauth2/step-4.3.jpg" alt="step 4.3" style="width: 70%;">
+<img src="/res/guide/gcp-oauth2/step-4.3.jpg" alt="step 4.3" style="width: 70%;">
 
 3. A new terminal and a new tab on your web browser should have opened.
    1. If the new tab on your web browser did not open, copy the URL from the terminal and paste it on your web browser.

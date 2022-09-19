@@ -17,7 +17,6 @@ Cultured Downloader
 </div>
 
 <div align="center">
-  <a href="https://github.com/KJHJason/Cultured-Downloader/releases">Changelog</a>
   <a href="#introduction">English</a>
   <a href="#お知らせ">日本語</a>
 </div>
