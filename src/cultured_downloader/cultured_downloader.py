@@ -288,12 +288,11 @@ if (__name__ == "__main__"):
                 time.sleep(C.RETRY_DELAY)
                 continue
             else:
-                if (response.status_code == 200):
-                    software_info = response.json()
-                    latest_ver = software_info["version"]
-                    if (latest_ver != __version__):
-                        print_warning(
-                            f"New version {latest_ver} is available at {software_info['download_url']}\n"
-                        )
+                software_info = response.json()
+                latest_ver = software_info["version"]
+                if (latest_ver != __version__):
+                    print_warning(
+                        f"New version {latest_ver} is available at {software_info['download_url']}\n"
+                    )
 
     main()
