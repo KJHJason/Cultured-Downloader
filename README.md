@@ -51,9 +51,11 @@ In the end, I spent about a month doing this project while learning concepts suc
   ```
   pip install -r requirements.txt
   ```
-- Run [launcher.py](src/launcher.py) or [cultured_downloader.py](src/cultured_downloader/cultured_downloader.py) and enjoy!
+- Run [launcher.py](src/launcher.py) or [cultured_downloader.py](src/cultured_downloader.py) and enjoy!
 
-Note: If you are not using the executable file, you can enjoy automatic updates by running [launcher.py](src/launcher.py) instead of [cultured_downloader.py](src/cultured_downloader/cultured_downloader.py).
+Note: You can enjoy automatic updates by running [launcher.py](src/launcher.py) instead of [cultured_downloader.py](src/cultured_downloader.py) which will download the latest release Python files. 
+
+However, if you face any connection errors, you can pass in the `--skip-update` or `-s` argument to skip the update *check* in both [launcher.py](src/launcher.py) and [cultured_downloader.py](src/cultured_downloader.py)
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.

@@ -134,7 +134,9 @@ if (__name__ == "__main__"):
     except (ModuleNotFoundError, ImportError):
         if (not args.skip_update):
             handle_shutdown(
-                "Failed to import Cultured Downloader, please try again or raise an issue on GitHub."
+                "Failed to import Cultured Downloader, please try again, or" \
+                "check for a newer launcher on Cultured Downloader's GitHub Repository, " \
+                "or raise an issue on Cultured Downloader's GitHub Repository."
             )
         else:
             handle_shutdown(
