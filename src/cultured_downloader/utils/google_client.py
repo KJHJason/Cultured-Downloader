@@ -60,11 +60,11 @@ class GoogleOAuth2:
         """Sends a request to Google and retrieve a short-lived 30 mins to 1 hour token"""
         if (self.__CREDENTIALS):
             if (self.CREDENTIALS.expired and self.CREDENTIALS.refresh_token):
-                for retry_counter in range(C.MAX_RETRIES):
+                for retry_counter in range(1, C.MAX_RETRIES + 1):
                     try:
                         self.CREDENTIALS.refresh(Request())
                     except (RefreshError):
-                        if (retry_counter == C.MAX_RETRIES_CHECK):
+                        if (retry_counter == C.MAX_RETRIES):
                             raise
                         time.sleep(C.RETRY_DELAY)
                     else:
@@ -140,13 +140,13 @@ class GoogleDrive(GoogleOAuth2):
                 if (page_token is not None):
                     url += f"&pageToken={page_token}"
 
-                for retry_counter in range(C.MAX_RETRIES):
+                for retry_counter in range(1, C.MAX_RETRIES + 1):
                     try:
                         response = await client.get(url=url)
                         response.raise_for_status()
                         json_response = response.json()
-                    except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, json.JSONDecodeError) as e:
-                        if (retry_counter == C.MAX_RETRIES_CHECK):
+                    except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
+                        if (retry_counter == C.MAX_RETRIES):
                             logger.error(f"Failed to get gdrive folder content for {folder_id}: {e}")
                             failed_requests_arr.append((folder_id, gdrive_info[1], "folder", str(e)))
                             return (None, None)
@@ -187,7 +187,7 @@ class GoogleDrive(GoogleOAuth2):
             headers["Authorization"] = f"Bearer {self.get_oauth_access_token()}"
 
         async with httpx.AsyncClient(headers=headers, http2=True, timeout=self.timeout) as client:
-            for retry_counter in range(C.MAX_RETRIES):
+            for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     response = await client.get(
                         url=f"https://www.googleapis.com/drive/v3/files/{file_id}?fields=id,name"
@@ -198,8 +198,8 @@ class GoogleDrive(GoogleOAuth2):
 
                     response.raise_for_status()
                     file_info = response.json()
-                except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, json.JSONDecodeError) as e:
-                    if (retry_counter == C.MAX_RETRIES_CHECK):
+                except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
+                    if (retry_counter == C.MAX_RETRIES):
                         logger.error(f"Failed to get gdrive file details for {file_id}: {e}")
                         failed_requests_arr.append((file_id, gdrive_info[1], "file", str(e)))
                         return (None, None)
@@ -259,6 +259,9 @@ class GoogleDrive(GoogleOAuth2):
                 failed_downloads_arr.append(
                     (folder_path, error_message)
                 )
+            except (KeyboardInterrupt):
+                file_path.unlink(missing_ok=True)
+                raise
 
 def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
     """Starts the Google OAuth2 flow and returns the GoogleDrive object if successful, else None."""
@@ -361,7 +364,7 @@ def get_gdrive_service() -> Union[GoogleDrive, None]:
         return None
 
     drive_service = GoogleDrive(google_token)
-    print_success("Successfully loaded Google OAuth2 token!")
+    print_success("✓ Successfully loaded Google OAuth2 token!")
     return drive_service
 
 # test codes below

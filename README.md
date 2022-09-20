@@ -32,7 +32,7 @@ Cultured Downloader
   - [Usage Notes](#usage-notes)
   - [FAQ](#faq)
   - [Final Notes](#final-notes)
-  - [Screenshots](#screenshots)
+  - [Demo](#demo)
 ---
 
 ## Introduction
@@ -42,16 +42,18 @@ I did this project as I was tired of downloading images manually as some artists
 
 Hence, I coded this program to automate the process of downloading images from a post via web scraping.
 
-In the end, I spent about 2-4 weeks learning concepts such as web scraping, async, threading, and more.
+In the end, I spent about a month doing this project while learning concepts such as web scraping, async, threading, and more.
 
 ## Running the Python File
 - Download all the files in this repository.
 - Install [Python 3.9.0 or above](https://www.python.org/downloads/)
-- Install all dependencies by running the command below:
+- You can install all dependencies by running the command below or let the program install them for you.
   ```
   pip install -r requirements.txt
   ```
-- Run [launcher.py](src/launcher.py) and enjoy!
+- Run [launcher.py](src/launcher.py) or [cultured_downloader.py](src/cultured_downloader/cultured_downloader.py) and enjoy!
+
+Note: If you are not using the executable file, you can enjoy automatic updates by running [launcher.py](src/launcher.py) instead of [cultured_downloader.py](src/cultured_downloader/cultured_downloader.py).
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
@@ -91,10 +93,15 @@ In the end, I spent about 2-4 weeks learning concepts such as web scraping, asyn
 3. If you would like to improve on this program, you can fork this repository and do the necessary changes and make a pull request. I will then review it and merge it I feel that it is a good contribution.
 4. Though, I may or may not maintain this program depending on the workload I have as a student.
 
-## Screenshots
+## Demo
 
 <div align="center">
-  <p>Soon to be added!</p>
+  <p>Menu</p>
+  <p><img width="500px" alt="menu demo" src="/res/menu.jpg"></p>
+  <p>Downloading files from a post page URL</p>
+  <p><img width="650px" alt="downloading posts demo" src="/res/post-download.gif"></p>
+  <p>Downloading files from multiple posts from multiple creators</p>
+  <p><img width="650px" alt="downloading multiple posts demo" src="/res/creator-page-downloads.gif"></p>
 </div>
 
 ---

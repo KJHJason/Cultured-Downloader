@@ -525,11 +525,11 @@ def save_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key
     Returns:
         Boolean to indicate whether or not the key was saved successfully.
     """
-    for retry_counter in range(C.MAX_RETRIES):
+    for retry_counter in range(1, C.MAX_RETRIES + 1):
         try:
             obj.save_key(save_locally=save_key_locally)
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
-            if (retry_counter == C.MAX_RETRIES_CHECK):
+            if (retry_counter == C.MAX_RETRIES):
                 return False
             time.sleep(C.RETRY_WAIT_TIME)
         else:
@@ -550,11 +550,11 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: A
         SecureCookie | SecureGoogleOAuth2 | None:
             The UserData object that was passed in or None if the key could not be loaded.
     """
-    for retry_counter in range(C.MAX_RETRIES):
+    for retry_counter in range(1, C.MAX_RETRIES + 1):
         try:
             return obj(*args, **kwargs)
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
-            if (retry_counter == C.MAX_RETRIES_CHECK):
+            if (retry_counter == C.MAX_RETRIES):
                 return None
             time.sleep(C.RETRY_WAIT_TIME)
 
@@ -607,7 +607,30 @@ def load_data(obj: Union[SecureCookie, SecureGoogleOAuth2], *args, **kwargs) -> 
     else:
         return secure_obj.data
 
-class SaveGoogleOAuth2Thread(threading.Thread):
+class BaseThread(threading.Thread):
+    """Creates a base thread that will raise an error if the exec attribute is not None."""
+    def __init__(self, *args, **kwargs) -> None:
+        """Initializes the BaseThread class.
+
+        Args:
+            target (Callable):
+                The function to run in the thread.
+            *args (Any):
+                The arguments to pass to the Thread parent class.
+            **kwargs (Any):
+                The keyword arguments to pass to the Thread parent class.
+        """
+        super().__init__(*args, **kwargs)
+        self.exec = None
+        self.result = None
+
+    def join(self) -> None:
+        """Joins the thread and raises an error if caught."""
+        super().join()
+        if (self.exec is not None):
+            raise self.exec
+
+class SaveGoogleOAuth2Thread(BaseThread):
     """Thread to securely save the cookie to a file."""
     def __init__(self, client_data: Union[dict, str], is_token: bool, save_locally: bool, **threading_kwargs) -> None:
         """Constructor for the SaveCookieThread class.
@@ -629,14 +652,17 @@ class SaveGoogleOAuth2Thread(threading.Thread):
 
     def run(self) -> None:
         """Runs the thread."""
-        self.result = save_data(
-            SecureGoogleOAuth2, 
-            save_key_locally=self.save_locally, 
-            client_data=self.client_data, 
-            is_token=self.is_token
-        )
+        try:
+            self.result = save_data(
+                SecureGoogleOAuth2, 
+                save_key_locally=self.save_locally, 
+                client_data=self.client_data, 
+                is_token=self.is_token
+            )
+        except (Exception) as e:
+            self.exec = e
 
-class LoadGoogleOAuth2Thread(threading.Thread):
+class LoadGoogleOAuth2Thread(BaseThread):
     """Thread to securely load the cookie from a file."""
     def __init__(self, is_token: bool, **threading_kwargs) -> None:
         """Constructor for the LoadCookieThread class.
@@ -652,12 +678,15 @@ class LoadGoogleOAuth2Thread(threading.Thread):
 
     def run(self) -> None:
         """Runs the thread."""
-        self.result = load_data(
-            SecureGoogleOAuth2,
-            is_token=self.is_token
-        )
+        try:
+            self.result = load_data(
+                SecureGoogleOAuth2,
+                is_token=self.is_token
+            )
+        except (Exception) as e:
+            self.exec = e
 
-class SaveCookieThread(threading.Thread):
+class SaveCookieThread(BaseThread):
     """Thread to securely save the cookie to a file."""
     def __init__(self, cookie: dict, website: str, save_locally: bool, **threading_kwargs) -> None:
         """Constructor for the SaveCookieThread class.
@@ -677,18 +706,20 @@ class SaveCookieThread(threading.Thread):
         self.website = website
         self.readable_website = website_to_readable_format(self.website)
         self.save_locally = save_locally
-        self.result = None
 
     def run(self) -> None:
         """Runs the thread."""
-        self.result = save_data(
-            SecureCookie,
-            save_key_locally=self.save_locally,
-            website=self.website, 
-            cookie_data=self.cookie
-        )
+        try:
+            self.result = save_data(
+                SecureCookie,
+                save_key_locally=self.save_locally,
+                website=self.website, 
+                cookie_data=self.cookie
+            )
+        except (Exception) as e:
+            self.exec = e
 
-class LoadCookieThread(threading.Thread):
+class LoadCookieThread(BaseThread):
     """Thread to securely load the cookie from a file."""
     def __init__(self, website: str, **threading_kwargs):
         """Constructor for the LoadCookieThread class.
@@ -702,14 +733,16 @@ class LoadCookieThread(threading.Thread):
         super().__init__(**threading_kwargs)
         self.website = website
         self.readable_website = website_to_readable_format(self.website)
-        self.result = None
 
     def run(self) -> None:
         """Runs the thread."""
-        self.result = load_data(
-            SecureCookie, 
-            website=self.website
-        )
+        try:
+            self.result = load_data(
+                SecureCookie, 
+                website=self.website
+            )
+        except (Exception) as e:
+            self.exec = e
 
 def load_cookies(*websites: list[str]) -> list[LoadCookieThread]:
     """Loads the cookie from the user's machine.

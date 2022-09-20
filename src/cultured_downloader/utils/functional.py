@@ -616,6 +616,36 @@ def check_internet_connection() -> bool:
             return False
     return True
 
+def delete_cookies(website: str) -> None:
+    """Delete the cookies for the given website if the user wishes to.
+
+    Args:
+        website (str):
+            The website's cookies to delete.
+
+    Returns:
+        None
+    """
+    if (website == "pixiv_fanbox"):
+        cookie_path = C.PIXIV_FANBOX_COOKIE_PATH
+    elif (website == "fantia"):
+        cookie_path = C.FANTIA_COOKIE_PATH
+    else:
+        raise ValueError(f"Invalid website: {website}")
+
+    if (cookie_path.exists() and cookie_path.is_file()):
+        readable_website_name = website_to_readable_format(website)
+        confirm_delete = get_input(
+            input_msg=f"Do you want to delete your saved cookies for {readable_website_name} as well? (y/N): ",
+            inputs=("y", "n"),
+            default="n"
+        )
+        if (confirm_delete == "y"):
+            cookie_path.unlink()
+            print_success(
+                f"Successfully deleted your saved cookies for {readable_website_name}."
+            )
+
 def user_has_saved_cookies() -> bool:
     """Check if the user has saved cookies for Fantia and Pixiv Fanbox.
 

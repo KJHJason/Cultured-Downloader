@@ -12,6 +12,7 @@ from utils import *
 from utils import __version__, __author__, __license__
 
 # import third-party libraries
+from urllib3 import exceptions as urllib3_exceptions
 from colorama import Fore as F, init as colorama_init
 
 def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, None]) -> None:
@@ -58,7 +59,7 @@ def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, 
     print(f"      {F.RED}X. Shutdown the program{C.END}")
     print()
 
-async def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
+def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
     """Main program function."""
     login_status = {}
     drive_service = get_gdrive_service()
@@ -80,7 +81,7 @@ async def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             login_status=login_status
         )
     else:
-        print_success("Successfully loaded Fantia cookies.")
+        print_success("✓ Successfully loaded Fantia cookies.")
 
     if (not login_status.get("pixiv_fanbox", False)):
         pixiv_fanbox_login_result = login(
@@ -89,9 +90,25 @@ async def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             login_status=login_status
         )
     else:
-        print_success("Successfully loaded Pixiv Fanbox cookies.")
+        print_success("✓ Successfully loaded Pixiv Fanbox cookies.")
 
     save_cookies(*[fantia_login_result, pixiv_fanbox_login_result])
+    def download_process(website: str, creator_page: bool) -> None:
+        """Download process for Fantia and Pixiv Fanbox."""
+        try:
+            asyncio.run(execute_download_process(
+                website=website,
+                creator_page=creator_page,
+                download_path=configs.download_directory,
+                driver=driver,
+                login_status=login_status,
+                drive_service=drive_service
+            ))
+        except (KeyboardInterrupt):
+            return
+        except (urllib3_exceptions.MaxRetryError):
+            print_danger("Connection error, please try again later.")
+
     while (True):
         print_menu(login_status=login_status, drive_service=drive_service)
         user_action = get_input(
@@ -103,59 +120,19 @@ async def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
 
         elif (user_action == "1"):
             # Download images from Fantia post(s)
-            try:
-                await execute_download_process(
-                    website="fantia",
-                    creator_page=False,
-                    download_path=configs.download_directory,
-                    driver=driver,
-                    login_status=login_status,
-                    drive_service=drive_service
-                )
-            except (KeyboardInterrupt):
-                continue
+            download_process(website="fantia", creator_page=False)
 
         elif (user_action == "2"):
             # Download all Fantia posts from creator(s)
-            try:
-                await execute_download_process(
-                    website="fantia",
-                    creator_page=True,
-                    download_path=configs.download_directory,
-                    driver=driver,
-                    login_status=login_status,
-                    drive_service=drive_service
-                )
-            except (KeyboardInterrupt):
-                continue
+            download_process(website="fantia", creator_page=True)
 
         elif (user_action == "3"):
             # Download images from pixiv Fanbox post(s)
-            try:
-                await execute_download_process(
-                    website="pixiv_fanbox",
-                    creator_page=False,
-                    download_path=configs.download_directory,
-                    driver=driver,
-                    login_status=login_status,
-                    drive_service=drive_service
-                )
-            except (KeyboardInterrupt):
-                continue
+            download_process(website="pixiv_fanbox", creator_page=False)
 
         elif (user_action == "4"):
             # Download all pixiv Fanbox posts from a creator(s)
-            try:
-                await execute_download_process(
-                    website="pixiv_fanbox",
-                    creator_page=True,
-                    download_path=configs.download_directory,
-                    driver=driver,
-                    login_status=login_status,
-                    drive_service=drive_service
-                )
-            except (KeyboardInterrupt):
-                continue
+            download_process(website="pixiv_fanbox", creator_page=True)
 
         elif (user_action == "5"):
             # Change Default Download Folder
@@ -216,9 +193,11 @@ async def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
 
             if (fantia_logged_in):
                 logout(driver=driver, website="fantia", login_status=login_status)
+                delete_cookies("fantia")
 
             if (pixiv_fanbox_logged_in):
                 logout(driver=driver, website="pixiv_fanbox", login_status=login_status)
+                delete_cookies("pixiv_fanbox")
 
         else:
             # Report a bug
@@ -275,7 +254,7 @@ Please read the term of use at https://github.com/KJHJason/Cultured-Downloader b
         return
 
     with get_driver(download_path=configs.download_directory) as driver:
-        asyncio.run(main_program(driver=driver, configs=configs))
+        main_program(driver=driver, configs=configs)
 
 def main() -> None:
     """Main function that will run the program."""
@@ -287,3 +266,34 @@ def main() -> None:
 
     delete_empty_and_old_logs()
     sys.exit(0)
+
+if (__name__ == "__main__"):
+    import httpx
+    # check for latest version
+    # if directly running this Python file.
+    with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS) as client:
+        for retry_counter in range(1, C.MAX_RETRIES + 1):
+            try:
+                response = client.get(
+                    "https://cultureddownloader.com/api/v1/software/latest/version"
+                )
+                response.raise_for_status()
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError):
+                if (retry_counter == C.MAX_RETRIES):
+                    print_danger("Failed to check for latest version.")
+                    print_danger("Please check your internet connection and try again.")
+                    input("Please press ENTER to exit...")
+                    sys.exit(1)
+
+                time.sleep(C.RETRY_DELAY)
+                continue
+            else:
+                if (response.status_code == 200):
+                    software_info = response.json()
+                    latest_ver = software_info["version"]
+                    if (latest_ver != __version__):
+                        print_warning(
+                            f"New version {latest_ver} is available at {software_info['download_url']}\n"
+                        )
+
+    main()

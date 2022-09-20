@@ -62,7 +62,7 @@ class Constants:
 
     # Debug mode
     DEBUG_MODE: bool = False # For logger
-    API_DEBUG_MODE: bool = False # (For requesting to the web application hosted on localhost)
+    API_DEBUG_MODE: bool = True # (For requesting to the web application hosted on localhost)
 
     # For cryptographic operations with the user's saved cookies
     API_URL: str = "http://127.0.0.1:8080/api/v1" if (API_DEBUG_MODE) else "https://cultureddownloader.com/api/v1"
@@ -71,6 +71,7 @@ class Constants:
     # Application constants
     END: str = Style.RESET_ALL
     USER_PLATFORM: str = USER_PLATFORM
+    ILLEGAL_PATH_CHARS_REGEX: re.Pattern[str] = re.compile(r"[<>:\"/\\|?*]")
     LOGGER_NAME: str = f"Cultured Downloader V{__version__}"
     IS_64BITS: bool = (struct.calcsize("P") * 8 == 64) # from https://stackoverflow.com/a/12568652/16377492
     DESKTOP_PATH: pathlib.Path = pathlib.Path.home().joinpath("Desktop")
@@ -130,8 +131,7 @@ class Constants:
                 "https://www.fanbox.cc",
         }
     )
-    MAX_RETRIES: int = 5
-    MAX_RETRIES_CHECK: int = MAX_RETRIES - 1
+    MAX_RETRIES: int = 4
     RETRY_DELAY: int = 1.5 # 1.5 second
     CHUNK_SIZE: int = 1024 * 1024 # 1 MB
     IMAGE_FILE: str = "image"

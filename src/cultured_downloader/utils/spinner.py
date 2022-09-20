@@ -2,6 +2,7 @@
 import time
 import json
 import types
+import asyncio
 import itertools
 import threading
 import functools
@@ -160,11 +161,11 @@ class Spinner:
         if (not error):
             if (manually_stopped):
                 if (self.cancelled_msg is not None):
-                    print(f"\r❌  {F.LIGHTRED_EX}", self.CLEAR_LINE, self.cancelled_msg, sep="", end=S.RESET_ALL)
+                    print(f"\r{F.LIGHTRED_EX}✗ ", self.CLEAR_LINE, self.cancelled_msg, sep="", end=S.RESET_ALL)
                     return
             else:
                 if (self.completion_msg is not None):
-                    print(f"\r✔️  {F.LIGHTGREEN_EX}", self.CLEAR_LINE, self.completion_msg, sep="", end=S.RESET_ALL)
+                    print(f"\r{F.LIGHTGREEN_EX}✓ ", self.CLEAR_LINE, self.completion_msg, sep="", end=S.RESET_ALL)
                     return
 
         print("\r", self.CLEAR_LINE, end=S.RESET_ALL, sep="")
@@ -178,10 +179,11 @@ class Spinner:
         exc: Optional[BaseException],
         traceback: Optional[types.TracebackType]) -> None:
         """Stops the spinner when used in a context manager."""
-        if (exc_type is KeyboardInterrupt):
-            self.stop(manually_stopped=True)
-        elif (exc_type is not None):
-            self.stop(error=True)
+        if (exc_type is not None):
+            if (exc_type is asyncio.CancelledError or issubclass(exc_type, KeyboardInterrupt)):
+                self.stop(manually_stopped=True)
+            else:
+                self.stop(error=True)
         else:
             self.stop()
 

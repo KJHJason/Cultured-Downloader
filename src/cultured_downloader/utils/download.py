@@ -107,6 +107,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         folder_path = folder_path.joinpath("images")
     folder_path.mkdir(parents=True, exist_ok=True)
 
+    file_path = None
     async with httpx.AsyncClient(
         headers=C.BASE_REQ_HEADERS, 
         http2=True, 
@@ -114,7 +115,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         follow_redirects=follow_redirects,
         cookies=cookie
     ) as client:
-        for retry_counter in range(C.MAX_RETRIES):
+        for retry_counter in range(1, C.MAX_RETRIES + 1):
             try:
                 async with client.stream(method="GET", url=url) as response:
                     response.raise_for_status()
@@ -128,14 +129,18 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     async with aiofiles.open(file_path, "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
                             await f.write(chunk)
-            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, httpx.StreamError):
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError):
                 file_path.unlink(missing_ok=True)
-                if (retry_counter == C.MAX_RETRIES_CHECK):
+                if (retry_counter == C.MAX_RETRIES):
                     failed_downloads_arr.append(
                         (url_info, website, folder_path)
                     )
                     return
                 await asyncio.sleep(C.RETRY_DELAY)
+            except (asyncio.CancelledError):
+                if (file_path is not None):
+                    file_path.unlink(missing_ok=True)
+                raise
             else:
                 break
 
@@ -199,6 +204,10 @@ def create_post_folder(download_path: pathlib.Path,
         pathlib.Path:
             The path to the post folder.
     """
+    # replace invalid characters in the post title with a dash
+    post_title = C.ILLEGAL_PATH_CHARS_REGEX.sub(repl="-", string=post_title)
+
+    # construct the post folder path
     post_folder_path = download_path.joinpath(creator_name, f"[{post_id}] {post_title}")
     post_folder_path.mkdir(parents=True, exist_ok=True)
     return post_folder_path
@@ -255,7 +264,7 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
 
     headers["Referer"] = post_url
     async with httpx.AsyncClient(http2=True, cookies=cookie, timeout=30, headers=headers) as client:
-        for retry_counter in range(C.MAX_RETRIES):
+        for retry_counter in range(1, C.MAX_RETRIES + 1):
             try:
                 response = await client.get(api_url + post_id)
                 if (response.status_code == 404):
@@ -267,8 +276,8 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
 
                 response.raise_for_status()
                 json_response = response.json()
-            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, json.decoder.JSONDecodeError):
-                if (retry_counter == C.MAX_RETRIES_CHECK):
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.decoder.JSONDecodeError):
+                if (retry_counter == C.MAX_RETRIES):
                     log_failed_post_api_call(
                         download_path=download_path, 
                         post_url=post_url
@@ -470,16 +479,16 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
         if (thumbnail is not None):
             urls_to_download_arr.append((thumbnail, C.THUMBNAIL_IMAGE))
 
-    # Note that Pixiv Fanbox posts have 2 types of formatting (as of now):
+    # Note that Pixiv Fanbox posts have 3 types of formatting (as of now):
     #   1. With proper formatting and mapping of post content elements ("article")
-    #   2. With a simple formatting that obly contains info about the text and files ("file")
+    #   2. With a simple formatting that obly contains info about the text and files ("file", "image")
     post_type: str = json_response["type"]
     post_contents: dict = json_response["body"]
 
     # Retrieves the post's gdrive links or log external download links such as MEGA links, if any.
     # Will also detect if the post contains a password for the user to use.
     if (download_gdrive_links or detect_other_download_links):
-        if (post_type == "file"):
+        if (post_type in ("file", "image")):
             post_body: str = post_contents.get("text")
             if (post_body is not None):
                 # If the post follow a simple format,
@@ -586,16 +595,16 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         )
 
     # Get images and attachments URL(s) from the post
-    if (post_type == "file" and (download_images or download_attachments)):
+    if (post_type in ("file", "image") and (download_images or download_attachments)):
         # If the post follows a simple format,
-        image_and_attachment_files: list[dict] = post_contents.get("files", [])
+        image_and_attachment_files: list[dict] = post_contents.get(f"{post_type}s", [])
         for file_info in image_and_attachment_files:
-            file_url = file_info["url"]
-            extension = file_info["extension"]
-            if (download_images and extension in C.PIXIV_FANBOX_ALLOWED_IMAGE_FORMATS):
-                urls_to_download_arr.append((file_url, C.IMAGE))
-            elif (download_attachments):
-                urls_to_download_arr.append((file_url, C.ATTACHMENT))
+            file_url = file_info.get("url") or file_info.get("originalUrl")
+            if (file_url is not None):
+                if (download_images and file_info["extension"] in C.PIXIV_FANBOX_ALLOWED_IMAGE_FORMATS):
+                    urls_to_download_arr.append((file_url, C.IMAGE_FILE))
+                elif (download_attachments):
+                    urls_to_download_arr.append((file_url, C.ATTACHMENT_FILE))
 
     elif (post_type == "article"):
         if (download_images):
