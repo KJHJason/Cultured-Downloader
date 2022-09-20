@@ -5,17 +5,28 @@ import json
 import shutil
 import pathlib
 import zipfile
+import platform
 from typing import NoReturn, Any
 import urllib.request as urllib_request
 
 # import local libraries
 try:
-    from cultured_downloader.utils.crucial import __version__
+    from utils.crucial import __version__
 except (ModuleNotFoundError, ImportError):
     __version__ = "0.0.0"
 
 MAX_REQUEST_RETRIES = 5
 RETRY_DELAY = 1.5
+CHROME_USER_AGENT = " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+OS_USER_AGENTS = {
+    "Windows":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Linux":
+        "Mozilla/5.0 (X11; Linux x86_64)",
+    "Darwin":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_6)"
+}
+USER_PLATFORM = platform.system()
 
 def handle_shutdown(error_msg: str) -> NoReturn:
     """Print the supplied error message in the terminal and exit the application.
@@ -50,13 +61,17 @@ def fetch(url: str) -> Any:
     """
     for retry_counter in range(1, MAX_REQUEST_RETRIES + 1):
         try:
-            response = urllib_request.urlopen(urllib_request.Request(url), timeout=10)
+            request = urllib_request.Request(url)
+            request.add_header("User-Agent", OS_USER_AGENTS[USER_PLATFORM] + CHROME_USER_AGENT)
+            response = urllib_request.urlopen(request, timeout=10)
         except (urllib_request.HTTPError, urllib_request.URLError) as e:
             if (retry_counter == MAX_REQUEST_RETRIES):
-                handle_shutdown(
-                    f"Failed to fetch {url} due to {e}\n"
-                    "Please check your internet connection and try again."
-                )
+                error_msg = f"Failed to fetch {url} due to {e}\n" \
+                            "Please check your internet connection or try again."
+                if (isinstance(e, urllib_request.HTTPError) and e.code == 403):
+                    error_msg += "\nAdditionally, Cloudflare may be blocking your request due to a poor IP reputation."
+
+                handle_shutdown(error_msg)
             time.sleep(RETRY_DELAY)
         else:
             return response
@@ -70,10 +85,13 @@ if (__name__ == "__main__"):
 
         folder = pathlib.Path(__file__).parent.absolute()
         folder.mkdir(parents=True, exist_ok=True)
-        # remove any contents in the cultured_downloader folder
-        cultured_downloader_folder = folder.joinpath("cultured_downloader")
-        if (cultured_downloader_folder.exists() and cultured_downloader_folder.is_dir()):
-            shutil.rmtree(cultured_downloader_folder)
+        # remove any contents in the folder path except for the launcher and any compiled bytecodes
+        for file in folder.iterdir():
+            if (file.name != "launcher.py"):
+                if (file.is_dir()):
+                    shutil.rmtree(file)
+                else:
+                    file.unlink()
 
         zipfile_path = folder.joinpath("cultured_downloader.zip")
         downloaded_file: bytes = fetch(release_info["download_url"]).read()
@@ -84,11 +102,18 @@ if (__name__ == "__main__"):
             zip_ref.extractall(folder)
         zipfile_path.unlink()
 
+        # Move the unzipped files one level up
+        unzipped_contents_folder = folder.joinpath("cultured_downloader")
+        for file in unzipped_contents_folder.iterdir():
+            shutil.move(file, folder)
+        unzipped_contents_folder.rmdir()
+
         print("\nUpdate completed...")
 
+    time.sleep(1) # Added delay as the files may not be ready to be imported yet
     try:
-        from cultured_downloader.utils.crucial import __version__
-        from cultured_downloader.cultured_downloader import main as cultured_downloader_main
+        from utils.crucial import __version__
+        from cultured_downloader import main as cultured_downloader_main
     except (ModuleNotFoundError, ImportError):
         handle_shutdown(
             "Failed to import Cultured Downloader, please try again or raise an issue on GitHub."
