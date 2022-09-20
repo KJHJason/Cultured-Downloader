@@ -261,9 +261,9 @@ def main() -> None:
     try:
         initialise()
         print_warning("\nThe program will now shutdown...")
-        input("Please press ENTER to quit.")
     except (KeyboardInterrupt, EOFError):
         print_danger("\n\nProgram terminated by user.")
+    finally:
         input("Please press ENTER to quit.")
 
     delete_empty_and_old_logs()
