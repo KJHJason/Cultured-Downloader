@@ -278,10 +278,14 @@ if (__name__ == "__main__"):
                     "https://cultureddownloader.com/api/v1/software/latest/version"
                 )
                 response.raise_for_status()
-            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError):
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
                 if (retry_counter == C.MAX_RETRIES):
                     print_danger("Failed to check for latest version.")
-                    print_danger("Please check your internet connection and try again.")
+                    if (isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 403):
+                        print_danger("You may have been blocked by Cloudflare due to a poor IP reputation.")
+                    else:
+                        print_danger("Please check your internet connection and try again.")
+
                     input("Please press ENTER to exit...")
                     sys.exit(1)
 
