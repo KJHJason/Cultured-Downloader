@@ -1,6 +1,7 @@
 # Main libraries used
 selenium>=4.1.2,<5.0.0
 webdriver-manager==3.5.3
+aiofiles>=22.1.0
 httpx[http2]>=0.23.0
 colorama>=0.4.4
 cryptography>=37.0.4

@@ -97,9 +97,6 @@ class Constants:
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
     SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
 
-    # Spinner JSON path
-    SPINNERS_JSON_PATH: pathlib.Path = ROOT_PY_FILE_PATH.joinpath("json", "spinners.json")
-
     # GitHub URLs
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
     OAUTH2_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth2_guide.md"

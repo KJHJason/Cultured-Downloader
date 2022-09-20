@@ -1,6 +1,5 @@
 # import Python's standard libraries
 import time
-import json
 import types
 import asyncio
 import itertools
@@ -13,9 +12,9 @@ from colorama import Fore as F, Style as S
 
 # import local files
 if (__package__ is None or __package__ == ""):
-    from constants import CONSTANTS as C
+    from spinner_types import SpinnerTypes
 else:
-    from .constants import CONSTANTS as C
+    from .spinner_types import SpinnerTypes
 
 def convert_str_to_ansi(colour: Union[str, None]) -> str:
     """Convert a string to ANSI escape code using colorama.
@@ -105,12 +104,14 @@ class Spinner:
     def load_spinner(self, spinner_type: str) -> list[str]:
         """Load the spinner type from the JSON file in the json folder
         which was obtained from https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json"""
-        with open(C.SPINNERS_JSON_PATH, "r", encoding="utf-8") as f:
-            spinners = json.load(f)
-
-        if (spinner_type not in spinners):
-            raise ValueError("Invalid spinner type.")
-        return spinners[spinner_type]
+        if (spinner_type not in SpinnerTypes.__members__):
+            raise ValueError(
+                f"Invalid spinner type, '{spinner_type}'.\n" \
+                "Please refer to the SpinnerTypes enum or refer to " \
+                "https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json " \
+                "for a list of valid spinner types."
+            )
+        return SpinnerTypes[spinner_type].value
 
     def get_spin(self) -> itertools.cycle:
         """returns the spinner cycle."""
