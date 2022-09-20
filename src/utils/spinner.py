@@ -102,8 +102,7 @@ class Spinner:
         self.__stop_event = None
 
     def load_spinner(self, spinner_type: str) -> list[str]:
-        """Load the spinner type from the JSON file in the json folder
-        which was obtained from https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json"""
+        """Load the spinner type from the SpinnerTypes Enum object."""
         if (spinner_type not in SpinnerTypes.__members__):
             raise ValueError(
                 f"Invalid spinner type, '{spinner_type}'.\n" \
