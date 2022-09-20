@@ -270,35 +270,61 @@ def main() -> None:
     sys.exit(0)
 
 if (__name__ == "__main__"):
-    import httpx
-    # check for latest version
-    # if directly running this Python file.
-    with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS) as client:
-        for retry_counter in range(1, C.MAX_RETRIES + 1):
-            try:
-                response = client.get(
-                    "https://cultureddownloader.com/api/v1/software/latest/version"
-                )
-                response.raise_for_status()
-            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
-                if (retry_counter == C.MAX_RETRIES):
-                    print_danger("Failed to check for latest version.")
-                    if (isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 403):
-                        print_danger("You may have been blocked by Cloudflare due to a poor IP reputation.")
-                    else:
-                        print_danger("Please check your internet connection and try again.")
+    # import Python's standard libraries
+    from argparse import ArgumentParser, BooleanOptionalAction
+    parser = ArgumentParser(
+        description="Cultured Downloader main program that lets you "\
+                    "download multiple images from Fantia or Pixiv Fanbox automatically."
+    )
+    parser.add_argument(
+        "-s", "--skip-update",
+        action=BooleanOptionalAction,
+        default=False,
+        required=False,
+        help="Skip the update check and run the program immediately."
+    )
+    args = parser.parse_args()
 
-                    input("Please press ENTER to exit...")
-                    sys.exit(1)
+    if (not args.skip_update):
+        # Import Third-party Libraries
+        import httpx
 
-                time.sleep(C.RETRY_DELAY)
-                continue
-            else:
-                software_info = response.json()
-                latest_ver = software_info["version"]
-                if (latest_ver != __version__):
-                    print_warning(
-                        f"New version {latest_ver} is available at {software_info['download_url']}\n"
+        # check for latest version
+        # if directly running this Python file.
+        print_warning("Checking for latest version...")
+        with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS) as client:
+            for retry_counter in range(1, C.MAX_RETRIES + 1):
+                try:
+                    response = client.get(
+                        "https://cultureddownloader.com/api/v1/software/latest/version"
                     )
+                    response.raise_for_status()
+                except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
+                    if (retry_counter == C.MAX_RETRIES):
+                        print_danger("Failed to check for latest version.")
+                        if (isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 403):
+                            print_danger("You may have been blocked by Cloudflare due to a poor IP reputation.")
+                        else:
+                            print_danger("Please check your internet connection and try again.")
+
+                        input("Please press ENTER to exit...")
+                        sys.exit(1)
+
+                    time.sleep(C.RETRY_DELAY)
+                    continue
+                else:
+                    software_info = response.json()
+                    latest_ver = software_info["version"]
+                    if (latest_ver != __version__):
+                        print_danger(
+                            f"New version {latest_ver} is available at " \
+                            f"{software_info['download_url']}!\n"
+                        )
+                    else:
+                        print_success("You are running the latest version!\n")
+
+                    break
+    else:
+        print_danger("Skipping update check...\n")
 
     main()

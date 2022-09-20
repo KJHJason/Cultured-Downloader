@@ -8,6 +8,7 @@ import zipfile
 import platform
 from typing import NoReturn, Any
 import urllib.request as urllib_request
+from argparse import ArgumentParser, BooleanOptionalAction
 
 # import local libraries
 try:
@@ -77,46 +78,69 @@ def fetch(url: str) -> Any:
             return response
 
 if (__name__ == "__main__"):
-    release_info = fetch("https://cultureddownloader.com/api/v1/software/latest/version")
-    release_info: dict = json.loads(release_info.read().decode("utf-8"))
-    latest_version = release_info["version"]
-    if (latest_version != __version__):
-        is_updating = (__version__ != "0.0.0")
-        if (is_updating):
-            print(f"Cultured Downloader is outdated, updating to {latest_version}...")
-        else:
-            print(f"Cultured Downloader is missing some files, downloading {latest_version}...")
+    parser = ArgumentParser(
+        description="A program to launch the main program, Cultured Downloader.\n" \
+                    "By running this program, the latest version of Cultured Downloader will " \
+                    "be automatically downloaded if it is not already up-to-date."
+    )
+    parser.add_argument(
+        "-s", "--skip-update",
+        action=BooleanOptionalAction,
+        default=False,
+        required=False,
+        help="Skip the update check and launch the main program directly."
+    )
+    args = parser.parse_args()
 
-        folder = pathlib.Path(__file__).parent.absolute()
-        folder.mkdir(parents=True, exist_ok=True)
-        # remove any contents in the folder path except for the launcher and any compiled bytecodes
-        for file in folder.iterdir():
-            if (file.name != "launcher.py"):
-                if (file.is_dir()):
-                    shutil.rmtree(file)
-                else:
-                    file.unlink()
+    if (not args.skip_update):
+        release_info = fetch("https://cultureddownloader.com/api/v1/software/latest/version")
+        release_info: dict = json.loads(release_info.read().decode("utf-8"))
+        latest_version = release_info["version"]
+        if (latest_version != __version__):
+            is_updating = (__version__ != "0.0.0")
+            if (is_updating):
+                print(f"Cultured Downloader is outdated, updating to {latest_version}...")
+            else:
+                print(f"Cultured Downloader is missing some files, downloading {latest_version}...")
 
-        zipfile_path = folder.joinpath("cultured_downloader.zip")
-        downloaded_file: bytes = fetch(release_info["download_url"]).read()
-        with open(zipfile_path, "wb") as f:
-            f.write(downloaded_file)
+            folder = pathlib.Path(__file__).parent.absolute()
+            folder.mkdir(parents=True, exist_ok=True)
+            # remove any contents in the folder path except for the launcher and any compiled bytecodes
+            for file in folder.iterdir():
+                if (file.name != "launcher.py"):
+                    if (file.is_dir()):
+                        shutil.rmtree(file)
+                    else:
+                        file.unlink()
 
-        with zipfile.ZipFile(zipfile_path, "r") as zip_ref:
-            zip_ref.extractall(folder)
-        zipfile_path.unlink()
+            zipfile_path = folder.joinpath("cultured_downloader.zip")
+            downloaded_file: bytes = fetch(release_info["download_url"]).read()
+            with open(zipfile_path, "wb") as f:
+                f.write(downloaded_file)
 
-        if (is_updating):
-            print("\nUpdate completed...")
-        else:
-            print("\nDownload completed...")
+            with zipfile.ZipFile(zipfile_path, "r") as zip_ref:
+                zip_ref.extractall(folder)
+            zipfile_path.unlink()
+
+            if (is_updating):
+                print("Update completed...")
+            else:
+                print("Download completed...")
+    else:
+        print("Skipping update check...")
 
     try:
         from cultured_downloader import main as cultured_downloader_main, __version__
     except (ModuleNotFoundError, ImportError):
-        handle_shutdown(
-            "Failed to import Cultured Downloader, please try again or raise an issue on GitHub."
-        )
+        if (not args.skip_update):
+            handle_shutdown(
+                "Failed to import Cultured Downloader, please try again or raise an issue on GitHub."
+            )
+        else:
+            handle_shutdown(
+                "Failed to import Cultured Downloader, please try again or " \
+                "run the launcher without the --skip-update or -s flag."
+            )
 
-    print(f"Launching Cultured Downloader {__version__}...\n")
+    print(f"Launching Cultured Downloader {__version__}...")
     cultured_downloader_main()
