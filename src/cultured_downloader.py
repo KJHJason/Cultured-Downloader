@@ -260,6 +260,8 @@ def main() -> None:
     """Main function that will run the program."""
     try:
         initialise()
+        print_warning("\nThe program will now shutdown...")
+        input("Please press ENTER to quit.")
     except (KeyboardInterrupt, EOFError):
         print_danger("\n\nProgram terminated by user.")
         input("Please press ENTER to quit.")
