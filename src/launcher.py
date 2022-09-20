@@ -11,7 +11,7 @@ import urllib.request as urllib_request
 
 # import local libraries
 try:
-    from utils.crucial import __version__
+    from cultured_downloader import __version__
 except (ModuleNotFoundError, ImportError):
     __version__ = "0.0.0"
 
@@ -81,7 +81,11 @@ if (__name__ == "__main__"):
     release_info: dict = json.loads(release_info.read().decode("utf-8"))
     latest_version = release_info["version"]
     if (latest_version != __version__):
-        print(f"Your CulturedDownloader is outdated, updating to {latest_version}...")
+        is_updating = (__version__ != "0.0.0")
+        if (is_updating):
+            print(f"Cultured Downloader is outdated, updating to {latest_version}...")
+        else:
+            print(f"Cultured Downloader is missing some files, downloading {latest_version}...")
 
         folder = pathlib.Path(__file__).parent.absolute()
         folder.mkdir(parents=True, exist_ok=True)
@@ -102,18 +106,13 @@ if (__name__ == "__main__"):
             zip_ref.extractall(folder)
         zipfile_path.unlink()
 
-        # Move the unzipped files one level up
-        unzipped_contents_folder = folder.joinpath("cultured_downloader")
-        for file in unzipped_contents_folder.iterdir():
-            shutil.move(file, folder)
-        unzipped_contents_folder.rmdir()
+        if (is_updating):
+            print("\nUpdate completed...")
+        else:
+            print("\nDownload completed...")
 
-        print("\nUpdate completed...")
-
-    time.sleep(1) # Added delay as the files may not be ready to be imported yet
     try:
-        from utils.crucial import __version__
-        from cultured_downloader import main as cultured_downloader_main
+        from cultured_downloader import main as cultured_downloader_main, __version__
     except (ModuleNotFoundError, ImportError):
         handle_shutdown(
             "Failed to import Cultured Downloader, please try again or raise an issue on GitHub."
