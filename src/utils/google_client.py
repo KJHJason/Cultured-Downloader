@@ -275,27 +275,35 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
 
     if (C.USER_PLATFORM != "Windows"):
         formatted_scopes = "' '".join(GOOGLE_OAUTH_SCOPE)
-        suggested_action =  "you can manually set up the OAuth2 flow " \
-                            "by running the google_oauth.py file with the required flags.\n" \
-                            "Suggested flags:\n" \
-                            f"-cp '{pathlib.Path.cwd()}/client_secret.json' " \
-                            "<-- change this to the path where you saved your client secret JSON!\n" \
-                            f"-s '{formatted_scopes}'\n" \
-                            f"-tp '{C.TEMP_SAVED_TOKEN_JSON_PATH}'\n" \
-                            f"-p 8080 <-- Defaults to port 8080 if not specified\n" \
-                            "OAuth2 Helper program documentations: https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_program.md\n"
+        suggested_action =  f"""
+you can manually set up the OAuth2 flow by running the google_oauth.py file with the required flags.
+Suggested flags:
+f"-cp '{pathlib.Path.cwd()}/client_secret.json' <-- change this to the path where you saved your client secret JSON!
+f"-s '{formatted_scopes}'
+f"-tp '{C.TEMP_SAVED_TOKEN_JSON_PATH}' <-- Must be the same so that the program can load the token!
+f"-p 8080 <-- Defaults to port 8080 if not specified
+
+OAuth2 Helper program documentations: 
+https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_program.md
+
+IMPORTANT: 
+You will have to set up the Google Cloud Platform project and enable the Google Drive API first.
+If unsure, follow the guide below:
+https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth2_guide.md
+"""
+
         if (C.USER_PLATFORM == "Linux"):
             import distro # type: ignore *Only available on Linux
             if (distro.id() != "ubuntu"):
                 print_danger(
                     "Disclaimer: If you run into any error, " \
                     "it is because this program uses the gnome terminal and has only been tested on Ubuntu 22.04\n" \
-                    f"If you are facing any issues but wishes to enable GDrive downloads,\n{suggested_action}"
+                    f"If you are facing any issues but wishes to enable GDrive downloads,{suggested_action}"
                 )
         else:
             print_danger(
                 "Since, you are not using Windows or Linux, this feature is not supported for your platform.\n" \
-                f"Therefore, if you still want to enable GDrive downloads,\n{suggested_action}"
+                f"Therefore, if you still want to enable GDrive downloads,{suggested_action}"
             )
             return
 

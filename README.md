@@ -83,7 +83,7 @@ In the end, I spent about a month doing this project while learning concepts suc
 * **Allow downloads of gdrive links (for Pixiv Fanbox only)**
   * Note: Requires you to set up Google OAuth2.
     - For Windows or Linux users, please refer to the [guide](/doc/google_oauth2_guide.md) in the [doc folder](/doc) if unsure.
-    - For macOS users, you will have to manually set up google OAuth2 by referring to a simple documentation [here](https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_program.md) for running [google_oauth.py](https://github.com/KJHJason/Cultured-Downloader/blob/main/src/helper/google_oauth.py).
+    - For macOS users, after following step 1 to 3 of the guide, you will have to manually set up google OAuth2 which you can refer to a simple documentation [here](https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_script.md) for running [google_oauth.py](https://github.com/KJHJason/Cultured-Downloader/blob/main/src/helper/google_oauth.py).
 
 * **2 Types of download options on both Fantia and Pixiv Fanbox!**
   * Downloading from post URL(s)

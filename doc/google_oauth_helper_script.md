@@ -1,5 +1,7 @@
 # Google OAuth2 Helper Program
 
+**IMPORTANT**: This assumes that you have completed step 1 to 3 of the [Google OAuth2 Guide](google_oauth2_guide.md). Otherwise, follow the guide first before reading the rest of this guide.
+
 When running [google_oauth.py](https://github.com/KJHJason/Cultured-Downloader/blob/main/src/helper/google_oauth.py), you will need the following flags:
 
 - `-cp` or `--client-path`: Path to the client_secret.json file.
