@@ -60,15 +60,15 @@ In the end, I spent about a month doing this project while learning concepts suc
    However, if you face any connection errors, you can pass in the `--skip-update` or `-s` argument to skip the update *check* in both [launcher.py](src/launcher.py) and [cultured_downloader.py](src/cultured_downloader.py)
 
 2. Running the executable file
-  - IMPORTANT: For macOS users, you will have to run the Python scripts instead of the executable file so you can ignore this section and refer to the one above.
-  - Download the latest Cultured Downloader zip file from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
-    - Do **NOT** download the file that says `Source code (zip)`. Otherwise, you will be downloading the source code instead of the executable file.
-  - Once downloaded, you can do integrity check by comparing the SHA256 hash of the downloaded zip file with the hash provided in the release notes.
-  - Extract the files and make sure to place the `google_oauth.py` file on your desktop. This is required if you will be using the GDrive download feature.
-    - Ensure that you have Python 3.9.X and above installed and have the dependency, `google-api-python-client`, installed.
-      - If unsure, just run `pip install google-api-python-client` in your terminal/command prompt.
-  - Finally, you can enjoy running the program!
-    - If you are on Windows, run `cultured-downloader.exe`. Otherwise, for Linux, run the one without any extension.
+   - IMPORTANT: For macOS users, you will have to run the Python scripts instead of the executable file so you can ignore this section and refer to the one above.
+   - Download the latest Cultured Downloader zip file from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
+     - Do **NOT** download the file that says `Source code (zip)`. Otherwise, you will be downloading the source code instead of the executable file.
+   - Once downloaded, you can do integrity check by comparing the SHA256 hash of the downloaded zip file with the hash provided in the release notes.
+   - Extract the files and make sure to place the `google_oauth.py` file on your desktop. This is ***IMPORTANT*** if you will be using the GDrive download feature.
+     - Ensure that you have Python 3.9.X and above installed and have the dependency, `google-api-python-client`, installed.
+       - If unsure, just run `pip install google-api-python-client` in your terminal/command prompt.
+   - Finally, you can enjoy running the program!
+     - If you are on Windows, run `cultured-downloader.exe`. Otherwise, for Linux, run the one without any extension.
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
