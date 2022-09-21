@@ -62,7 +62,7 @@ class Constants:
 
     # Debug mode
     DEBUG_MODE: bool = False # For logger
-    API_DEBUG_MODE: bool = True # (For requesting to the web application hosted on localhost)
+    API_DEBUG_MODE: bool = False # (For requesting to the web application hosted on localhost)
 
     # For cryptographic operations with the user's saved cookies
     API_URL: str = "http://127.0.0.1:8080/api/v1" if (API_DEBUG_MODE) else "https://cultureddownloader.com/api/v1"
@@ -89,6 +89,7 @@ class Constants:
     DRIVER_CACHE_RANGE: int = 7 # days
 
     # Applications configuration, Google Drive API key, and cookies file paths
+    TEMP_SAVED_TOKEN_JSON_PATH: pathlib.Path = APP_FOLDER_PATH.joinpath("google-oauth2-token.json")
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
     GOOGLE_OAUTH_CLIENT_SECRET: pathlib.Path = appDir.joinpath("google-client-secret")

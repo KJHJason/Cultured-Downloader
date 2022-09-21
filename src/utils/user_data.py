@@ -531,7 +531,7 @@ def save_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key
         except (APIServerError, httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
             if (retry_counter == C.MAX_RETRIES):
                 return False
-            time.sleep(C.RETRY_WAIT_TIME)
+            time.sleep(C.RETRY_DELAY)
         else:
             return True
 
@@ -556,7 +556,7 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: A
         except (APIServerError, httpx.ReadTimeout, httpx.ConnectError, httpx.ConnectTimeout, json.JSONDecodeError):
             if (retry_counter == C.MAX_RETRIES):
                 return None
-            time.sleep(C.RETRY_WAIT_TIME)
+            time.sleep(C.RETRY_DELAY)
 
 def save_data(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key_locally: bool, *args, **kwargs) -> bool:
     """Saves the data to the user's machine.

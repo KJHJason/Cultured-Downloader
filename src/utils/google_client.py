@@ -273,6 +273,31 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         except (ValueError):
             pass
 
+    if (C.USER_PLATFORM != "Windows"):
+        formatted_scopes = "' '".join(GOOGLE_OAUTH_SCOPE)
+        suggested_action =  "you can manually set-up the OAuth2 flow " \
+                            "by running the google_oauth.py file with the required flags.\n" \
+                            "Suggested flags:\n" \
+                            f"-cp '{pathlib.Path.cwd()}/client_secret.json' " \
+                            "<-- change this to the path where you saved your client secret JSON!\n" \
+                            f"-s '{formatted_scopes}'\n" \
+                            f"-tp '{C.TEMP_SAVED_TOKEN_JSON_PATH}'\n" \
+                            f"-p 8080 <-- Defaults to port 8080 if not passed in\n"
+        if (C.USER_PLATFORM == "Linux"):
+            import distro # type: ignore *Only available on Linux
+            if (distro.id() != "ubuntu"):
+                print_danger(
+                    "Disclaimer: If you run into any error, " \
+                    "it is because this program uses the gnome terminal and has only been tested on Ubuntu 22.04\n" \
+                    f"If you are facing any issues but wishes to enable GDrive downloads,\n{suggested_action}"
+                )
+        else:
+            print_danger(
+                "Since, you are not using Windows or Linux, this feature is not supported for your platform.\n" \
+                f"Therefore, if you still want to enable GDrive downloads,\n{suggested_action}"
+            )
+            return
+
     if (getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")):
         # If running the PyInstaller executable
         helper_file_path = pathlib.Path(sys._MEIPASS).joinpath("google_oauth.py")
@@ -330,26 +355,29 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
 
     # Construct the command for the subprocess
     cmd = "python" if (C.USER_PLATFORM == "Windows") else "python3"
-    temp_saved_token_json = C.APP_FOLDER_PATH.joinpath("google-oauth2-token.json")
     commands = [
         cmd, str(helper_file_path),
         "-cp", str(temp_saved_client_json),
         "-s", " ".join(GOOGLE_OAUTH_SCOPE), 
-        "-tp", str(temp_saved_token_json),
+        "-tp", str(C.TEMP_SAVED_TOKEN_JSON_PATH),
         "-p", "8080" # if changing port, the client secret JSON redirect URIs must be changed as well
     ]
 
     def delete_temp_files():
         temp_saved_client_json.unlink(missing_ok=True)
-        temp_saved_token_json.unlink(missing_ok=True)
+        C.TEMP_SAVED_TOKEN_JSON_PATH.unlink(missing_ok=True)
 
     while (True):
         # Open a new terminal window and start the OAuth2 flow
         # as the user would be stuck unless they close the terminal if they wish to cancel
-        subprocess.call(commands, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        if (C.USER_PLATFORM == "Windows"):
+            subprocess.call(commands, creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            # Tested on Ubuntu 22.04 but may not work on other distros
+            subprocess.call(f"gnome-terminal --disable-factory -- {' '.join(commands)}", shell=True)
 
         # Check if the flow was successful by checking if the token JSON file exists
-        if (not temp_saved_token_json.exists() or not temp_saved_token_json.is_file()):
+        if (not C.TEMP_SAVED_TOKEN_JSON_PATH.exists() or not C.TEMP_SAVED_TOKEN_JSON_PATH.is_file()):
             print_danger("Google OAuth2 flow was not successful, please try again.\n")
             retry = get_input(
                 input_msg="Do you want to retry the OAuth2 flow? (Y/n): ",
@@ -367,7 +395,7 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         print("\x1b[2J\x1b[H", end="")
 
         # Load the generated token JSON file
-        with open(temp_saved_token_json, "r") as f:
+        with open(C.TEMP_SAVED_TOKEN_JSON_PATH, "r") as f:
             token_json = f.read()
 
         delete_temp_files()

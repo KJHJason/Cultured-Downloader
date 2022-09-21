@@ -12,7 +12,7 @@ if (__name__ == "__main__"):
         "--client-path",
         type=str,
         required=True,
-        help="The client secret JSON file path",
+        help="The client secret JSON file path to use for the OAuth2 flow",
     )
     parser.add_argument(
         "-s",
@@ -34,7 +34,8 @@ if (__name__ == "__main__"):
         "--port",
         type=int,
         default=8080,
-        help="The port to use for the OAuth2 flow"
+        required=False,
+        help="The port to use for the OAuth2 flow local server"
     )
     args = vars(parser.parse_args())
 
