@@ -26,7 +26,7 @@ Cultured Downloader
 ## Table of Contents/目次
 [English](#introduction)
   - [Introduction](#introduction)
-  - [Running the Python File](#running-the-python-file)
+  - [Running the Program](#running-the-program)
   - [Terms of Use](#terms-of-use)
   - [Features](#features)
   - [Usage Notes](#usage-notes)
@@ -44,18 +44,31 @@ Hence, I coded this program to automate the process of downloading images from a
 
 In the end, I spent about a month doing this project while learning concepts such as web scraping, async, threading, and more.
 
-## Running the Python File
-- Download all the files in this repository.
-- Install [Python 3.9.0 or above](https://www.python.org/downloads/)
-- You can install all dependencies by running the command below or let the program install them for you.
-  ```
-  pip install -r requirements.txt
-  ```
-- Run [launcher.py](src/launcher.py) or [cultured_downloader.py](src/cultured_downloader.py) and enjoy!
+## Running the Program
 
-Note: You can enjoy automatic updates by running [launcher.py](src/launcher.py) instead of [cultured_downloader.py](src/cultured_downloader.py) which will download the latest release Python files. 
+1. Running the Python scripts
+   - Download all the files in this repository.
+   - Install [Python 3.9.0 or above](https://www.python.org/downloads/)
+   - You can install all dependencies by running the command below or let the program install them for you.
+     ```
+     pip install -r requirements.txt
+     ```
+   - Run [launcher.py](src/launcher.py) or [cultured_downloader.py](src/cultured_downloader.py) and enjoy!
 
-However, if you face any connection errors, you can pass in the `--skip-update` or `-s` argument to skip the update *check* in both [launcher.py](src/launcher.py) and [cultured_downloader.py](src/cultured_downloader.py)
+   Note: You can enjoy automatic updates by running [launcher.py](src/launcher.py) instead of [cultured_downloader.py](src/cultured_downloader.py) which will download the latest release Python files. 
+
+   However, if you face any connection errors, you can pass in the `--skip-update` or `-s` argument to skip the update *check* in both [launcher.py](src/launcher.py) and [cultured_downloader.py](src/cultured_downloader.py)
+
+2. Running the executable file
+  - IMPORTANT: For macOS users, you will have to run the Python scripts instead of the executable file so you can ignore this section and refer to the one above.
+  - Download the latest Cultured Downloader zip file from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
+    - Do **NOT** download the file that says `Source code (zip)`. Otherwise, you will be downloading the source code instead of the executable file.
+  - Once downloaded, you can do integrity check by comparing the SHA256 hash of the downloaded zip file with the hash provided in the release notes.
+  - Extract the files and make sure to place the `google_oauth.py` file on your desktop. This is required if you will be using the GDrive download feature.
+    - Ensure that you have Python 3.9.X and above installed and have the dependency, `google-api-python-client`, installed.
+      - If unsure, just run `pip install google-api-python-client` in your terminal/command prompt.
+  - Finally, you can enjoy running the program!
+    - If you are on Windows, run `cultured-downloader.exe`. Otherwise, for Linux, run the one without any extension.
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
@@ -65,15 +78,21 @@ However, if you face any connection errors, you can pass in the `--skip-update` 
 3. As a user of this program, you must never share any data such as your cookie files to other people. This is not permissible as it may cause damages to the artists that you are downloading from. If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable for the damages caused but the user(s) involved will be.
 
 ## Features
-* **Allow multiple URLs input**
+* **Allow multiple URLs input by separating URLs with a comma**
+
 * **Allow downloads of attachments such as videos, psd, etc.**
-* **Allow downloads of gdrive links (for pixiv Fanbox only)**
-* **4 Download Options**
-    * Downloading all the images or attachment files (videos, psd, etc.) in a Fantia post based on a URL such as "https://fantia.jp/posts/1234567"
-    * Downloading all the images or attachment files (videos, psd, etc.) in a pixiv Fanbox post based on a URL such as "https://www.fanbox.cc/@creator_name/posts/1234567"
-    * Downloading images or attachment files (videos, psd, etc.) from Fantia's all posts page URL such as "https://fantia.jp/fanclubs/1234/posts"
-    * Downloading images or attachment files (videos, psd, etc.) from pixiv Fanbox's all posts page URL such as "https://www.fanbox.cc/@creator_name/posts"<br>
-      (The user will then be asked to specify the page number. For example, "1-3" to specify page 1 to 3. In another instance, the user can enter "4" to specify page 4 only.)
+
+* **Allow downloads of gdrive links (for Pixiv Fanbox only)**
+  * Note: Requires you to set up Google OAuth2.
+    - Please refer to the [guide](/doc/google_oauth2_guide.md) in the [doc folder](/doc) if unsure.
+
+* **2 Types of download options on both Fantia and Pixiv Fanbox!**
+  * Downloading from post URL(s)
+    - Fantia URL example: "https://fantia.jp/posts/1234567"
+    - Pixiv Fanbox URL example: "https://www.fanbox.cc/@creator_name/posts/1234567"
+  * Downloading from multiple posts from creator's page(s)
+    - Fantia URL example: "https://fantia.jp/fanclubs/1234/posts"
+    - Pixiv Fanbox example: "https://www.fanbox.cc/@creator_name/posts"
 
 ## Usage Notes
 1. **This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually. Please do not use this program and break any of Fantia's or pixiv Fanbox's Terms of Service/Terms of Use.**

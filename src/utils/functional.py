@@ -655,3 +655,19 @@ def user_has_saved_cookies() -> bool:
     """
     return ((C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()) or \
             (C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()))
+
+def remove_folder_if_empty(folder_path: pathlib.Path) -> None:
+    """Removes the folder if it is empty.
+
+    Args:
+        folder_path (pathlib.Path):
+            The folder path to remove if it is empty.
+
+    Returns:
+        None
+    """
+    if (not folder_path.exists() or not folder_path.is_dir()):
+        return
+
+    if (not any(folder_path.iterdir())):
+        folder_path.rmdir()

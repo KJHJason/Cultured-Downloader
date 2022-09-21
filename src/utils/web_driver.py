@@ -26,7 +26,7 @@ if (__package__ is None or __package__ == ""):
     from user_data import load_cookies
     from google_client import GoogleDrive
     from download import *
-    from functional import print_danger, get_input, save_key_prompt, \
+    from functional import print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
                            website_to_readable_format, get_user_urls, get_user_download_choices
 else:
     from .constants import CONSTANTS as C
@@ -36,7 +36,7 @@ else:
     from .user_data import load_cookies
     from .google_client import GoogleDrive
     from .download import *
-    from .functional import print_danger, get_input, save_key_prompt, \
+    from .functional import print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
                             website_to_readable_format, get_user_urls, get_user_download_choices
 
 class CustomWebDriver(webdriver.Chrome):
@@ -471,6 +471,19 @@ def call_async_result(executed_async_tasks: set) -> None:
         # async function or raise any uncaught exceptions
         task.result()  
 
+def __download_process_cleanup(downloaded_urls_arr: list[tuple[pathlib.Path, list[tuple[str, str]]]]) -> None:
+    """Cleans up any empty folders that were created during the download process.
+
+    Args:
+        downloaded_urls_arr (list[tuple[pathlib.Path, list[tuple[str, str]]]]):
+            The array of tuples containing the folder path and the URL's information.
+
+    Returns:
+        None
+    """
+    for post_folder_path, _ in downloaded_urls_arr:
+        remove_folder_if_empty(post_folder_path)
+
 async def execute_download_process(website: str, creator_page: bool, download_path: str,
                              driver: webdriver.Chrome, login_status: dict, drive_service: GoogleDrive) -> None:
     """Executes the download process for the given website.
@@ -728,6 +741,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         )
 
     if (block_gdrive_downloads or website == "fantia"):
+        __download_process_cleanup(urls_to_download)
         return
 
     with Spinner(
@@ -822,6 +836,8 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                 message=error_msg,
                 log_filename="gdrive_download.log"
             )
+
+    __download_process_cleanup(urls_to_download)
 
 # test codes
 if (__name__ == "__main__"):

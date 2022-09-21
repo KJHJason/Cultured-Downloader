@@ -79,8 +79,9 @@ Alternative:
 
 *You are almost there!*
 
-1. Run the [launcher.py](/src/launcher.py) script and enter the command option for **Configure Google OAuth2 for Google Drive API**.
+1. Run [launcher.py](/src/launcher.py) or the executable and enter the command option for **Configure Google OAuth2 for Google Drive API**.
 2. Copy the contents of the downloaded JSON file and paste it when asked for the **client secret JSON**.
+   - For those running the executable and experiences a block of text that says `Could not find the Google OAuth2 helper Python file at...`, please refer to the [README.md](/README.md#running-the-program) for instructions on how to fix it.
 
 <img src="/res/guide/gcp-oauth2/step-4.1-4.2.jpg" alt="step 4.1 to 4.2" style="width: 70%;">
 

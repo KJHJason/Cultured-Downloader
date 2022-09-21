@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 # import third-party libraries
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-def main() -> None:
+if (__name__ == "__main__"):
     parser = ArgumentParser()
     parser.add_argument(
         "-cp",
@@ -48,6 +48,3 @@ def main() -> None:
     creds = flow.run_local_server(port=args["port"])
     with open(args["token_path"], "w") as json_file:
         json_file.write(creds.to_json())
-
-if (__name__ == "__main__"):
-    main()
