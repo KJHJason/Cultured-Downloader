@@ -275,14 +275,15 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
 
     if (C.USER_PLATFORM != "Windows"):
         formatted_scopes = "' '".join(GOOGLE_OAUTH_SCOPE)
-        suggested_action =  "you can manually set-up the OAuth2 flow " \
+        suggested_action =  "you can manually set up the OAuth2 flow " \
                             "by running the google_oauth.py file with the required flags.\n" \
                             "Suggested flags:\n" \
                             f"-cp '{pathlib.Path.cwd()}/client_secret.json' " \
                             "<-- change this to the path where you saved your client secret JSON!\n" \
                             f"-s '{formatted_scopes}'\n" \
                             f"-tp '{C.TEMP_SAVED_TOKEN_JSON_PATH}'\n" \
-                            f"-p 8080 <-- Defaults to port 8080 if not passed in\n"
+                            f"-p 8080 <-- Defaults to port 8080 if not specified\n" \
+                            "OAuth2 Helper program documentations: https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_program.md\n"
         if (C.USER_PLATFORM == "Linux"):
             import distro # type: ignore *Only available on Linux
             if (distro.id() != "ubuntu"):
@@ -413,8 +414,16 @@ def get_gdrive_service() -> Union[GoogleDrive, None]:
     if (google_token is None):
         return None
 
-    drive_service = GoogleDrive(google_token)
-    print_success("✓ Successfully loaded Google OAuth2 token!")
+    try:
+        drive_service = GoogleDrive(google_token)
+    except (RefreshError):
+        drive_service = None
+        print_danger("✗ Google OAuth2 token is no longer valid, please re-run the Google OAuth2 flow.")
+    except (ValueError):
+        drive_service = None
+        print_danger("✗ Google OAuth2 token is invalid possibly due to missing GDrive scopes. Please re-run the Google OAuth2 flow")
+    else:
+        print_success("✓ Successfully loaded Google OAuth2 token!")
     return drive_service
 
 # test codes below

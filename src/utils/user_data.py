@@ -18,7 +18,7 @@ if (__package__ is None or __package__ == ""):
     from logger import logger
     from spinner import Spinner
     from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken, ClientSecret, ClientToken
-    from functional import  validate_schema, save_key_prompt, print_success, \
+    from functional import  validate_schema, save_key_prompt, print_success, print_warning, \
                             print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 else:
     from .errors import APIServerError
@@ -27,7 +27,7 @@ else:
     from .logger import logger
     from .spinner import Spinner
     from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken, ClientSecret, ClientToken
-    from .functional import validate_schema, save_key_prompt, print_success, \
+    from .functional import validate_schema, save_key_prompt, print_success, print_warning, \
                             print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 
 # Import Third-party Libraries
@@ -360,6 +360,7 @@ class UserData(abc.ABC):
         if (save_locally):
             with open(C.SECRET_KEY_PATH, "wb") as f:
                 f.write(self.__secret_key)
+            return
 
         csrf_token, cookies = self.get_csrf_token()
         json_data = {
@@ -854,12 +855,6 @@ def save_google_oauth_json(*json_data: tuple[tuple[Union[dict, str]], bool]) -> 
         else:
             print_success(f"Successfully saved Google OAuth2 {file_type} JSON data.")
 
-@Spinner(
-    message="Loading Google OAuth2 JSON (if found)...",
-    colour="light_yellow",
-    spinner_position="left",
-    spinner_type="arc"
-)
 def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optional[bool] = True) -> Union[dict, tuple[dict, dict]]:
     """Load the Google OAuth2 JSON data from the user's machine.
 
@@ -876,15 +871,45 @@ def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optiona
     if (not get_client and not get_token):
         raise ValueError("You must get either the client secret or secret token JSON data.")
 
-    path_arr = []
+    path_arr: list[pathlib.Path] = []
     if (get_client):
         path_arr.append(C.GOOGLE_OAUTH_CLIENT_SECRET)
-    if (get_token):
-        path_arr.append(C.GOOGLE_OAUTH_CLIENT_TOKEN)
 
+    if (get_token):
+        if (C.TEMP_SAVED_TOKEN_JSON_PATH.exists() and C.TEMP_SAVED_TOKEN_JSON_PATH.is_file()):
+            path_arr.append(C.TEMP_SAVED_TOKEN_JSON_PATH)
+        else:
+            path_arr.append(C.GOOGLE_OAUTH_CLIENT_TOKEN)
+
+    google_token = None
     threads_arr: list[LoadGoogleOAuth2Thread] = []
     for file_path in path_arr:
         if (not file_path.exists() or not file_path.is_file()):
+            continue
+
+        if (file_path == C.TEMP_SAVED_TOKEN_JSON_PATH):
+            print_warning("Detected unencrypted Google OAuth2 token JSON file.")
+            print_warning("Will be encrypting the file now...")
+            save_key_locally = save_key_prompt()
+            with Spinner(
+                message="Encrypting Google OAuth2 token JSON file...",
+                colour="light_yellow",
+                spinner_position="left",
+                spinner_type="arc"
+            ):
+                google_token = file_path.read_text()
+                save_result = save_data(
+                    SecureGoogleOAuth2,
+                    is_token=True,
+                    client_data=google_token,
+                    save_key_locally=save_key_locally
+                )
+
+            if (save_result):
+                print_success("Successfully encrypted Google OAuth2 token JSON file.")
+                file_path.unlink()
+            else:
+                print_danger("Could not encrypt the Google OAuth2 token JSON file, please try again later.")
             continue
 
         is_token = (file_path == C.GOOGLE_OAUTH_CLIENT_TOKEN)
@@ -892,10 +917,24 @@ def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optiona
         thread.start()
         threads_arr.append(thread)
 
-    for thread in threads_arr:
-        thread.join()
+    with Spinner(
+        message="Loading Google OAuth2 JSON (if found)...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc"
+    ):
+        for thread in threads_arr:
+            thread.join()
 
-    google_token = google_client = None
+    if (google_token is not None):
+        try:
+            google_token = json.loads(google_token)
+        except (json.JSONDecodeError):
+            print_danger("Could not load Google OAuth2 token JSON data.")
+            google_token = None
+            C.GOOGLE_OAUTH_CLIENT_TOKEN.unlink(missing_ok=True)
+
+    google_client = None
     for thread in threads_arr:
         if (thread.is_token and thread.result):
             google_token = thread.result
