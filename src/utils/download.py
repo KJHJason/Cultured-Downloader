@@ -24,12 +24,6 @@ except (ModuleNotFoundError, ImportError):
     install_dependency(dep="aiofiles>=0.8.0")
     import aiofiles
 
-try:
-    import gdown
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="gdown>=4.4.0")
-    import gdown
-
 def log_critical_details_for_post(post_folder: pathlib.Path, message: str, 
                                   log_filename: Optional[str] = "read_me.log") -> None:
     """Log critical details about a post to a log file.
