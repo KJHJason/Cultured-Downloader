@@ -278,7 +278,7 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         suggested_action =  f"""
 you can manually set up the OAuth2 flow by running the google_oauth.py file with the required flags.
 Suggested flags:
-f"-cp '{pathlib.Path.cwd()}/client_secret.json' <-- change this to the path where you saved your client secret JSON!
+f"-cp '{pathlib.Path.cwd().joinpath('client_secret.json')}' <-- change this to the path where you saved your client secret JSON!
 f"-s '{formatted_scopes}'
 f"-tp '{C.TEMP_SAVED_TOKEN_JSON_PATH}' <-- Must be the same so that the program can load the token!
 f"-p 8080 <-- Defaults to port 8080 if not specified
