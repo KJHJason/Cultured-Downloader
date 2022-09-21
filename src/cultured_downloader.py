@@ -15,6 +15,10 @@ from utils import __version__, __author__, __license__
 from urllib3 import exceptions as urllib3_exceptions
 from colorama import Fore as F, init as colorama_init
 
+# escape ANSI escape sequences on Windows terminal
+if (C.USER_PLATFORM == "Windows"):
+    colorama_init(autoreset=False, convert=True)
+
 def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, None]) -> None:
     """Print the menu for the user to read and enter their desired action.
 
@@ -213,8 +217,6 @@ def initialise() -> None:
         sys.excepthook = exception_handler
 
     if (C.USER_PLATFORM == "Windows"):
-        # escape ansi escape sequences on Windows terminal
-        colorama_init(autoreset=False, convert=True)
         # A temporary fix for ProactorBasePipeTransport issues on
         # Windows OS Machines that may appear for older versions of Python
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
