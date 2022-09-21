@@ -889,28 +889,39 @@ def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optiona
 
         if (file_path == C.TEMP_SAVED_TOKEN_JSON_PATH):
             print_warning("Detected unencrypted Google OAuth2 token JSON file.")
-            print_warning("Will be encrypting the file now...")
-            save_key_locally = save_key_prompt()
-            with Spinner(
-                message="Encrypting Google OAuth2 token JSON file...",
-                colour="light_yellow",
-                spinner_position="left",
-                spinner_type="arc"
-            ):
-                google_token = file_path.read_text()
-                save_result = save_data(
-                    SecureGoogleOAuth2,
-                    is_token=True,
-                    client_data=google_token,
-                    save_key_locally=save_key_locally
-                )
+            google_token = file_path.read_text()
+            try:
+                google_token = json.loads(google_token)
+                if (not validate_schema(schema=ClientToken, data=google_token)):
+                    print_danger("The Google OAuth2 token JSON file is invalid.")
+                    google_token = None
+                    C.TEMP_SAVED_TOKEN_JSON_PATH.unlink(missing_ok=True)
+            except (json.JSONDecodeError):
+                print_danger("Could not load Google OAuth2 token JSON file.")
+                google_token = None
+                C.TEMP_SAVED_TOKEN_JSON_PATH.unlink(missing_ok=True)
 
-            if (save_result):
-                print_success("Successfully encrypted Google OAuth2 token JSON file.")
-                file_path.unlink()
-            else:
-                print_danger("Could not encrypt the Google OAuth2 token JSON file, please try again later.")
-            continue
+            if (google_token is not None):
+                save_key_locally = save_key_prompt()
+                with Spinner(
+                    message="Encrypting Google OAuth2 token JSON file...",
+                    colour="light_yellow",
+                    spinner_position="left",
+                    spinner_type="arc"
+                ):
+                    save_result = save_data(
+                        SecureGoogleOAuth2,
+                        is_token=True,
+                        client_data=google_token,
+                        save_key_locally=save_key_locally
+                    )
+
+                if (save_result):
+                    print_success("Successfully encrypted Google OAuth2 token JSON file.")
+                    file_path.unlink()
+                else:
+                    print_danger("Could not encrypt the Google OAuth2 token JSON file, please try again later.")
+                continue
 
         is_token = (file_path == C.GOOGLE_OAUTH_CLIENT_TOKEN)
         thread = LoadGoogleOAuth2Thread(is_token=is_token)
@@ -925,14 +936,6 @@ def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optiona
     ):
         for thread in threads_arr:
             thread.join()
-
-    if (google_token is not None):
-        try:
-            google_token = json.loads(google_token)
-        except (json.JSONDecodeError):
-            print_danger("Could not load Google OAuth2 token JSON data.")
-            google_token = None
-            C.GOOGLE_OAUTH_CLIENT_TOKEN.unlink(missing_ok=True)
 
     google_client = None
     for thread in threads_arr:
