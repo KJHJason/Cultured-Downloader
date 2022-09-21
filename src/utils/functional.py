@@ -612,7 +612,7 @@ def check_internet_connection() -> bool:
     with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS, timeout=5) as client:
         try:
             client.head("https://www.google.com")
-        except (httpx.ConnectTimeout):
+        except (httpx.ConnectError, httpx.ConnectTimeout):
             return False
     return True
 

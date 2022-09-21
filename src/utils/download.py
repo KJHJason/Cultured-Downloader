@@ -129,7 +129,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     async with aiofiles.open(file_path, "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
                             await f.write(chunk)
-            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError):
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError):
                 file_path.unlink(missing_ok=True)
                 if (retry_counter == C.MAX_RETRIES):
                     failed_downloads_arr.append(

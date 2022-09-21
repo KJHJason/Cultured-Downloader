@@ -114,7 +114,7 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
     with httpx.Client(headers=C.JSON_REQ_HEADERS, http2=True, timeout=30) as client:
         try:
             res = client.post(f"{C.API_URL}/public-key", json=json_data)
-        except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+        except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
             logger.error(f"httpx error while retrieving API's public key:\n{e}")
             raise
 

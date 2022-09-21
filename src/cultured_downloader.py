@@ -299,7 +299,7 @@ if (__name__ == "__main__"):
                         "https://api.github.com/repos/KJHJason/Cultured-Downloader/releases/latest"
                     )
                     response.raise_for_status()
-                except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
+                except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
                     if (retry_counter == C.MAX_RETRIES):
                         print_danger(f"Failed to check for latest version after {C.MAX_RETRIES} retries.")
                         if (isinstance(e, httpx.HTTPStatusError)):

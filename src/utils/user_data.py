@@ -250,7 +250,7 @@ class UserData(abc.ABC):
         with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS, timeout=30) as client:
             try:
                 res = client.get(f"{C.API_URL}/csrf-token")
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 logger.error(f"httpx error while retrieving CSRF token from the API:\n{e}")
                 raise
 
@@ -315,7 +315,7 @@ class UserData(abc.ABC):
         with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
             try:
                 res = client.post(f"{C.API_URL}/get-key", json=json_data)
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 logger.error(f"httpx error while loading key from API:\n{e}")
                 raise
 
@@ -380,7 +380,7 @@ class UserData(abc.ABC):
         with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
             try:
                 res = client.post(f"{C.API_URL}/save-key", json=json_data)
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 logger.error(f"httpx error while saving key from API:\n{e}")
                 raise
 
@@ -528,7 +528,7 @@ def save_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key
     for retry_counter in range(1, C.MAX_RETRIES + 1):
         try:
             obj.save_key(save_locally=save_key_locally)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+        except (APIServerError, httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
             if (retry_counter == C.MAX_RETRIES):
                 return False
             time.sleep(C.RETRY_WAIT_TIME)
@@ -553,7 +553,7 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: A
     for retry_counter in range(1, C.MAX_RETRIES + 1):
         try:
             return obj(*args, **kwargs)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectError, httpx.ConnectTimeout, json.JSONDecodeError):
             if (retry_counter == C.MAX_RETRIES):
                 return None
             time.sleep(C.RETRY_WAIT_TIME)

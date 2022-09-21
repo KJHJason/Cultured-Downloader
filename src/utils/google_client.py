@@ -8,6 +8,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.http import MediaIoBaseDownload
 
 # import Python's standard libraries
+import sys
 import json
 import time
 import asyncio
@@ -145,7 +146,7 @@ class GoogleDrive(GoogleOAuth2):
                         response = await client.get(url=url)
                         response.raise_for_status()
                         json_response = response.json()
-                    except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
+                    except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
                         if (retry_counter == C.MAX_RETRIES):
                             logger.error(f"Failed to get gdrive folder content for {folder_id}: {e}")
                             failed_requests_arr.append((folder_id, gdrive_info[1], "folder", str(e)))
@@ -198,7 +199,7 @@ class GoogleDrive(GoogleOAuth2):
 
                     response.raise_for_status()
                     file_info = response.json()
-                except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
+                except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
                     if (retry_counter == C.MAX_RETRIES):
                         logger.error(f"Failed to get gdrive file details for {file_id}: {e}")
                         failed_requests_arr.append((file_id, gdrive_info[1], "file", str(e)))
@@ -272,28 +273,23 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         except (ValueError):
             pass
 
-    use_main_path = (C.GOOGLE_OAUTH_HELPER_FILE.exists() and C.GOOGLE_OAUTH_HELPER_FILE.is_file())
-    use_alternative_path = (
-        C.ALTERNATIVE_GOOGLE_OAUTH_HELPER_FILE.exists() and C.ALTERNATIVE_GOOGLE_OAUTH_HELPER_FILE.is_file()
-    )
+    if (getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")):
+        # If running the PyInstaller executable
+        helper_file_path = pathlib.Path(sys._MEIPASS).joinpath("google_oauth.py")
+    else:
+        helper_file_path = C.ROOT_PY_FILE_PATH.joinpath("helper", "google_oauth.py")
+
     if (google_client is None):
         google_client_initially_none = True
-        if (not use_main_path and not use_alternative_path):
+        if (not helper_file_path.exists() or not helper_file_path.is_file()):
             print_danger(
                 "Could not find the Google OAuth2 helper Python file at\n" \
-                f"{C.GOOGLE_OAUTH_HELPER_FILE}\n" \
+                f"{helper_file_path}\n" \
             )
             print_danger(
                 "Please download the Google OAuth2 helper Python file from\n" \
                 "https://github.com/KJHJason/Cultured-Downloader/blob/main/src/helper/google_oauth.py\n"
-                "and place it on your desktop or in a helper folder in the same directory as Cultured Downloader.\n"
-            )
-            print_warning(
-                "If you are running the executable version of Cultured Downloader, " \
-                "this is normal and you will have to download the helper file manually and place it on your desktop.\n" \
-                "Lastly, make sure to have Python 3.9.X and above installed and make sure that you have " \
-                "google-api-python-client dependency installed.\n"
-                "If unsure, just run the command, 'pip install google-api-python-client', on your terminal/command prompt.\n"
+                "and place it in a helper folder in the same directory as Cultured Downloader.\n"
             )
             return
 
@@ -328,13 +324,11 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         google_client_initially_none = False
         google_client = json.dumps(google_client)
 
-    temp_saved_client_json = C.ROOT_PY_FILE_PATH.joinpath("google-oauth2-client.json")
+    temp_saved_client_json = C.APP_FOLDER_PATH.joinpath("google-oauth2-client.json")
     with open(temp_saved_client_json, "w") as f:
         f.write(google_client)
 
     # Construct the command for the subprocess
-    helper_file_path =  C.GOOGLE_OAUTH_HELPER_FILE \
-                        if (use_main_path) else C.ALTERNATIVE_GOOGLE_OAUTH_HELPER_FILE
     cmd = "python" if (C.USER_PLATFORM == "Windows") else "python3"
     temp_saved_token_json = C.APP_FOLDER_PATH.joinpath("google-oauth2-token.json")
     commands = [
@@ -344,6 +338,10 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         "-tp", str(temp_saved_token_json),
         "-p", "8080" # if changing port, the client secret JSON redirect URIs must be changed as well
     ]
+
+    def delete_temp_files():
+        temp_saved_client_json.unlink(missing_ok=True)
+        temp_saved_token_json.unlink(missing_ok=True)
 
     while (True):
         # Open a new terminal window and start the OAuth2 flow
@@ -359,6 +357,7 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
                 default="y"
             )
             if (retry == "n"):
+                delete_temp_files()
                 return
             else:
                 continue
@@ -371,9 +370,7 @@ def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
         with open(temp_saved_token_json, "r") as f:
             token_json = f.read()
 
-        # Delete the temporary files
-        temp_saved_client_json.unlink()
-        temp_saved_token_json.unlink()
+        delete_temp_files()
 
         to_save = [(token_json, True)]
         if (google_client_initially_none):

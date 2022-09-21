@@ -83,8 +83,6 @@ class Constants:
     TODAYS_LOG_FILE_PATH: pathlib.Path = LOG_FOLDER_PATH.joinpath(
         f"cultured-downloader_v{__version__}_{datetime.now().strftime('%Y-%m-%d')}.log"
     )
-    GOOGLE_OAUTH_HELPER_FILE: pathlib.Path = ROOT_PY_FILE_PATH.joinpath("helper", "google_oauth.py")
-    ALTERNATIVE_GOOGLE_OAUTH_HELPER_FILE: pathlib.Path = pathlib.Path.home().joinpath("Desktop", "google_oauth.py")
 
     # For the webdriver manager
     DRIVER_FOLDER_PATH: pathlib.Path = APP_FOLDER_PATH.joinpath("webdrivers")

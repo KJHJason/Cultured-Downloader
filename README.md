@@ -61,14 +61,12 @@ In the end, I spent about a month doing this project while learning concepts suc
 
 2. Running the executable file
    - IMPORTANT: For macOS users, you will have to run the Python scripts instead of the executable file so you can ignore this section and refer to the one above.
-   - Download the latest Cultured Downloader zip file from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
-     - Do **NOT** download the file that says `Source code (zip)`. Otherwise, you will be downloading the source code instead of the executable file.
+   - Download the latest Cultured Downloader executable file from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
+     - Make sure to download the correct executable file for your operating system.
+       - For Windows users, download the `cultured_downloader.exe` file.
+       - For Linux users, download the `cultured_downloader` file.
    - Once downloaded, you can do integrity check by comparing the SHA256 hash of the downloaded zip file with the hash provided in the release notes.
-   - Extract the files and make sure to place the `google_oauth.py` file on your desktop. This is ***IMPORTANT*** if you will be using the GDrive download feature.
-     - Ensure that you have Python 3.9.X and above installed and have the dependency, `google-api-python-client`, installed.
-       - If unsure, just run `pip install google-api-python-client` in your terminal/command prompt.
    - Finally, you can enjoy running the program!
-     - If you are on Windows, run `cultured-downloader.exe`. Otherwise, for Linux, run the one without any extension.
 
 ## Terms of Use
 1. This program, Cultured Downloader, is not liable for any damages caused. This program is meant for personal use and to save time downloading images from pixiv Fanbox and Fantia manually.
