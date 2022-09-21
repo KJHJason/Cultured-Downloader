@@ -5,7 +5,6 @@ import json
 import shutil
 import pathlib
 import zipfile
-import platform
 from typing import NoReturn, Any
 import urllib.request as urllib_request
 from argparse import ArgumentParser, BooleanOptionalAction
@@ -18,16 +17,9 @@ except (ModuleNotFoundError, ImportError):
 
 MAX_REQUEST_RETRIES = 5
 RETRY_DELAY = 1.5
-CHROME_USER_AGENT = " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
-OS_USER_AGENTS = {
-    "Windows":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "Linux":
-        "Mozilla/5.0 (X11; Linux x86_64)",
-    "Darwin":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_6)"
-}
-USER_PLATFORM = platform.system()
+OUTDATED_LAUNCHER_MSG = "\nPlease try again, or" \
+                        "check for a newer launcher on Cultured Downloader's GitHub Repository.\n" \
+                        "You may also raise an issue on Cultured Downloader's GitHub Repository if you are unable to resolve this issue."
 
 def handle_shutdown(error_msg: str) -> NoReturn:
     """Print the supplied error message in the terminal and exit the application.
@@ -63,14 +55,16 @@ def fetch(url: str) -> Any:
     for retry_counter in range(1, MAX_REQUEST_RETRIES + 1):
         try:
             request = urllib_request.Request(url)
-            request.add_header("User-Agent", OS_USER_AGENTS[USER_PLATFORM] + CHROME_USER_AGENT)
             response = urllib_request.urlopen(request, timeout=10)
         except (urllib_request.HTTPError, urllib_request.URLError) as e:
             if (retry_counter == MAX_REQUEST_RETRIES):
-                error_msg = f"Failed to fetch {url} due to {e}\n" \
-                            "Please check your internet connection or try again."
-                if (isinstance(e, urllib_request.HTTPError) and e.code == 403):
-                    error_msg += "\nAdditionally, Cloudflare may be blocking your request due to a poor IP reputation."
+                error_msg = f"Failed to fetch {url} after {MAX_REQUEST_RETRIES} retries due to {e}"
+                if (isinstance(e, urllib_request.HTTPError)):
+                    if (e.code == 403):
+                        error_msg += "\nAdditionally, you might be rate limited by GitHub's API in which you can try again later in an hour time."
+                        error_msg += "\nAlternatively, you can skip the update check by running the program with the --skip-update or -s flag."
+                else:
+                    error_msg += "\nPlease check your internet connection or try again."
 
                 handle_shutdown(error_msg)
             time.sleep(RETRY_DELAY)
@@ -93,9 +87,9 @@ if (__name__ == "__main__"):
     args = parser.parse_args()
 
     if (not args.skip_update):
-        release_info = fetch("https://cultureddownloader.com/api/v1/software/latest/version")
+        release_info = fetch("https://api.github.com/repos/KJHJason/Cultured-Downloader/releases/latest")
         release_info: dict = json.loads(release_info.read().decode("utf-8"))
-        latest_version = release_info["version"]
+        latest_version = release_info["tag_name"]
         if (latest_version != __version__):
             is_updating = (__version__ != "0.0.0")
             if (is_updating):
@@ -113,8 +107,9 @@ if (__name__ == "__main__"):
                     else:
                         file.unlink()
 
+            # download the latest release
             zipfile_path = folder.joinpath("cultured_downloader.zip")
-            downloaded_file: bytes = fetch(release_info["download_url"]).read()
+            downloaded_file: bytes = fetch(release_info["zipball_url"]).read()
             with open(zipfile_path, "wb") as f:
                 f.write(downloaded_file)
 
@@ -122,6 +117,32 @@ if (__name__ == "__main__"):
                 zip_ref.extractall(folder)
             zipfile_path.unlink()
 
+            # Look for the folder that was extracted from the zip file
+            extracted_folder_path = None
+            for path in folder.iterdir():
+                if (path.is_dir() and path.name.startswith("KJHJason-Cultured-Downloader-")):
+                    extracted_folder_path = path
+                    break
+            else:
+                handle_shutdown("Failed to find the extracted folder." + OUTDATED_LAUNCHER_MSG)
+
+            # Look for the src folder after finding the extracted folder
+            src_folder_path = None
+            for github_path in extracted_folder_path.iterdir():
+                if (github_path.is_dir() and github_path.name == "src"):
+                    src_folder_path = github_path
+                    break
+            else:
+                handle_shutdown("Failed to find the src folder." + OUTDATED_LAUNCHER_MSG)
+
+            # Move the contents of the src folder to the main folder
+            # where the launcher is located and being run from
+            for src_path in src_folder_path.iterdir():
+                if (src_path.is_file() and src_path.name == "launcher.py"):
+                    continue
+                shutil.move(src_path, folder)
+
+            shutil.rmtree(extracted_folder_path)
             if (is_updating):
                 print("Update completed...")
             else:
@@ -133,11 +154,7 @@ if (__name__ == "__main__"):
         from cultured_downloader import main as cultured_downloader_main, __version__
     except (ModuleNotFoundError, ImportError):
         if (not args.skip_update):
-            handle_shutdown(
-                "Failed to import Cultured Downloader, please try again, or" \
-                "check for a newer launcher on Cultured Downloader's GitHub Repository, " \
-                "or raise an issue on Cultured Downloader's GitHub Repository."
-            )
+            handle_shutdown("Failed to import Cultured Downloader." + OUTDATED_LAUNCHER_MSG)
         else:
             handle_shutdown(
                 "Failed to import Cultured Downloader, please try again or " \

@@ -296,14 +296,18 @@ if (__name__ == "__main__"):
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     response = client.get(
-                        "https://cultureddownloader.com/api/v1/software/latest/version"
+                        "https://api.github.com/repos/KJHJason/Cultured-Downloader/releases/latest"
                     )
                     response.raise_for_status()
                 except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
                     if (retry_counter == C.MAX_RETRIES):
-                        print_danger("Failed to check for latest version.")
-                        if (isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 403):
-                            print_danger("You may have been blocked by Cloudflare due to a poor IP reputation.")
+                        print_danger(f"Failed to check for latest version after {C.MAX_RETRIES} retries.")
+                        if (isinstance(e, httpx.HTTPStatusError)):
+                            if (e.response.status_code == 403):
+                                print_danger("You might be rate limited by GitHub's API in which you can try again later in an hour time.")
+                                print_danger("Alternatively, you can skip the update check by running the program with the --skip-update or -s flag.")
+                            else:
+                                print_danger(f"GitHub API returned an error with status code {e.response.status_code}...")
                         else:
                             print_danger("Please check your internet connection and try again.")
 
@@ -313,12 +317,12 @@ if (__name__ == "__main__"):
                     time.sleep(C.RETRY_DELAY)
                     continue
                 else:
-                    software_info = response.json()
-                    latest_ver = software_info["version"]
+                    release_info = response.json()
+                    latest_ver = release_info["tag_name"]
                     if (latest_ver != __version__):
                         print_danger(
                             f"New version {latest_ver} is available at " \
-                            f"{software_info['download_url']}!\n"
+                            f"{release_info['html_url']}\n"
                         )
                     else:
                         print_success("You are running the latest version!\n")
