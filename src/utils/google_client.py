@@ -59,18 +59,18 @@ class GoogleOAuth2:
     def get_oauth_access_token(self) -> Union[str, None]:
         """Sends a request to Google and retrieve a short-lived 30 mins to 1 hour token"""
         if (self.__CREDENTIALS):
-            if (self.CREDENTIALS.expired and self.CREDENTIALS.refresh_token):
+            if (self.__CREDENTIALS.expired and self.__CREDENTIALS.refresh_token):
                 for retry_counter in range(1, C.MAX_RETRIES + 1):
                     try:
-                        self.CREDENTIALS.refresh(Request())
+                        self.__CREDENTIALS.refresh(Request())
                     except (RefreshError):
                         if (retry_counter == C.MAX_RETRIES):
                             raise
                         time.sleep(C.RETRY_DELAY)
                     else:
-                        return self.CREDENTIALS.token
+                        return self.__CREDENTIALS.token
             else:
-                return self.CREDENTIALS.token
+                return self.__CREDENTIALS.token
 
     @property
     def CREDENTIALS(self) -> Union[Credentials, None]:
@@ -106,7 +106,8 @@ class GoogleDrive(GoogleOAuth2):
         self.__SERVICE = build(
             serviceName="drive",
             version="v3",
-            credentials=self.CREDENTIALS
+            credentials=self.CREDENTIALS,
+            static_discovery=False,
         )
 
     async def get_folder_contents(self, folder_id: str, gdrive_info: tuple[str, pathlib.Path], failed_requests_arr: list, headers: Optional[dict] = None) -> Union[tuple[str, tuple[str, pathlib.Path]], tuple[None, None]]:
