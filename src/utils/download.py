@@ -6,23 +6,20 @@ from typing import Union, Optional
 
 # import local files
 if (__package__ is None or __package__ == ""):
-    from crucial import install_dependency, __version__
     from constants import CONSTANTS as C
     from google_client import GoogleDrive
+    from functional import async_remove_file, async_file_exists
 else:
-    from .crucial import install_dependency, __version__
     from .constants import CONSTANTS as C
     from .google_client import GoogleDrive
+    from .functional import async_remove_file, async_file_exists
 
 # import third-party libraries
 import httpx
 from http.cookiejar import Cookie, CookieJar
 
-try:
-    import aiofiles
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="aiofiles>=0.8.0")
-    import aiofiles
+import aiofiles
+import aiofiles.os as aiofiles_os
 
 def log_critical_details_for_post(post_folder: pathlib.Path, message: str, 
                                   log_filename: Optional[str] = "read_me.log") -> None:
@@ -99,7 +96,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         folder_path = folder_path.joinpath("attachments")
     elif (content_type == C.IMAGE_FILE):
         folder_path = folder_path.joinpath("images")
-    folder_path.mkdir(parents=True, exist_ok=True)
+    await aiofiles_os.makedirs(folder_path, exist_ok=True)
 
     file_path = None
     async with httpx.AsyncClient(
@@ -117,14 +114,14 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     file_path = folder_path.joinpath(
                         response.url.path.rsplit(sep="/", maxsplit=1)[1]
                     )
-                    if (file_path.exists() and file_path.is_file()):
+                    if (await async_file_exists(file_path)):
                         return
 
                     async with aiofiles.open(file_path, "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
                             await f.write(chunk)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError):
-                file_path.unlink(missing_ok=True)
+                await async_remove_file(file_path)
                 if (retry_counter == C.MAX_RETRIES):
                     failed_downloads_arr.append(
                         (url_info, website, folder_path)
@@ -133,7 +130,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                 await asyncio.sleep(C.RETRY_DELAY)
             except (asyncio.CancelledError):
                 if (file_path is not None):
-                    file_path.unlink(missing_ok=True)
+                    await async_remove_file(file_path)
                 raise
             else:
                 break

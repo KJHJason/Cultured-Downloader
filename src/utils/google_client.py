@@ -227,6 +227,9 @@ class GoogleDrive(GoogleOAuth2):
             None
         """
         file_path = folder_path.joinpath(file_name)
+        if (file_path.exists() and file_path.is_file()):
+            return
+
         spinner_base_msg = f"Downloading a gdrive file from the post, {folder_path.name}: " + \
                             "{progress}% downloaded..."
         with Spinner(
@@ -237,9 +240,6 @@ class GoogleDrive(GoogleOAuth2):
             completion_msg=f"Downloaded a gdrive file from the post, {folder_path.name}\n",
             cancelled_msg=f"Cancelled downloading a gdrive file from the post, {folder_path.name}\n"
         ) as spinner:
-            if (file_path.exists() and file_path.is_file()):
-                return
-
             try:
                 with open(file_path, mode="wb") as file:
                     request = self.__SERVICE.files().get_media(fileId=file_id)

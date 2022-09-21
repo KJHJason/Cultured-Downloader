@@ -23,6 +23,7 @@ else:
 import httpx
 from colorama import Fore as F
 from pydantic import BaseModel
+import aiofiles.os as aiofiles_os
 import pydantic.error_wrappers as pydantic_error_wrappers 
 
 def website_to_readable_format(website: str) -> str:
@@ -671,3 +672,42 @@ def remove_folder_if_empty(folder_path: pathlib.Path) -> None:
 
     if (not any(folder_path.iterdir())):
         folder_path.rmdir()
+
+async def async_file_exists(file_path: pathlib.Path) -> bool:
+    """Check if the given file exists asynchronously.
+
+    Args:
+        file_path (pathlib.Path):
+            The file path to check if it exists.
+
+    Returns:
+        bool: 
+            True if the file exists, False otherwise.
+    """
+    return await aiofiles_os.path.exists(file_path) and await aiofiles_os.path.isfile(file_path)
+
+async def async_folder_exists(folder_path: pathlib.Path) -> bool:
+    """Check if the given folder exists asynchronously.
+
+    Args:
+        folder_path (pathlib.Path):
+            The folder path to check if it exists.
+
+    Returns:
+        bool: 
+            True if the folder exists, False otherwise.
+    """
+    return await aiofiles_os.path.exists(folder_path) and await aiofiles_os.path.isdir(folder_path)
+
+async def async_remove_file(file_path: pathlib.Path) -> None:
+    """Remove the file if it exists asynchronously.
+
+    Args:
+        file_path (pathlib.Path):
+            The file path to remove.
+
+    Returns:
+        None
+    """
+    if (await async_file_exists(file_path)):
+        await aiofiles_os.unlink(file_path)

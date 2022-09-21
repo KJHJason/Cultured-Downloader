@@ -9,7 +9,7 @@ import subprocess
 import platform
 from typing import NoReturn, Union
 
-def install_dependency(dep: str) -> Union[None, NoReturn]:
+def __install_dependency(dep: str) -> Union[None, NoReturn]:
     """Install a dependency using pip install using the subprocess module.
 
     Args:
@@ -38,28 +38,39 @@ def install_dependency(dep: str) -> Union[None, NoReturn]:
     else:
         print(f"{dep} module has been installed.\n")
 
-# install commonly used libraries if it is not installed
+# install all the dependencies if they are not installed
 try:
     import colorama
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="colorama>=0.4.5")
+    __install_dependency(dep="colorama>=0.4.5")
 
 try:
     import httpx
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="httpx[http2]>=0.23.0")
+    __install_dependency(dep="httpx[http2]>=0.23.0")
+
+try:
+    import aiofiles
+except (ModuleNotFoundError, ImportError):
+    __install_dependency(dep="aiofiles>=22.1.0")
+    import aiofiles
+
+try:
+    import cryptography
+except (ModuleNotFoundError, ImportError):
+    __install_dependency(dep="cryptography>=38.0.1")
 
 try:
     import pydantic
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="pydantic>=1.10.2")
+    __install_dependency(dep="pydantic>=1.10.2")
 
 try:
     from selenium import webdriver
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="selenium>=4.4.3")
+    __install_dependency(dep="selenium>=4.4.3")
 
 try:
     from webdriver_manager.chrome import ChromeDriverManager
 except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="webdriver-manager>=3.8.3")
+    __install_dependency(dep="webdriver-manager>=3.8.3")
