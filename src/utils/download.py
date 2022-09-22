@@ -93,8 +93,8 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     response.raise_for_status()
 
                     file_path = folder_path.joinpath(
-                        response.url.path.rsplit(sep="/", maxsplit=1)[1]
-                    )
+                        response.url.path.rsplit(sep="/", maxsplit=1)[1].strip()
+                    ).resolve()
                     if (await async_file_exists(file_path)):
                         return
 
@@ -109,10 +109,6 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     )
                     return
                 await asyncio.sleep(C.RETRY_DELAY)
-            except (FileNotFoundError):
-                # Not sure why this happens, but it does occasionally.
-                await async_mkdir(folder_path, parents=True, exist_ok=True)
-                await asyncio.sleep(0.5)
             except (asyncio.CancelledError):
                 if (file_path is not None):
                     await async_remove_file(file_path)
@@ -181,10 +177,10 @@ def create_post_folder(download_path: pathlib.Path,
             The path to the post folder.
     """
     # replace invalid characters in the post title with a dash
-    post_title = C.ILLEGAL_PATH_CHARS_REGEX.sub(repl="-", string=post_title)
+    post_title = C.ILLEGAL_PATH_CHARS_REGEX.sub(repl="-", string=post_title.strip())
 
     # construct the post folder path
-    post_folder_path = download_path.joinpath(creator_name, f"[{post_id}] {post_title}")
+    post_folder_path = download_path.joinpath(creator_name, f"[{post_id}] {post_title}").resolve()
     post_folder_path.mkdir(parents=True, exist_ok=True)
     return post_folder_path
 

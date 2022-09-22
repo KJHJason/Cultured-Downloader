@@ -193,7 +193,7 @@ class GoogleDrive:
         Returns:
             None
         """
-        file_path = folder_path.joinpath("gdrive", file_name)
+        file_path = folder_path.joinpath("gdrive", file_name.strip()).resolve()
         if (await async_file_exists(file_path)):
             return
 
@@ -227,10 +227,6 @@ class GoogleDrive:
                         )
                         return
                     await asyncio.sleep(C.RETRY_DELAY)
-                except (FileNotFoundError):
-                    # Not sure why this happens, but it does occasionally.
-                    await async_mkdir(file_path.parent, parents=True, exist_ok=True)
-                    await asyncio.sleep(0.5)
                 except (asyncio.CancelledError):
                     await async_remove_file(file_path)
                     raise
