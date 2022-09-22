@@ -80,7 +80,7 @@ Alternative:
 *You are almost there!*
 
 1. Run [launcher.py](/src/launcher.py) or the executable and enter the command option for **Configure Google OAuth2 for Google Drive API**.
-   - If facing any issues due to cross-platform issues, please refer to the documentation [here](https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_script.md) for running [google_oauth.py](https://github.com/KJHJason/Cultured-Downloader/blob/main/src/helper/google_oauth.py) manually to set up Google OAuth2.
+   - For Linux users who do not have gnome-terminal and macOS users, please refer to the documentation [here](/doc/google_oauth_helper_script.md) for running [google_oauth.py](/src/helper/google_oauth.py) manually to set up Google OAuth2.
 2. Copy the contents of the downloaded JSON file and paste it when asked for the **client secret JSON**.
 
 <img src="/res/guide/gcp-oauth2/step-4.1-4.2.jpg" alt="step 4.1 to 4.2" style="width: 70%;">
