@@ -232,7 +232,7 @@ Purpose: Allows you to download multiple images from Fantia or Pixiv Fanbox auto
 Note:    Requires the user to login via this program for images that requires a membership.
          This program is not affiliated with Pixiv or Fantia.{C.END}
 {F.RED}
-Warning:
+Important:
 Please read the term of use at https://github.com/KJHJason/Cultured-Downloader before using this program.{C.END}
 """)
     with Spinner(

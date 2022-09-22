@@ -344,7 +344,7 @@ def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = N
         else:
             print_danger(f"Sorry, please enter a valid input." if (warning is None) else warning)
 
-def get_user_download_choices(website: str, block_gdrive: bool) -> Union[tuple[bool, bool, bool], tuple[bool, bool, bool, bool, bool], None]:
+def get_user_download_choices(website: str, block_gdrive_downloads: bool) -> Union[tuple[bool, bool, bool], tuple[bool, bool, bool, bool, bool], None]:
     """Prompt the user and get their download preferences.
 
     Args:
@@ -354,13 +354,14 @@ def get_user_download_choices(website: str, block_gdrive: bool) -> Union[tuple[b
             other file hosting provider links will be disabled.
         block_gdrive (bool):
             Whether to block gdrive links from being downloaded.
-            If so, the user would not be prompted if they would like to download gdrive links.
+            If it's for Fantia, the user would not be prompted if they would like to download gdrive links.
+            Otherwise, for Pixiv Fanbox, the user would be prompted if they would like to download or detect gdrive links.
 
     Returns:
         A tuple of boolean or None if the user cancels the download process:
             (download_images, download_thumbnail, download_attachment).\n
             If the website is not "fantia", the tuple will have an additional last 2 booleans:
-                download_gdrive_links, detect_other_download_links
+                download_gdrive_links/detect_gdrive_links, detect_other_download_links
     """
     while (True):
         download_images = get_input(
@@ -393,16 +394,22 @@ def get_user_download_choices(website: str, block_gdrive: bool) -> Union[tuple[b
             download_attachments == "y"
         ]
         if (website != "fantia"):
-            if (not block_gdrive):
+            if (not block_gdrive_downloads):
                 download_gdrive_links = get_input(
                     input_msg="Download Google Drive links? (Y/n/x to cancel): ",
                     inputs=("y", "n", "x"),
                     default="y"
                 )
-                if (download_gdrive_links == "x"):
-                    return
             else:
-                download_gdrive_links = "n"
+                # Since the user did not configure Google OAuth2 yet, detect GDrive links instead.
+                detect_gdrive_links = get_input(
+                    input_msg="Detect Google Drive links (Note: Configure Google OAuth2 to enable downloads)? (Y/n/x to cancel): ",
+                    inputs=("y", "n", "x"),
+                    default="y"
+                )
+                download_gdrive_links = detect_gdrive_links
+            if (download_gdrive_links == "x"):
+                return
 
             detect_other_download_links = get_input(
                 input_msg="Detect other download links such as MEGA links? (Y/n/x to cancel): ",

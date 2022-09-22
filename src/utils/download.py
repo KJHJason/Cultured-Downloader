@@ -22,7 +22,8 @@ import aiofiles
 import aiofiles.os as aiofiles_os
 
 def log_critical_details_for_post(post_folder: pathlib.Path, message: str, 
-                                  log_filename: Optional[str] = "read_me.log") -> None:
+                                  log_filename: Optional[str] = "read_me.log", 
+                                  ignore_if_exists: Optional[bool] = False) -> None:
     """Log critical details about a post to a log file.
 
     Args:
@@ -32,8 +33,13 @@ def log_critical_details_for_post(post_folder: pathlib.Path, message: str,
             The message to log.
         log_filename (Optional[str], optional):
             The name of the log file. Defaults to "read_me.log".
+        ignore_if_exists (Optional[bool], optional):
+            Whether to ignore logging if the log file already exists and has data in it. Defaults to False.
     """
     log_file = post_folder.joinpath(log_filename)
+    if (ignore_if_exists and log_file.exists() and log_file.is_file() and log_file.stat().st_size > 0):
+        return
+
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(message)
         f.write("\n")
@@ -365,7 +371,8 @@ def detect_password_in_text(post_folder_path: pathlib.Path, text: str) -> bool:
             return True
     return False
 
-def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]) -> bool:
+def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str],
+                        gdrive_service: GoogleDrive, post_folder_path: pathlib.Path) -> bool:
     """Detect if the given text contains a Google Drive link.
 
     Args:
@@ -375,19 +382,39 @@ def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]
             Whether the text is a URL or not.
         urls_to_download_arr (list[str]):
             The array of URLs to download to append the Google Drive link to.
+        gdrive_service (GoogleDrive):
+            To check if the Google Drive Service object is None, 
+            in this case, the Google Drive link will be logged instead.
+        post_folder_path (pathlib.Path):
+            The path to the folder where the Google Drive link will be logged.
 
     Returns:
-        Bool: True if the text contains a Google Drive link, otherwise False.
+        Bool: 
+            True if the text contains a Google Drive link, otherwise False.
     """
     DRIVE_LINK = "https://drive.google.com"
-    if (is_url):
-        if (text.startswith(DRIVE_LINK)):
+    if (is_url and text.startswith(DRIVE_LINK)):
+        if (gdrive_service is not None):
             urls_to_download_arr.append((text, C.GDRIVE_FILE))
-            return True
-        return False
+        else:
+            log_critical_details_for_post(
+                post_folder=post_folder_path,
+                message=f"Google Drive link detected: {text}\n",
+                log_filename="detected_gdrive_links.txt",
+                ignore_if_exists=True
+            )
+        return True
 
-    if (DRIVE_LINK in text):
-        urls_to_download_arr.append((text, C.GDRIVE_FILE))
+    if (not is_url and DRIVE_LINK in text):
+        if (gdrive_service is not None):
+            urls_to_download_arr.append((text, C.GDRIVE_FILE))
+        else:
+            log_critical_details_for_post(
+                post_folder=post_folder_path,
+                message=f"Google Drive link detected in the post's description:\n{text}\n",
+                log_filename="detected_gdrive_links.txt",
+                ignore_if_exists=True
+            )
         return True
     return False
 
@@ -429,8 +456,11 @@ def detect_other_external_download_links(text: str, is_url: bool,
             return True
     return False
 
-def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: pathlib.Path, 
-                              download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
+def process_pixiv_fanbox_json(
+    json_response: Union[dict, None], 
+    download_path: pathlib.Path,
+    gdrive_service: GoogleDrive,
+    download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
     """Get the details of a Pixiv Fanbox post using Pixiv Fanbox's API.
 
     Args:
@@ -508,7 +538,9 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         detect_gdrive_links(
                             text=text,
                             is_url=False,
-                            urls_to_download_arr=urls_to_download_arr
+                            urls_to_download_arr=urls_to_download_arr,
+                            gdrive_service=gdrive_service,
+                            post_folder_path=post_folder_path
                         )
 
         elif (post_type == "article"):
@@ -521,7 +553,9 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         detect_gdrive_links(
                             text=text,
                             is_url=False,
-                            urls_to_download_arr=urls_to_download_arr
+                            urls_to_download_arr=urls_to_download_arr,
+                            gdrive_service=gdrive_service,
+                            post_folder_path=post_folder_path
                         )
 
                     if (detect_other_download_links):
@@ -573,7 +607,9 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         detected_gdrive = detect_gdrive_links(
                             text=external_link,
                             is_url=True,
-                            urls_to_download_arr=urls_to_download_arr
+                            urls_to_download_arr=urls_to_download_arr,
+                            gdrive_service=gdrive_service,
+                            post_folder_path=post_folder_path
                         )
                         if (detected_gdrive):
                             continue

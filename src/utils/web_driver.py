@@ -513,7 +513,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
     block_gdrive_downloads = (drive_service is None)
     download_flags = get_user_download_choices(
         website=website,
-        block_gdrive=block_gdrive_downloads
+        block_gdrive_downloads=block_gdrive_downloads
     )
     if (download_flags is None):
         return
@@ -622,7 +622,8 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                 processed_json = process_pixiv_fanbox_json(
                     json_response=json_response,
                     download_path=download_path,
-                    download_flags=download_flags
+                    download_flags=download_flags,
+                    gdrive_service=drive_service
                 )
             else:
                 raise ValueError(f"Invalid website, {website}, in execute_download_process function...")
