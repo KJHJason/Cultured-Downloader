@@ -227,6 +227,11 @@ class GoogleDrive:
                         )
                         return
                     await asyncio.sleep(C.RETRY_DELAY)
+                except (FileNotFoundError):
+                    # could be because the folder has not been created yet
+                    # known issue: https://github.com/Tinche/aiofiles/issues/108
+                    await async_mkdir(file_path.parent, parents=True, exist_ok=True)
+                    await asyncio.sleep(0.5)
                 except (asyncio.CancelledError):
                     await async_remove_file(file_path)
                     raise
