@@ -6,7 +6,7 @@ This guide will help you to get your Google Drive API key required for downloadi
 
 *You can `ignore` this guide if you do not wish to download any Google Drive links from Pixiv Fanbox posts.*
 
-### Step 1: Create a Google Cloud Platform Project and enable the Google Drive API
+## Step 1: Create a Google Cloud Platform Project and enable the Google Drive API
 
 1. Go to the [Google Cloud Platform Console](https://console.cloud.google.com/).
 
@@ -21,7 +21,7 @@ This guide will help you to get your Google Drive API key required for downloadi
 
 <img src="/res/guide/gdrive_api_key/step-1.4.jpg" alt="step 1.4" style="width: 70%;">
 
-### Step 2: Creating an API Key for GDrive API v3
+## Step 2: Creating an API Key for GDrive API v3
 
 1. Go to the `Credentials` page of your project under the `APIs & Services` tab.
 
@@ -49,7 +49,7 @@ This guide will help you to get your Google Drive API key required for downloadi
 
 <img src="/res/guide/gdrive_api_key/step-2.6.jpg" alt="step 2.6" style="width: 70%;">
 
-### Step 3: Set up your Google Drive API on Cultured Downloader
+## Step 3: Set up your Google Drive API on Cultured Downloader
 
 *You are almost there!*
 
