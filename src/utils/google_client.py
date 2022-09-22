@@ -1,114 +1,82 @@
 # import third-party libraries
 import httpx
-from googleapiclient.errors import HttpError
-from google.auth.exceptions import RefreshError
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.http import MediaIoBaseDownload
+import aiofiles
 
 # import Python's standard libraries
-import sys
 import json
-import time
 import asyncio
 import pathlib
-import webbrowser
-import subprocess
 from typing import Optional, Union
 
 # import local files
 if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
-    from spinner import Spinner
+    from spinner import Spinner, format_error_msg
     from logger import logger
-    from user_data import save_google_oauth_json, load_google_oauth_json
-    from functional import get_input, print_danger, validate_schema, print_success, print_warning
-    from schemas.google_oauth2_client import ClientSecret, GOOGLE_OAUTH_SCOPE
+    from user_data import load_gdrive_api_key
+    from functional import  print_danger, async_file_exists, async_mkdir, \
+                            async_remove_file, check_download_tasks, log_critical_details_for_post
 else:
     from .constants import CONSTANTS as C
-    from .spinner import Spinner
+    from .spinner import Spinner, format_error_msg
     from .logger import logger
-    from .user_data import save_google_oauth_json, load_google_oauth_json
-    from .functional import get_input, print_danger, validate_schema, print_success, print_warning
-    from .schemas.google_oauth2_client import ClientSecret, GOOGLE_OAUTH_SCOPE
+    from .user_data import load_gdrive_api_key
+    from .functional import print_danger, async_file_exists, async_mkdir, \
+                            async_remove_file, check_download_tasks, log_critical_details_for_post
 
-class GoogleOAuth2:
-    """Creates the base Google API service object that can be used for creating
-    authenticated API calls to other Google APIs that requires Google OAuth2 authentication
-
-    Attributes:
-        __CREDENTIALS (google.oauth2.credentials.Credentials):
-                The credentials object that can be used to build other
-                authenticated Google API objects via the googleapiclient.discovery.build function
-    """
-    def __init__(self, credentials: Optional[dict] = None) -> None:
-        if (credentials is None):
-            self.__CREDENTIALS = None
-        else:
-            self.__CREDENTIALS = Credentials.from_authorized_user_info(
-                info=credentials, 
-                scopes=GOOGLE_OAUTH_SCOPE
-            )
-
-            # check if the credentials is valid.
-            # if it is invalid, program will stop
-            # due to RefreshError being raised.
-            self.get_oauth_access_token()
-
-    def get_oauth_access_token(self) -> Union[str, None]:
-        """Sends a request to Google and retrieve a short-lived 30 mins to 1 hour token"""
-        if (self.__CREDENTIALS):
-            if (self.__CREDENTIALS.expired and self.__CREDENTIALS.refresh_token):
-                for retry_counter in range(1, C.MAX_RETRIES + 1):
-                    try:
-                        self.__CREDENTIALS.refresh(Request())
-                    except (RefreshError):
-                        if (retry_counter == C.MAX_RETRIES):
-                            raise
-                        time.sleep(C.RETRY_DELAY)
-                    else:
-                        return self.__CREDENTIALS.token
-            else:
-                return self.__CREDENTIALS.token
-
-    @property
-    def CREDENTIALS(self) -> Union[Credentials, None]:
-        """Returns the credentials object that can be used to build other 
-        authenticated Google API objects via the googleapiclient.discovery.build function"""
-        return self.__CREDENTIALS
-
-class GoogleDrive(GoogleOAuth2):
+class GoogleDrive:
     """Creates an authenticated Google Drive Client that can be used 
     for communicating with Google Drive API v3 with async capabilities.
 
     Attributes:
-        __SERVICE (googleapiclient.discovery.Resource):
-            The Google Drive API service object that can be used for creating
-            authenticated API calls to other Google APIs that requires Google OAuth2 authentication
+        __API_KEY (str):
+            The API key that will be used to authenticate the Google Drive Client.
     """
-    def __init__(self, credentials: Optional[dict] = None, timeout: Optional[int] = 15) -> None:
+    def __init__(self, api_key: str, 
+                 timeout: Optional[int] = 60, max_concurrent_downloads: Optional[int] = 4) -> None:
         """Constructor for the GoogleDrive class
 
         Args:
-            credentials (Optional[dict], optional):
-                The credentials object that can be used to build other
-                authenticated Google API objects via the googleapiclient.discovery.build function.
-                Defaults to None.
+            api_key (str):
+                The API key that will be used to authenticate the Google Drive Client.
             timeout (Optional[int], optional):
-                The timeout value for the httpx.AsyncClient object.
+                The timeout value for the httpx.AsyncClient object. Defaults to 60 seconds.
+            max_concurrent_downloads (Optional[int], optional):
+                The maximum number of concurrent downloads that can be performed at any given time.
+                Defaults to 4 concurrent downloads.
         """
-        if (credentials.get("scopes") != GOOGLE_OAUTH_SCOPE):
-            raise ValueError("The provided credentials does not have the required scopes")
-
-        super().__init__(credentials)
+        self.__BASE_API_URL = "https://www.googleapis.com/drive/v3/files"
+        self.__API_KEY = self.__check_api_key(api_key)
         self.timeout = timeout
-        self.__SERVICE = build(
-            serviceName="drive",
-            version="v3",
-            credentials=self.CREDENTIALS,
-            static_discovery=False,
-        )
+        self.max_concurrent_downloads = max_concurrent_downloads
+
+    def __check_api_key(self, api_key: str) -> str:
+        """Checks if the API key is valid.
+
+        Args:
+            api_key (str):
+                The API key to be checked.
+
+        Returns:
+            str:
+                The API key if it is valid.
+
+        Raises:
+            ValueError: 
+                If the API key is invalid.
+            ConnectionError:
+                When the API key could not verified due to connection errors from the client or the server.
+        """
+        headers = C.BASE_REQ_HEADERS.copy()
+        for retry_counter in range(1, C.MAX_RETRIES + 1):
+            try:
+                response = httpx.get(f"{self.__BASE_API_URL}?key={api_key}", headers=headers)
+                if (response.status_code == 400):
+                    raise ValueError("Invalid API key.")
+                return api_key # Although the API key is valid, Google Drive API will return a 403 Forbidden error.
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout):
+                if (retry_counter == C.MAX_RETRIES):
+                    raise ConnectionError("Could not verify API key due to connection errors.")
 
     async def get_folder_contents(self, folder_id: str, gdrive_info: tuple[str, pathlib.Path], failed_requests_arr: list, headers: Optional[dict] = None) -> Union[tuple[str, tuple[str, pathlib.Path]], tuple[None, None]]:
         """Sends a request to the Google Drive API to get the 
@@ -131,13 +99,12 @@ class GoogleDrive(GoogleOAuth2):
         """
         if (headers is None):
             headers = C.BASE_REQ_HEADERS.copy()
-            headers["Authorization"] = f"Bearer {self.get_oauth_access_token()}"
 
         files, page_token = [], None
         query = f"'{folder_id}' in parents"
         async with httpx.AsyncClient(headers=headers, http2=True, timeout=self.timeout) as client:
             while (True):
-                url = f"https://www.googleapis.com/drive/v3/files?q={query}&fields=nextPageToken,files(id,name,mimeType)"
+                url = f"{self.__BASE_API_URL}?key={self.__API_KEY}&q={query}&fields=nextPageToken,files(id,name,mimeType)"
                 if (page_token is not None):
                     url += f"&pageToken={page_token}"
 
@@ -185,13 +152,12 @@ class GoogleDrive(GoogleOAuth2):
         """
         if (headers is None):
             headers = C.BASE_REQ_HEADERS.copy()
-            headers["Authorization"] = f"Bearer {self.get_oauth_access_token()}"
 
         async with httpx.AsyncClient(headers=headers, http2=True, timeout=self.timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     response = await client.get(
-                        url=f"https://www.googleapis.com/drive/v3/files/{file_id}?fields=id,name"
+                        url=f"{self.__BASE_API_URL}/{file_id}?key={self.__API_KEY}&fields=id,name,mimeType"
                     )
                     if (response.status_code == 404):
                         failed_requests_arr.append((file_id, gdrive_info[1], "file", str(e)))
@@ -210,8 +176,9 @@ class GoogleDrive(GoogleOAuth2):
 
         return (file_info, gdrive_info)
 
-    def download_file_id(self, file_id: str, file_name: str, folder_path: pathlib.Path, failed_downloads_arr: list) -> None:
-        """Downloads the file from the Google Drive API service object using the file ID.
+    async def download_file_id(self, file_id: str, file_name: str, folder_path: pathlib.Path, 
+                               failed_downloads_arr: list, headers: Optional[dict] = None) -> None:
+        """Downloads the file from the Google Drive v3 API asynchronously using the file ID.
 
         Args:
             file_id (str): 
@@ -226,214 +193,187 @@ class GoogleDrive(GoogleOAuth2):
         Returns:
             None
         """
-        file_path = folder_path.joinpath(file_name)
-        if (file_path.exists() and file_path.is_file()):
+        file_path = folder_path.joinpath("gdrive", file_name)
+        if (await async_file_exists(file_path)):
             return
 
-        spinner_base_msg = f"Downloading a gdrive file from the post, {folder_path.name}: " + \
-                            "{progress}% downloaded..."
-        with Spinner(
-            message=spinner_base_msg.format(progress=0),
-            spinner_type="aesthetic",
-            spinner_position="left",
-            colour="light_yellow",
-            completion_msg=f"Downloaded a gdrive file from the post, {folder_path.name}\n",
-            cancelled_msg=f"Cancelled downloading a gdrive file from the post, {folder_path.name}\n"
-        ) as spinner:
-            try:
-                with open(file_path, mode="wb") as file:
-                    request = self.__SERVICE.files().get_media(fileId=file_id)
-                    downloader = MediaIoBaseDownload(file, request)
-                    done = False
-                    while (done is False):
-                        status, done = downloader.next_chunk(num_retries=C.MAX_RETRIES)
-                        progress = int(status.progress() * 100)
-                        spinner.message = spinner_base_msg.format(
-                            progress=progress if (progress > 0) else "?"
-                        )
-            except (HttpError) as e:
-                file_path.unlink(missing_ok=True)
-                logger.error(f"Failed to download gdrive file {file_id}: {e}")
-                error_message = f"Failed to download a gdrive file from the post, {folder_path.name}!\n" \
+        if (headers is None):
+            headers = C.BASE_REQ_HEADERS.copy()
+
+        # Construct the API URL and add the API key and 
+        # alt=media to tell Google that we would like to download the file
+        url = f"{self.__BASE_API_URL}/{file_id}?key={self.__API_KEY}&alt=media"
+        await async_mkdir(file_path.parent, parents=True, exist_ok=True)
+        async with httpx.AsyncClient(
+            headers=headers, 
+            http2=True, 
+            timeout=60
+        ) as client:
+            for retry_counter in range(1, C.MAX_RETRIES + 1):
+                try:
+                    async with client.stream(method="GET", url=url) as response:
+                        response.raise_for_status()
+                        async with aiofiles.open(file_path, "wb") as f:
+                            async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
+                                await f.write(chunk)
+                except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError) as e:
+                    await async_remove_file(file_path)
+                    if (retry_counter == C.MAX_RETRIES):
+                        error_message = f"Failed to download a gdrive file from the post, {folder_path.name}!\n" \
                                 f"GDrive URL: https://drive.google.com/file/d/{file_id}/view?usp=sharing\n" \
                                 f"Error: {e}\n"
-                failed_downloads_arr.append(
-                    (folder_path, error_message)
-                )
-            except (KeyboardInterrupt):
-                file_path.unlink(missing_ok=True)
-                raise
-
-def start_google_oauth2_flow() -> Union[GoogleDrive, None]:
-    """Starts the Google OAuth2 flow and returns the GoogleDrive object if successful, else None."""
-    google_token, google_client = load_google_oauth_json()
-    if (google_token is not None):
-        try:
-            return Credentials.from_authorized_user_info(google_token, GOOGLE_OAUTH_SCOPE)
-        except (ValueError):
-            pass
-
-    if (C.USER_PLATFORM != "Windows"):
-        formatted_scopes = "' '".join(GOOGLE_OAUTH_SCOPE)
-        suggested_action =  f"""
-you can manually set up the OAuth2 flow by running the google_oauth.py file with the required flags.
-Suggested flags:
-f"-cp '{pathlib.Path.cwd().joinpath('client_secret.json')}' <-- change this to the path where you saved your client secret JSON!
-f"-s '{formatted_scopes}'
-f"-tp '{C.TEMP_SAVED_TOKEN_JSON_PATH}' <-- Must be the same so that the program can load the token!
-f"-p 8080 <-- Defaults to port 8080 if not specified
-
-OAuth2 Helper program documentations: 
-https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth_helper_program.md
-
-IMPORTANT: 
-You will have to set up the Google Cloud Platform project and enable the Google Drive API first.
-If unsure, follow the guide below:
-https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth2_guide.md
-"""
-
-        if (C.USER_PLATFORM == "Linux"):
-            import distro # type: ignore *Only available on Linux
-            if (distro.id() != "ubuntu"):
-                print_danger(
-                    "Disclaimer: If you run into any error, " \
-                    "it is because this program uses the gnome terminal and has only been tested on Ubuntu 22.04\n" \
-                    f"If you are facing any issues but wishes to enable GDrive downloads,{suggested_action}"
-                )
-        else:
-            print_danger(
-                "Since, you are not using Windows or Linux, this feature is not supported for your platform.\n" \
-                f"Therefore, if you still want to enable GDrive downloads,{suggested_action}"
-            )
-            return
-
-    if (getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")):
-        # If running the PyInstaller executable
-        helper_file_path = pathlib.Path(sys._MEIPASS).joinpath("google_oauth.py")
-    else:
-        helper_file_path = C.ROOT_PY_FILE_PATH.joinpath("helper", "google_oauth.py")
-
-    if (google_client is None):
-        google_client_initially_none = True
-        if (not helper_file_path.exists() or not helper_file_path.is_file()):
-            print_danger(
-                "Could not find the Google OAuth2 helper Python file at\n" \
-                f"{helper_file_path}\n" \
-            )
-            print_danger(
-                "Please download the Google OAuth2 helper Python file from\n" \
-                "https://github.com/KJHJason/Cultured-Downloader/blob/main/src/helper/google_oauth.py\n"
-                "and place it in a helper folder in the same directory as Cultured Downloader.\n"
-            )
-            return
-
-        print_warning(
-            "Note: You will need to create a Google Cloud Platform project and " \
-            "enable the Google Drive API for it.\n" \
-            "If you are unsure on the steps to do so, please enter -h."
-        )
-        while (True):
-            user_json = input("\nEnter the client secret JSON (X to cancel, -h for help): ").strip()
-            if (user_json in ("X", "x")):
-                return
-
-            if (user_json == "-h"):
-                opened_browser = webbrowser.open(
-                    url=C.OAUTH2_GUIDE_PAGE,
-                    new=1
-                )
-                if (opened_browser):
-                    print_success("Please refer to the newly opened tab that contains the Google OAuth2 guide in your browser.")
+                        failed_downloads_arr.append(
+                            (folder_path, error_message)
+                        )
+                        return
+                    await asyncio.sleep(C.RETRY_DELAY)
+                except (asyncio.CancelledError):
+                    await async_remove_file(file_path)
+                    raise
                 else:
-                    print_danger("Failed to open the Google OAuth2 guide in your browser!")
-                    print_danger(f"Please visit the following link manually:\n{C.OAUTH2_GUIDE_PAGE}")
-                continue
+                    break
 
-            if (validate_schema(schema=ClientSecret, data=user_json, log_failure=False)):
-                google_client = user_json
-                break
+    async def download_multiple_files(self, file_arr: list[tuple[str, str, str, tuple[str, pathlib.Path]]]) -> None:
+        """Download multiple files asynchronously.
+
+        Args:
+            file_arr (list[tuple[str, str, str, tuple[str, pathlib.Path]]]):
+                A list of tuples containing the file ID(s), file name, and mimetype and
+                a tuple of the original gdrive URL and the post folder that the gdrive URL was found in.
+
+        Returns:
+            None
+        """
+        allowed_for_downloads_arr = []
+        not_allowed_for_downloads_arr = []
+        for file in file_arr:
+            mimetype = file[2]
+            if ("application/vnd.google-apps" in mimetype):
+                not_allowed_for_downloads_arr.append(file)
             else:
-                print_danger(f"User Error: Invalid JSON, please try again.")
-    else:
-        google_client_initially_none = False
-        google_client = json.dumps(google_client)
+                allowed_for_downloads_arr.append(file)
 
-    temp_saved_client_json = C.APP_FOLDER_PATH.joinpath("google-oauth2-client.json")
-    with open(temp_saved_client_json, "w") as f:
-        f.write(google_client)
+        if (len(allowed_for_downloads_arr) > 0):
+            base_spinner_msg = "Downloaded {progress} out of " + \
+                            f"{len(allowed_for_downloads_arr)} gdrive files..."
+            with Spinner(
+                message=base_spinner_msg.format(progress=0),
+                colour="light_yellow",
+                spinner_position="left",
+                spinner_type="material",
+                completion_msg=f"Finished downloading all {len(allowed_for_downloads_arr)} gdrive URL(s)!\n",
+                cancelled_msg=f"GDrive download process has been cancelled!\n"
+            ) as spinner:
+                finished_downloads = 0
+                download_tasks = set()
+                failed_downloads_arr = []
+                not_allowed_for_downloads_arr = []
+                headers = C.BASE_REQ_HEADERS.copy()
+                for file in file_arr:
+                    file_id, file_name, mimetype, gdrive_info = file
+                    if ("application/vnd.google-apps" in mimetype):
+                        not_allowed_for_downloads_arr.append(file)
+                        continue
 
-    # Construct the command for the subprocess
-    cmd = "python" if (C.USER_PLATFORM == "Windows") else "python3"
-    commands = [
-        cmd, str(helper_file_path),
-        "-cp", str(temp_saved_client_json),
-        "-s", " ".join(GOOGLE_OAUTH_SCOPE), 
-        "-tp", str(C.TEMP_SAVED_TOKEN_JSON_PATH),
-        "-p", "8080" # if changing port, the client secret JSON redirect URIs must be changed as well
-    ]
+                    if (len(download_tasks) >= self.max_concurrent_downloads):
+                        done, download_tasks = await check_download_tasks(
+                            download_tasks,
+                            all_completed=False
+                        )
+                        finished_downloads += len(done)
+                        spinner.message = base_spinner_msg.format(
+                            progress=finished_downloads
+                        )
 
-    def delete_temp_files():
-        temp_saved_client_json.unlink(missing_ok=True)
-        C.TEMP_SAVED_TOKEN_JSON_PATH.unlink(missing_ok=True)
+                    download_tasks.add(
+                        asyncio.create_task(
+                            self.download_file_id(
+                                file_id=file_id,
+                                file_name=file_name,
+                                folder_path=gdrive_info[1],
+                                failed_downloads_arr=failed_downloads_arr,
+                                headers=headers,
+                            )
+                        )
+                    )
 
-    while (True):
-        # Open a new terminal window and start the OAuth2 flow
-        # as the user would be stuck unless they close the terminal if they wish to cancel
-        if (C.USER_PLATFORM == "Windows"):
-            subprocess.call(commands, creationflags=subprocess.CREATE_NEW_CONSOLE)
-        else:
-            # Tested on Ubuntu 22.04 but may not work on other distros
-            subprocess.call(f"gnome-terminal --disable-factory -- {' '.join(commands)}", shell=True)
+                # Wait for any remaining downloads to finish
+                done, _ = await check_download_tasks(
+                    download_tasks,
+                    all_completed=True
+                )
 
-        # Check if the flow was successful by checking if the token JSON file exists
-        if (not C.TEMP_SAVED_TOKEN_JSON_PATH.exists() or not C.TEMP_SAVED_TOKEN_JSON_PATH.is_file()):
-            print_danger("Google OAuth2 flow was not successful, please try again.\n")
-            retry = get_input(
-                input_msg="Do you want to retry the OAuth2 flow? (Y/n): ",
-                inputs=("y", "n"),
-                default="y"
+            if (len(failed_downloads_arr) > 0):
+                for folder_path, error_msg in failed_downloads_arr:
+                    log_critical_details_for_post(
+                        post_folder=folder_path,
+                        message=error_msg,
+                        log_filename="gdrive_download.log"
+                    )
+
+        if (len(not_allowed_for_downloads_arr) > 0):
+            for file in not_allowed_for_downloads_arr:
+                file_id, file_name, mimetype, gdrive_info = file
+                log_critical_details_for_post(
+                    post_folder=gdrive_info[1],
+                    message=f"The gdrive file, {file_name}, is not allowed for downloads!\n" \
+                            f"File ID: {file_id}\n" \
+                            f"File name: {file_name}\n" \
+                            f"Mimetype: {mimetype}\n",
+                    log_filename="gdrive_download.log"
+                )
+
+def validate_gdrive_api_key(gdrive_api_key: str, print_error: Optional[bool] = False) -> Union[GoogleDrive, None]:
+    """Validate the Google Drive API key.
+
+    Args:
+        api_key (str): 
+            The Google Drive API key to validate.
+
+    Returns:
+        Union[GoogleDrive, None]: 
+            The GoogleDrive object if the API key is valid, None otherwise.
+    """
+    try:
+        temp_gdrive_service = GoogleDrive(gdrive_api_key)
+    except (ValueError):
+        if (print_error):
+            print_danger(
+                "Invalid Google Drive API key. Please enter a working Google Drive API key.\n"
             )
-            if (retry == "n"):
-                delete_temp_files()
-                return
-            else:
-                continue
-
-        # Clear any text from the terminal
-        # to the top of the terminal screen
-        print("\x1b[2J\x1b[H", end="")
-
-        # Load the generated token JSON file
-        with open(C.TEMP_SAVED_TOKEN_JSON_PATH, "r") as f:
-            token_json = f.read()
-
-        delete_temp_files()
-
-        to_save = [(token_json, True)]
-        if (google_client_initially_none):
-            to_save.append((google_client, False))
-
-        save_google_oauth_json(*to_save)
-        return GoogleDrive(json.loads(token_json))
+        return
+    except (ConnectionError):
+        if (print_error):
+            print_danger(
+                "Connection error when trying to validate the given API key, please try again later.\n"
+            )
+        return
+    else:
+        return temp_gdrive_service
 
 def get_gdrive_service() -> Union[GoogleDrive, None]:
     """Returns the Google Drive service object if possible."""
-    google_token = load_google_oauth_json(get_client=False)
-    if (google_token is None):
-        return None
+    with Spinner(
+        message="Loading Google Drive API key...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc",
+        completion_msg="Finished loading Google Drive API key!\n"
+    ) as spinner:
+        gdrive_api_key = load_gdrive_api_key()
+        if (gdrive_api_key is False):
+            spinner.completion_msg = ""
+            return
+        if (gdrive_api_key is None):
+            spinner.completion_msg = format_error_msg(
+                "Could not load Google Drive API Key either due to connection error or decryption issues.\n"
+            )
+            return
 
-    try:
-        drive_service = GoogleDrive(google_token)
-    except (RefreshError):
-        drive_service = None
-        print_danger("✗ Google OAuth2 token is no longer valid, please re-run the Google OAuth2 flow.")
-    except (ValueError):
-        drive_service = None
-        print_danger("✗ Google OAuth2 token is invalid possibly due to missing GDrive scopes. Please re-run the Google OAuth2 flow")
-    else:
-        print_success("✓ Successfully loaded Google OAuth2 token!")
-    return drive_service
-
-# test codes below
-if (__name__ == "__main__"):
-    start_google_oauth2_flow()
+        drive_service = validate_gdrive_api_key(gdrive_api_key)
+        if (drive_service is None):
+            spinner.completion_msg = format_error_msg(
+                "Failed to validate Google Drive API key.\n"
+            )
+            return
+        return drive_service

@@ -26,8 +26,9 @@ if (__package__ is None or __package__ == ""):
     from user_data import load_cookies
     from google_client import GoogleDrive
     from download import *
-    from functional import print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
-                           website_to_readable_format, get_user_urls, get_user_download_choices
+    from functional import  print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
+                            website_to_readable_format, get_user_urls, get_user_download_choices, \
+                            call_async_result, check_download_tasks, log_critical_details_for_post
 else:
     from .constants import CONSTANTS as C
     from .errors import ChangedHTMLStructureError
@@ -37,7 +38,8 @@ else:
     from .google_client import GoogleDrive
     from .download import *
     from .functional import print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
-                            website_to_readable_format, get_user_urls, get_user_download_choices
+                            website_to_readable_format, get_user_urls, get_user_download_choices, \
+                            call_async_result, check_download_tasks, log_critical_details_for_post
 
 class CustomWebDriver(webdriver.Chrome):
     """Custom chrome webdriver with some modifications."""
@@ -456,21 +458,6 @@ def get_creator_posts(driver: webdriver.Chrome, url: str, website: str) -> list[
     # with the order of the links being preserved.
     return list(dict.fromkeys(post_urls))
 
-def call_async_result(executed_async_tasks: set) -> None:
-    """Call and get the result of the executed async tasks.
-
-    Args:
-        executed_async_tasks (set):
-            The set of executed async tasks.
-
-    Returns:
-        None
-    """
-    for task in executed_async_tasks:
-        # will get the returned value of the 
-        # async function or raise any uncaught exceptions
-        task.result()  
-
 def __download_process_cleanup(downloaded_urls_arr: list[tuple[pathlib.Path, list[tuple[str, str]]]]) -> None:
     """Cleans up any empty folders that were created during the download process.
 
@@ -638,108 +625,73 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
             if (content_type != C.GDRIVE_FILE):
                 total_urls_to_download += 1
 
-    async def _download_tasks(tasks: set[asyncio.Task], all_completed: bool) -> tuple[set[asyncio.Task], set[asyncio.Task]]:
-        """
-        Awaits the given tasks and raises any errors that may have occurred.
+    if (total_urls_to_download > 0):
+        failed_downloads_arr = []
+        gdrive_urls_arr: list[str] = []
+        max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
+        base_spinner_msg = " ".join([
+            "Downloaded {progress} out of",
+            f"{total_urls_to_download} URL(s) from {len(urls_arr)} posts on {readable_website_name}..."
+        ])
+        with Spinner(
+            message=base_spinner_msg.format(
+                progress=0,
+                website=readable_website_name
+            ),
+            colour="light_yellow",
+            spinner_position="left",
+            spinner_type="material",
+            completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}!\n",
+            cancelled_msg=f"Download process for {readable_website_name} has been cancelled!\n"
+        ) as spinner:
+            download_tasks = set()
+            finished_downloads = 0
+            for post_folder_path, post_content_urls_info in urls_to_download:
+                for content_url_info in post_content_urls_info:
+                    if (content_url_info[1] == C.GDRIVE_FILE):
+                        gdrive_urls_arr.append((content_url_info[0], post_folder_path))
+                        continue
 
-        Args:
-            tasks (set[asyncio.Task]):
-                The tasks to await.
+                    if (len(download_tasks) >= max_concurrent_downloads):
+                        # Wait for some download to finish before adding a new task
+                        done, download_tasks = await check_download_tasks(
+                            download_tasks, 
+                            all_completed=False
+                        )
+                        finished_downloads += len(done)
+                        spinner.message = base_spinner_msg.format(
+                            progress=finished_downloads
+                        )
 
-        Returns:
-            tuple[set[asyncio.Task], set[asyncio.Task]]:
-                The tasks that have finished and the tasks that are still running.
-
-        Raises:
-            asyncio.CancelledError:
-                If the download process has been cancelled by the user (via Ctrl+C).
-        """
-        if (tasks):
-            if (all_completed):
-                return_when = asyncio.ALL_COMPLETED
-            else:
-                return_when = asyncio.FIRST_COMPLETED
-
-            try:
-                done, download_tasks = await asyncio.wait(
-                    tasks,
-                    return_when=return_when
-                )
-                call_async_result(done)
-                return done, download_tasks
-            except (asyncio.CancelledError):
-                for task in tasks:
-                    task.cancel()
-                raise
-        else:
-            return set(), set()
-
-    failed_downloads_arr = []
-    gdrive_urls_arr: list[str] = []
-    max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
-    base_spinner_msg = " ".join([
-        "Downloaded {progress} out of",
-        f"{total_urls_to_download} URL(s) from {len(urls_arr)} posts on {readable_website_name}..."
-    ])
-    with Spinner(
-        message=base_spinner_msg.format(
-            progress=0,
-            website=readable_website_name
-        ),
-        colour="light_yellow",
-        spinner_position="left",
-        spinner_type="material",
-        completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}!\n",
-        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!\n"
-    ) as spinner:
-        download_tasks = set()
-        finished_downloads = 0
-        for post_folder_path, post_content_urls_info in urls_to_download:
-            for content_url_info in post_content_urls_info:
-                if (content_url_info[1] == C.GDRIVE_FILE):
-                    gdrive_urls_arr.append((content_url_info[0], post_folder_path))
-                    continue
-
-                if (len(download_tasks) >= max_concurrent_downloads):
-                    # Wait for some download to finish before adding a new task
-                    done, download_tasks = await _download_tasks(
-                        download_tasks, 
-                        all_completed=False
-                    )
-                    finished_downloads += len(done)
-                    spinner.message = base_spinner_msg.format(
-                        progress=finished_downloads
-                    )
-
-                download_tasks.add(
-                    asyncio.create_task(
-                        async_download_file(
-                            url_info=content_url_info,
-                            folder_path=post_folder_path,
-                            website=website,
-                            cookie=cookie,
-                            failed_downloads_arr=failed_downloads_arr
+                    download_tasks.add(
+                        asyncio.create_task(
+                            async_download_file(
+                                url_info=content_url_info,
+                                folder_path=post_folder_path,
+                                website=website,
+                                cookie=cookie,
+                                failed_downloads_arr=failed_downloads_arr
+                            )
                         )
                     )
-                )
 
-        # Wait for any remaining downloads to finish
-        done, _ = await _download_tasks(
-            download_tasks, 
-            all_completed=True
-        )
+            # Wait for any remaining downloads to finish
+            done, _ = await check_download_tasks(
+                download_tasks, 
+                all_completed=True
+            )
 
-    for url_info, website, folder_path in failed_downloads_arr:
-        log_failed_downloads(
-            url_info=url_info, 
-            website=website,
-            folder_path=folder_path
-        )
-    if (failed_downloads_arr):
-        print_danger(
-            f"{len(failed_downloads_arr)} download(s) failed. "
-            "Please check the generated logs in each of the post's folders."
-        )
+        for url_info, website, folder_path in failed_downloads_arr:
+            log_failed_downloads(
+                url_info=url_info, 
+                website=website,
+                folder_path=folder_path
+            )
+        if (failed_downloads_arr):
+            print_danger(
+                f"{len(failed_downloads_arr)} download(s) failed. "
+                "Please check the generated logs in each of the post's folders.\n"
+            )
 
     if (block_gdrive_downloads or website == "fantia"):
         __download_process_cleanup(urls_to_download)
@@ -750,7 +702,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         colour="light_yellow",
         spinner_position="left",
         spinner_type="pong",
-        completion_msg="Finished processing all GDrive URLs!\n",
+        completion_msg="Finished processing all GDrive URLs!",
         cancelled_msg="GDrive download process has been cancelled!\n"
     ) as spinner:
         if (len(gdrive_urls_arr) < 1):
@@ -779,7 +731,6 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         processed_json_arr = []
         failed_requests_arr = []
         headers = C.BASE_REQ_HEADERS.copy()
-        headers["Authorization"] = f"Bearer {drive_service.get_oauth_access_token()}"
         if (len(gdrive_folder_arr) > 0):
             gdrive_api_calls_arr = await get_gdrive_folder_contents(
                 drive_service=drive_service,
@@ -804,7 +755,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                     continue
 
                 processed_json_arr.append(
-                    (file_info["id"], file_info["name"], gdrive_info)
+                    (file_info["id"], file_info["name"], file_info["mimeType"], gdrive_info)
                 )
 
         for gdrive_id, post_folder, drive_type, error in failed_requests_arr:
@@ -822,21 +773,9 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
             )
 
     if (len(processed_json_arr) > 0):
-        failed_downloads_arr = []
-        for file_id, file_name, gdrive_info in processed_json_arr:
-            drive_service.download_file_id(
-                file_id=file_id,
-                file_name=file_name,
-                folder_path=gdrive_info[1],
-                failed_downloads_arr=failed_downloads_arr
-            )
-
-        for folder_path, error_msg in failed_downloads_arr:
-            log_critical_details_for_post(
-                post_folder=folder_path,
-                message=error_msg,
-                log_filename="gdrive_download.log"
-            )
+        await drive_service.download_multiple_files(
+            file_arr=processed_json_arr
+        )
 
     __download_process_cleanup(urls_to_download)
 

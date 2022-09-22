@@ -49,9 +49,9 @@ def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, 
       {F.LIGHTBLUE_EX}5. Change Default Download Folder{C.END}""")
 
     if (drive_service is None):
-        print(f"""      {F.LIGHTBLUE_EX}6. Configure Google OAuth2 for Google Drive API{C.END}""")
+        print(f"""      {F.LIGHTBLUE_EX}6. Add Google Drive API Key{C.END}""")
     else:
-        print(f"""      {F.LIGHTBLUE_EX}6. Remove Saved Google OAuth2 files{C.END}""")
+        print(f"""      {F.LIGHTBLUE_EX}6. Remove Saved Google Drive API Key{C.END}""")
 
     if (not fantia_status or not pixiv_status):
         print(f"      {F.LIGHTBLUE_EX}7. Login{C.END}")
@@ -144,26 +144,57 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             configs = load_configs()
 
         elif (user_action == "6"):
-            # Google OAuth2 Configurations
+            # Google Drive API key configurations
             if (drive_service is None):
-                # Setup Google OAuth2
-                drive_service = start_google_oauth2_flow()
-                if (drive_service is not None):
-                    print_success("Successfully set up Google OAuth2 and saved the JSON files.")
+                # Setup Google Drive API key
+                temp_gdrive_service = None
+                save_api_key = False
+                while (True):
+                    gdrive_api_key = get_input(
+                        input_msg="Enter Google Drive API key (X to cancel, -h for guide): ",
+                        regex=C.GOOGLE_API_KEY_REGEX,
+                        is_case_sensitive=True,
+                        warning="Invalid Google Drive API key pattern. Please enter a valid Google Drive API key.\n"
+                    )
+                    if (gdrive_api_key in ("x", "X")):
+                        break
+
+                    if (gdrive_api_key == "-h"):
+                        opened_guide = webbrowser.open(url=C.GDRIVE_API_KEY_GUIDE_PAGE, new=1)
+                        if (opened_guide):
+                            print_success(
+                                "A new tab should have been opened, please follow the guide to get your Google Drive API key."
+                            )
+                        else:
+                            print_warning(
+                                f"Failed to open a new tab, please follow the guide here:\n{C.GDRIVE_API_KEY_GUIDE_PAGE}"
+                            )
+                        print()
+                        continue
+
+                    temp_gdrive_service = validate_gdrive_api_key(
+                        gdrive_api_key, 
+                        print_error=True
+                    )
+                    if (temp_gdrive_service is not None):
+                        save_api_key = True
+                        break
+
+                if (save_api_key):
+                    save_gdrive_api_key(api_key=gdrive_api_key)
+                    drive_service = temp_gdrive_service
             else:
-                # Remove Saved Google OAuth2 files
-                confirm = get_input(
-                    input_msg="Are you sure you want to remove your saved Google OAuth2 files? (y/N): ",
+                # Remove Google Drive API key
+                remove_drive_api_key = get_input(
+                    input_msg="Are you sure you want to remove your saved Google Drive API Key? (y/N): ",
                     inputs=("y", "n"),
                     default="n"
                 )
-                if (confirm == "n"):
+                if (remove_drive_api_key == "n"):
                     continue
-
-                C.GOOGLE_OAUTH_CLIENT_SECRET.unlink(missing_ok=True)
-                C.GOOGLE_OAUTH_CLIENT_TOKEN.unlink(missing_ok=True)
+                C.GDRIVE_API_KEY_PATH.unlink(missing_ok=True)
                 drive_service = None
-                print_success("Successfully removed your saved Google OAuth2 files.")
+                print_success("Successfully removed Google Drive API key.")
 
         elif (user_action == "7"):
             # Login

@@ -53,6 +53,38 @@ def convert_str_to_ansi(colour: Union[str, None]) -> str:
 
     return colour_table[colour]
 
+def format_success_msg(msg: Union[str, None]) -> Union[str, None]:
+    """Format the success message with a check mark.
+
+    Args:
+        msg (str | None):
+            The message to format.
+
+    Returns:
+        str | None: 
+            The formatted message.
+    """
+    if (msg is None):
+        return
+    else:
+        return " ".join([f"{F.LIGHTGREEN_EX}✓", msg, S.RESET_ALL])
+
+def format_error_msg(msg: Union[str, None]) -> Union[str, None]:
+    """Format the error message with a cross.
+
+    Args:
+        msg (str | None):
+            The message to format.
+
+    Returns:
+        str | None:
+            The formatted message.
+    """
+    if (msg is None):
+        return
+    else:
+        return " ".join([f"{F.LIGHTRED_EX}✗", msg, S.RESET_ALL])
+
 class Spinner:
     """Spinner class for displaying a spinner animation
     with a text message in the terminal on a separate thread.
@@ -90,8 +122,8 @@ class Spinner:
         self.__spinner = itertools.cycle(spinner_info["frames"])
         self.__interval = 0.001 * spinner_info["interval"]
         self.message = message
-        self.completion_msg = completion_msg
-        self.cancelled_msg = cancelled_msg
+        self.completion_msg = format_success_msg(completion_msg)
+        self.cancelled_msg = format_error_msg(cancelled_msg)
         self.__colour = convert_str_to_ansi(colour)
         self.__position = spinner_position.lower()
         if (self.__position not in ("left", "right")):
@@ -161,11 +193,11 @@ class Spinner:
         if (not error):
             if (manually_stopped):
                 if (self.cancelled_msg is not None):
-                    print(f"\r{F.LIGHTRED_EX}✗ ", self.CLEAR_LINE, self.cancelled_msg, sep="", end=S.RESET_ALL)
+                    print("\r", self.CLEAR_LINE, self.cancelled_msg, sep="", end="")
                     return
             else:
                 if (self.completion_msg is not None):
-                    print(f"\r{F.LIGHTGREEN_EX}✓ ", self.CLEAR_LINE, self.completion_msg, sep="", end=S.RESET_ALL)
+                    print("\r", self.CLEAR_LINE, self.completion_msg, sep="", end="")
                     return
 
         print("\r", self.CLEAR_LINE, end=S.RESET_ALL, sep="")

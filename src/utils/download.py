@@ -8,41 +8,16 @@ from typing import Union, Optional
 if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
     from google_client import GoogleDrive
-    from functional import async_remove_file, async_file_exists
+    from functional import async_remove_file, async_file_exists, async_mkdir, log_critical_details_for_post
 else:
     from .constants import CONSTANTS as C
     from .google_client import GoogleDrive
-    from .functional import async_remove_file, async_file_exists
+    from .functional import async_remove_file, async_file_exists, async_mkdir, log_critical_details_for_post
 
 # import third-party libraries
 import httpx
-from http.cookiejar import Cookie, CookieJar
-
 import aiofiles
-import aiofiles.os as aiofiles_os
-
-def log_critical_details_for_post(post_folder: pathlib.Path, message: str, 
-                                  log_filename: Optional[str] = "read_me.log", 
-                                  ignore_if_exists: Optional[bool] = False) -> None:
-    """Log critical details about a post to a log file.
-
-    Args:
-        post_folder (pathlib.Path):
-            The path to the post's folder.
-        message (str):
-            The message to log.
-        log_filename (Optional[str], optional):
-            The name of the log file. Defaults to "read_me.log".
-        ignore_if_exists (Optional[bool], optional):
-            Whether to ignore logging if the log file already exists and has data in it. Defaults to False.
-    """
-    log_file = post_folder.joinpath(log_filename)
-    if (ignore_if_exists and log_file.exists() and log_file.is_file() and log_file.stat().st_size > 0):
-        return
-
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(message)
-        f.write("\n")
+from http.cookiejar import Cookie, CookieJar
 
 def log_failed_downloads(url_info: tuple[str, str], website: str, folder_path: pathlib.Path) -> None:
     """Log failed downloads to a log file.
@@ -102,7 +77,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         folder_path = folder_path.joinpath("attachments")
     elif (content_type == C.IMAGE_FILE):
         folder_path = folder_path.joinpath("images")
-    await aiofiles_os.makedirs(folder_path, exist_ok=True)
+    await async_mkdir(folder_path, parents=True, exist_ok=True)
 
     file_path = None
     async with httpx.AsyncClient(
@@ -273,7 +248,7 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
 
                 response.raise_for_status()
                 json_response = response.json()
-            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.decoder.JSONDecodeError):
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError):
                 if (retry_counter == C.MAX_RETRIES):
                     log_failed_post_api_call(
                         download_path=download_path, 
@@ -373,7 +348,7 @@ def detect_password_in_text(post_folder_path: pathlib.Path, text: str) -> bool:
 
 def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str],
                         gdrive_service: GoogleDrive, post_folder_path: pathlib.Path) -> bool:
-    """Detect if the given text contains a Google Drive link.
+    """Detect if the given text contains a Google Drive link and logs it.
 
     Args:
         text (str):
@@ -384,7 +359,7 @@ def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]
             The array of URLs to download to append the Google Drive link to.
         gdrive_service (GoogleDrive):
             To check if the Google Drive Service object is None, 
-            in this case, the Google Drive link will be logged instead.
+            in this case, the Google Drive link will only be logged instead.
         post_folder_path (pathlib.Path):
             The path to the folder where the Google Drive link will be logged.
 
@@ -396,25 +371,25 @@ def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]
     if (is_url and text.startswith(DRIVE_LINK)):
         if (gdrive_service is not None):
             urls_to_download_arr.append((text, C.GDRIVE_FILE))
-        else:
-            log_critical_details_for_post(
-                post_folder=post_folder_path,
-                message=f"Google Drive link detected: {text}\n",
-                log_filename="detected_gdrive_links.txt",
-                ignore_if_exists=True
-            )
+
+        log_critical_details_for_post(
+            post_folder=post_folder_path,
+            message=f"Google Drive link detected: {text}\n",
+            log_filename="detected_gdrive_links.txt",
+            ignore_if_exists=True
+        )
         return True
 
     if (not is_url and DRIVE_LINK in text):
         if (gdrive_service is not None):
             urls_to_download_arr.append((text, C.GDRIVE_FILE))
-        else:
-            log_critical_details_for_post(
-                post_folder=post_folder_path,
-                message=f"Google Drive link detected in the post's description:\n{text}\n",
-                log_filename="detected_gdrive_links.txt",
-                ignore_if_exists=True
-            )
+
+        log_critical_details_for_post(
+            post_folder=post_folder_path,
+            message=f"Google Drive link detected in the post's description:\n{text}\n",
+            log_filename="detected_gdrive_links.txt",
+            ignore_if_exists=True
+        )
         return True
     return False
 
@@ -505,6 +480,10 @@ def process_pixiv_fanbox_json(
     #   2. With a simple formatting that obly contains info about the text and files ("file", "image")
     post_type: str = json_response["type"]
     post_contents: dict = json_response["body"]
+    if (post_contents is None):
+        # If the post has no content or 
+        # the user is not subscribed to the creator.
+        return (post_folder_path, urls_to_download_arr)
 
     # Retrieves the post's gdrive links or log external download links such as MEGA links, if any.
     # Will also detect if the post contains a password for the user to use.
@@ -654,7 +633,7 @@ async def get_gdrive_folder_contents(
     drive_service: GoogleDrive, 
     gdrive_folder_arr: C.GDRIVE_HINT_TYPING,
     failed_requests_arr: list, 
-    headers: Optional[dict] = None) -> list[tuple[str, tuple[str, pathlib.Path]]]:
+    headers: Optional[dict] = None) -> list[tuple[str, str, str, tuple[str, pathlib.Path]]]:
     """Get the folder contents of a Google Drive folder including any sub-folders (using recursion).
 
     Args:
@@ -668,8 +647,8 @@ async def get_gdrive_folder_contents(
             The headers to use for the requests. Defaults to None.
 
     Returns:
-        list[tuple[str, tuple[str, pathlib.Path]]]:
-            A list of tuples containing the file ID(s) and
+        list[tuple[str, str, str, tuple[str, pathlib.Path]]]:
+            A list of tuples containing the file ID(s), file name, and mimetype and
             a tuple of the original gdrive URL and the post folder that the gdrive URL was found in.
     """
     if (drive_service is None):
@@ -695,7 +674,7 @@ async def get_gdrive_folder_contents(
             if (file["mimeType"] == "application/vnd.google-apps.folder"):
                 nested_folders_arr.append((file["id"], gdrive_info))
             else:
-                gdrive_files_arr.append((file["id"], file["name"], gdrive_info))
+                gdrive_files_arr.append((file["id"], file["name"], file["mimeType"], gdrive_info))
 
     if (len(nested_folders_arr) > 0):
         nested_files_arr = await get_gdrive_folder_contents(

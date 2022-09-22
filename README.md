@@ -81,9 +81,8 @@ In the end, I spent about a month doing this project while learning concepts suc
 * **Allow downloads of attachments such as videos, psd, etc.**
 
 * **Allow downloads of gdrive links (for Pixiv Fanbox only)**
-  * Note: Requires you to set up Google OAuth2.
-    - For Windows or Linux users, please refer to the [guide](doc/google_oauth2_guide.md) in the [doc folder](doc) if unsure.
-    - For Linux users who do not have gnome-terminal and macOS users, after following step 1 to 3 of the [guide](doc/google_oauth2_guide.md), you will have to manually set up google OAuth2 which you can refer to the documentation [here](doc/google_oauth_helper_script.md) for running [google_oauth.py](src/helper/google_oauth.py).
+  * Note: Requires an API key from Google Cloud Platform for GDrive downloads to work. 
+    * Refer to my [guide](doc/google_api_key_guide.md) if unsure.
 
 * **2 Types of download options on both Fantia and Pixiv Fanbox!**
   * Downloading from post URL(s)
@@ -106,8 +105,6 @@ In the end, I spent about a month doing this project while learning concepts suc
 ## FAQ
 1. Does this work on other OS platforms such as macOS and Linux?
     * This program has only been tested on Windows and Linux (Ubuntu). However, it should work on other Linux distros and macOS as well.
-    * For Linux users who do not have gnome-terminal and macOS users, you will face issue configuring Google OAuth2. 
-      * In this case, you will have to manually set up google OAuth2 which you can refer to the documentation [here](doc/google_oauth_helper_script.md) for running [google_oauth.py](src/helper/google_oauth.py).
 
 ## Final Notes
 1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
@@ -119,11 +116,11 @@ In the end, I spent about a month doing this project while learning concepts suc
 
 <div align="center">
   <p>Menu</p>
-  <p><img width="500px" alt="menu demo" src="/res/menu.jpg"></p>
+  <p><img width="500px" alt="menu demo" src="res/menu.jpg"></p>
   <p>Downloading files from a post page URL</p>
-  <p><img width="650px" alt="downloading posts demo" src="/res/post-download.gif"></p>
+  <p><img width="650px" alt="downloading posts demo" src="res/post-download.gif"></p>
   <p>Downloading files from multiple posts from multiple creators</p>
-  <p><img width="650px" alt="downloading multiple posts demo" src="/res/creator-page-downloads.gif"></p>
+  <p><img width="650px" alt="downloading multiple posts demo" src="res/creator-page-downloads.gif"></p>
 </div>
 
 ---

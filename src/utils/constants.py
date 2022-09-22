@@ -59,6 +59,9 @@ class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-8xy]$")
+    GOOGLE_API_KEY_REGEX: re.Pattern[str] = re.compile(
+        r"^AIza[\w-]{35}$|^[xX]$|^-h$" # based on https://github.com/odomojuli/RegExAPI
+    )
 
     # Debug mode
     DEBUG_MODE: bool = False # For logger
@@ -89,18 +92,16 @@ class Constants:
     DRIVER_CACHE_RANGE: int = 7 # days
 
     # Applications configuration, Google Drive API key, and cookies file paths
-    TEMP_SAVED_TOKEN_JSON_PATH: pathlib.Path = APP_FOLDER_PATH.joinpath("google-oauth2-token.json")
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
-    GOOGLE_OAUTH_CLIENT_SECRET: pathlib.Path = appDir.joinpath("google-client-secret")
-    GOOGLE_OAUTH_CLIENT_TOKEN: pathlib.Path = appDir.joinpath("google-client-token")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
+    GDRIVE_API_KEY_PATH: pathlib.Path = appDir.joinpath("gdrive-api-key")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
     SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
 
     # GitHub URLs
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
-    OAUTH2_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth2_guide.md"
+    GDRIVE_API_KEY_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_api_key_guide.md"
 
     # For downloading
     GDRIVE_HINT_TYPING: TypeAlias = list[tuple[str, tuple[str, pathlib.Path]]]
@@ -131,7 +132,7 @@ class Constants:
     )
     MAX_RETRIES: int = 4
     RETRY_DELAY: int = 1.5 # 1.5 second
-    CHUNK_SIZE: int = 1024 * 1024 # 1 MB
+    CHUNK_SIZE: int = 10 * 1024 * 1024 # 10 MB
     IMAGE_FILE: str = "image"
     THUMBNAIL_IMAGE: str = "thumbnail"
     ATTACHMENT_FILE: str = "attachment"

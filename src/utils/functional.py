@@ -3,6 +3,7 @@ import re
 import time
 import json
 import pathlib
+import asyncio
 from typing import Union, Optional, Any
 
 # import local files
@@ -717,4 +718,124 @@ async def async_remove_file(file_path: pathlib.Path) -> None:
         None
     """
     if (await async_file_exists(file_path)):
-        await aiofiles_os.unlink(file_path)
+        try:
+            await aiofiles_os.unlink(file_path)
+        except (PermissionError):
+            pass
+
+async def async_remove_folder(folder_path: pathlib.Path, has_files_ok: Optional[bool] = False) -> None:
+    """Remove the folder if it exists asynchronously.
+
+    Args:
+        folder_path (pathlib.Path):
+            The folder path to remove.
+        has_files_ok (bool, optional):
+            Whether or not it is okay if the folder has files in it as the folder would not be deleted. 
+            Defaults to False which will raise an error if the folder has files in it.
+
+    Returns:
+        None
+    """
+    if (await async_folder_exists(folder_path)):
+        try:
+            await aiofiles_os.rmdir(folder_path)
+        except (OSError):
+            if (not has_files_ok):
+                raise
+
+async def async_mkdir(folder_path: pathlib.Path, 
+                      parents: Optional[bool] = False, exist_ok: Optional[bool] = False) -> None:
+    """Create the folder if it doesn't exist asynchronously.
+
+    Args:
+        folder_path (pathlib.Path):
+            The folder path to create.
+        parents (Optional[bool], optional):
+            Whether to create the parent folders if they don't exist. Defaults to False.
+        exist_ok (Optional[bool], optional):
+            Whether to not throw an error if the folder already exists. Defaults to False.
+
+    Returns:
+        None
+    """
+    if (parents):
+        return await aiofiles_os.makedirs(folder_path, exist_ok=exist_ok)
+
+    try:
+        return await aiofiles_os.mkdir(folder_path)
+    except (OSError):
+        if (not exist_ok):
+            raise
+
+def log_critical_details_for_post(post_folder: pathlib.Path, message: str, 
+                                  log_filename: Optional[str] = "read_me.log", 
+                                  ignore_if_exists: Optional[bool] = False) -> None:
+    """Log critical details about a post to a log file.
+
+    Args:
+        post_folder (pathlib.Path):
+            The path to the post's folder.
+        message (str):
+            The message to log.
+        log_filename (Optional[str], optional):
+            The name of the log file. Defaults to "read_me.log".
+        ignore_if_exists (Optional[bool], optional):
+            Whether to ignore logging if the log file already exists and has data in it. Defaults to False.
+    """
+    log_file = post_folder.joinpath(log_filename)
+    if (ignore_if_exists and log_file.exists() and log_file.is_file() and log_file.stat().st_size > 0):
+        return
+
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(message)
+        f.write("\n")
+
+def call_async_result(executed_async_tasks: set[asyncio.Task]) -> None:
+    """Call and get the result of the executed async tasks.
+
+    Args:
+        executed_async_tasks (set):
+            The set of executed async tasks.
+
+    Returns:
+        None
+    """
+    for task in executed_async_tasks:
+        # will get the returned value of the 
+        # async function or raise any uncaught exceptions
+        task.result()  
+
+async def check_download_tasks(tasks: set[asyncio.Task], all_completed: bool) -> tuple[set[asyncio.Task], set[asyncio.Task]]:
+    """Awaits and check the given tasks and raises any errors that may have occurred.
+
+    Args:
+        tasks (set[asyncio.Task]):
+            The tasks to await.
+
+    Returns:
+        tuple[set[asyncio.Task], set[asyncio.Task]]:
+            The tasks that have finished and the tasks that are still running.
+
+    Raises:
+        asyncio.CancelledError:
+            If the download process has been cancelled by the user (via Ctrl+C).
+    """
+    if (tasks):
+        if (all_completed):
+            return_when = asyncio.ALL_COMPLETED
+        else:
+            return_when = asyncio.FIRST_COMPLETED
+
+        try:
+            done, download_tasks = await asyncio.wait(
+                tasks,
+                return_when=return_when
+            )
+            call_async_result(done)
+            return done, download_tasks
+        except (asyncio.CancelledError):
+            for task in tasks:
+                task.cancel()
+            raise
+    else:
+        return set(), set()
