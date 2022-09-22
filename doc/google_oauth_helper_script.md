@@ -11,7 +11,7 @@ When running [google_oauth.py](/src/helper/google_oauth.py), you will need the f
   - Other scopes are not allowed and the main Cultured Downloader program will reject your generated token JSON file.
 - `-tp` or `--token-path`: Path to save the generated token JSON file.
   - Recommended to follow the source code so that Cultured Downloader can detect the token file and handle with it.
-    - Refer to the source code at [constants.py](/90e3b7ec892224a5723effda7a34920efe50e509/src/utils/constants.py#L34-L49) or refer to the path below:
+    - Refer to the source code at [constants.py](/blob/90e3b7ec892224a5723effda7a34920efe50e509/src/utils/constants.py#L34-L49) or refer to the path below:
       - Windows: `C:\Users\{username}\AppData\Roaming\Cultured-Downloader\google-oauth2-token.json`
       - Linux: `/home/{username}/.config/Cultured-Downloader/google-oauth2-token.jsonn`
       - macOS: `/Users/{username}/Library/Preferences/Cultured-Downloader/google-oauth2-token.json`
