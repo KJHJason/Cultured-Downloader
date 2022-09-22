@@ -110,8 +110,7 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                     return
                 await asyncio.sleep(C.RETRY_DELAY)
             except (FileNotFoundError):
-                # could be because the folder has not been created yet
-                # known issue: https://github.com/Tinche/aiofiles/issues/108
+                # Not sure why this happens, but it does occasionally.
                 await async_mkdir(folder_path, parents=True, exist_ok=True)
                 await asyncio.sleep(0.5)
             except (asyncio.CancelledError):
