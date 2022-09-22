@@ -49,7 +49,7 @@ This guide will help you to get your Google Drive API key required for downloadi
 
 <img src="/res/guide/gdrive_api_key/step-2.6.jpg" alt="step 2.6" style="width: 70%;">
 
-### Step 3: Setup Google OAuth2 on Cultured Downloader
+### Step 3: Set up your Google Drive API on Cultured Downloader
 
 *You are almost there!*
 
