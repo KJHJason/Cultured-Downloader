@@ -655,7 +655,7 @@ async def get_gdrive_folder_contents(
     gdrive_folder_arr: C.GDRIVE_HINT_TYPING,
     failed_requests_arr: list, 
     headers: Optional[dict] = None) -> list[tuple[str, tuple[str, pathlib.Path]]]:
-    """Get the folder contents of a Google Drive folder.
+    """Get the folder contents of a Google Drive folder including any sub-folders (using recursion).
 
     Args:
         drive_service (GoogleDrive): 
@@ -692,11 +692,10 @@ async def get_gdrive_folder_contents(
             continue
 
         for file in response:
-            to_append = (file["id"], file["name"], gdrive_info)
             if (file["mimeType"] == "application/vnd.google-apps.folder"):
-                nested_folders_arr.append(to_append)
+                nested_folders_arr.append((file["id"], gdrive_info))
             else:
-                gdrive_files_arr.append(to_append)
+                gdrive_files_arr.append((file["id"], file["name"], gdrive_info))
 
     if (len(nested_folders_arr) > 0):
         nested_files_arr = await get_gdrive_folder_contents(
