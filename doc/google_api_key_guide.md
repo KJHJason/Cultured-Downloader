@@ -32,12 +32,18 @@ This guide will help you to get your Google Drive API key required for downloadi
 <img src="/res/guide/gdrive_api_key/step-2.2.jpg" alt="step 2.2" style="width: 70%;">
 
 3. A prompt will appear with your API key. Copy the key as we will have to paste it when running the Cultured Downloader program.
+   1. Please do ***NOT*** share your API key with anyone.
+      - Note that you have a limit of 20,000 requests per every 100 seconds or 1 billion requests per day.
+        - Usage limits reference: [https://developers.google.com/drive/api/guides/limits](https://developers.google.com/drive/api/guides/limits)
+      - Hence, if it is shared with someone else, you may find yourself unable to download any Google Drive links from Pixiv Fanbox posts as someone else may have abused your API key.
 
 <img src="/res/guide/gdrive_api_key/step-2.3.jpg" alt="step 2.3" style="width: 70%;">
 
 #### Note: Below are optional steps to restrict the API key to only work with the Google Drive API (For security reasons).
 
-4. Click on the the API key that you just created.
+Reasons: If you do not restrict the API key to only work with the Google Drive API, then anyone who gets their hands on the API key can use it to access any Google API.
+
+1. Click on the the API key that you just created.
 
 <img src="/res/guide/gdrive_api_key/step-2.4.jpg" alt="step 2.4" style="width: 70%;">
 
