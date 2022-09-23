@@ -67,6 +67,7 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
     """Main program function."""
     login_status = {}
     drive_service = get_gdrive_service()
+    pixiv_api = get_pixiv_api()
 
     if (user_has_saved_cookies()):
         load_cookies = get_input(
@@ -152,7 +153,7 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                 while (True):
                     gdrive_api_key = get_input(
                         input_msg="Enter Google Drive API key (X to cancel, -h for guide): ",
-                        regex=C.GOOGLE_API_KEY_REGEX,
+                        regex=C.GOOGLE_API_KEY_INPUT_REGEX,
                         is_case_sensitive=True,
                         warning="Invalid Google Drive API key pattern. Please enter a valid Google Drive API key.\n"
                     )

@@ -59,9 +59,14 @@ class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-8xy]$")
-    GOOGLE_API_KEY_REGEX: re.Pattern[str] = re.compile(
-        r"^AIza[\w-]{35}$|^[xX]$|^-h$" # based on https://github.com/odomojuli/RegExAPI
+    GOOGLE_API_KEY_INPUT_REGEX: re.Pattern[str] = re.compile(
+        r"^AIza[\w-]{35}$|^[xX]$|^-h$"
     )
+    GOOGLE_API_KEY_REGEX: re.Pattern[str] = re.compile(
+        r"^AIza[\w-]{35}$" # based on https://github.com/odomojuli/RegExAPI
+    )
+    PIXIV_REFRESH_TOKEN_INPUT_REGEX: re.Pattern[str] = re.compile(r"^[\w-]{43}$|^[xX]$|^-h$")
+    PIXIV_REFRESH_TOKEN_REGEX: re.Pattern[str] = re.compile(r"^[\w-]{43}$")
 
     # Debug mode
     DEBUG_MODE: bool = False # For logger
@@ -94,6 +99,7 @@ class Constants:
     # Applications configuration, Google Drive API key, and cookies file paths
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
+    PIXIV_REFRESH_TOKEN_PATH: pathlib.Path = appDir.joinpath("pixiv-refresh-token")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
     GDRIVE_API_KEY_PATH: pathlib.Path = appDir.joinpath("gdrive-api-key")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
@@ -102,6 +108,8 @@ class Constants:
     # GitHub URLs
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
     GDRIVE_API_KEY_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_api_key_guide.md"
+    # TODO: update the link below
+    PIXIV_OAUTH_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_api_key_guide.md"
 
     # For downloading
     GDRIVE_HINT_TYPING: TypeAlias = list[tuple[str, tuple[str, pathlib.Path]]]

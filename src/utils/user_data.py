@@ -443,7 +443,7 @@ class SecureCookie(UserData):
                 The cookie data to be handled. If None, the cookie data will be loaded 
                 from the saved file in the application's directory.
         """
-        if (not isinstance(cookie_data, Union[None, dict])):
+        if (cookie_data is not None and not isinstance(cookie_data, dict)):
             raise TypeError("cookie_data must be of type dict or None")
 
         super().__init__(
@@ -470,12 +470,13 @@ class SecureGDriveAPIKey(UserData):
     Google Drive API key that is stored on the user's machine."""
     def __init__(self, api_key: Optional[str] = None) -> None:
         """Initializes the SecureGDriveAPIKey class.
+
         Args:
             api_key (str, Optional): 
                 The API key data to be handled. If None, the API key data will be loaded 
                 from the saved file in the application's directory.
         """
-        if (not isinstance(api_key, Union[None, str])):
+        if (api_key is not None and not isinstance(api_key, str)):
             raise TypeError("api_key must be of type str or None")
 
         super().__init__(
@@ -487,7 +488,7 @@ class SecureGDriveAPIKey(UserData):
         """Saves the data to the user's machine."""
         return self.encrypt_data(data=self.data)
 
-    def load_data(self) -> Union[dict, None]:
+    def load_data(self) -> Union[str, None]:
         """Loads the data from the user's machine from the saved file."""
         return self.decrypt_data(decode=True, regex=C.GOOGLE_API_KEY_REGEX)
 
@@ -497,11 +498,44 @@ class SecureGDriveAPIKey(UserData):
     def __repr__(self) -> str:
         return f"GDriveAPIKey<{self.data}>"
 
-def save_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], save_key_locally: bool) -> bool:
+class SecurePixivRefreshToken(UserData):
+    """Creates a way to securely deal with the user's saved
+    Pixiv refresh token that is stored on the user's machine."""
+    def __init__(self, refresh_token: Optional[str] = None) -> None:
+        """Initializes the SecurePixivRefreshToken class.
+
+        Args:
+            refresh_token (str, Optional): 
+                The user's Pixiv refresh token data to be handled. If None, The user's Pixiv refresh token data 
+                will be loaded from the saved file in the application's directory.
+        """
+        if (refresh_token is not None and not isinstance(refresh_token, str)):
+            raise TypeError("api_key must be of type str or None")
+
+        super().__init__(
+            data=refresh_token, 
+            data_path=C.PIXIV_REFRESH_TOKEN_PATH
+        )
+
+    def save_data(self) -> None:
+        """Saves the data to the user's machine."""
+        return self.encrypt_data(data=self.data)
+
+    def load_data(self) -> Union[str, None]:
+        """Loads the data from the user's machine from the saved file."""
+        return self.decrypt_data(decode=True, regex=C.PIXIV_REFRESH_TOKEN_REGEX)
+
+    def __str__(self) -> str:
+        return self.data
+
+    def __repr__(self) -> str:
+        return f"PixivRefreshToken<{self.data}>"
+
+def save_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], save_key_locally: bool) -> bool:
     """Saves the user's key to the API server.
 
     Args:
-        obj (SecureCookie | SecureGDriveAPIKey): 
+        obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken): 
             The UserData object to save the key with.
         save_key_locally (bool):
             Whether or not to save the key locally.
@@ -519,7 +553,8 @@ def save_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], save_key
         else:
             return True
 
-def load_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], *args: Any, **kwargs: Any) -> Union[SecureCookie, SecureGDriveAPIKey, None]:
+def load_key_with_retries(
+    obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken],*args: Any, **kwargs: Any) -> Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken, None]:
     """Loads the user's key from the API server.
 
     Args:
@@ -531,7 +566,7 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], *args: A
             The keyword arguments to pass to the object.
 
     Returns:
-        SecureCookie | SecureGDriveAPIKey | None:
+        SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken | None:
             The UserData object that was passed in or None if the key could not be loaded.
     """
     for retry_counter in range(1, C.MAX_RETRIES + 1):
@@ -542,11 +577,11 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey], *args: A
                 return None
             time.sleep(C.RETRY_DELAY)
 
-def save_data(obj: Union[SecureCookie, SecureGDriveAPIKey], save_key_locally: bool, *args, **kwargs) -> bool:
+def save_data(obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], save_key_locally: bool, *args, **kwargs) -> bool:
     """Saves the data to the user's machine.
 
     Args:
-        obj (SecureCookie | SecureGDriveAPIKey):
+        obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken):
             The object to use to save the data.
         save_key_locally (bool):
             Whether to save the key locally or not.
@@ -569,11 +604,11 @@ def save_data(obj: Union[SecureCookie, SecureGDriveAPIKey], save_key_locally: bo
     else:
         return False
 
-def load_data(obj: Union[SecureCookie, SecureGDriveAPIKey], *args, **kwargs) -> Union[str, dict, bytes, None]:
+def load_data(obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], *args, **kwargs) -> Union[str, dict, bytes, None]:
     """Loads the data from the user's machine from the saved file.
 
     Args:
-        obj (SecureCookie | SecureGDriveAPIKey):
+        obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken):
             The object to use to load the data.
         *args (list):
             The arguments to pass to the object.
@@ -735,41 +770,132 @@ def save_cookies(*login_results: Union[tuple[dict, str, bool], None]) -> None:
         else:
             print_success(f"Successfully saved {thread.readable_website} cookie.")
 
+def save_and_encrypt_data(data_name: str, 
+                          secure_obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], *args, **kwargs) -> None:
+    """Saves the user's data and encrypts it to the user's machine.
+
+    Args:
+        data_name (str):
+            The name of the data to save (shown to the user in the spinner).
+        secure_obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken):
+            The object use when saving the data.
+        *args (list):
+            The arguments to pass to the object.
+        **kwargs (dict):
+            The keyword arguments to pass to the object.
+
+    Returns:
+        None
+    """
+    save_key_locally = save_key_prompt()
+    with Spinner(
+        message=f"Saving {data_name}...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc",
+        completion_msg=f"Successfully saved {data_name}.\n",
+        cancelled_msg=f"Stopped saving {data_name}.\n"
+    ) as spinner:
+        if (not save_data(secure_obj, save_key_locally=save_key_locally, *args, **kwargs)):
+            spinner.completion_msg = format_error_msg(
+                f"Failed to save {data_name}. Please try again later.\n"
+            )
+
+def load_and_decrypt_data(data_path: pathlib.Path, 
+                          secure_obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], *args, **kwargs) -> Union[str, Literal[False], None]:
+    """Decrypts and load the user's data from the user's machine.
+
+    Returns:
+        str | Literal[False] | None:
+            The decrypted data, False if the user has not saved the data, 
+            or None if the encrypted data could not be loaded (connection/decryption issues).
+    """
+    if (not data_path.exists() or not data_path.is_file()):
+        return False
+
+    decrypted_data = load_data(secure_obj, *args, **kwargs)
+    if (decrypted_data is None):
+        return None
+    return decrypted_data
+
 def load_gdrive_api_key() -> Union[str, Literal[False], None]:
-    """Loads the Google Drive API key from the user's machine.
+    """Decrypts and load the Google Drive API key from the user's machine.
 
     Returns:
         str | Literal[False] | None:
             The Google Drive API key, False if the user has not saved the api key, 
             or None if the API key could not be loaded (connection/decryption issues).
     """
-    if (not C.GDRIVE_API_KEY_PATH.exists() or not C.GDRIVE_API_KEY_PATH.is_file()):
-        return False
-
-    gdrive_api_key = load_data(SecureGDriveAPIKey)
-    if (gdrive_api_key is None):
-        return None
-    return gdrive_api_key
+    return load_and_decrypt_data(
+        data_path=C.GDRIVE_API_KEY_PATH,
+        secure_obj=SecureGDriveAPIKey,
+    )
 
 def save_gdrive_api_key(api_key: str) -> None:
-    """Saves the Google Drive API key to the user's machine."""
-    save_key_locally = save_key_prompt()
+    """Saves the Google Drive API key to the user's machine.
+
+    Args:
+        api_key (str):
+            The Google Drive API key to save.
+
+    Returns:
+        None
+    """
+    save_and_encrypt_data(
+        data_name="Google Drive API Key",
+        secure_obj=SecureGDriveAPIKey,
+        api_key=api_key
+    )
+
+def load_pixiv_refresh_token() -> Union[str, None]:
+    """Decrypts and load the Pixiv refresh token from the user's machine.
+
+    Returns:
+        str  | None:
+            The Pixiv refresh token or None if the refresh token could not be loaded (connection/decryption issues).
+    """
     with Spinner(
-        message="Saving Google Drive API Key...",
+        message="Loading Pixiv refresh token...",
         colour="light_yellow",
         spinner_position="left",
         spinner_type="arc",
-        completion_msg="Successfully saved Google Drive API key.\n",
-        cancelled_msg="Stopped saving Google Drive API key.\n"
+        completion_msg="Finished loading Pixiv refresh token!\n"
     ) as spinner:
-        if (not save_data(SecureGDriveAPIKey, save_key_locally=save_key_locally, api_key=api_key)):
+        pixiv_refresh_token = load_and_decrypt_data(
+            data_path=C.PIXIV_REFRESH_TOKEN_PATH,
+            secure_obj=SecurePixivRefreshToken,
+        )
+        if (pixiv_refresh_token is False):
+            spinner.completion_msg = ""
+            return
+        if (pixiv_refresh_token is None):
             spinner.completion_msg = format_error_msg(
-                "Failed to save Google Drive API key. Please try again later.\n"
+                "Could not load Pixiv refresh token either due to connection error or decryption issues.\n"
             )
+            return
+
+        return pixiv_refresh_token
+
+def save_pixiv_refresh_token(refresh_token: str) -> None:
+    """Saves the Pixiv refresh token to the user's machine.
+
+    Args:
+        refresh_token (str):
+            The Pixiv refresh token to save.
+
+    Returns:
+        None
+    """
+    save_and_encrypt_data(
+        data_name="Pixiv refresh token",
+        secure_obj=SecurePixivRefreshToken,
+        refresh_token=refresh_token
+    )
 
 __all__ = [
     "SecureCookie",
     "SecureGDriveAPIKey",
+    "SecurePixivRefreshToken",
     "SaveCookieThread",
     "LoadCookieThread",
     "save_data",
@@ -778,5 +904,7 @@ __all__ = [
     "load_cookies",
     "load_gdrive_api_key",
     "save_gdrive_api_key",
+    "load_pixiv_refresh_token",
+    "save_pixiv_refresh_token",
     "convert_website_to_path"
 ]

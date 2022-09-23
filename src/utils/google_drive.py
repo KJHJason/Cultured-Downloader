@@ -39,9 +39,9 @@ class GoogleDrive:
         Args:
             api_key (str):
                 The API key that will be used to authenticate the Google Drive Client.
-            timeout (Optional[int], optional):
+            timeout (int, optional):
                 The timeout value for the httpx.AsyncClient object. Defaults to 60 seconds.
-            max_concurrent_downloads (Optional[int], optional):
+            max_concurrent_downloads (int, optional):
                 The maximum number of concurrent downloads that can be performed at any given time.
                 Defaults to 4 concurrent downloads.
         """

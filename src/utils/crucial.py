@@ -45,6 +45,11 @@ except (ModuleNotFoundError, ImportError):
     __install_dependency(dep="colorama>=0.4.5")
 
 try:
+    from PIL import Image
+except (ModuleNotFoundError, ImportError):
+    __install_dependency(dep="Pillow>=9.2.0")
+
+try:
     import httpx
 except (ModuleNotFoundError, ImportError):
     __install_dependency(dep="httpx[http2]>=0.23.0")

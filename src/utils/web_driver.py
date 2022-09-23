@@ -24,7 +24,7 @@ if (__package__ is None or __package__ == ""):
     from logger import logger
     from spinner import Spinner
     from user_data import load_cookies
-    from google_client import GoogleDrive
+    from google_drive import GoogleDrive
     from download import *
     from functional import  print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
                             website_to_readable_format, get_user_urls, get_user_download_choices, \
@@ -35,7 +35,7 @@ else:
     from .logger import logger
     from .spinner import Spinner
     from .user_data import load_cookies
-    from .google_client import GoogleDrive
+    from .google_drive import GoogleDrive
     from .download import *
     from .functional import print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
                             website_to_readable_format, get_user_urls, get_user_download_choices, \

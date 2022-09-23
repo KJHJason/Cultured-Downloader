@@ -227,6 +227,14 @@ class Spinner:
                 return func(*args, **kwargs)
         return wrapper
 
+    def __str__(self) -> str:
+        """Returns the string representation of the spinner object."""
+        return f"Spinner<message={self.message}, colour={self.__colour}, spinner_type={self.__spinner}, spinner_position={self.__position}, completion_msg={self.completion_msg}, cancelled_msg={self.cancelled_msg}>"
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the spinner object."""
+        return self.__str__()
+
 # Test codes below
 if (__name__ == "__main__"):
     import time

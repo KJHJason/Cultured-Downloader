@@ -782,6 +782,7 @@ def log_critical_details_for_post(post_folder: pathlib.Path, message: str,
         ignore_if_exists (Optional[bool], optional):
             Whether to ignore logging if the log file already exists and has data in it. Defaults to False.
     """
+    post_folder.mkdir(parents=True, exist_ok=True)
     log_file = post_folder.joinpath(log_filename)
     if (ignore_if_exists and log_file.exists() and log_file.is_file() and log_file.stat().st_size > 0):
         return
