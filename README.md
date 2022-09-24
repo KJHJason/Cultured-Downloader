@@ -60,12 +60,8 @@ In the end, I spent about a month doing this project while learning concepts suc
    However, if you face any connection errors, you can pass in the `--skip-update` or `-s` argument to skip the update *check* in both [launcher.py](src/launcher.py) and [cultured_downloader.py](src/cultured_downloader.py)
 
 2. Running the executable file
-   - IMPORTANT: For macOS users, you will have to run the Python scripts instead of the executable file so you can ignore this section and refer to the one above.
+   - IMPORTANT: This is only for Windows users! Otherwise, you will have to run the Python scripts instead of the executable file so you can ignore this section and refer to the one above.
    - Download the latest Cultured Downloader executable file from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
-     - Make sure to download the correct executable file for your operating system.
-       - For Windows users, download the `cultured_downloader.exe` file.
-       - For Linux users, download the `cultured_downloader` file.
-         - Note that the Python scripts was bundled in Ubuntu 22.04. Hence, if you are using other distros, you might not be able to run it.
    - Once downloaded, you can do integrity check by comparing the SHA256 hash of the downloaded zip file with the hash provided in the release notes.
    - Finally, you can enjoy running the program!
 
