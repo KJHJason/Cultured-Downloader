@@ -460,7 +460,7 @@ class SecureCookie(UserData):
         return self.decrypt_data(decode=True, schema=CookieSchema)
 
     def __str__(self) -> str:
-        return json.dumps(self.data)
+        return json.dumps(self.data) if (self.data is not None) else ""
 
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
@@ -493,7 +493,7 @@ class SecureGDriveAPIKey(UserData):
         return self.decrypt_data(decode=True, regex=C.GOOGLE_API_KEY_REGEX)
 
     def __str__(self) -> str:
-        return self.data
+        return self.data if (self.data is not None) else ""
 
     def __repr__(self) -> str:
         return f"GDriveAPIKey<{self.data}>"
@@ -526,7 +526,7 @@ class SecurePixivRefreshToken(UserData):
         return self.decrypt_data(decode=True, regex=C.PIXIV_REFRESH_TOKEN_REGEX)
 
     def __str__(self) -> str:
-        return self.data
+        return self.data if (self.data is not None) else ""
 
     def __repr__(self) -> str:
         return f"PixivRefreshToken<{self.data}>"
@@ -908,3 +908,6 @@ __all__ = [
     "save_pixiv_refresh_token",
     "convert_website_to_path"
 ]
+
+if __name__ == "__main__":
+    print(SecurePixivRefreshToken())

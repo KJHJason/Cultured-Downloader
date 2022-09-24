@@ -446,7 +446,7 @@ class PixivAPI:
             append_images=images,
             duration=durations,
             loop=0,
-            optimize=False,
+            optimize=True,
             quality=100,
         )
 
