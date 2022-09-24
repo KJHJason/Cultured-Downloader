@@ -22,7 +22,7 @@ if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
     from errors import ChangedHTMLStructureError
     from logger import logger
-    from spinner import Spinner
+    from spinner import Spinner, format_success_msg
     from user_data import load_cookies
     from google_drive import GoogleDrive
     from download import *
@@ -33,7 +33,7 @@ else:
     from .constants import CONSTANTS as C
     from .errors import ChangedHTMLStructureError
     from .logger import logger
-    from .spinner import Spinner
+    from .spinner import Spinner, format_success_msg
     from .user_data import load_cookies
     from .google_drive import GoogleDrive
     from .download import *
@@ -706,7 +706,9 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         cancelled_msg="GDrive download process has been cancelled!\n"
     ) as spinner:
         if (len(gdrive_urls_arr) < 1):
-            spinner.completion_msg = "No GDrive URL found. Skipping GDrive download process...\n"
+            spinner.completion_msg = format_success_msg(
+                "No GDrive URL found. Skipping GDrive download process...\n"
+            )
             return # Return since this is the last step of the download process
 
         gdrive_folder_arr: C.GDRIVE_HINT_TYPING = []

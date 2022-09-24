@@ -109,7 +109,7 @@ class Constants:
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
     GDRIVE_API_KEY_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_api_key_guide.md"
     # TODO: update the link below
-    PIXIV_OAUTH_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_api_key_guide.md"
+    PIXIV_OAUTH_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md"
 
     # For downloading
     GDRIVE_HINT_TYPING: TypeAlias = list[tuple[str, tuple[str, pathlib.Path]]]
@@ -169,6 +169,10 @@ class Constants:
     FANTIA_VERIFY_LOGIN_URL: str = "https://fantia.jp/mypage/users/plans"
     FANTIA_POST_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/posts/\d+$")
     FANTIA_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/fanclubs/\d+(/posts)?$")
+
+    # For Pixiv URLS
+    PIXIV_ILLUST_URL_REGEX: re.Pattern[str] = re.compile(r"^https://www\.pixiv\.net/(en/)?artworks/(\d+)$")
+    PIXIV_ARTIST_URL_REGEX: re.Pattern[str] = re.compile(r"^https://www\.pixiv\.net/(en/)?users/(\d+)$")
 
     # For Pixiv Fanbox URLs
     PIXIV_FANBOX_API_URL: str = "https://api.fanbox.cc/post.info?postId="

@@ -70,7 +70,7 @@ class GoogleDrive:
         headers = C.BASE_REQ_HEADERS.copy()
         for retry_counter in range(1, C.MAX_RETRIES + 1):
             try:
-                response = httpx.get(f"{self.__BASE_API_URL}?key={api_key}", headers=headers)
+                response = httpx.get(self.__BASE_API_URL, headers=headers, params={"key": api_key})
                 if (response.status_code == 400):
                     raise ValueError("Invalid API key.")
                 return api_key # Although the API key is valid, Google Drive API will return a 403 Forbidden error.
@@ -101,16 +101,21 @@ class GoogleDrive:
             headers = C.BASE_REQ_HEADERS.copy()
 
         files, page_token = [], None
-        query = f"'{folder_id}' in parents"
+        params = {
+            "key": self.__API_KEY,
+            "q": f"'{folder_id}' in parents",
+            "fields": "nextPageToken,files(id,name,mimeType)"
+        }
         async with httpx.AsyncClient(headers=headers, http2=True, timeout=self.timeout) as client:
             while (True):
-                url = f"{self.__BASE_API_URL}?key={self.__API_KEY}&q={query}&fields=nextPageToken,files(id,name,mimeType)"
                 if (page_token is not None):
-                    url += f"&pageToken={page_token}"
+                    params["pageToken"] = page_token
+                else:
+                    params.pop("pageToken", None)
 
                 for retry_counter in range(1, C.MAX_RETRIES + 1):
                     try:
-                        response = await client.get(url=url)
+                        response = await client.get(url=self.__BASE_API_URL, params=params)
                         response.raise_for_status()
                         json_response = response.json()
                     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError) as e:
@@ -153,12 +158,14 @@ class GoogleDrive:
         if (headers is None):
             headers = C.BASE_REQ_HEADERS.copy()
 
+        params = {
+            "key": self.__API_KEY,
+            "fields": "id,name,mimeType"
+        }
         async with httpx.AsyncClient(headers=headers, http2=True, timeout=self.timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
-                    response = await client.get(
-                        url=f"{self.__BASE_API_URL}/{file_id}?key={self.__API_KEY}&fields=id,name,mimeType"
-                    )
+                    response = await client.get(url=f"{self.__BASE_API_URL}/{file_id}", params=params)
                     if (response.status_code == 404):
                         failed_requests_arr.append((file_id, gdrive_info[1], "file", str(e)))
                         return (None, None)
@@ -200,9 +207,10 @@ class GoogleDrive:
         if (headers is None):
             headers = C.BASE_REQ_HEADERS.copy()
 
-        # Construct the API URL and add the API key and 
-        # alt=media to tell Google that we would like to download the file
-        url = f"{self.__BASE_API_URL}/{file_id}?key={self.__API_KEY}&alt=media"
+        params = {
+            "key": self.__API_KEY,
+            "alt": "media" # to tell Google that we would like to download the file
+        }
         await async_mkdir(file_path.parent, parents=True, exist_ok=True)
         async with httpx.AsyncClient(
             headers=headers, 
@@ -211,7 +219,7 @@ class GoogleDrive:
         ) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
-                    async with client.stream(method="GET", url=url) as response:
+                    async with client.stream(method="GET", url=f"{self.__BASE_API_URL}/{file_id}", params=params) as response:
                         response.raise_for_status()
                         async with aiofiles.open(file_path, "wb") as f:
                             async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):

@@ -8,6 +8,7 @@ import time
 import json
 import base64
 import shutil
+import random
 import zipfile
 import pathlib
 import hashlib
@@ -23,7 +24,7 @@ if (__package__ is None or __package__ == ""):
     from spinner import Spinner
     from user_data import save_pixiv_refresh_token, load_pixiv_refresh_token
     from download import log_critical_details_for_post
-    from functional import print_danger, print_success, check_download_tasks
+    from functional import print_danger, print_success, check_download_tasks, remove_illegal_chars_in_path
     from errors import PixivOAuthRefreshedError, PixivOAuthRefreshError
     from functional import async_mkdir, async_remove_file, async_file_exists, get_input
 else:
@@ -31,7 +32,7 @@ else:
     from .spinner import Spinner
     from .user_data import save_pixiv_refresh_token, load_pixiv_refresh_token
     from .download import log_critical_details_for_post
-    from .functional import print_danger, print_success, check_download_tasks
+    from .functional import print_danger, print_success, check_download_tasks, remove_illegal_chars_in_path
     from .errors import PixivOAuthRefreshedError, PixivOAuthRefreshError
     from .functional import async_mkdir, async_remove_file, async_file_exists, get_input
 
@@ -65,9 +66,14 @@ class PixivAPI:
             Refresh token to use to get a new access token (lasts for 1 hour).
         access_token (str):
             Access token to use for the Pixiv API.
+        api_timeout (int):
+            Timeout for the Pixiv API requests.
+        download_timeout (int):
+            Timeout for when downloading files.
     """
     def __init__(self, refresh_token: Optional[str] = None, access_token: Optional[str] = None, 
-                 max_concurrent_downloads: Optional[int] = 4) -> None:
+                 max_concurrent_downloads: Optional[int] = 4, 
+                 api_timeout: Optional[int] = 15, download_timeout: Optional[int] = 60) -> None:
         """Constructor method for the PixivAPI class.
 
         Args:
@@ -79,6 +85,10 @@ class PixivAPI:
             max_concurrent_downloads (int, optional):
                 Maximum number of concurrent downloads when calling the download_multiple_illust method. 
                 Defaults to 4.
+            api_timeout (int, optional):
+                Timeout for the Pixiv API requests. Defaults to 15.
+            download_timeout (int, optional):
+                Timeout for when downloading files. Defaults to 60.
         """
         self.__URL = "https://app-api.pixiv.net"
         self.__CLIENT_ID = "MOBrBDS8blbauoSck0ZfDbtuzpyT"
@@ -88,6 +98,8 @@ class PixivAPI:
         self.__LOGIN_URL = "https://app-api.pixiv.net/web/v1/login"
         self.__REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
 
+        self.api_timeout = api_timeout
+        self.download_timeout = download_timeout
         self.max_concurrent_downloads = max_concurrent_downloads
         self.refresh_token = refresh_token
         self.access_token = access_token
@@ -144,7 +156,7 @@ class PixivAPI:
             )
 
         headers = {"User-Agent": "PixivAndroidApp/5.0.234 (Android 11; Pixel 5)"}
-        with httpx.Client(http2=True, headers=headers) as client:
+        with httpx.Client(http2=True, headers=headers, timeout=self.api_timeout) as client:
             while (True):
                 code = get_input(
                     input_msg="Enter the code from your browser's console (X to cancel, -h for help): ",
@@ -226,7 +238,7 @@ class PixivAPI:
             "include_policy": "true",
             "refresh_token": self.refresh_token,
         }
-        with httpx.Client(http2=True, headers=headers) as client:
+        with httpx.Client(http2=True, headers=headers, timeout=self.api_timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     data = client.post(self.__AUTH_TOKEN_URL, data=data)
@@ -263,18 +275,18 @@ class PixivAPI:
         return headers
 
     @staticmethod
-    def get_illust_url(illust_id: str) -> str:
+    def get_illust_url(illust_id: Union[str, int]) -> str:
         """Get the URL of an illustration.
 
         Args:
-            illust_id (str):
+            illust_id (str | int):
                 ID of the illustration.
 
         Returns:
             str:
                 URL of the illustration.
         """
-        return "https://www.pixiv.net/en/artworks/" + illust_id
+        return f"https://www.pixiv.net/en/artworks/{illust_id}"
 
     def __append_to_failed_requests_arr(self, failed_requests_arr: Union[list, None], to_append: Any) -> None:
         """Append to failed requests array if failed_requests_arr is not None.
@@ -305,7 +317,7 @@ class PixivAPI:
                 The metadata of the ugoira.
         """
         url = self.__URL + "/v1/ugoira/metadata"
-        with httpx.Client(http2=True, headers=self.get_headers(referer=self.__URL)) as client:
+        with httpx.Client(http2=True, headers=self.get_headers(referer=self.__URL), timeout=self.api_timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     r = client.get(url, params={"illust_id": illust_id})
@@ -356,7 +368,7 @@ class PixivAPI:
             return
 
         await async_mkdir(download_path.parent, parents=True, exist_ok=True)
-        async with httpx.AsyncClient(http2=True, headers=self.get_headers(referer=self.__URL)) as client:
+        async with httpx.AsyncClient(http2=True, headers=self.get_headers(referer=self.__URL), timeout=self.download_timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     async with client.stream("GET", ugoira_url) as r:
@@ -463,7 +475,7 @@ class PixivAPI:
             return
 
         await async_mkdir(download_path.parent, parents=True, exist_ok=True)
-        async with httpx.AsyncClient(http2=True, headers=self.get_headers(referer=self.get_illust_url(illust_id))) as client:
+        async with httpx.AsyncClient(http2=True, headers=self.get_headers(referer=self.get_illust_url(illust_id)), timeout=self.download_timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     async with client.stream("GET", illust_url) as r:
@@ -540,11 +552,14 @@ class PixivAPI:
                 The details of the illustration.
         """
         url = self.__URL + "/v1/illust/detail"
-        with httpx.Client(http2=True, headers=self.get_headers()) as client:
+        with httpx.Client(http2=True, headers=self.get_headers(), timeout=self.api_timeout) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
                     r = client.get(url, params={"illust_id": illust_id})
                     self.refresh_oauth_token(r, raise_error=True)
+                    if (r.status_code == 404):
+                        return
+
                     r.raise_for_status()
                     r = r.json()
                 except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError):
@@ -600,7 +615,7 @@ class PixivAPI:
             "filter": "for_ios",
             "offset": min_offset
         }
-        with httpx.Client(http2=True, headers=self.get_headers()) as client:
+        with httpx.Client(http2=True, headers=self.get_headers(), timeout=self.api_timeout) as client:
             while (next_url is not None and params["offset"] != max_offset):
                 for retry_counter in range(1, C.MAX_RETRIES + 1):
                     try:
@@ -632,11 +647,12 @@ class PixivAPI:
 
                 illusts.extend(r["illusts"])
                 next_url = r.get("next_url")
+                self.__sleep_after_request()
 
         return illusts
 
     def get_tag_illusts(self, tag_name: str, min_page_num: int, 
-                        max_page_num: int, failed_api_requests, strict: bool) -> dict:
+                        max_page_num: int, failed_api_requests, strict: bool, sort_order: str) -> dict:
         """Get the illustrations of a tag name.
 
         Args:
@@ -651,11 +667,17 @@ class PixivAPI:
             strict (bool):
                 Whether to match all illustration strictly with the tag name.
                 If set to False, it will match all illustrations that contain the tag name.
+            sort_order (str):
+                The sort order of the illustrations.
+                ("date_desc", "date_asc", "popular_desc")
 
         Returns:
             dict:
                 The illustrations of the tag name.
         """
+        if (sort_order not in ("date_desc", "date_asc", "popular_desc")):
+            raise ValueError("Invalid sort order")
+
         illusts: list[dict] = []
         next_url = self.__URL + "/v1/search/illust"
         min_offset, max_offset = self.convert_page_num_to_offset(
@@ -670,9 +692,11 @@ class PixivAPI:
             "filter": 
                 "for_ios",
             "offset": 
-                min_offset
+                min_offset,
+            "sort":
+                sort_order
         }
-        with httpx.Client(http2=True, headers=self.get_headers()) as client:
+        with httpx.Client(http2=True, headers=self.get_headers(), timeout=self.api_timeout) as client:
             while (next_url is not None and params["offset"] != max_offset):
                 for retry_counter in range(1, C.MAX_RETRIES + 1):
                     try:
@@ -705,20 +729,30 @@ class PixivAPI:
 
                 illusts.extend(r["illusts"])
                 next_url = r.get("next_url")
+                self.__sleep_after_request()
 
         return illusts
 
+    @staticmethod
+    def __sleep_after_request():
+        """Slow down the requests to prevent rate limiting 
+        and to avoid being blocked by Cloudflare."""
+        return time.sleep(random.uniform(0.8, 2))
+
     async def download_multiple_illust(
-        self, base_folder_path: pathlib.Path, 
+        self, base_folder_path: Union[pathlib.Path, str], 
+        convert_ugoira: bool,
         illust_id_arr: Optional[list[str]] = None, 
         user_id_arr: Optional[list[tuple[str, int, int]]] = None, 
         tag_name_arr: Optional[list[tuple[str, int, int]]] = None) -> None:
         """Not using async for Pixiv's API calls as the API is strict on rate limiting 
-        and it should not take too long but uses async when downloading content from Pixiv's servers.
+        and it is protected by Cloudflare but uses async when downloading content from Pixiv's servers.
 
         Args:
-            base_folder_path (pathlib.Path):
+            base_folder_path (pathlib.Path | str):
                 The user's default download folder path.
+            convert_ugoira (bool):
+                Whether to convert ugoira to gif.
             illust_id_arr (list[str], optional):
                 Array of illustration IDs to download. Defaults to None.
             user_id_arr (list[tuple[str, int, int]], optional):
@@ -737,6 +771,7 @@ class PixivAPI:
         if (illust_id_arr):
             for illust_id in illust_id_arr:
                 illust_json = self.get_illust_details(illust_id, failed_api_requests)
+                self.__sleep_after_request()
                 if (illust_json is not None):
                     illust_json_arr.append(illust_json)
             download_illust_id = True
@@ -752,12 +787,14 @@ class PixivAPI:
                     illust_json_arr.extend(user_illusts)
             download_user_illust = True
         elif (tag_name_arr):
-            for tag_name, min_page_num, max_page_num in tag_name_arr:
+            for tag_name, min_page_num, max_page_num, sort_order in tag_name_arr:
                 tag_illusts = self.get_tag_illusts(
                     tag_name=tag_name, 
                     min_page_num=min_page_num,
                     max_page_num=max_page_num,
                     failed_api_requests=failed_api_requests,
+                    strict=True,
+                    sort_order=sort_order
                 )
                 if (tag_illusts is not None):
                     illust_json_arr.extend(tag_illusts)
@@ -766,7 +803,11 @@ class PixivAPI:
             return # nothing to download
 
         if (len(illust_json_arr) == 0):
-            return # nothing to download
+            print_danger("No illustrations to download.")
+            return
+
+        if (isinstance(base_folder_path, str)):
+            base_folder_path = pathlib.Path(base_folder_path)
 
         # parse the JSON responses
         spinner_base_msg = "Processed {progress} out of " + f"{len(illust_json_arr)} JSON responses"
@@ -788,8 +829,12 @@ class PixivAPI:
                     progress=i + 1
                 )
                 illust_id = illust_json["id"]
-                illust_title = illust_json["title"].strip()
-                illustrator_name = illust_json["user"]["name"].strip()
+                illust_title = remove_illegal_chars_in_path(
+                    string=illust_json["title"]
+                )
+                illustrator_name = remove_illegal_chars_in_path(
+                    string=illust_json["user"]["name"]
+                )
                 illust_folder = base_folder_path.joinpath(
                     illustrator_name, 
                     f"[{illust_id}] {illust_title}"
@@ -798,6 +843,7 @@ class PixivAPI:
                 illust_type = illust_json["type"]
                 if (illust_type == "ugoira"): # animated images which will require a separate API call
                     ugoira_json = self.get_ugoira_metadata(illust_id, failed_api_requests)
+                    self.__sleep_after_request()
                     ugoira_url: str = ugoira_json["zip_urls"]["medium"]
                     if ("600x600" in ugoira_url): # since the API will only return the 600x600 URL
                         ugoira_url = ugoira_url.replace("600x600", "1920x1080", 1)
@@ -809,7 +855,7 @@ class PixivAPI:
 
                 # If the post only has one image,
                 illust_url = illust_json.get("meta_single_page")
-                if (illust_url is not None):
+                if (illust_url is not None and illust_url):
                     illust_urls.append((illust_id, illust_url["original_image_url"], illust_folder))
                     continue
 
@@ -922,7 +968,7 @@ class PixivAPI:
         # Ugoira conversion to be done synchronously
         # as it can use up a lot of memory (100MB+)
         total_ugoira_to_convert = len(ugoira_urls)
-        if (total_ugoira_to_convert > 0):
+        if (total_ugoira_to_convert > 0 and convert_ugoira):
             spinner_base_msg = "Converted {progress} " + f"out of {total_ugoira_to_convert} Pixiv ugoira(s) to gifs..."
             with Spinner(
                 message=spinner_base_msg.format(

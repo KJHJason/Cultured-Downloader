@@ -430,6 +430,107 @@ def get_user_download_choices(website: str, block_gdrive_downloads: bool) -> Uni
         else:
             return tuple(download_flags)
 
+def split_url_input(user_input: str) -> list[str]:
+    """Split the user input into a list of URLs and removes any duplicates.
+
+    Args:
+        user_input (str):
+            The user input to split.
+
+    Returns:
+        A list of URLs.
+    """
+    urls_arr = [url.strip() for url in user_input.split(sep=",")]
+    unique_urls = list(dict.fromkeys(urls_arr, None))
+    if (len(unique_urls) != len(urls_arr)):
+        print_danger("Warning: Duplicate URLs have been removed from your input...")
+
+    return unique_urls
+
+def get_page_nums(user_inputs: list[str], website: str, input_name: Optional[str] = "URL(s)") -> Union[list[str], list[tuple[str, int, int]]]:
+    """Get the page numbers for each input in the user_inputs array.
+
+    Args:
+        user_inputs (list[str]):
+            An array of inputs to get the page numbers for.
+        website (str):
+            The website to get the page numbers for.
+
+    Returns:
+        A list of URLs with the page num query parameters or a list of tuples of user inputs and page numbers.
+    """
+    print_warning(
+        f"\nPlease enter the page numbers you wish to download from corresponding to the {input_name} you entered." \
+        f"\nFor example, if you entered 2 {input_name}, you will enter something like '1, 1-3' to indicate " \
+        f"that you wish to download from the 1st page of the first {input_name} and the 1st to 3rd page of the second {input_name}."
+    )
+    page_num_prompt = "\nPlease enter {} (X to cancel): ".format(
+        f"{len(user_inputs)} page numbers corresponding to the entered {input_name}" \
+        if (len(user_inputs) > 1) \
+        else "a page number"
+    )
+    while (True):
+        try:
+            page_inputs = input(page_num_prompt).strip()
+        except (EOFError):
+            continue
+
+        if (page_inputs == ""):
+            print_danger("User Error: Please enter a page number")
+            continue
+        elif (page_inputs in ("X", "x")):
+            return
+
+        page_nums_arr = page_inputs.split(sep=",")
+        if (len(page_nums_arr) != len(user_inputs)):
+            print_danger(
+                f"User Error: The number of page numbers entered does not match the number of {input_name} entered"
+            )
+            continue
+
+        url_with_page_nums_arr = []
+        for idx, page_num in enumerate(page_nums_arr):
+            page_num = page_num.strip()
+            if (C.PAGE_NUM_REGEX.fullmatch(page_num) is None):
+                print_danger(f"User Error: The page number, {page_num}, is invalid.")
+                print_danger("Please enter in the correct format such as '1, 1-3' and try again.")
+                break
+
+            is_fantia = (website == "fantia")
+            page_nums = page_num.split(sep="-", maxsplit=1)
+            if (len(page_nums) == 1):
+                if (website == "pixiv"):
+                    url_with_page_nums_arr.append(
+                        (user_inputs[idx], int(page_nums[0]), int(page_nums[0]))
+                    )
+                elif (website in ("pixiv_fanbox", "fantia")):
+                    formatted_url = user_inputs[idx] + f"?page={page_nums[0]}"
+                    if (is_fantia):
+                        # Ensure that the pages go by newest to oldest
+                        formatted_url += "&q[s]=newer&q[tag]="
+
+                    url_with_page_nums_arr.append(formatted_url)
+                continue
+
+            # if a range was given, make sure the range is valid
+            page_nums = [int(page_num) for page_num in page_nums]
+            if (page_nums[0] > page_nums[1]):
+                page_nums[0], page_nums[1] = page_nums[1], page_nums[0]
+
+            if (website == "pixiv"):
+                url_with_page_nums_arr.append((user_inputs[idx], page_nums[0], page_nums[1]))
+                continue
+
+            for page_num in range(page_nums[0], page_nums[1] + 1):
+                formatted_url = user_inputs[idx] + f"?page={page_num}"
+                if (is_fantia):
+                    # Ensure that the pages go by newest to oldest
+                    formatted_url += "&q[s]=newer&q[tag]="
+
+                url_with_page_nums_arr.append(formatted_url)
+        else:
+            return url_with_page_nums_arr
+
 def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
     """Get the URLs from the user.
 
@@ -476,12 +577,8 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
         elif (user_input in ("X", "x")):
             return
 
-        urls_arr = [url.strip() for url in user_input.split(",")]
-        unique_urls = list(dict.fromkeys(urls_arr, None))
-        if (len(unique_urls) != len(urls_arr)):
-            print_danger("Warning: Duplicate URLs have been removed from your input...")
-
         formatted_urls = []
+        unique_urls = split_url_input(user_input)
         for url in unique_urls:
             # Since a url can end with a slash,
             # remove it so for the regex validations
@@ -499,7 +596,7 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
                         "Please make sure {suggestion} correct and try again.".format(
                             url=url,
                             suggestion="all the URLs entered are" \
-                                        if (len(url) > 1) \
+                                        if (len(unique_urls) > 1) \
                                         else "the URL entered is"
                         )
             print_danger(error_msg)
@@ -526,68 +623,130 @@ def get_user_urls(website: str, creator_page: bool) -> Union[list[str], None]:
                 break
 
     # get page number from user
-    print_warning(
-        "\nPlease enter the page numbers you wish to download from corresponding to the URLs you entered." \
-        "\nFor example, if you entered 2 URLs, you will enter something like '1, 1-3' to indicate " \
-        "that you wish to download from the 1st page of the first URL and the 1st to 3rd page of the second URL."
+    return get_page_nums(
+        website=website, 
+        user_inputs=formatted_urls
     )
-    page_num_prompt = "\nPlease enter {} (X to cancel): ".format(
-        f"{len(formatted_urls)} page numbers corresponding to the entered URLs" \
-        if (len(formatted_urls) > 1) \
-        else "a page number"
-    )
+
+def pixiv_get_ids_or_tags(download_option: str) -> list:
+    """Get the IDs of the Pixiv posts/artists or tag names to download from the user.
+
+    Args:
+        download_option (str): 
+            The download option the user chose.
+
+    Returns:
+        list: 
+            The list of IDs or tag names to download from.
+    """
+    if (not isinstance(download_option, str)):
+        raise TypeError("download_option must be an str")
+    if (download_option not in ("1", "2", "3")):
+        raise ValueError(f"Invalid download option: {download_option}")
+
+    download_table = {
+        "1": {
+            # download illust IDs
+            "get_page_num": False,
+            "regex": C.PIXIV_ILLUST_URL_REGEX
+        },
+        "2": {
+            # download artist IDs
+            "get_page_num": True,
+            "regex": C.PIXIV_ARTIST_URL_REGEX
+        },
+        "3": {
+            # download tag names
+            "get_page_num": True,
+            "regex": None,
+        }
+    }
+
+    input_prompt = "Enter URL(s) (X to cancel): "
+    if (download_option == "3"):
+        input_prompt = "Enter tag name(s) (X to cancel): "
+
     while (True):
         try:
-            page_inputs = input(page_num_prompt).strip()
+            user_input = input(input_prompt).strip()
         except (EOFError):
-            continue
+            return
 
-        if (page_inputs == ""):
-            print_danger("User Error: Please enter a page number")
+        if (user_input == ""):
+            print_danger("User Error: You cannot leave this empty!")
             continue
         elif (user_input in ("X", "x")):
             return
 
-        page_nums_arr = page_inputs.split(sep=",")
-        if (len(page_nums_arr) != len(formatted_urls)):
-            print_danger(
-                "User Error: The number of page numbers entered does not match the number of URLs entered"
-            )
-            continue
+        pixiv_ids = []
+        unique_urls = split_url_input(user_input)
+        regex: re.Pattern[str] = download_table[download_option]["regex"]
+        if (regex is None):
+            pixiv_ids = unique_urls # tag names
+        else:
+            has_invalid_urls = False
+            for url in unique_urls:
+                match = regex.fullmatch(url)
+                if (match is not None):
+                    pixiv_ids.append(match.group(2))
+                    continue
 
-        url_with_page_nums_arr = []
-        for idx, page_num in enumerate(page_nums_arr):
-            page_num = page_num.strip()
-            if (C.PAGE_NUM_REGEX.fullmatch(page_num) is None):
-                print_danger(f"User Error: The page number, {page_num}, is invalid.")
-                print_danger("Please enter in the correct format such as '1, 1-3' and try again.")
+                has_invalid_urls = True
+                error_msg = "User Error: The URL, {url}, is invalid.\n" \
+                            "Please make sure {suggestion} correct and try again.".format(
+                                url=url,
+                                suggestion="all the URLs entered are" \
+                                            if (len(unique_urls) > 1) \
+                                            else "the URL entered is"
+                            )
+                print_danger(error_msg)
                 break
-
-            is_fantia = (website == "fantia")
-            page_nums = page_num.split(sep="-", maxsplit=1)
-            if (len(page_nums) == 1):
-                formatted_url = formatted_urls[idx] + f"?page={page_nums[0]}"
-                if (is_fantia):
-                    # Ensure that the pages go by newest to oldest
-                    formatted_url += "&q[s]=newer&q[tag]="
-
-                url_with_page_nums_arr.append(formatted_url)
+            if (has_invalid_urls):
                 continue
 
-            # if a range was given, make sure the range is valid
-            page_nums = [int(page_num) for page_num in page_nums]
-            if (page_nums[0] > page_nums[1]):
-                page_nums[0], page_nums[1] = page_nums[1], page_nums[0]
+        if (not download_table[download_option]["get_page_num"]):
+            return pixiv_ids
 
-            for page_num in range(page_nums[0], page_nums[1] + 1):
-                formatted_url = formatted_urls[idx] + f"?page={page_num}"
-                if (is_fantia):
-                    # Ensure that the pages go by newest to oldest
-                    formatted_url += "&q[s]=newer&q[tag]="
+        # get page number from user
+        inputs_with_page_nums = get_page_nums(
+            website="pixiv",
+            user_inputs=pixiv_ids,
+            input_name="URL(s)" if (download_option != "3") else "tag name(s)"
+        )
+        if (inputs_with_page_nums is None):
+            return
 
-                url_with_page_nums_arr.append(formatted_url)
-        else:
-            return url_with_page_nums_arr
+        if (download_option != "3"):
+            # for Pixiv artist URLs, the sort order 
+            # is always "new to old" (i.e. descending)
+            return inputs_with_page_nums
+
+        extra_information = """Tag Name Download Order:
+1. From newest to oldest illustration
+2. From oldest to newest illustration
+3. From most popular to least popular illustration
+X. Cancel downloads
+"""
+        get_sort_order = get_input(
+            "Enter the download order for the tag name(s): ",
+            inputs=("1", "2", "3", "x"),
+            default="1",
+            extra_information=extra_information
+        )
+        if (get_sort_order == "x"):
+            return
+
+        sort_order_table = {
+            "1": "date_desc",
+            "2": "date_asc",
+            "3": "popular_desc"
+        }
+        formatted_tag_name_arr = []
+        for tag_name, min_page_num, max_page_num in inputs_with_page_nums:
+            formatted_tag_name_arr.append(
+                (tag_name, min_page_num, max_page_num, sort_order_table[get_sort_order])
+            )
+        return formatted_tag_name_arr
 
 def delete_empty_and_old_logs() -> None:
     """Delete all empty log files and log files
@@ -664,6 +823,22 @@ def user_has_saved_cookies() -> bool:
     """
     return ((C.FANTIA_COOKIE_PATH.exists() and C.FANTIA_COOKIE_PATH.is_file()) or \
             (C.PIXIV_FANBOX_COOKIE_PATH.exists() and C.PIXIV_FANBOX_COOKIE_PATH.is_file()))
+
+def remove_illegal_chars_in_path(string: str) -> str:
+    """Remove illegal characters in a path name.
+
+    Args:
+        string (str):
+            The string to remove illegal characters from.
+
+    Returns:
+        str: 
+            The path name with illegal characters replaced with a dash.
+    """
+    return C.ILLEGAL_PATH_CHARS_REGEX.sub(
+        repl="-", 
+        string=string.strip()
+    )
 
 def remove_folder_if_empty(folder_path: pathlib.Path) -> None:
     """Removes the folder if it is empty.

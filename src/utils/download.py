@@ -8,11 +8,13 @@ from typing import Union, Optional
 if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
     from google_drive import GoogleDrive
-    from functional import async_remove_file, async_file_exists, async_mkdir, log_critical_details_for_post
+    from functional import  async_remove_file, async_file_exists, \
+                            async_mkdir, log_critical_details_for_post, remove_illegal_chars_in_path
 else:
     from .constants import CONSTANTS as C
     from .google_drive import GoogleDrive
-    from .functional import async_remove_file, async_file_exists, async_mkdir, log_critical_details_for_post
+    from .functional import async_remove_file, async_file_exists, \
+                            async_mkdir, log_critical_details_for_post, remove_illegal_chars_in_path
 
 # import third-party libraries
 import httpx
@@ -177,8 +179,8 @@ def create_post_folder(download_path: pathlib.Path,
             The path to the post folder.
     """
     # replace invalid characters in the post title with a dash
-    creator_name = C.ILLEGAL_PATH_CHARS_REGEX.sub(repl="-", string=creator_name.strip())
-    post_title = C.ILLEGAL_PATH_CHARS_REGEX.sub(repl="-", string=post_title.strip())
+    creator_name = remove_illegal_chars_in_path(string=creator_name)
+    post_title = remove_illegal_chars_in_path(string=post_title)
 
     # construct the post folder path
     post_folder_path = download_path.joinpath(creator_name, f"[{post_id}] {post_title}").resolve()

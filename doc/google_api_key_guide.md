@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This guide will help you to get your Google Drive API key required for downloading files from Google Drive.
+This guide will help you get your Google Drive API key required for downloading files from Google Drive.
 
 *You can `ignore` this guide if you do not wish to download any Google Drive links from Pixiv Fanbox posts.*
 

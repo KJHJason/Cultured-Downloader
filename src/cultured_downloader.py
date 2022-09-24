@@ -19,7 +19,8 @@ from colorama import Fore as F, init as colorama_init
 if (C.USER_PLATFORM == "Windows"):
     colorama_init(autoreset=False, convert=True)
 
-def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, None]) -> None:
+def print_main_menu(login_status: dict[str, bool], 
+                    drive_service: Union[str, None], pixiv_api: Union[PixivAPI, None]) -> None:
     """Print the menu for the user to read and enter their desired action.
 
     Args:
@@ -28,40 +29,95 @@ def print_menu(login_status: dict[str, bool], drive_service: Union[GoogleDrive, 
             E.g. {"pixiv_fanbox": False, "fantia": True}
         drive_service (Any | None):
             The Google Drive API Service Object if it exists, None otherwise.
+        pixiv_api (PixivAPI | None):
+            The PixivAPI object if it exists, None otherwise.
 
     Returns:
         None
     """
     fantia_status = login_status.get("fantia")
-    pixiv_status = login_status.get("pixiv_fanbox")
+    pixiv_fanbox_status = login_status.get("pixiv_fanbox")
     print(f"""{F.LIGHTYELLOW_EX}
 > Login Status...
 > Fantia: {'Logged In' if (fantia_status) else 'Guest (Not logged in)'}
-> Pixiv: {'Logged In' if (pixiv_status) else 'Guest (Not logged in)'}
+> Pixiv Fanbox: {'Logged In' if (pixiv_fanbox_status) else 'Guest (Not logged in)'}
 {C.END}
---------------------- {F.LIGHTYELLOW_EX}Download Options{C.END} --------------------
-      {F.GREEN}1. Download images from Fantia post(s){C.END}
-      {F.GREEN}2. Download all Fantia posts from creator(s){C.END}
-      {F.LIGHTCYAN_EX}3. Download images from pixiv Fanbox post(s){C.END}
-      {F.LIGHTCYAN_EX}4. Download all pixiv Fanbox posts from a creator(s){C.END}
+------------ {F.LIGHTYELLOW_EX}Download Options{C.END} ------------
+    {F.GREEN}1. Download Fantia Posts{C.END}
+    {F.LIGHTCYAN_EX}2. Download Pixiv Illustrations{C.END}
+    {F.YELLOW}3. Download Pixiv Fanbox Posts{C.END}
 
----------------------- {F.LIGHTYELLOW_EX}Config Options{C.END} ----------------------
-      {F.LIGHTBLUE_EX}5. Change Default Download Folder{C.END}""")
+------------- {F.LIGHTYELLOW_EX}Config Options{C.END} -------------
+    {F.LIGHTBLUE_EX}4. Change Default Download Folder{C.END}""")
 
     if (drive_service is None):
-        print(f"""      {F.LIGHTBLUE_EX}6. Add Google Drive API Key{C.END}""")
+        print(f"""    {F.LIGHTBLUE_EX}5. Add Google Drive API Key{C.END}""")
     else:
-        print(f"""      {F.LIGHTBLUE_EX}6. Remove Saved Google Drive API Key{C.END}""")
+        print(f"""    {F.LIGHTBLUE_EX}5. Remove Saved Google Drive API Key{C.END}""")
 
-    if (not fantia_status or not pixiv_status):
-        print(f"      {F.LIGHTBLUE_EX}7. Login{C.END}")
-    if (fantia_status or pixiv_status):
-        print(f"      {F.LIGHTBLUE_EX}8. Logout{C.END}")
+    if (pixiv_api is None):
+        print(f"""    {F.LIGHTBLUE_EX}6. Configure Pixiv OAuth{C.END}""")
+    else:
+        print(f"""    {F.LIGHTBLUE_EX}6. Remove Saved Pixiv refresh token{C.END}""")
 
-    print(f"\n---------------------- {F.LIGHTYELLOW_EX}Other Options{C.END} ----------------------")
-    print(f"      {F.LIGHTRED_EX}Y. Report a bug{C.END}")
-    print(f"      {F.RED}X. Shutdown the program{C.END}")
+    if (not fantia_status or not pixiv_fanbox_status):
+        print(f"    {F.LIGHTBLUE_EX}7. Login{C.END}")
+    if (fantia_status or pixiv_fanbox_status):
+        print(f"    {F.LIGHTBLUE_EX}8. Logout{C.END}")
+
+    print(f"\n------------- {F.LIGHTYELLOW_EX}Other Options{C.END} -------------")
+    print(f"    {F.LIGHTRED_EX}Y. Report a bug{C.END}")
+    print(f"    {F.RED}X. Shutdown the program{C.END}")
     print()
+
+def print_fantia_menu() -> None:
+    """Print the Fantia menu for the user to read and enter their desired action.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+    print(f"""
+------------ {F.LIGHTGREEN_EX}Fantia Download Options{C.END} ------------
+
+  {F.LIGHTYELLOW_EX}1. Download images from Fantia post(s){C.END}
+  {F.LIGHTYELLOW_EX}2. Download all Fantia posts from creator(s){C.END}
+  {F.LIGHTRED_EX}B. Return to Main Menu{C.END}
+
+-------------------------------------------------""")
+
+def print_pixiv_fanbox_menu() -> None:
+    """Print the Pixiv Fanbox menu for the user to read and enter their desired action.
+
+    Returns:
+        None
+    """
+    print(f"""
+------------ {F.YELLOW}Pixiv Fanbox Download Options{C.END} ------------
+
+  {F.LIGHTYELLOW_EX}1. Download images from pixiv Fanbox post(s){C.END}
+  {F.LIGHTYELLOW_EX}2. Download all pixiv Fanbox posts from a creator(s){C.END}
+  {F.LIGHTRED_EX}B. Return to Main Menu{C.END}
+
+-------------------------------------------------------""")
+
+def print_pixiv_menu() -> None:
+    """Print the Pixiv menu for the user to read and enter their desired action.
+
+    Returns:
+        None
+    """
+    print(f"""
+----------- {F.LIGHTCYAN_EX}Pixiv Download Options{C.END} -----------
+
+  {F.LIGHTYELLOW_EX}1. Download illustration(s){C.END}
+  {F.LIGHTYELLOW_EX}2. Download from artist(s)/illustrator(s){C.END}
+  {F.LIGHTYELLOW_EX}3. Download using tag name(s){C.END}
+  {F.LIGHTRED_EX}B. Return to Main Menu{C.END}
+
+----------------------------------------------""")
 
 def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
     """Main program function."""
@@ -86,7 +142,7 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             login_status=login_status
         )
     else:
-        print_success("✓ Successfully loaded Fantia cookies.")
+        print_success(format_success_msg("Successfully loaded Fantia cookies."))
 
     if (not login_status.get("pixiv_fanbox", False)):
         pixiv_fanbox_login_result = login(
@@ -95,7 +151,7 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             login_status=login_status
         )
     else:
-        print_success("✓ Successfully loaded Pixiv Fanbox cookies.")
+        print_success(format_success_msg("Successfully loaded Pixiv Fanbox cookies."))
 
     save_cookies(*[fantia_login_result, pixiv_fanbox_login_result])
     def download_process(website: str, creator_page: bool) -> None:
@@ -114,37 +170,121 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
         except (urllib3_exceptions.MaxRetryError):
             print_danger("Connection error, please try again later.")
 
+    def nested_menu(website: str) -> None:
+        """Nested menu for Fantia and Pixiv Fanbox."""
+        while (True):
+            if (website == "fantia"):
+                print_fantia_menu()
+            elif (website == "pixiv_fanbox"):
+                print_pixiv_fanbox_menu()
+            else:
+                raise ValueError("Invalid website name.")
+
+            download_option = get_input(
+                input_msg="Enter download option: ",
+                inputs=("1", "2", "b"),
+                warning="Invalid download option, please enter a valid option from the menu above."
+            )
+            if (download_option == "1"):
+                download_process(website=website, creator_page=False)
+            elif (download_option == "2"):
+                download_process(website=website, creator_page=True)
+            else:
+                return
+
     while (True):
-        print_menu(login_status=login_status, drive_service=drive_service)
+        print_main_menu(
+            login_status=login_status, 
+            drive_service=drive_service,
+            pixiv_api=pixiv_api
+        )
         user_action = get_input(
-            "Enter command: ", regex=C.CMD_REGEX, 
+            input_msg="Enter command: ", 
+            regex=C.CMD_REGEX, 
             warning="Invalid command input, please enter a valid command from the menu above."
         )
         if (user_action == "x"):
             return
 
         elif (user_action == "1"):
-            # Download images from Fantia post(s)
-            download_process(website="fantia", creator_page=False)
+            # Download from Fantia post(s)
+            nested_menu(website="fantia")
 
         elif (user_action == "2"):
-            # Download all Fantia posts from creator(s)
-            download_process(website="fantia", creator_page=True)
+            # Download illustrations from Pixiv
+            if (pixiv_api is None):
+                temp_pixiv_api = PixivAPI()
+                print_warning("Missing Pixiv refresh token, starting Pixiv OAuth process...")
+                refresh_token = temp_pixiv_api.start_oauth_flow()
+                if (refresh_token is not None):
+                    pixiv_api = temp_pixiv_api
+                else:
+                    continue
+
+            while (True):
+                print_pixiv_menu()
+                pixiv_download_option = get_input(
+                    input_msg="Enter download option: ",
+                    inputs=("1", "2", "3", "b"),
+                    warning="Invalid download option, please enter a valid option from the menu above."
+                )
+                if (pixiv_download_option in ("1", "2", "3")):
+                    convert_ugoira = get_input(
+                        input_msg="Do you want to convert Ugoira to GIF? (if found) (Y/n/x to cancel): ",
+                        inputs=("y", "n", "x"),
+                        default="y",
+                        extra_information="Note: Converting Ugoira (animated images) to gifs will take a while to convert."
+                    )
+                    if (convert_ugoira == "x"):
+                        continue
+
+                    convert_ugoira = True if (convert_ugoira == "y") else False
+                    if (pixiv_download_option == "1"):
+                        # Download illustration(s)
+                        illust_ids = pixiv_get_ids_or_tags(pixiv_download_option)
+                        if (illust_ids is not None):
+                            asyncio.run(
+                                pixiv_api.download_multiple_illust(
+                                    base_folder_path=configs.download_directory,
+                                    convert_ugoira=convert_ugoira,
+                                    illust_id_arr=illust_ids,
+                                )
+                            )
+                    elif (pixiv_download_option == "2"):
+                        # Download from artist(s)/illustrator(s)
+                        user_ids = pixiv_get_ids_or_tags(pixiv_download_option)
+                        if (user_ids is not None):
+                            asyncio.run(
+                                pixiv_api.download_multiple_illust(
+                                    base_folder_path=configs.download_directory,
+                                    convert_ugoira=convert_ugoira,
+                                    user_id_arr=user_ids,
+                                )
+                            )
+                    else:
+                        # Download using tag name(s)
+                        tag_names = pixiv_get_ids_or_tags(pixiv_download_option)
+                        if (tag_names is not None):
+                            asyncio.run(
+                                pixiv_api.download_multiple_illust(
+                                    base_folder_path=configs.download_directory,
+                                    convert_ugoira=convert_ugoira,
+                                    tag_name_arr=tag_names,
+                                )
+                            )
+                else:
+                    break
 
         elif (user_action == "3"):
-            # Download images from pixiv Fanbox post(s)
-            download_process(website="pixiv_fanbox", creator_page=False)
+            # Download from Pixiv Fanbox post(s)
+            nested_menu(website="pixiv_fanbox")
 
         elif (user_action == "4"):
-            # Download all pixiv Fanbox posts from a creator(s)
-            download_process(website="pixiv_fanbox", creator_page=True)
-
-        elif (user_action == "5"):
             # Change Default Download Folder
             change_download_directory(configs=configs, print_message=True)
             configs = load_configs()
 
-        elif (user_action == "6"):
+        elif (user_action == "5"):
             # Google Drive API key configurations
             if (drive_service is None):
                 # Setup Google Drive API key
@@ -187,7 +327,7 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
             else:
                 # Remove Google Drive API key
                 remove_drive_api_key = get_input(
-                    input_msg="Are you sure you want to remove your saved Google Drive API Key? (y/N): ",
+                    input_msg="Are you sure you want to delete your saved Google Drive API Key? (y/N): ",
                     inputs=("y", "n"),
                     default="n"
                 )
@@ -195,7 +335,28 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                     continue
                 C.GDRIVE_API_KEY_PATH.unlink(missing_ok=True)
                 drive_service = None
-                print_success("Successfully removed Google Drive API key.")
+                print_success("Successfully deleted Google Drive API key.")
+
+        elif (user_action == "6"):
+            # Pixiv OAuth configurations
+            if (pixiv_api is None):
+                # Setup Pixiv OAuth
+                temp_pixiv_api = PixivAPI()
+                refresh_token = temp_pixiv_api.start_oauth_flow()
+                if (refresh_token is not None):
+                    pixiv_api = temp_pixiv_api
+            else:
+                # Remove Pixiv OAuth
+                remove_pixiv_oauth = get_input(
+                    input_msg="Are you sure you want to delete your saved Pixiv refresh token? (y/N): ",
+                    inputs=("y", "n"),
+                    default="n"
+                )
+                if (remove_pixiv_oauth == "n"):
+                    continue
+                C.PIXIV_REFRESH_TOKEN_PATH.unlink(missing_ok=True)
+                pixiv_api = None
+                print_success("Successfully deleted Pixiv refresh token.")
 
         elif (user_action == "7"):
             # Login
