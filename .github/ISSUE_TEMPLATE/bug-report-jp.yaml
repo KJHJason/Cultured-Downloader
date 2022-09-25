@@ -13,7 +13,7 @@ body:
         注意：　日本語を勉強中なので、簡単な日本語で書いてください。そうでないと、私が問題を理解し解決することができません。
       
   - type: dropdown
-    id: programName
+    id: program_name
     attributes:
       label: どのプログラムでこの問題が発生したのでしょうか？
       multiple: true
@@ -23,20 +23,8 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: browser
-    attributes:
-      label: 使用したWebdriver/ブラウザ
-      multiple: false
-      options:
-        - Chrome/クローム
-        - Edge/エッジ
-        - Firefox/ファイアフォックス
-    validations:
-      required: true
-
   - type: input
-    id: programVersion
+    id: program_version
     attributes:
       label: プログラムバージョン
       description: ご使用のプログラムのバージョンを教えてください (プログラムを実行したとき、またはexeファイル名から確認できます）。
@@ -44,7 +32,7 @@ body:
       required: true
       
   - type: textarea
-    id: stepsToReproduce
+    id: steps_to_reproduce
     attributes:
       label: バグを再現するための手順
       description: これによって、どこが悪かったのかがわかるようになります。
@@ -58,7 +46,7 @@ body:
       required: true
 
   - type: textarea
-    id: expectedBehaviour
+    id: expected_behaviour
     attributes:
       label: プログラムの期待する行動
       description: 期待したことが明確に、かつ簡潔に書かれていること。
@@ -67,10 +55,10 @@ body:
       required: true
 
   - type: textarea
-    id: errorLogText
+    id: error_log_text
     attributes:
       label: 関連するログ出力（ある場合）
-      description: エラーログのテキストをコピー＆ペーストするか、トレースバックやプログラムクラッシュ時に表示されたエラーメッセージのテキストをコピー＆ペーストしてください。
+      description: 生成されたエラーログのテキストを入力してください。
     validations:
       required: false
 

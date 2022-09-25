@@ -15,9 +15,13 @@ from utils import __version__, __author__, __license__
 from urllib3 import exceptions as urllib3_exceptions
 from colorama import Fore as F, init as colorama_init
 
-# escape ANSI escape sequences on Windows terminal
 if (C.USER_PLATFORM == "Windows"):
+    # escape ANSI escape sequences on Windows terminal
     colorama_init(autoreset=False, convert=True)
+
+    # A temporary fix for ProactorBasePipeTransport issues on
+    # Windows OS Machines that may appear for older versions of Python
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 def print_main_menu(login_status: dict[str, bool], 
                     drive_service: Union[str, None], pixiv_api: Union[PixivAPI, None]) -> None:
@@ -237,41 +241,53 @@ def main_program(driver: webdriver.Chrome, configs: ConfigSchema) -> None:
                     )
                     if (convert_ugoira == "x"):
                         continue
+                    convert_ugoira = (convert_ugoira == "y")
 
-                    convert_ugoira = True if (convert_ugoira == "y") else False
+                    if (convert_ugoira):
+                        delete_ugoira_zip = get_input(
+                            input_msg="Do you want to delete the downloaded Ugoira zip file after converting to GIF? (Y/n/x to cancel): ",
+                            inputs=("y", "n", "x"),
+                            default="y"
+                        )
+                        if (delete_ugoira_zip == "x"):
+                            continue
+                        delete_ugoira_zip = (delete_ugoira_zip == "y")
+                    else:
+                        delete_ugoira_zip = False
+
+                    def run_pixiv_download(illust_id_arr: Optional[list] = None, 
+                                           user_id_arr: Optional[list] = None, 
+                                           tag_name_arr: Optional[list] = None) -> None:
+                        """Run Pixiv download process."""
+                        try:
+                            asyncio.run(
+                                pixiv_api.download_multiple_illust(
+                                    base_folder_path=configs.download_directory,
+                                    convert_ugoira=convert_ugoira,
+                                    illust_id_arr=illust_id_arr,
+                                    user_id_arr=user_id_arr,
+                                    tag_name_arr=tag_name_arr,
+                                    delete_ugoira_zip=delete_ugoira_zip,
+                                )
+                            )
+                        except (KeyboardInterrupt):
+                            return
+
                     if (pixiv_download_option == "1"):
                         # Download illustration(s)
                         illust_ids = pixiv_get_ids_or_tags(pixiv_download_option)
                         if (illust_ids is not None):
-                            asyncio.run(
-                                pixiv_api.download_multiple_illust(
-                                    base_folder_path=configs.download_directory,
-                                    convert_ugoira=convert_ugoira,
-                                    illust_id_arr=illust_ids,
-                                )
-                            )
+                            run_pixiv_download(illust_id_arr=illust_ids)
                     elif (pixiv_download_option == "2"):
                         # Download from artist(s)/illustrator(s)
                         user_ids = pixiv_get_ids_or_tags(pixiv_download_option)
                         if (user_ids is not None):
-                            asyncio.run(
-                                pixiv_api.download_multiple_illust(
-                                    base_folder_path=configs.download_directory,
-                                    convert_ugoira=convert_ugoira,
-                                    user_id_arr=user_ids,
-                                )
-                            )
+                            run_pixiv_download(user_id_arr=user_ids)
                     else:
                         # Download using tag name(s)
                         tag_names = pixiv_get_ids_or_tags(pixiv_download_option)
                         if (tag_names is not None):
-                            asyncio.run(
-                                pixiv_api.download_multiple_illust(
-                                    base_folder_path=configs.download_directory,
-                                    convert_ugoira=convert_ugoira,
-                                    tag_name_arr=tag_names,
-                                )
-                            )
+                            run_pixiv_download(tag_name_arr=tag_names)
                 else:
                     break
 
@@ -408,11 +424,6 @@ def initialise() -> None:
     """Initialises the program and run the main program afterwards."""
     if (not C.DEBUG_MODE):
         sys.excepthook = exception_handler
-
-    if (C.USER_PLATFORM == "Windows"):
-        # A temporary fix for ProactorBasePipeTransport issues on
-        # Windows OS Machines that may appear for older versions of Python
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     print(f"""
 =========================================== {F.LIGHTBLUE_EX}CULTURED DOWNLOADER v{__version__ }{C.END} ===========================================

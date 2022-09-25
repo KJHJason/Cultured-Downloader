@@ -452,7 +452,7 @@ class PixivAPI:
 
         shutil.rmtree(extracted_image_path)
         if (delete_zip):
-            zipfile_path.unlink()
+            zipfile_path.unlink(missing_ok=True)
 
     async def download_illust(self, illust_url: str, illust_id: str, download_path: pathlib.Path,
                               failed_downloads_arr: Optional[list] = None) -> None:
@@ -647,7 +647,8 @@ class PixivAPI:
 
                 illusts.extend(r["illusts"])
                 next_url = r.get("next_url")
-                self.__sleep_after_request()
+                if (next_url is not None):
+                    self.__sleep_after_request()
 
         return illusts
 
@@ -729,7 +730,8 @@ class PixivAPI:
 
                 illusts.extend(r["illusts"])
                 next_url = r.get("next_url")
-                self.__sleep_after_request()
+                if (next_url is not None):
+                    self.__sleep_after_request()
 
         return illusts
 
@@ -737,11 +739,12 @@ class PixivAPI:
     def __sleep_after_request():
         """Slow down the requests to prevent rate limiting 
         and to avoid being blocked by Cloudflare."""
-        return time.sleep(random.uniform(0.8, 2))
+        return time.sleep(random.uniform(0.9, 2))
 
     async def download_multiple_illust(
         self, base_folder_path: Union[pathlib.Path, str], 
         convert_ugoira: bool,
+        delete_ugoira_zip: bool,
         illust_id_arr: Optional[list[str]] = None, 
         user_id_arr: Optional[list[tuple[str, int, int]]] = None, 
         tag_name_arr: Optional[list[tuple[str, int, int]]] = None) -> None:
@@ -753,6 +756,8 @@ class PixivAPI:
                 The user's default download folder path.
             convert_ugoira (bool):
                 Whether to convert ugoira to gif.
+            delete_ugoira_zip (bool):
+                Whether to delete the downloaded ugoira zip file.
             illust_id_arr (list[str], optional):
                 Array of illustration IDs to download. Defaults to None.
             user_id_arr (list[tuple[str, int, int]], optional):
@@ -765,18 +770,24 @@ class PixivAPI:
         Returns:
             None
         """
-        illust_json_arr = []
+        illust_json_arr: list[dict] = []
         failed_api_requests: list[str] = []
         download_illust_id, download_user_illust, download_tag_name = False, False, False
         if (illust_id_arr):
-            for illust_id in illust_id_arr:
+            last_element = len(illust_id_arr) - 1
+            for i, illust_id in enumerate(illust_id_arr):
                 illust_json = self.get_illust_details(illust_id, failed_api_requests)
-                self.__sleep_after_request()
                 if (illust_json is not None):
                     illust_json_arr.append(illust_json)
+
+                if (i != last_element):
+                    self.__sleep_after_request()
             download_illust_id = True
+
         elif (user_id_arr):
-            for user_id, min_page_num, max_page_num in user_id_arr:
+            last_element = len(user_id_arr) - 1
+            for i, user_download_info in enumerate(user_id_arr):
+                user_id, min_page_num, max_page_num = user_download_info
                 user_illusts = self.get_illustrator_illusts(
                     user_id=user_id, 
                     min_page_num=min_page_num,
@@ -785,9 +796,16 @@ class PixivAPI:
                 )
                 if (user_illusts is not None):
                     illust_json_arr.extend(user_illusts)
+
+                if (i != last_element):
+                    self.__sleep_after_request()
             download_user_illust = True
+
         elif (tag_name_arr):
-            for tag_name, min_page_num, max_page_num, sort_order in tag_name_arr:
+            last_element = len(tag_name_arr) - 1
+            for i, tag_download_info in enumerate(tag_name_arr):
+                tag_name, min_page_num, \
+                    max_page_num, sort_order = tag_download_info
                 tag_illusts = self.get_tag_illusts(
                     tag_name=tag_name, 
                     min_page_num=min_page_num,
@@ -798,7 +816,11 @@ class PixivAPI:
                 )
                 if (tag_illusts is not None):
                     illust_json_arr.extend(tag_illusts)
+
+                if (i != last_element):
+                    self.__sleep_after_request()
             download_tag_name = True
+
         else:
             return # nothing to download
 
@@ -808,6 +830,7 @@ class PixivAPI:
 
         if (isinstance(base_folder_path, str)):
             base_folder_path = pathlib.Path(base_folder_path)
+        base_folder_path = base_folder_path.joinpath("Pixiv")
 
         # parse the JSON responses
         spinner_base_msg = "Processed {progress} out of " + f"{len(illust_json_arr)} JSON responses"
@@ -821,13 +844,9 @@ class PixivAPI:
             completion_msg=f"Processed {len(illust_json_arr)} JSON responses from Pixiv's API!\n",
             cancelled_msg="Cancelled processing JSON responses from Pixiv's API!\n",
         ) as spinner:
-            base_folder_path = base_folder_path.joinpath("Pixiv")
             ugoira_urls: list[tuple[str, dict, dict[str, int], pathlib.Path]] = []
             illust_urls: list[tuple[str, str, pathlib.Path]] = []
             for i, illust_json in enumerate(illust_json_arr):
-                spinner.message = spinner_base_msg.format(
-                    progress=i + 1
-                )
                 illust_id = illust_json["id"]
                 illust_title = remove_illegal_chars_in_path(
                     string=illust_json["title"]
@@ -844,24 +863,35 @@ class PixivAPI:
                 if (illust_type == "ugoira"): # animated images which will require a separate API call
                     ugoira_json = self.get_ugoira_metadata(illust_id, failed_api_requests)
                     self.__sleep_after_request()
+
                     ugoira_url: str = ugoira_json["zip_urls"]["medium"]
                     if ("600x600" in ugoira_url): # since the API will only return the 600x600 URL
                         ugoira_url = ugoira_url.replace("600x600", "1920x1080", 1)
                     frames_info = {frame["file"]: frame["delay"] for frame in ugoira_json["frames"]}
+
                     ugoira_urls.append(
                         (illust_id, ugoira_url, frames_info, illust_folder)
+                    )
+                    spinner.message = spinner_base_msg.format(
+                        progress=i + 1
                     )
                     continue
 
                 # If the post only has one image,
-                illust_url = illust_json.get("meta_single_page")
-                if (illust_url is not None and illust_url):
+                illust_url = illust_json.get("meta_single_page", False)
+                if (illust_url):
                     illust_urls.append((illust_id, illust_url["original_image_url"], illust_folder))
+                    spinner.message = spinner_base_msg.format(
+                        progress=i + 1
+                    )
                     continue
 
                 # For posts with multiple images,
                 for illust_url in illust_json.get("meta_pages", []):
                     illust_urls.append((illust_id, illust_url["image_urls"]["original"], illust_folder))
+                spinner.message = spinner_base_msg.format(
+                    progress=i + 1
+                )
 
             log_filename = "failed_pixiv_api_calls.log"
             for id_request in failed_api_requests:
@@ -987,6 +1017,7 @@ class PixivAPI:
                         zipfile_path=illust_folder.joinpath(
                             ugoira_url.rsplit(sep="/", maxsplit=1)[1]
                         ).resolve(),
+                        delete_zip=delete_ugoira_zip
                     )
                     spinner.message = spinner_base_msg.format(
                         progress=i + 1

@@ -17,7 +17,6 @@ Please add your summary here...
 ## Checklist (Tick those that apply):
 
 - [ ] I have read the [contribution guidelines](https://github.com/KJHJason/Cultured-Downloader/blob/main/CONTRIBUTING.md) and have adhered to it
-- [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation

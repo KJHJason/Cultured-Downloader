@@ -276,7 +276,7 @@ def change_download_directory(configs: Optional[ConfigSchema] = None,
 
 def get_input(input_msg: str, inputs: Optional[Union[tuple[str], list[str]]] = None, 
               regex: re.Pattern[str] = None, default: Optional[str] = None, warning: str = None, 
-              extra_information: Optional[str] = None, is_case_sensitive: Optional[bool] = False) -> Any:
+              extra_information: Optional[str] = None, is_case_sensitive: Optional[bool] = False) -> str:
     """Get the expected input from the user.
 
     Args:
@@ -835,6 +835,7 @@ def remove_illegal_chars_in_path(string: str) -> str:
         str: 
             The path name with illegal characters replaced with a dash.
     """
+    string = string.replace(".", " ")
     return C.ILLEGAL_PATH_CHARS_REGEX.sub(
         repl="-", 
         string=string.strip()
