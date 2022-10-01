@@ -334,10 +334,6 @@ def detect_password_in_text(post_folder_path: pathlib.Path, text: str) -> bool:
         Bool: True if the text contains a password, otherwise False.
     """
     password_filename = "detected_passwords.txt"
-    password_text_path = post_folder_path.joinpath(password_filename)
-    if (password_text_path.exists() and password_text_path.is_file() and password_text_path.stat().st_size > 0):
-        return False
-
     for password_text in C.PASSWORD_TEXTS:
         if (password_text in text):
             log_critical_details_for_post(
@@ -379,7 +375,7 @@ def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]
             post_folder=post_folder_path,
             message=f"Google Drive link detected: {text}\n",
             log_filename="detected_gdrive_links.txt",
-            ignore_if_exists=True
+            ignore_if_exists=False
         )
         return True
 
@@ -391,7 +387,7 @@ def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]
             post_folder=post_folder_path,
             message=f"Google Drive link detected in the post's description:\n{text}\n",
             log_filename="detected_gdrive_links.txt",
-            ignore_if_exists=True
+            ignore_if_exists=False
         )
         return True
     return False
@@ -413,10 +409,6 @@ def detect_other_external_download_links(text: str, is_url: bool,
         Bool: True if the text contains an external link, otherwise False.
     """
     filename = "detected_external_links.txt"
-    text_path = post_folder_path.joinpath(filename)
-    if (text_path.exists() and text_path.is_file() and text_path.stat().st_size > 0):
-        return False
-
     for url in C.OTHER_FILE_HOSTING_PROVIDERS:
         if (url in text):
             if (is_url):
