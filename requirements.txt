@@ -1,5 +1,5 @@
 selenium>=4.1.2,<5.0.0
-webdriver-manager==3.5.3
+webdriver-manager==3.8.4
 aiofiles>=22.1.0
 httpx[http2]>=0.23.0
 colorama>=0.4.4
