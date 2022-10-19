@@ -34,7 +34,7 @@ OS_USER_AGENTS = {
 DIRECTORIES = {
     "Windows": "AppData/Roaming/Cultured-Downloader",
     "Linux": ".config/Cultured-Downloader",
-    "Darwin": "Library/Preferences/Cultured-Downloader"
+    "Darwin": "Library/Application Support/Cultured-Downloader"
 }
 
 appDir = pathlib.Path.home().absolute()

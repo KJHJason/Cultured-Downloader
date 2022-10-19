@@ -286,7 +286,7 @@ class PixivAPI:
             str:
                 URL of the illustration.
         """
-        return f"https://www.pixiv.net/en/artworks/{illust_id}"
+        return f"https://www.pixiv.net/artworks/{illust_id}"
 
     def __append_to_failed_requests_arr(self, failed_requests_arr: Union[list, None], to_append: Any) -> None:
         """Append to failed requests array if failed_requests_arr is not None.
