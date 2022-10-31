@@ -5,4 +5,4 @@ httpx[http2]==0.23.0
 coloram==0.4.4
 cryptography==38.0.1
 pydantic==1.10.2
-Pillow==9.2.0
+Pillow==9.3.0
