@@ -3,6 +3,6 @@ webdriver-manager==3.8.5
 aiofiles==22.1.0
 httpx[http2]==0.23.1
 colorama==0.4.4
-cryptography==38.0.4
+cryptography==39.0.1
 pydantic==1.10.2
 Pillow==9.3.0
