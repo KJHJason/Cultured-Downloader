@@ -6,3 +6,4 @@ colorama==0.4.6
 cryptography==39.0.2
 pydantic==1.10.5
 Pillow==9.3.0
+lxml==4.9.2

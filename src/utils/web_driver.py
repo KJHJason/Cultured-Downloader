@@ -1,4 +1,5 @@
 # import third-party libraries
+from lxml import html
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -544,6 +545,34 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
     cookie = format_cookie_to_cookiejar(
         login_status.get(website)
     )
+
+    csrf_token = None
+    if website == "fantia":
+        with httpx.Client(http2=True, cookies=cookie, timeout=10, headers=C.BASE_REQ_HEADERS.copy()) as client:
+            for retry_counter in range(1, C.MAX_RETRIES + 1):
+                try:
+                    response = client.get("https://fantia.jp/")
+                    if response.status_code == 404:
+                        log_failed_post_api_call(
+                            download_path=download_path, 
+                            post_url=post_url
+                        )
+                        return
+
+                    response.raise_for_status()
+                    html_tree = html.fromstring(response.text)
+                    csrf_token = html_tree.xpath("//meta[@name='csrf-token']/@content")[0]
+                except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
+                    if retry_counter == C.MAX_RETRIES:
+                        print_danger(
+                            f"Retrieval of CSRF token for Fantia has failed after {C.MAX_RETRIES} retries.\n"
+                            f"More info: {e}"
+                        )
+                        return
+                    time.sleep(C.RETRY_DELAY)
+                else:
+                    break
+
     base_spinner_msg = " ".join([
         "Retrieved and processed {progress}",
         f"out of {len(urls_arr)}",
@@ -586,6 +615,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                         post_url=post_url,
                         json_arr=json_to_process,
                         download_path=download_path,
+                        csrf_token=csrf_token,
                     )
                 )
             )

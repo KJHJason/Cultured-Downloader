@@ -8,3 +8,4 @@ set_exe_info.py
 ExperimentalCulturedDownloader.py
 build
 dist
+venv

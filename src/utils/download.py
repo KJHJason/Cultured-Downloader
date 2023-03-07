@@ -206,7 +206,15 @@ def log_failed_post_api_call(download_path: pathlib.Path, post_url: str) -> None
         log_filename="download_failures.log"
     )
 
-async def get_post_details(download_path: pathlib.Path, website: str, post_id: str, post_url: str, json_arr: list, cookie: Optional[CookieJar] = None) -> None:
+async def get_post_details(
+    download_path: pathlib.Path, 
+    website: str, 
+    post_id: str, 
+    post_url: str, 
+    json_arr: list, 
+    cookie: Optional[CookieJar] = None, 
+    csrf_token: Optional[str] = None,
+) -> None:
     """Get the details of a post using the respective API of the given website.
 
     Args:
@@ -222,12 +230,22 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
             The array to append the JSON response to.
         cookie (CookieJar, Optional):
             The user's cookie to use to get access to the paywall-restricted post contents.
+        csrf_token (str, Optional):
+            The CSRF token to use to communicate with the API.
 
     Returns:
         The JSON response of the post details.
+
+    Raises:
+        ValueError:
+            If the website is invalid or the CSRF token is not provided for Fantia API requests.
     """
     if (website == "fantia"):
         headers = C.BASE_REQ_HEADERS.copy()
+        if csrf_token is None:
+            raise ValueError("CSRF token is required for Fantia API requests.")
+        headers["x-csrf-token"] = csrf_token
+
         api_url = C.FANTIA_API_URL
         main_json = "post"
     elif (website == "pixiv_fanbox"):
