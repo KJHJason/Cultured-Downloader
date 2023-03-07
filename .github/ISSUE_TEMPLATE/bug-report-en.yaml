@@ -12,7 +12,7 @@ body:
         Thanks for taking the time to fill out this bug report! 
       
   - type: dropdown
-    id: programName
+    id: program_name
     attributes:
       label: Which program are you seeing this problem on?
       multiple: true
@@ -22,20 +22,8 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: browser
-    attributes:
-      label: Webdriver/Browser Used
-      multiple: false
-      options:
-        - Chrome
-        - Edge
-        - Firefox
-    validations:
-      required: true
-
   - type: input
-    id: programVersion
+    id: program_version
     attributes:
       label: Program Version
       description: What version of the program are you using? (Can be found when running the program or from the exe file name)
@@ -43,7 +31,7 @@ body:
       required: true
       
   - type: textarea
-    id: stepsToReproduce
+    id: steps_to_reproduce
     attributes:
       label: Steps to reproduce the bug
       description: This will assist me in finding where it went wrong.
@@ -57,7 +45,7 @@ body:
       required: true
 
   - type: textarea
-    id: expectedBehaviour
+    id: expected_behaviour
     attributes:
       label: Expected behaviour
       description: A clear and concise description of what you expected to happen.
@@ -66,10 +54,10 @@ body:
       required: true
 
   - type: textarea
-    id: errorLogText
+    id: error_log_text
     attributes:
       label: Relevant log output (If any)
-      description: Please copy and paste the text in the error log or copy and paste any tracebacks or any error message text that appeared during a program crash.
+      description: Please copy and paste the text in the error log that was generated.
     validations:
       required: false
 

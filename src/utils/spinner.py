@@ -1,7 +1,7 @@
 # import Python's standard libraries
 import time
-import json
 import types
+import asyncio
 import itertools
 import threading
 import functools
@@ -12,9 +12,9 @@ from colorama import Fore as F, Style as S
 
 # import local files
 if (__package__ is None or __package__ == ""):
-    from constants import CONSTANTS as C
+    from spinner_types import SpinnerTypes
 else:
-    from .constants import CONSTANTS as C
+    from .spinner_types import SpinnerTypes
 
 def convert_str_to_ansi(colour: Union[str, None]) -> str:
     """Convert a string to ANSI escape code using colorama.
@@ -53,6 +53,38 @@ def convert_str_to_ansi(colour: Union[str, None]) -> str:
 
     return colour_table[colour]
 
+def format_success_msg(msg: Union[str, None]) -> Union[str, None]:
+    """Format the success message with a check mark.
+
+    Args:
+        msg (str | None):
+            The message to format.
+
+    Returns:
+        str | None: 
+            The formatted message.
+    """
+    if (msg is None):
+        return
+    else:
+        return " ".join([f"{F.LIGHTGREEN_EX}✓", msg, S.RESET_ALL])
+
+def format_error_msg(msg: Union[str, None]) -> Union[str, None]:
+    """Format the error message with a cross.
+
+    Args:
+        msg (str | None):
+            The message to format.
+
+    Returns:
+        str | None:
+            The formatted message.
+    """
+    if (msg is None):
+        return
+    else:
+        return " ".join([f"{F.LIGHTRED_EX}✗", msg, S.RESET_ALL])
+
 class Spinner:
     """Spinner class for displaying a spinner animation
     with a text message in the terminal on a separate thread.
@@ -90,8 +122,8 @@ class Spinner:
         self.__spinner = itertools.cycle(spinner_info["frames"])
         self.__interval = 0.001 * spinner_info["interval"]
         self.message = message
-        self.completion_msg = completion_msg
-        self.cancelled_msg = cancelled_msg
+        self.completion_msg = format_success_msg(completion_msg)
+        self.cancelled_msg = format_error_msg(cancelled_msg)
         self.__colour = convert_str_to_ansi(colour)
         self.__position = spinner_position.lower()
         if (self.__position not in ("left", "right")):
@@ -102,14 +134,15 @@ class Spinner:
         self.__stop_event = None
 
     def load_spinner(self, spinner_type: str) -> list[str]:
-        """Load the spinner type from the JSON file in the json folder
-        which was obtained from https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json"""
-        with open(C.SPINNERS_JSON_PATH, "r", encoding="utf-8") as f:
-            spinners = json.load(f)
-
-        if (spinner_type not in spinners):
-            raise ValueError("Invalid spinner type.")
-        return spinners[spinner_type]
+        """Load the spinner type from the SpinnerTypes Enum object."""
+        if (spinner_type not in SpinnerTypes.__members__):
+            raise ValueError(
+                f"Invalid spinner type, '{spinner_type}'.\n" \
+                "Please refer to the SpinnerTypes enum or refer to " \
+                "https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json " \
+                "for a list of valid spinner types."
+            )
+        return SpinnerTypes[spinner_type].value
 
     def get_spin(self) -> itertools.cycle:
         """returns the spinner cycle."""
@@ -160,11 +193,11 @@ class Spinner:
         if (not error):
             if (manually_stopped):
                 if (self.cancelled_msg is not None):
-                    print(f"\r❌  {F.LIGHTRED_EX}", self.CLEAR_LINE, self.cancelled_msg, sep="", end=S.RESET_ALL)
+                    print("\r", self.CLEAR_LINE, self.cancelled_msg, sep="", end="")
                     return
             else:
                 if (self.completion_msg is not None):
-                    print(f"\r✔️  {F.LIGHTGREEN_EX}", self.CLEAR_LINE, self.completion_msg, sep="", end=S.RESET_ALL)
+                    print("\r", self.CLEAR_LINE, self.completion_msg, sep="", end="")
                     return
 
         print("\r", self.CLEAR_LINE, end=S.RESET_ALL, sep="")
@@ -178,10 +211,11 @@ class Spinner:
         exc: Optional[BaseException],
         traceback: Optional[types.TracebackType]) -> None:
         """Stops the spinner when used in a context manager."""
-        if (exc_type is KeyboardInterrupt):
-            self.stop(manually_stopped=True)
-        elif (exc_type is not None):
-            self.stop(error=True)
+        if (exc_type is not None):
+            if (exc_type is asyncio.CancelledError or issubclass(exc_type, KeyboardInterrupt)):
+                self.stop(manually_stopped=True)
+            else:
+                self.stop(error=True)
         else:
             self.stop()
 
@@ -193,9 +227,17 @@ class Spinner:
                 return func(*args, **kwargs)
         return wrapper
 
+    def __str__(self) -> str:
+        """Returns the string representation of the spinner object."""
+        return f"Spinner<message={self.message}, colour={self.__colour}, spinner_type={self.__spinner}, spinner_position={self.__position}, completion_msg={self.completion_msg}, cancelled_msg={self.cancelled_msg}>"
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the spinner object."""
+        return self.__str__()
+
 # Test codes below
 if (__name__ == "__main__"):
     import time
 
-    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="bouncingBar", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
+    with Spinner("loading", colour="yellow", spinner_position="left", spinner_type="material", completion_msg="Done", cancelled_msg="Cancelled\n") as s:
         time.sleep(12)

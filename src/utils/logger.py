@@ -35,11 +35,11 @@ def exception_handler(
     exc: Optional[BaseException],
     traceback: Optional[types.TracebackType]) -> NoReturn:
     """Use a custom logger to log exceptions to a file."""
-    logger.exception(f"Uncaught {exc_type.__name__}", exc_info=(exc_type, exc, traceback))
+    logger.exception(f"\nUncaught {exc_type.__name__}", exc_info=(exc_type, exc, traceback))
     print(f"\n{F.LIGHTRED_EX}Uncaught {exc_type.__name__}")
     print(f"Please provide the developer with the error log generated at\n{logger.handlers[0].baseFilename}{S.RESET_ALL}")
 
-    input("Please press ENTER to exit...")
+    input("Please press ENTER to shutdown the program...")
     return sys.exit(1)
 
 logger = get_logger()

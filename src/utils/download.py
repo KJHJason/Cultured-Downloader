@@ -6,46 +6,20 @@ from typing import Union, Optional
 
 # import local files
 if (__package__ is None or __package__ == ""):
-    from crucial import install_dependency, __version__
     from constants import CONSTANTS as C
-    from google_client import GoogleDrive
+    from google_drive import GoogleDrive
+    from functional import  async_remove_file, async_file_exists, \
+                            async_mkdir, log_critical_details_for_post, remove_illegal_chars_in_path
 else:
-    from .crucial import install_dependency, __version__
     from .constants import CONSTANTS as C
-    from .google_client import GoogleDrive
+    from .google_drive import GoogleDrive
+    from .functional import async_remove_file, async_file_exists, \
+                            async_mkdir, log_critical_details_for_post, remove_illegal_chars_in_path
 
 # import third-party libraries
 import httpx
+import aiofiles
 from http.cookiejar import Cookie, CookieJar
-
-try:
-    import aiofiles
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="aiofiles>=0.8.0")
-    import aiofiles
-
-try:
-    import gdown
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="gdown>=4.4.0")
-    import gdown
-
-def log_critical_details_for_post(post_folder: pathlib.Path, message: str, 
-                                  log_filename: Optional[str] = "read_me.log") -> None:
-    """Log critical details about a post to a log file.
-
-    Args:
-        post_folder (pathlib.Path):
-            The path to the post's folder.
-        message (str):
-            The message to log.
-        log_filename (Optional[str], optional):
-            The name of the log file. Defaults to "read_me.log".
-    """
-    log_file = post_folder.joinpath(log_filename)
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(message)
-        f.write("\n")
 
 def log_failed_downloads(url_info: tuple[str, str], website: str, folder_path: pathlib.Path) -> None:
     """Log failed downloads to a log file.
@@ -105,8 +79,9 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         folder_path = folder_path.joinpath("attachments")
     elif (content_type == C.IMAGE_FILE):
         folder_path = folder_path.joinpath("images")
-    folder_path.mkdir(parents=True, exist_ok=True)
+    await async_mkdir(folder_path, parents=True, exist_ok=True)
 
+    file_path = None
     async with httpx.AsyncClient(
         headers=C.BASE_REQ_HEADERS, 
         http2=True, 
@@ -114,28 +89,32 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
         follow_redirects=follow_redirects,
         cookies=cookie
     ) as client:
-        for retry_counter in range(C.MAX_RETRIES):
+        for retry_counter in range(1, C.MAX_RETRIES + 1):
             try:
                 async with client.stream(method="GET", url=url) as response:
                     response.raise_for_status()
 
                     file_path = folder_path.joinpath(
-                        response.url.path.rsplit(sep="/", maxsplit=1)[1]
-                    )
-                    if (file_path.exists() and file_path.is_file()):
+                        response.url.path.rsplit(sep="/", maxsplit=1)[1].strip()
+                    ).resolve()
+                    if (await async_file_exists(file_path)):
                         return
 
                     async with aiofiles.open(file_path, "wb") as f:
                         async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
                             await f.write(chunk)
-            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, httpx.StreamError):
-                file_path.unlink(missing_ok=True)
-                if (retry_counter == C.MAX_RETRIES_CHECK):
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError):
+                await async_remove_file(file_path)
+                if (retry_counter == C.MAX_RETRIES):
                     failed_downloads_arr.append(
                         (url_info, website, folder_path)
                     )
                     return
                 await asyncio.sleep(C.RETRY_DELAY)
+            except (asyncio.CancelledError):
+                if (file_path is not None):
+                    await async_remove_file(file_path)
+                raise
             else:
                 break
 
@@ -199,7 +178,12 @@ def create_post_folder(download_path: pathlib.Path,
         pathlib.Path:
             The path to the post folder.
     """
-    post_folder_path = download_path.joinpath(creator_name, f"[{post_id}] {post_title}")
+    # replace invalid characters in the post title with a dash
+    creator_name = remove_illegal_chars_in_path(string=creator_name)
+    post_title = remove_illegal_chars_in_path(string=post_title)
+
+    # construct the post folder path
+    post_folder_path = download_path.joinpath(creator_name, f"[{post_id}] {post_title}").resolve()
     post_folder_path.mkdir(parents=True, exist_ok=True)
     return post_folder_path
 
@@ -222,7 +206,15 @@ def log_failed_post_api_call(download_path: pathlib.Path, post_url: str) -> None
         log_filename="download_failures.log"
     )
 
-async def get_post_details(download_path: pathlib.Path, website: str, post_id: str, post_url: str, json_arr: list, cookie: Optional[CookieJar] = None) -> None:
+async def get_post_details(
+    download_path: pathlib.Path, 
+    website: str, 
+    post_id: str, 
+    post_url: str, 
+    json_arr: list, 
+    cookie: Optional[CookieJar] = None, 
+    csrf_token: Optional[str] = None,
+) -> None:
     """Get the details of a post using the respective API of the given website.
 
     Args:
@@ -238,12 +230,22 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
             The array to append the JSON response to.
         cookie (CookieJar, Optional):
             The user's cookie to use to get access to the paywall-restricted post contents.
+        csrf_token (str, Optional):
+            The CSRF token to use to communicate with the API.
 
     Returns:
         The JSON response of the post details.
+
+    Raises:
+        ValueError:
+            If the website is invalid or the CSRF token is not provided for Fantia API requests.
     """
     if (website == "fantia"):
         headers = C.BASE_REQ_HEADERS.copy()
+        if csrf_token is None:
+            raise ValueError("CSRF token is required for Fantia API requests.")
+        headers["x-csrf-token"] = csrf_token
+
         api_url = C.FANTIA_API_URL
         main_json = "post"
     elif (website == "pixiv_fanbox"):
@@ -255,7 +257,7 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
 
     headers["Referer"] = post_url
     async with httpx.AsyncClient(http2=True, cookies=cookie, timeout=30, headers=headers) as client:
-        for retry_counter in range(C.MAX_RETRIES):
+        for retry_counter in range(1, C.MAX_RETRIES + 1):
             try:
                 response = await client.get(api_url + post_id)
                 if (response.status_code == 404):
@@ -267,8 +269,8 @@ async def get_post_details(download_path: pathlib.Path, website: str, post_id: s
 
                 response.raise_for_status()
                 json_response = response.json()
-            except (httpx.RequestError, httpx.HTTPStatusError, httpx.HTTPError, json.decoder.JSONDecodeError):
-                if (retry_counter == C.MAX_RETRIES_CHECK):
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, json.JSONDecodeError):
+                if (retry_counter == C.MAX_RETRIES):
                     log_failed_post_api_call(
                         download_path=download_path, 
                         post_url=post_url
@@ -350,10 +352,6 @@ def detect_password_in_text(post_folder_path: pathlib.Path, text: str) -> bool:
         Bool: True if the text contains a password, otherwise False.
     """
     password_filename = "detected_passwords.txt"
-    password_text_path = post_folder_path.joinpath(password_filename)
-    if (password_text_path.exists() and password_text_path.is_file() and password_text_path.stat().st_size > 0):
-        return False
-
     for password_text in C.PASSWORD_TEXTS:
         if (password_text in text):
             log_critical_details_for_post(
@@ -365,8 +363,9 @@ def detect_password_in_text(post_folder_path: pathlib.Path, text: str) -> bool:
             return True
     return False
 
-def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]) -> bool:
-    """Detect if the given text contains a Google Drive link.
+def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str],
+                        gdrive_service: GoogleDrive, post_folder_path: pathlib.Path) -> bool:
+    """Detect if the given text contains a Google Drive link and logs it.
 
     Args:
         text (str):
@@ -375,19 +374,39 @@ def detect_gdrive_links(text: str, is_url: bool, urls_to_download_arr: list[str]
             Whether the text is a URL or not.
         urls_to_download_arr (list[str]):
             The array of URLs to download to append the Google Drive link to.
+        gdrive_service (GoogleDrive):
+            To check if the Google Drive Service object is None, 
+            in this case, the Google Drive link will only be logged instead.
+        post_folder_path (pathlib.Path):
+            The path to the folder where the Google Drive link will be logged.
 
     Returns:
-        Bool: True if the text contains a Google Drive link, otherwise False.
+        Bool: 
+            True if the text contains a Google Drive link, otherwise False.
     """
     DRIVE_LINK = "https://drive.google.com"
-    if (is_url):
-        if (text.startswith(DRIVE_LINK)):
+    if (is_url and text.startswith(DRIVE_LINK)):
+        if (gdrive_service is not None):
             urls_to_download_arr.append((text, C.GDRIVE_FILE))
-            return True
-        return False
 
-    if (DRIVE_LINK in text):
-        urls_to_download_arr.append((text, C.GDRIVE_FILE))
+        log_critical_details_for_post(
+            post_folder=post_folder_path,
+            message=f"Google Drive link detected: {text}\n",
+            log_filename="detected_gdrive_links.txt",
+            ignore_if_exists=False
+        )
+        return True
+
+    if (not is_url and DRIVE_LINK in text):
+        if (gdrive_service is not None):
+            urls_to_download_arr.append((text, C.GDRIVE_FILE))
+
+        log_critical_details_for_post(
+            post_folder=post_folder_path,
+            message=f"Google Drive link detected in the post's description:\n{text}\n",
+            log_filename="detected_gdrive_links.txt",
+            ignore_if_exists=False
+        )
         return True
     return False
 
@@ -408,10 +427,6 @@ def detect_other_external_download_links(text: str, is_url: bool,
         Bool: True if the text contains an external link, otherwise False.
     """
     filename = "detected_external_links.txt"
-    text_path = post_folder_path.joinpath(filename)
-    if (text_path.exists() and text_path.is_file() and text_path.stat().st_size > 0):
-        return False
-
     for url in C.OTHER_FILE_HOSTING_PROVIDERS:
         if (url in text):
             if (is_url):
@@ -429,8 +444,11 @@ def detect_other_external_download_links(text: str, is_url: bool,
             return True
     return False
 
-def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: pathlib.Path, 
-                              download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
+def process_pixiv_fanbox_json(
+    json_response: Union[dict, None], 
+    download_path: pathlib.Path,
+    gdrive_service: GoogleDrive,
+    download_flags: tuple[bool, bool, bool, bool, bool]) -> Union[tuple[pathlib.Path, list[tuple[str, str]]], None]:
     """Get the details of a Pixiv Fanbox post using Pixiv Fanbox's API.
 
     Args:
@@ -470,16 +488,20 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
         if (thumbnail is not None):
             urls_to_download_arr.append((thumbnail, C.THUMBNAIL_IMAGE))
 
-    # Note that Pixiv Fanbox posts have 2 types of formatting (as of now):
+    # Note that Pixiv Fanbox posts have 3 types of formatting (as of now):
     #   1. With proper formatting and mapping of post content elements ("article")
-    #   2. With a simple formatting that obly contains info about the text and files ("file")
+    #   2. With a simple formatting that obly contains info about the text and files ("file", "image")
     post_type: str = json_response["type"]
     post_contents: dict = json_response["body"]
+    if (post_contents is None):
+        # If the post has no content or 
+        # the user is not subscribed to the creator.
+        return (post_folder_path, urls_to_download_arr)
 
     # Retrieves the post's gdrive links or log external download links such as MEGA links, if any.
     # Will also detect if the post contains a password for the user to use.
     if (download_gdrive_links or detect_other_download_links):
-        if (post_type == "file"):
+        if (post_type in ("file", "image")):
             post_body: str = post_contents.get("text")
             if (post_body is not None):
                 # If the post follow a simple format,
@@ -508,7 +530,9 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         detect_gdrive_links(
                             text=text,
                             is_url=False,
-                            urls_to_download_arr=urls_to_download_arr
+                            urls_to_download_arr=urls_to_download_arr,
+                            gdrive_service=gdrive_service,
+                            post_folder_path=post_folder_path
                         )
 
         elif (post_type == "article"):
@@ -521,7 +545,9 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         detect_gdrive_links(
                             text=text,
                             is_url=False,
-                            urls_to_download_arr=urls_to_download_arr
+                            urls_to_download_arr=urls_to_download_arr,
+                            gdrive_service=gdrive_service,
+                            post_folder_path=post_folder_path
                         )
 
                     if (detect_other_download_links):
@@ -573,7 +599,9 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         detected_gdrive = detect_gdrive_links(
                             text=external_link,
                             is_url=True,
-                            urls_to_download_arr=urls_to_download_arr
+                            urls_to_download_arr=urls_to_download_arr,
+                            gdrive_service=gdrive_service,
+                            post_folder_path=post_folder_path
                         )
                         if (detected_gdrive):
                             continue
@@ -586,16 +614,16 @@ def process_pixiv_fanbox_json(json_response: Union[dict, None], download_path: p
                         )
 
     # Get images and attachments URL(s) from the post
-    if (post_type == "file" and (download_images or download_attachments)):
+    if (post_type in ("file", "image") and (download_images or download_attachments)):
         # If the post follows a simple format,
-        image_and_attachment_files: list[dict] = post_contents.get("files", [])
+        image_and_attachment_files: list[dict] = post_contents.get(f"{post_type}s", [])
         for file_info in image_and_attachment_files:
-            file_url = file_info["url"]
-            extension = file_info["extension"]
-            if (download_images and extension in C.PIXIV_FANBOX_ALLOWED_IMAGE_FORMATS):
-                urls_to_download_arr.append((file_url, C.IMAGE))
-            elif (download_attachments):
-                urls_to_download_arr.append((file_url, C.ATTACHMENT))
+            file_url = file_info.get("url") or file_info.get("originalUrl")
+            if (file_url is not None):
+                if (download_images and file_info["extension"] in C.PIXIV_FANBOX_ALLOWED_IMAGE_FORMATS):
+                    urls_to_download_arr.append((file_url, C.IMAGE_FILE))
+                elif (download_attachments):
+                    urls_to_download_arr.append((file_url, C.ATTACHMENT_FILE))
 
     elif (post_type == "article"):
         if (download_images):
@@ -618,8 +646,8 @@ async def get_gdrive_folder_contents(
     drive_service: GoogleDrive, 
     gdrive_folder_arr: C.GDRIVE_HINT_TYPING,
     failed_requests_arr: list, 
-    headers: Optional[dict] = None) -> list[tuple[str, tuple[str, pathlib.Path]]]:
-    """Get the folder contents of a Google Drive folder.
+    headers: Optional[dict] = None) -> list[tuple[str, str, str, tuple[str, pathlib.Path]]]:
+    """Get the folder contents of a Google Drive folder including any sub-folders (using recursion).
 
     Args:
         drive_service (GoogleDrive): 
@@ -632,8 +660,8 @@ async def get_gdrive_folder_contents(
             The headers to use for the requests. Defaults to None.
 
     Returns:
-        list[tuple[str, tuple[str, pathlib.Path]]]:
-            A list of tuples containing the file ID(s) and
+        list[tuple[str, str, str, tuple[str, pathlib.Path]]]:
+            A list of tuples containing the file ID(s), file name, and mimetype and
             a tuple of the original gdrive URL and the post folder that the gdrive URL was found in.
     """
     if (drive_service is None):
@@ -656,11 +684,10 @@ async def get_gdrive_folder_contents(
             continue
 
         for file in response:
-            to_append = (file["id"], file["name"], gdrive_info)
             if (file["mimeType"] == "application/vnd.google-apps.folder"):
-                nested_folders_arr.append(to_append)
+                nested_folders_arr.append((file["id"], gdrive_info))
             else:
-                gdrive_files_arr.append(to_append)
+                gdrive_files_arr.append((file["id"], file["name"], file["mimeType"], gdrive_info))
 
     if (len(nested_folders_arr) > 0):
         nested_files_arr = await get_gdrive_folder_contents(

@@ -1,4 +1,5 @@
 # import third-party libraries
+from lxml import html
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -22,22 +23,24 @@ if (__package__ is None or __package__ == ""):
     from constants import CONSTANTS as C
     from errors import ChangedHTMLStructureError
     from logger import logger
-    from spinner import Spinner
+    from spinner import Spinner, format_success_msg
     from user_data import load_cookies
-    from google_client import GoogleDrive
+    from google_drive import GoogleDrive
     from download import *
-    from functional import print_danger, get_input, save_key_prompt, \
-                           website_to_readable_format, get_user_urls, get_user_download_choices
+    from functional import  print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
+                            website_to_readable_format, get_user_urls, get_user_download_choices, \
+                            call_async_result, check_download_tasks, log_critical_details_for_post
 else:
     from .constants import CONSTANTS as C
     from .errors import ChangedHTMLStructureError
     from .logger import logger
-    from .spinner import Spinner
+    from .spinner import Spinner, format_success_msg
     from .user_data import load_cookies
-    from .google_client import GoogleDrive
+    from .google_drive import GoogleDrive
     from .download import *
-    from .functional import print_danger, get_input, save_key_prompt, \
-                            website_to_readable_format, get_user_urls, get_user_download_choices
+    from .functional import print_danger, get_input, save_key_prompt, remove_folder_if_empty, \
+                            website_to_readable_format, get_user_urls, get_user_download_choices, \
+                            call_async_result, check_download_tasks, log_critical_details_for_post
 
 class CustomWebDriver(webdriver.Chrome):
     """Custom chrome webdriver with some modifications."""
@@ -434,7 +437,7 @@ def get_creator_posts(driver: webdriver.Chrome, url: str, website: str) -> list[
     if (website == "fantia"):
         post_xpath = "//a[@class='link-block']"
     elif (website == "pixiv_fanbox"):
-        post_xpath = "//a[starts-with(@href, '/posts/')]"
+        post_xpath = "//a[contains(@href, '/posts/')]"
     else:
         raise ValueError("Invalid website in get_creator_posts function...")
 
@@ -455,6 +458,19 @@ def get_creator_posts(driver: webdriver.Chrome, url: str, website: str) -> list[
     # Remove the duplicate links 
     # with the order of the links being preserved.
     return list(dict.fromkeys(post_urls))
+
+def __download_process_cleanup(downloaded_urls_arr: list[tuple[pathlib.Path, list[tuple[str, str]]]]) -> None:
+    """Cleans up any empty folders that were created during the download process.
+
+    Args:
+        downloaded_urls_arr (list[tuple[pathlib.Path, list[tuple[str, str]]]]):
+            The array of tuples containing the folder path and the URL's information.
+
+    Returns:
+        None
+    """
+    for post_folder_path, _ in downloaded_urls_arr:
+        remove_folder_if_empty(post_folder_path)
 
 async def execute_download_process(website: str, creator_page: bool, download_path: str,
                              driver: webdriver.Chrome, login_status: dict, drive_service: GoogleDrive) -> None:
@@ -485,7 +501,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
     block_gdrive_downloads = (drive_service is None)
     download_flags = get_user_download_choices(
         website=website,
-        block_gdrive=block_gdrive_downloads
+        block_gdrive_downloads=block_gdrive_downloads
     )
     if (download_flags is None):
         return
@@ -517,12 +533,46 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                                 "if there are in fact posts in the URL above.",
                         log_filename="possible_errors.log"
                     )
-            urls_arr = posts_url_arr
+
+        if (len(posts_url_arr) == 0):
+            print_danger(f"No post(s) were found on {readable_website_name} creator URL(s) provided.")
+            print_danger("If you are sure that there are posts in the URL(s) above, you may raise an issue on GitHub.")
+            return
+
+        urls_arr = posts_url_arr
 
     urls_to_download: list[tuple[pathlib.Path, list[tuple[str, str]]]] = []
     cookie = format_cookie_to_cookiejar(
         login_status.get(website)
     )
+
+    csrf_token = None
+    if website == "fantia":
+        with httpx.Client(http2=True, cookies=cookie, timeout=10, headers=C.BASE_REQ_HEADERS.copy()) as client:
+            for retry_counter in range(1, C.MAX_RETRIES + 1):
+                try:
+                    response = client.get(C.FANTIA_WEBSITE_URL)
+                    if response.status_code == 404:
+                        log_failed_post_api_call(
+                            download_path=download_path, 
+                            post_url=post_url
+                        )
+                        return
+
+                    response.raise_for_status()
+                    html_tree = html.fromstring(response.text)
+                    csrf_token = html_tree.xpath("//meta[@name='csrf-token']/@content")[0]
+                except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
+                    if retry_counter == C.MAX_RETRIES:
+                        print_danger(
+                            f"Retrieval of CSRF token for Fantia has failed after {C.MAX_RETRIES} retries.\n"
+                            f"More info: {e}"
+                        )
+                        return
+                    time.sleep(C.RETRY_DELAY)
+                else:
+                    break
+
     base_spinner_msg = " ".join([
         "Retrieved and processed {progress}",
         f"out of {len(urls_arr)}",
@@ -549,6 +599,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                     api_request_tasks,
                     return_when=asyncio.FIRST_COMPLETED
                 )
+                call_async_result(done)
                 finished_api_requests += len(done)
                 spinner.message = base_spinner_msg.format(
                     progress=finished_api_requests
@@ -564,13 +615,18 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                         post_url=post_url,
                         json_arr=json_to_process,
                         download_path=download_path,
+                        csrf_token=csrf_token,
                     )
                 )
             )
 
         # Wait for any remaining downloads to finish
         if (api_request_tasks):
-            await asyncio.wait(api_request_tasks)
+            done, _ = await asyncio.wait(
+                api_request_tasks, 
+                return_when=asyncio.ALL_COMPLETED
+            )
+            call_async_result(done)
 
         for json_response in json_to_process:
             if (website == "fantia"):
@@ -583,7 +639,8 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                 processed_json = process_pixiv_fanbox_json(
                     json_response=json_response,
                     download_path=download_path,
-                    download_flags=download_flags
+                    download_flags=download_flags,
+                    gdrive_service=drive_service
                 )
             else:
                 raise ValueError(f"Invalid website, {website}, in execute_download_process function...")
@@ -598,73 +655,76 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
             if (content_type != C.GDRIVE_FILE):
                 total_urls_to_download += 1
 
-    failed_downloads_arr = []
-    gdrive_urls_arr: list[str] = []
-    max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
-    base_spinner_msg = " ".join([
-        "Downloaded {progress} out of",
-        f"{total_urls_to_download} URL(s) from {len(urls_arr)} posts on {readable_website_name}..."
-    ])
-    with Spinner(
-        message=base_spinner_msg.format(
-            progress=0,
-            website=readable_website_name
-        ),
-        colour="light_yellow",
-        spinner_position="left",
-        spinner_type="material",
-        completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}\n!",
-        cancelled_msg=f"Download process for {readable_website_name} has been cancelled!\n"
-    ) as spinner:
-        download_tasks = set()
-        finished_downloads = 0
-        for post_folder_path, post_content_urls_info in urls_to_download:
-            for content_url_info in post_content_urls_info:
-                if (content_url_info[1] == C.GDRIVE_FILE):
-                    gdrive_urls_arr.append((content_url_info[0], post_folder_path))
-                    continue
+    if (total_urls_to_download > 0):
+        failed_downloads_arr = []
+        gdrive_urls_arr: list[str] = []
+        max_concurrent_downloads = C.MAX_CONCURRENT_DOWNLOADS_TABLE.get(website, 1)
+        base_spinner_msg = " ".join([
+            "Downloaded {progress} out of",
+            f"{total_urls_to_download} URL(s) from {len(urls_arr)} posts on {readable_website_name}..."
+        ])
+        with Spinner(
+            message=base_spinner_msg.format(
+                progress=0,
+                website=readable_website_name
+            ),
+            colour="light_yellow",
+            spinner_position="left",
+            spinner_type="material",
+            completion_msg=f"Finished downloading all {total_urls_to_download} URL(s) from {len(urls_arr)} post(s) on {readable_website_name}!\n",
+            cancelled_msg=f"Download process for {readable_website_name} has been cancelled!\n"
+        ) as spinner:
+            download_tasks = set()
+            finished_downloads = 0
+            for post_folder_path, post_content_urls_info in urls_to_download:
+                for content_url_info in post_content_urls_info:
+                    if (content_url_info[1] == C.GDRIVE_FILE):
+                        gdrive_urls_arr.append((content_url_info[0], post_folder_path))
+                        continue
 
-                if (len(download_tasks) >= max_concurrent_downloads):
-                    # Wait for some download to finish before adding a new task
-                    done, download_tasks = await asyncio.wait(
-                        download_tasks,
-                        return_when=asyncio.FIRST_COMPLETED
-                    )
-                    finished_downloads += len(done)
-                    spinner.message = base_spinner_msg.format(
-                        progress=finished_downloads
-                    )
+                    if (len(download_tasks) >= max_concurrent_downloads):
+                        # Wait for some download to finish before adding a new task
+                        done, download_tasks = await check_download_tasks(
+                            download_tasks, 
+                            all_completed=False
+                        )
+                        finished_downloads += len(done)
+                        spinner.message = base_spinner_msg.format(
+                            progress=finished_downloads
+                        )
 
-                download_tasks.add(
-                    asyncio.create_task(
-                        async_download_file(
-                            url_info=content_url_info,
-                            folder_path=post_folder_path,
-                            website=website,
-                            cookie=cookie,
-                            failed_downloads_arr=failed_downloads_arr
+                    download_tasks.add(
+                        asyncio.create_task(
+                            async_download_file(
+                                url_info=content_url_info,
+                                folder_path=post_folder_path,
+                                website=website,
+                                cookie=cookie,
+                                failed_downloads_arr=failed_downloads_arr
+                            )
                         )
                     )
-                )
 
-        # Wait for any remaining downloads to finish
-        if (download_tasks):
-            await asyncio.wait(download_tasks)
+            # Wait for any remaining downloads to finish
+            done, _ = await check_download_tasks(
+                download_tasks, 
+                all_completed=True
+            )
 
-    for url_info, website, folder_path in failed_downloads_arr:
-        log_failed_downloads(
-            url_info=url_info, 
-            website=website,
-            folder_path=folder_path
-        )
-    if (failed_downloads_arr):
-        print_danger(
-            f"{len(failed_downloads_arr)} download(s) failed. "
-            "Please check the generated logs in each of the post's folders."
-        )
+        for url_info, website, folder_path in failed_downloads_arr:
+            log_failed_downloads(
+                url_info=url_info, 
+                website=website,
+                folder_path=folder_path
+            )
+        if (failed_downloads_arr):
+            print_danger(
+                f"{len(failed_downloads_arr)} download(s) failed. "
+                "Please check the generated logs in each of the post's folders.\n"
+            )
 
-    # TODO: finish GDrive downloads
-    if (block_gdrive_downloads):
+    if (block_gdrive_downloads or website == "fantia"):
+        __download_process_cleanup(urls_to_download)
         return
 
     with Spinner(
@@ -672,11 +732,13 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         colour="light_yellow",
         spinner_position="left",
         spinner_type="pong",
-        completion_msg="Finished processing all GDrive URLs!\n",
+        completion_msg="Finished processing all GDrive URLs!",
         cancelled_msg="GDrive download process has been cancelled!\n"
     ) as spinner:
         if (len(gdrive_urls_arr) < 1):
-            spinner.completion_msg = "No GDrive URL found. Skipping GDrive download process..."
+            spinner.completion_msg = format_success_msg(
+                "No GDrive URL found. Skipping GDrive download process...\n"
+            )
             return # Return since this is the last step of the download process
 
         gdrive_folder_arr: C.GDRIVE_HINT_TYPING = []
@@ -701,7 +763,6 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         processed_json_arr = []
         failed_requests_arr = []
         headers = C.BASE_REQ_HEADERS.copy()
-        headers["Authorization"] = f"Bearer {drive_service.get_oauth_access_token()}"
         if (len(gdrive_folder_arr) > 0):
             gdrive_api_calls_arr = await get_gdrive_folder_contents(
                 drive_service=drive_service,
@@ -726,7 +787,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
                     continue
 
                 processed_json_arr.append(
-                    (file_info["id"], file_info["name"], gdrive_info)
+                    (file_info["id"], file_info["name"], file_info["mimeType"], gdrive_info)
                 )
 
         for gdrive_id, post_folder, drive_type, error in failed_requests_arr:
@@ -744,28 +805,18 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
             )
 
     if (len(processed_json_arr) > 0):
-        failed_downloads_arr = []
-        for file_id, file_name, gdrive_info in processed_json_arr:
-            drive_service.download_file_id(
-                file_id=file_id,
-                file_name=file_name,
-                folder_path=gdrive_info[1],
-                failed_downloads_arr=failed_downloads_arr
-            )
+        await drive_service.download_multiple_files(
+            file_arr=processed_json_arr
+        )
 
-        for folder_path, error_msg in failed_downloads_arr:
-            log_critical_details_for_post(
-                post_folder=folder_path,
-                message=error_msg,
-                log_filename="gdrive_download.log"
-            )
+    __download_process_cleanup(urls_to_download)
 
 # test codes
 if (__name__ == "__main__"):
     async def test(driver: webdriver.Chrome) -> None:
         await execute_download_process(
-            website="pixiv_fanbox",
-            creator_page=True,
+            website="fantia",
+            creator_page=False,
             driver=driver,
             download_path=pathlib.Path(__file__).parent.absolute(),
             login_status={
@@ -773,7 +824,8 @@ if (__name__ == "__main__"):
                     None,
                 "fantia":
                     None
-            }
+            },
+            drive_service=None
         )
     with get_driver(".") as driver:
         asyncio.run(test(driver))

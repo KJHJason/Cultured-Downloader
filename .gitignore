@@ -4,6 +4,8 @@
 *.spec
 *.log
 set_exe_info.py
-test.py
-src/build/*
+*test*
 ExperimentalCulturedDownloader.py
+build
+dist
+venv

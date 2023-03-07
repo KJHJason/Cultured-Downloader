@@ -34,7 +34,7 @@ OS_USER_AGENTS = {
 DIRECTORIES = {
     "Windows": "AppData/Roaming/Cultured-Downloader",
     "Linux": ".config/Cultured-Downloader",
-    "Darwin": "Library/Preferences/Cultured-Downloader"
+    "Darwin": "Library/Application Support/Cultured-Downloader"
 }
 
 appDir = pathlib.Path.home().absolute()
@@ -59,6 +59,14 @@ class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Inputs regex or tuples
     CMD_REGEX: re.Pattern[str] = re.compile(r"^[1-8xy]$")
+    GOOGLE_API_KEY_INPUT_REGEX: re.Pattern[str] = re.compile(
+        r"^AIza[\w-]{35}$|^[xX]$|^-h$"
+    )
+    GOOGLE_API_KEY_REGEX: re.Pattern[str] = re.compile(
+        r"^AIza[\w-]{35}$" # based on https://github.com/odomojuli/RegExAPI
+    )
+    PIXIV_REFRESH_TOKEN_INPUT_REGEX: re.Pattern[str] = re.compile(r"^[\w-]{43}$|^[xX]$|^-h$")
+    PIXIV_REFRESH_TOKEN_REGEX: re.Pattern[str] = re.compile(r"^[\w-]{43}$")
 
     # Debug mode
     DEBUG_MODE: bool = False # For logger
@@ -71,6 +79,7 @@ class Constants:
     # Application constants
     END: str = Style.RESET_ALL
     USER_PLATFORM: str = USER_PLATFORM
+    ILLEGAL_PATH_CHARS_REGEX: re.Pattern[str] = re.compile(r"[<>:\"/\\|?*]")
     LOGGER_NAME: str = f"Cultured Downloader V{__version__}"
     IS_64BITS: bool = (struct.calcsize("P") * 8 == 64) # from https://stackoverflow.com/a/12568652/16377492
     DESKTOP_PATH: pathlib.Path = pathlib.Path.home().joinpath("Desktop")
@@ -90,18 +99,17 @@ class Constants:
     # Applications configuration, Google Drive API key, and cookies file paths
     FANTIA_COOKIE_PATH: pathlib.Path = appDir.joinpath("fantia-cookie")
     PIXIV_FANBOX_COOKIE_PATH: pathlib.Path = appDir.joinpath("pixiv-fanbox-cookie")
-    GOOGLE_OAUTH_CLIENT_SECRET: pathlib.Path = appDir.joinpath("google-client-secret")
-    GOOGLE_OAUTH_CLIENT_TOKEN: pathlib.Path = appDir.joinpath("google-client-token")
+    PIXIV_REFRESH_TOKEN_PATH: pathlib.Path = appDir.joinpath("pixiv-refresh-token")
     CONFIG_JSON_FILE_PATH: pathlib.Path = appDir.joinpath("config.json")
+    GDRIVE_API_KEY_PATH: pathlib.Path = appDir.joinpath("gdrive-api-key")
     KEY_ID_TOKEN_JSON_PATH: pathlib.Path = appDir.joinpath("key-id-token.json")
     SECRET_KEY_PATH: pathlib.Path = appDir.joinpath("secret.key")
 
-    # Spinner JSON path
-    SPINNERS_JSON_PATH: pathlib.Path = ROOT_PY_FILE_PATH.joinpath("json", "spinners.json")
-
     # GitHub URLs
     ISSUE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/issues"
-    OAUTH2_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_oauth2_guide.md"
+    GDRIVE_API_KEY_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/google_api_key_guide.md"
+    # TODO: update the link below
+    PIXIV_OAUTH_GUIDE_PAGE: str = "https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md"
 
     # For downloading
     GDRIVE_HINT_TYPING: TypeAlias = list[tuple[str, tuple[str, pathlib.Path]]]
@@ -130,10 +138,9 @@ class Constants:
                 "https://www.fanbox.cc",
         }
     )
-    MAX_RETRIES: int = 5
-    MAX_RETRIES_CHECK: int = MAX_RETRIES - 1
+    MAX_RETRIES: int = 4
     RETRY_DELAY: int = 1.5 # 1.5 second
-    CHUNK_SIZE: int = 1024 * 1024 # 1 MB
+    CHUNK_SIZE: int = 10 * 1024 * 1024 # 10 MB
     IMAGE_FILE: str = "image"
     THUMBNAIL_IMAGE: str = "thumbnail"
     ATTACHMENT_FILE: str = "attachment"
@@ -162,6 +169,10 @@ class Constants:
     FANTIA_VERIFY_LOGIN_URL: str = "https://fantia.jp/mypage/users/plans"
     FANTIA_POST_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/posts/\d+$")
     FANTIA_CREATOR_POSTS_REGEX: re.Pattern[str] = re.compile(r"^https://fantia\.jp/fanclubs/\d+(/posts)?$")
+
+    # For Pixiv URLS
+    PIXIV_ILLUST_URL_REGEX: re.Pattern[str] = re.compile(r"^https://www\.pixiv\.net/(en/)?artworks/(\d+)$")
+    PIXIV_ARTIST_URL_REGEX: re.Pattern[str] = re.compile(r"^https://www\.pixiv\.net/(en/)?users/(\d+)$")
 
     # For Pixiv Fanbox URLs
     PIXIV_FANBOX_API_URL: str = "https://api.fanbox.cc/post.info?postId="

@@ -1,6 +1,6 @@
 # Addition to code
 
-## Type of additions (Tick those that applies):
+## Type of additions (Tick those that apply):
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
@@ -14,16 +14,14 @@ Version: <!-- 2.0.1 or based on my latest commit [dfd198b](https://github.com/KJ
 
 Please add your summary here...
 
-## Checklist (Tick those that applies):
+## Checklist (Tick those that apply):
 
 - [ ] I have read the [contribution guidelines](https://github.com/KJHJason/Cultured-Downloader/blob/main/CONTRIBUTING.md) and have adhered to it
-- [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
 - [ ] Any dependent changes have been merged and published in downstream modules
 - [ ] I have checked my code and corrected any spelling mistakes
 

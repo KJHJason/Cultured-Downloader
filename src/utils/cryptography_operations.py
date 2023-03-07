@@ -6,25 +6,19 @@ from typing import Union, Optional, Callable
 if (__package__ is None or __package__ == ""):
     from logger import logger
     from errors import APIServerError
-    from crucial import install_dependency
     from constants import CONSTANTS as C
     from schemas.api_response import APIPublicKeyResponse
     from functional import validate_schema
 else:
     from .logger import logger
     from .errors import APIServerError
-    from .crucial import install_dependency
     from .constants import CONSTANTS as C
     from .schemas.api_response import APIPublicKeyResponse
     from .functional import validate_schema
 
 # Import Third-party Libraries
 import httpx
-
-try:
-    from cryptography.hazmat.backends import default_backend
-except (ModuleNotFoundError, ImportError):
-    install_dependency(dep="cryptography>=37.0.4")
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding, rsa, types
 from cryptography.hazmat.primitives import hashes, serialization
@@ -114,7 +108,7 @@ def rsa_encrypt(plaintext: Union[str, bytes], digest_method: Optional[Callable] 
     with httpx.Client(headers=C.JSON_REQ_HEADERS, http2=True, timeout=30) as client:
         try:
             res = client.post(f"{C.API_URL}/public-key", json=json_data)
-        except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+        except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
             logger.error(f"httpx error while retrieving API's public key:\n{e}")
             raise
 

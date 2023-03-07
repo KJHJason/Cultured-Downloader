@@ -8,7 +8,7 @@ import pathlib
 import warnings
 import binascii
 import threading
-from typing import Optional, Any, Union, Literal
+from typing import Literal, Optional, Any, Union
 
 # import local files
 if (__package__ is None or __package__ == ""):
@@ -16,8 +16,8 @@ if (__package__ is None or __package__ == ""):
     from cryptography_operations import *
     from constants import CONSTANTS as C
     from logger import logger
-    from spinner import Spinner
-    from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken, ClientSecret, ClientToken
+    from spinner import Spinner, format_error_msg
+    from schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken
     from functional import  validate_schema, save_key_prompt, print_success, \
                             print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 else:
@@ -25,8 +25,8 @@ else:
     from .cryptography_operations import *
     from .constants import CONSTANTS as C
     from .logger import logger
-    from .spinner import Spinner
-    from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken, ClientSecret, ClientToken
+    from .spinner import Spinner, format_error_msg
+    from .schemas import CookieSchema, APIKeyResponse, APIKeyIDResponse, APICsrfResponse, KeyIdToken
     from .functional import validate_schema, save_key_prompt, print_success, \
                             print_danger, load_configs, edit_configs, log_api_error, website_to_readable_format
 
@@ -250,7 +250,7 @@ class UserData(abc.ABC):
         with httpx.Client(http2=True, headers=C.BASE_REQ_HEADERS, timeout=30) as client:
             try:
                 res = client.get(f"{C.API_URL}/csrf-token")
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 logger.error(f"httpx error while retrieving CSRF token from the API:\n{e}")
                 raise
 
@@ -315,7 +315,7 @@ class UserData(abc.ABC):
         with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
             try:
                 res = client.post(f"{C.API_URL}/get-key", json=json_data)
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 logger.error(f"httpx error while loading key from API:\n{e}")
                 raise
 
@@ -360,6 +360,7 @@ class UserData(abc.ABC):
         if (save_locally):
             with open(C.SECRET_KEY_PATH, "wb") as f:
                 f.write(self.__secret_key)
+            return
 
         csrf_token, cookies = self.get_csrf_token()
         json_data = {
@@ -380,7 +381,7 @@ class UserData(abc.ABC):
         with httpx.Client(http2=True, headers=C.JSON_REQ_HEADERS, cookies=cookies, timeout=30) as client:
             try:
                 res = client.post(f"{C.API_URL}/save-key", json=json_data)
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 logger.error(f"httpx error while saving key from API:\n{e}")
                 raise
 
@@ -442,7 +443,7 @@ class SecureCookie(UserData):
                 The cookie data to be handled. If None, the cookie data will be loaded 
                 from the saved file in the application's directory.
         """
-        if (not isinstance(cookie_data, Union[None, dict])):
+        if (cookie_data is not None and not isinstance(cookie_data, dict)):
             raise TypeError("cookie_data must be of type dict or None")
 
         super().__init__(
@@ -459,65 +460,82 @@ class SecureCookie(UserData):
         return self.decrypt_data(decode=True, schema=CookieSchema)
 
     def __str__(self) -> str:
-        return json.dumps(self.data)
+        return json.dumps(self.data) if (self.data is not None) else ""
 
     def __repr__(self) -> str:
         return f"Cookie<{self.data}>"
 
-class SecureGoogleOAuth2(UserData):
+class SecureGDriveAPIKey(UserData):
     """Creates a way to securely deal with the user's saved
-    Google OAuth2 files that are stored on the user's machine."""
-    def __init__(self, is_token: bool, client_data: Optional[Union[str, dict]] = None) -> None:
+    Google Drive API key that is stored on the user's machine."""
+    def __init__(self, api_key: Optional[str] = None) -> None:
         """Initializes the SecureGDriveAPIKey class.
 
         Args:
-            is_token (bool):
-                Whether the data is the secret token or not.
-            client_data (str | dict, Optional): 
-                The client JSON data to be handled. If None, the client JSON data will be loaded 
+            api_key (str, Optional): 
+                The API key data to be handled. If None, the API key data will be loaded 
                 from the saved file in the application's directory.
         """
-        if (client_data is not None and not isinstance(client_data, Union[dict, str])):
-            raise TypeError("Google client_data must be of type str, dict, or None")
-
-        if (isinstance(client_data, dict)):
-            client_data = json.dumps(client_data)
-
-        self.__is_token = is_token
-        if (self.__is_token):
-            data_path = C.GOOGLE_OAUTH_CLIENT_TOKEN
-        else:
-            data_path = C.GOOGLE_OAUTH_CLIENT_SECRET
+        if (api_key is not None and not isinstance(api_key, str)):
+            raise TypeError("api_key must be of type str or None")
 
         super().__init__(
-            data=client_data, 
-            data_path=data_path
+            data=api_key, 
+            data_path=C.GDRIVE_API_KEY_PATH
         )
 
     def save_data(self) -> None:
         """Saves the data to the user's machine."""
         return self.encrypt_data(data=self.data)
 
-    def load_data(self) -> Union[dict, None]:
+    def load_data(self) -> Union[str, None]:
         """Loads the data from the user's machine from the saved file."""
-        if (self.__is_token):
-            schema = ClientToken
-        else:
-            schema = ClientSecret
-
-        return self.decrypt_data(decode=True, schema=schema)
+        return self.decrypt_data(decode=True, regex=C.GOOGLE_API_KEY_REGEX)
 
     def __str__(self) -> str:
-        return json.dumps(self.data, indent=4)
+        return self.data if (self.data is not None) else ""
 
     def __repr__(self) -> str:
-        return f"SecureGoogleOAuth2<{self.__str__()}>"
+        return f"GDriveAPIKey<{self.data}>"
 
-def save_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key_locally: bool) -> bool:
+class SecurePixivRefreshToken(UserData):
+    """Creates a way to securely deal with the user's saved
+    Pixiv refresh token that is stored on the user's machine."""
+    def __init__(self, refresh_token: Optional[str] = None) -> None:
+        """Initializes the SecurePixivRefreshToken class.
+
+        Args:
+            refresh_token (str, Optional): 
+                The user's Pixiv refresh token data to be handled. If None, The user's Pixiv refresh token data 
+                will be loaded from the saved file in the application's directory.
+        """
+        if (refresh_token is not None and not isinstance(refresh_token, str)):
+            raise TypeError("api_key must be of type str or None")
+
+        super().__init__(
+            data=refresh_token, 
+            data_path=C.PIXIV_REFRESH_TOKEN_PATH
+        )
+
+    def save_data(self) -> None:
+        """Saves the data to the user's machine."""
+        return self.encrypt_data(data=self.data)
+
+    def load_data(self) -> Union[str, None]:
+        """Loads the data from the user's machine from the saved file."""
+        return self.decrypt_data(decode=True, regex=C.PIXIV_REFRESH_TOKEN_REGEX)
+
+    def __str__(self) -> str:
+        return self.data if (self.data is not None) else ""
+
+    def __repr__(self) -> str:
+        return f"PixivRefreshToken<{self.data}>"
+
+def save_key_with_retries(obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], save_key_locally: bool) -> bool:
     """Saves the user's key to the API server.
 
     Args:
-        obj (SecureCookie | SecureGoogleOAuth2): 
+        obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken): 
             The UserData object to save the key with.
         save_key_locally (bool):
             Whether or not to save the key locally.
@@ -525,17 +543,18 @@ def save_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key
     Returns:
         Boolean to indicate whether or not the key was saved successfully.
     """
-    for retry_counter in range(C.MAX_RETRIES):
+    for retry_counter in range(1, C.MAX_RETRIES + 1):
         try:
             obj.save_key(save_locally=save_key_locally)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
-            if (retry_counter == C.MAX_RETRIES_CHECK):
+        except (APIServerError, httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
+            if (retry_counter == C.MAX_RETRIES):
                 return False
-            time.sleep(C.RETRY_WAIT_TIME)
+            time.sleep(C.RETRY_DELAY)
         else:
             return True
 
-def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: Any, **kwargs: Any) -> Union[SecureCookie, SecureGoogleOAuth2, None]:
+def load_key_with_retries(
+    obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken],*args: Any, **kwargs: Any) -> Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken, None]:
     """Loads the user's key from the API server.
 
     Args:
@@ -547,22 +566,22 @@ def load_key_with_retries(obj: Union[SecureCookie, SecureGoogleOAuth2], *args: A
             The keyword arguments to pass to the object.
 
     Returns:
-        SecureCookie | SecureGoogleOAuth2 | None:
+        SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken | None:
             The UserData object that was passed in or None if the key could not be loaded.
     """
-    for retry_counter in range(C.MAX_RETRIES):
+    for retry_counter in range(1, C.MAX_RETRIES + 1):
         try:
             return obj(*args, **kwargs)
-        except (APIServerError, httpx.ReadTimeout, httpx.ConnectTimeout, json.JSONDecodeError):
-            if (retry_counter == C.MAX_RETRIES_CHECK):
+        except (APIServerError, httpx.ReadTimeout, httpx.ConnectError, httpx.ConnectTimeout, json.JSONDecodeError):
+            if (retry_counter == C.MAX_RETRIES):
                 return None
-            time.sleep(C.RETRY_WAIT_TIME)
+            time.sleep(C.RETRY_DELAY)
 
-def save_data(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key_locally: bool, *args, **kwargs) -> bool:
+def save_data(obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], save_key_locally: bool, *args, **kwargs) -> bool:
     """Saves the data to the user's machine.
 
     Args:
-        obj (SecureCookie | SecureGoogleOAuth2):
+        obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken):
             The object to use to save the data.
         save_key_locally (bool):
             Whether to save the key locally or not.
@@ -585,11 +604,11 @@ def save_data(obj: Union[SecureCookie, SecureGoogleOAuth2], save_key_locally: bo
     else:
         return False
 
-def load_data(obj: Union[SecureCookie, SecureGoogleOAuth2], *args, **kwargs) -> Union[str, dict, bytes, None, Literal[False]]:
+def load_data(obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], *args, **kwargs) -> Union[str, dict, bytes, None]:
     """Loads the data from the user's machine from the saved file.
 
     Args:
-        obj (SecureCookie | SecureGoogleOAuth2):
+        obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken):
             The object to use to load the data.
         *args (list):
             The arguments to pass to the object.
@@ -597,67 +616,40 @@ def load_data(obj: Union[SecureCookie, SecureGoogleOAuth2], *args, **kwargs) -> 
             The keyword arguments to pass to the object.
 
     Returns:
-        str | dict | bytes | None | False:
+        str | dict | bytes | None :
             The data that was loaded from the user's machine,
-            False if the key could not be loaded, or None if the data could not be decrypted.
+            Returns None if the key could not be loaded or if the data could not be decrypted.
     """
     secure_obj = load_key_with_retries(obj, *args, **kwargs)
     if (secure_obj is None):
-        return False
+        return None
     else:
         return secure_obj.data
 
-class SaveGoogleOAuth2Thread(threading.Thread):
-    """Thread to securely save the cookie to a file."""
-    def __init__(self, client_data: Union[dict, str], is_token: bool, save_locally: bool, **threading_kwargs) -> None:
-        """Constructor for the SaveCookieThread class.
+class BaseThread(threading.Thread):
+    """Creates a base thread that will raise an error if the exec attribute is not None."""
+    def __init__(self, *args, **kwargs) -> None:
+        """Initializes the BaseThread class.
 
         Args:
-            client_data (dict | str):
-                The client data to save.
-            is_token (bool):
-                Whether the data is the secret token or not.
-            save_locally (bool):
-                Whether to save the key locally or not.
-            threading_kwargs (dict):
-                The keyword arguments for the threading.Thread class.
+            target (Callable):
+                The function to run in the thread.
+            *args (Any):
+                The arguments to pass to the Thread parent class.
+            **kwargs (Any):
+                The keyword arguments to pass to the Thread parent class.
         """
-        super().__init__(**threading_kwargs)
-        self.client_data = client_data
-        self.is_token = is_token
-        self.save_locally = save_locally
+        super().__init__(*args, **kwargs)
+        self.exec = None
+        self.result = None
 
-    def run(self) -> None:
-        """Runs the thread."""
-        self.result = save_data(
-            SecureGoogleOAuth2, 
-            save_key_locally=self.save_locally, 
-            client_data=self.client_data, 
-            is_token=self.is_token
-        )
+    def join(self) -> None:
+        """Joins the thread and raises an error if caught."""
+        super().join()
+        if (self.exec is not None):
+            raise self.exec
 
-class LoadGoogleOAuth2Thread(threading.Thread):
-    """Thread to securely load the cookie from a file."""
-    def __init__(self, is_token: bool, **threading_kwargs) -> None:
-        """Constructor for the LoadCookieThread class.
-
-        Args:
-            is_token (bool):
-                Whether the data is the secret token or not.
-            threading_kwargs (dict):
-                The keyword arguments for the threading.Thread class.
-        """
-        super().__init__(**threading_kwargs)
-        self.is_token = is_token
-
-    def run(self) -> None:
-        """Runs the thread."""
-        self.result = load_data(
-            SecureGoogleOAuth2,
-            is_token=self.is_token
-        )
-
-class SaveCookieThread(threading.Thread):
+class SaveCookieThread(BaseThread):
     """Thread to securely save the cookie to a file."""
     def __init__(self, cookie: dict, website: str, save_locally: bool, **threading_kwargs) -> None:
         """Constructor for the SaveCookieThread class.
@@ -677,18 +669,20 @@ class SaveCookieThread(threading.Thread):
         self.website = website
         self.readable_website = website_to_readable_format(self.website)
         self.save_locally = save_locally
-        self.result = None
 
     def run(self) -> None:
         """Runs the thread."""
-        self.result = save_data(
-            SecureCookie,
-            save_key_locally=self.save_locally,
-            website=self.website, 
-            cookie_data=self.cookie
-        )
+        try:
+            self.result = save_data(
+                SecureCookie,
+                save_key_locally=self.save_locally,
+                website=self.website, 
+                cookie_data=self.cookie
+            )
+        except (Exception) as e:
+            self.exec = e
 
-class LoadCookieThread(threading.Thread):
+class LoadCookieThread(BaseThread):
     """Thread to securely load the cookie from a file."""
     def __init__(self, website: str, **threading_kwargs):
         """Constructor for the LoadCookieThread class.
@@ -702,14 +696,16 @@ class LoadCookieThread(threading.Thread):
         super().__init__(**threading_kwargs)
         self.website = website
         self.readable_website = website_to_readable_format(self.website)
-        self.result = None
 
     def run(self) -> None:
         """Runs the thread."""
-        self.result = load_data(
-            SecureCookie, 
-            website=self.website
-        )
+        try:
+            self.result = load_data(
+                SecureCookie, 
+                website=self.website
+            )
+        except (Exception) as e:
+            self.exec = e
 
 def load_cookies(*websites: list[str]) -> list[LoadCookieThread]:
     """Loads the cookie from the user's machine.
@@ -774,130 +770,144 @@ def save_cookies(*login_results: Union[tuple[dict, str, bool], None]) -> None:
         else:
             print_success(f"Successfully saved {thread.readable_website} cookie.")
 
-def save_google_oauth_json(*json_data: tuple[tuple[Union[dict, str]], bool]) -> None:
-    """Save the Google OAuth2 JSON data to the user's machine.
+def save_and_encrypt_data(data_name: str, 
+                          secure_obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], *args, **kwargs) -> None:
+    """Saves the user's data and encrypts it to the user's machine.
 
     Args:
-        *json_data (tuple[tuple[dict | str], bool]):
-            An iterable of tuple of the JSON data to save and a boolean to indicate if it is a secret token or not.
+        data_name (str):
+            The name of the data to save (shown to the user in the spinner).
+        secure_obj (SecureCookie | SecureGDriveAPIKey | SecurePixivRefreshToken):
+            The object use when saving the data.
+        *args (list):
+            The arguments to pass to the object.
+        **kwargs (dict):
+            The keyword arguments to pass to the object.
 
     Returns:
         None
     """
     save_key_locally = save_key_prompt()
-    threads_arr: list[SaveGoogleOAuth2Thread] = []
     with Spinner(
-        message="Saving Google OAuth2 JSON...",
+        message=f"Saving {data_name}...",
         colour="light_yellow",
         spinner_position="left",
-        spinner_type="arc"
-    ):
-        for data, is_token in json_data:
-            if (not isinstance(data, dict) and not isinstance(data, str)):
-                continue
-
-            thread_task = SaveGoogleOAuth2Thread(
-                client_data=data,
-                is_token=is_token,
-                save_locally=save_key_locally
+        spinner_type="arc",
+        completion_msg=f"Successfully saved {data_name}.\n",
+        cancelled_msg=f"Stopped saving {data_name}.\n"
+    ) as spinner:
+        if (not save_data(secure_obj, save_key_locally=save_key_locally, *args, **kwargs)):
+            spinner.completion_msg = format_error_msg(
+                f"Failed to save {data_name}. Please try again later.\n"
             )
-            thread_task.start()
-            threads_arr.append(thread_task)
 
-        for thread in threads_arr:
-            thread.join()
-
-    for thread in threads_arr:
-        if (thread.is_token):
-            file_type = "Secret Token"
-        else:
-            file_type = "Client Secret"
-
-        if (not thread.result):
-            print_danger(
-                f"Could not save your Google OAuth2 {file_type} JSON data either due to " \
-                "connectivity issues or a problem with Cultured Downloader API."
-            )
-        else:
-            print_success(f"Successfully saved Google OAuth2 {file_type} JSON data.")
-
-@Spinner(
-    message="Loading Google OAuth2 JSON (if found)...",
-    colour="light_yellow",
-    spinner_position="left",
-    spinner_type="arc"
-)
-def load_google_oauth_json(get_client: Optional[bool] = True, get_token: Optional[bool] = True) -> Union[dict, tuple[dict, dict]]:
-    """Load the Google OAuth2 JSON data from the user's machine.
-
-    Args:
-        get_client (bool, Optional):
-            Whether to get the client secret JSON data. (Default: True)
-        get_token (bool, Optional):
-            Whether to get the secret token JSON data. (Default: True)
+def load_and_decrypt_data(data_path: pathlib.Path, 
+                          secure_obj: Union[SecureCookie, SecureGDriveAPIKey, SecurePixivRefreshToken], *args, **kwargs) -> Union[str, Literal[False], None]:
+    """Decrypts and load the user's data from the user's machine.
 
     Returns:
-        dict | tuple[dict, dict]:
-            The Google OAuth2 JSON data.
+        str | Literal[False] | None:
+            The decrypted data, False if the user has not saved the data, 
+            or None if the encrypted data could not be loaded (connection/decryption issues).
     """
-    if (not get_client and not get_token):
-        raise ValueError("You must get either the client secret or secret token JSON data.")
+    if (not data_path.exists() or not data_path.is_file()):
+        return False
 
-    path_arr = []
-    if (get_client):
-        path_arr.append(C.GOOGLE_OAUTH_CLIENT_SECRET)
-    if (get_token):
-        path_arr.append(C.GOOGLE_OAUTH_CLIENT_TOKEN)
+    decrypted_data = load_data(secure_obj, *args, **kwargs)
+    if (decrypted_data is None):
+        return None
+    return decrypted_data
 
-    threads_arr: list[LoadGoogleOAuth2Thread] = []
-    for file_path in path_arr:
-        if (not file_path.exists() or not file_path.is_file()):
-            continue
+def load_gdrive_api_key() -> Union[str, Literal[False], None]:
+    """Decrypts and load the Google Drive API key from the user's machine.
 
-        is_token = (file_path == C.GOOGLE_OAUTH_CLIENT_TOKEN)
-        thread = LoadGoogleOAuth2Thread(is_token=is_token)
-        thread.start()
-        threads_arr.append(thread)
+    Returns:
+        str | Literal[False] | None:
+            The Google Drive API key, False if the user has not saved the api key, 
+            or None if the API key could not be loaded (connection/decryption issues).
+    """
+    return load_and_decrypt_data(
+        data_path=C.GDRIVE_API_KEY_PATH,
+        secure_obj=SecureGDriveAPIKey,
+    )
 
-    for thread in threads_arr:
-        thread.join()
+def save_gdrive_api_key(api_key: str) -> None:
+    """Saves the Google Drive API key to the user's machine.
 
-    google_token = google_client = None
-    for thread in threads_arr:
-        if (thread.is_token and thread.result):
-            google_token = thread.result
-        elif (not thread.is_token and thread.result):
-            google_client = thread.result
+    Args:
+        api_key (str):
+            The Google Drive API key to save.
 
-    if (get_token and get_client):
-        return (google_token, google_client)
-    elif (get_token and not get_client):
-        return google_token
-    else:
-        return google_client
+    Returns:
+        None
+    """
+    save_and_encrypt_data(
+        data_name="Google Drive API Key",
+        secure_obj=SecureGDriveAPIKey,
+        api_key=api_key
+    )
+
+def load_pixiv_refresh_token() -> Union[str, None]:
+    """Decrypts and load the Pixiv refresh token from the user's machine.
+
+    Returns:
+        str  | None:
+            The Pixiv refresh token or None if the refresh token could not be loaded (connection/decryption issues).
+    """
+    with Spinner(
+        message="Loading Pixiv refresh token...",
+        colour="light_yellow",
+        spinner_position="left",
+        spinner_type="arc",
+        completion_msg="Finished loading Pixiv refresh token!\n"
+    ) as spinner:
+        pixiv_refresh_token = load_and_decrypt_data(
+            data_path=C.PIXIV_REFRESH_TOKEN_PATH,
+            secure_obj=SecurePixivRefreshToken,
+        )
+        if (pixiv_refresh_token is False):
+            spinner.completion_msg = ""
+            return
+        if (pixiv_refresh_token is None):
+            spinner.completion_msg = format_error_msg(
+                "Could not load Pixiv refresh token either due to connection error or decryption issues.\n"
+            )
+            return
+
+        return pixiv_refresh_token
+
+def save_pixiv_refresh_token(refresh_token: str) -> None:
+    """Saves the Pixiv refresh token to the user's machine.
+
+    Args:
+        refresh_token (str):
+            The Pixiv refresh token to save.
+
+    Returns:
+        None
+    """
+    save_and_encrypt_data(
+        data_name="Pixiv refresh token",
+        secure_obj=SecurePixivRefreshToken,
+        refresh_token=refresh_token
+    )
 
 __all__ = [
     "SecureCookie",
-    "SecureGoogleOAuth2",
+    "SecureGDriveAPIKey",
+    "SecurePixivRefreshToken",
     "SaveCookieThread",
     "LoadCookieThread",
-    "SaveGoogleOAuth2Thread",
-    "LoadGoogleOAuth2Thread",
     "save_data",
     "load_data",
     "save_cookies",
     "load_cookies",
-    "save_google_oauth_json",
-    "load_google_oauth_json",
+    "load_gdrive_api_key",
+    "save_gdrive_api_key",
+    "load_pixiv_refresh_token",
+    "save_pixiv_refresh_token",
     "convert_website_to_path"
 ]
 
-# test codes
-if (__name__ == "__main__"):
-    # Google API key from random repo on GitHub
-    # t = SecureCookie("pixiv_fanbox")
-    # t.save_key(save_locally=False)
-    # t.save_data()
-
-    s = SecureCookie("pixiv_fanbox")
-    print(s.data)
+if __name__ == "__main__":
+    print(SecurePixivRefreshToken())
