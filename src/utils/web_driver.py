@@ -551,7 +551,7 @@ async def execute_download_process(website: str, creator_page: bool, download_pa
         with httpx.Client(http2=True, cookies=cookie, timeout=10, headers=C.BASE_REQ_HEADERS.copy()) as client:
             for retry_counter in range(1, C.MAX_RETRIES + 1):
                 try:
-                    response = client.get("https://fantia.jp/")
+                    response = client.get(C.FANTIA_WEBSITE_URL)
                     if response.status_code == 404:
                         log_failed_post_api_call(
                             download_path=download_path, 
