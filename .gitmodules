@@ -1,0 +1,3 @@
+[submodule "Cultured-Downloader-CLI"]
+	path = Cultured-Downloader-CLI
+	url = https://github.com/KJHJason/Cultured-Downloader-CLI
