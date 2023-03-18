@@ -104,7 +104,8 @@ async def async_download_file(url_info: tuple[str, str], folder_path: pathlib.Pa
                         async for chunk in response.aiter_bytes(chunk_size=C.CHUNK_SIZE):
                             await f.write(chunk)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError, httpx.StreamError):
-                await async_remove_file(file_path)
+                if file_path is not None:
+                    await async_remove_file(file_path)
                 if (retry_counter == C.MAX_RETRIES):
                     failed_downloads_arr.append(
                         (url_info, website, folder_path)
