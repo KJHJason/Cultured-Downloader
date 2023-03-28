@@ -10,6 +10,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # import Python's standard libraries
+import sys
 import time
 import types
 import logging
@@ -144,6 +145,7 @@ def get_driver(
         if (C.USER_PLATFORM == "Linux"):
             chrome_download_link += "?platform=linux"
         print_danger(message=f"Google Chrome browser download link: {chrome_download_link}\n")
+        sys.exit(1)
 
     driver.set_window_size(*window_size)
     return driver
