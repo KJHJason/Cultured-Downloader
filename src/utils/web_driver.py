@@ -145,6 +145,7 @@ def get_driver(
         if (C.USER_PLATFORM == "Linux"):
             chrome_download_link += "?platform=linux"
         print_danger(message=f"Google Chrome browser download link: {chrome_download_link}\n")
+        input("Press ENTER to exit...")
         sys.exit(1)
 
     driver.set_window_size(*window_size)
