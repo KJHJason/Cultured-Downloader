@@ -1,7 +1,7 @@
 selenium==4.8.3
 webdriver-manager==3.8.5
 aiofiles==23.1.0
-httpx[http2]==0.23.3
+httpx[http2]==0.24.0
 colorama==0.4.6
 cryptography==40.0.1
 pydantic==1.10.7
