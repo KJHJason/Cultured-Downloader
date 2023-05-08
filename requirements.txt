@@ -1,4 +1,4 @@
-selenium==4.8.3
+selenium==4.9.1
 webdriver-manager==3.8.6
 aiofiles==23.1.0
 httpx[http2]==0.24.0
