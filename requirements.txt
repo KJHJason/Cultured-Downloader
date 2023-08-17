@@ -4,6 +4,6 @@ aiofiles==23.1.0
 httpx[http2]==0.24.1
 colorama==0.4.6
 cryptography==41.0.2
-pydantic==1.10.8
+pydantic==2.2.0
 Pillow==9.5.0
 lxml==4.9.3
