@@ -1,6 +1,6 @@
 selenium==4.11.2
 webdriver-manager==4.0.0
-aiofiles==23.1.0
+aiofiles==23.2.1
 httpx[http2]==0.24.1
 colorama==0.4.6
 cryptography==41.0.3
