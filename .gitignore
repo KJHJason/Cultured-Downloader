@@ -1,11 +1,4 @@
 *.txt
-*.pyc
+*.json
 *.exe
-*.spec
-*.log
-set_exe_info.py
 *test*
-ExperimentalCulturedDownloader.py
-build
-dist
-venv

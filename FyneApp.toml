@@ -1,0 +1,8 @@
+Website = "https://github.com/KJHJason/Cultured-Downloader"
+
+[Details]
+    Icon = "./icons/cultured-downloader-logo.png"
+    Name = "Cultured Downloader"
+    ID = "cultured.downloader"
+    Version = "1.0.0"
+    Build = 1

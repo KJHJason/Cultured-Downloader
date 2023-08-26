@@ -1,9 +1,0 @@
-selenium==4.11.2
-webdriver-manager==4.0.0
-aiofiles==23.1.0
-httpx[http2]==0.24.1
-colorama==0.4.6
-cryptography==41.0.3
-pydantic==2.2.1
-Pillow==10.0.0
-lxml==4.9.3
