@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader/icons"
+	"github.com/KJHJason/Cultured-Downloader/settings"
 )
 
 func main() {
@@ -16,13 +17,15 @@ func main() {
 	myWindow := myApp.NewWindow("Cultured Downloader")
 	myWindow.Resize(fyne.NewSize(800, 600))
 
+	homeWidget := widget.NewLabel("Home")
 	fantiaWidget := widget.NewLabel("Fantia")
 	pixivFanboxWidget := widget.NewLabel("Pixiv Fanbox")
 	pixivWidget := widget.NewLabel("Pixiv")
 	kemonoWidget := widget.NewLabel("Kemono")
-	settingsWidget := widget.NewLabel("Settings")
+	settingsWidget := settings.GetSettingsGUI()
 
 	tabs := container.NewAppTabs(
+		container.NewTabItemWithIcon("", theme.HomeIcon(), homeWidget),
 		container.NewTabItemWithIcon("", icons.FantiaIcon, fantiaWidget),
 		container.NewTabItemWithIcon("", icons.PixivFanboxIcon, pixivFanboxWidget),
 		container.NewTabItemWithIcon("", icons.PixivIcon, pixivWidget),
