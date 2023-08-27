@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader/icons"
-	"github.com/KJHJason/Cultured-Downloader/settings"
 )
 
 func main() {
@@ -17,20 +16,20 @@ func main() {
 	myWindow := myApp.NewWindow("Cultured Downloader")
 	myWindow.Resize(fyne.NewSize(800, 600))
 
-	homeWidget := widget.NewLabel("Home")
-	fantiaWidget := widget.NewLabel("Fantia")
-	pixivFanboxWidget := widget.NewLabel("Pixiv Fanbox")
-	pixivWidget := widget.NewLabel("Pixiv")
-	kemonoWidget := widget.NewLabel("Kemono")
-	settingsWidget := settings.GetSettingsGUI()
+	homeCanvas := widget.NewLabel("Home")
+	fantiaCanvas := getFantiaGUI(myWindow)
+	pixivFanboxCanvas := widget.NewLabel("Pixiv Fanbox")
+	pixivCanvas := widget.NewLabel("Pixiv")
+	kemonoCanvas := widget.NewLabel("Kemono")
+	settingsCanvas := getSettingsGUI()
 
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("", theme.HomeIcon(), homeWidget),
-		container.NewTabItemWithIcon("", icons.FantiaIcon, fantiaWidget),
-		container.NewTabItemWithIcon("", icons.PixivFanboxIcon, pixivFanboxWidget),
-		container.NewTabItemWithIcon("", icons.PixivIcon, pixivWidget),
-		container.NewTabItemWithIcon("", icons.KemonoIcon, kemonoWidget),
-		container.NewTabItemWithIcon("", theme.SettingsIcon(), settingsWidget),
+		container.NewTabItemWithIcon("", theme.HomeIcon(), homeCanvas),
+		container.NewTabItemWithIcon("", icons.FantiaIcon, fantiaCanvas),
+		container.NewTabItemWithIcon("", icons.PixivFanboxIcon, pixivFanboxCanvas),
+		container.NewTabItemWithIcon("", icons.PixivIcon, pixivCanvas),
+		container.NewTabItemWithIcon("", icons.KemonoIcon, kemonoCanvas),
+		container.NewTabItemWithIcon("", theme.SettingsIcon(), settingsCanvas),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)
 
