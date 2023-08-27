@@ -72,7 +72,7 @@ Reasons: If you do not restrict your API key to only work with Google Drive API,
 
 <img src="/res/guide/gdrive_api_setup/service_account/step-2.2.png" alt="step 2.2" style="width: 70%;">
 
-3. Give the service account a name (any will do) and click `CREATE`.
+3. Give the service account a name (any will do) and click `DONE`.
 
 <img src="/res/guide/gdrive_api_setup/service_account/step-2.3.gif" alt="step 2.3" style="width: 70%;">
 
