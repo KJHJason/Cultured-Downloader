@@ -44,10 +44,10 @@ func NewProgressBar(label, errMsg string, win fyne.Window) (*fyne.Container, *Pr
 	}
 }
 
-func (p *ProgressBar) SetMax(max float64) {
+func (p *ProgressBar) UpdateMax(max int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.bar.Max = max
+	p.bar.Max = float64(max)
 }
 
 func (p *ProgressBar) Start() {
@@ -64,12 +64,6 @@ func (p *ProgressBar) Stop(hasErr bool) {
 	if hasErr {
 		dialog.ShowError(p.errMsg, p.win)
 	}
-}
-
-func (p *ProgressBar) SetProgress(val float64) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.bar.SetValue(val)
 }
 
 func (p *ProgressBar) Increment() {
