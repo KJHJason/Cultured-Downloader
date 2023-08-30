@@ -21,6 +21,7 @@ func main() {
 	pixivFanboxCanvas := widget.NewLabel("Pixiv Fanbox")
 	pixivCanvas := widget.NewLabel("Pixiv")
 	kemonoCanvas := widget.NewLabel("Kemono")
+	downloadQueueCanvas := widget.NewLabel("Download Queue")
 	settingsCanvas := getSettingsGUI()
 
 	tabs := container.NewAppTabs(
@@ -29,6 +30,7 @@ func main() {
 		container.NewTabItemWithIcon("", icons.PixivFanboxIcon, pixivFanboxCanvas),
 		container.NewTabItemWithIcon("", icons.PixivIcon, pixivCanvas),
 		container.NewTabItemWithIcon("", icons.KemonoIcon, kemonoCanvas),
+		container.NewTabItemWithIcon("", theme.DownloadIcon(), downloadQueueCanvas),
 		container.NewTabItemWithIcon("", theme.SettingsIcon(), settingsCanvas),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)
