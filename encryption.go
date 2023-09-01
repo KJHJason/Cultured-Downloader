@@ -1,10 +1,10 @@
 package main
 
 import (
-    "crypto/rand"
-    "crypto/sha256"
-    "encoding/hex"
-    "io"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 
 	"fyne.io/fyne/v2"
 	"golang.org/x/crypto/pbkdf2"
@@ -60,7 +60,7 @@ func deriveKey(password string) []byte {
 		}
 	}
 
-    // Derive the key using PBKDF2 with HMAC-SHA256
+	// Derive the key using PBKDF2 with HMAC-SHA256
 	return pbkdf2.Key([]byte(password), salt, iterations, keyLength, sha256.New)
 }
 
