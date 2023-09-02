@@ -27,7 +27,7 @@ func showErrDialog(err error, win fyne.Window) {
 
 func main() {
 	myApp := app.NewWithID("cultured.downloader")
-	myApp.SetIcon(icons.CulturedDownloaderIcon)
+	myApp.SetIcon(icons.ResourceCulturedDownloaderLogoPng)
 	myWindow := myApp.NewWindow("Cultured Downloader")
 	myWindow.Resize(fyne.NewSize(800, 600))
 
@@ -41,10 +41,10 @@ func main() {
 
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("", theme.HomeIcon(), homeCanvas),
-		container.NewTabItemWithIcon("", icons.FantiaIcon, fantiaCanvas),
-		container.NewTabItemWithIcon("", icons.PixivFanboxIcon, pixivFanboxCanvas),
-		container.NewTabItemWithIcon("", icons.PixivIcon, pixivCanvas),
-		container.NewTabItemWithIcon("", icons.KemonoIcon, kemonoCanvas),
+		container.NewTabItemWithIcon("", icons.ResourceFantiaLogoPng, fantiaCanvas),
+		container.NewTabItemWithIcon("", icons.ResourcePixivFanboxLogoPng, pixivFanboxCanvas),
+		container.NewTabItemWithIcon("", icons.ResourcePixivLogoPng, pixivCanvas),
+		container.NewTabItemWithIcon("", icons.ResourceKemonoLogoPng, kemonoCanvas),
 		container.NewTabItemWithIcon("", theme.DownloadIcon(), downloadQueueCanvas),
 		container.NewTabItemWithIcon("", theme.SettingsIcon(), settingsCanvas),
 	)
