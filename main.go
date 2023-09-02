@@ -9,7 +9,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader/icons"
-	"github.com/KJHJason/Cultured-Downloader/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 )
 
@@ -53,10 +52,6 @@ func main() {
 
 	myWindow.SetContent(tabs)
 	myWindow.Show()
-
-	masterPasswordHash := myApp.Preferences().String(constants.MasterPasswordHashKey)
-	if masterPasswordHash != "" {
-		promptMasterPassword(myApp, myWindow)
-	}
+	promptMasterPassword(myApp, myWindow)
 	myApp.Run()
 }

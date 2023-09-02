@@ -36,10 +36,13 @@ func readPath(path string) ([]byte, error) {
 }
 
 var masterPassword string
-
+var securityForm *widget.Form
+var resetSecurityContainer *fyne.Container
 func promptMasterPassword(app fyne.App, win fyne.Window) {
 	savedMasterPasswordHashStr := app.Preferences().String(constants.MasterPasswordHashKey)
 	if savedMasterPasswordHashStr == "" {
+		securityForm.Show()
+		resetSecurityContainer.Hide()
 		return
 	}
 	savedMasterPasswordHash, err := base64.StdEncoding.DecodeString(savedMasterPasswordHashStr)
@@ -63,6 +66,8 @@ func promptMasterPassword(app fyne.App, win fyne.Window) {
 					masterPassword = ""
 					cryptography.ResetEncryptedFields(app)
 					modal.Hide()
+					securityForm.Show()
+					resetSecurityContainer.Hide()
 				}
 			},
 			win,
@@ -75,6 +80,8 @@ func promptMasterPassword(app fyne.App, win fyne.Window) {
 		if cryptography.VerifyPassword(masterPasswordEntry.Text, savedMasterPasswordHash) {
 			masterPassword = masterPasswordEntry.Text
 			modal.Hide()
+			securityForm.Hide()
+			resetSecurityContainer.Show()
 		} else {
 			showErrDialog(fmt.Errorf("incorrect password"), win)
 			return
@@ -114,8 +121,6 @@ func getSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 	securityTitle := canvas.NewText("Security", color.White)
 	securityTitle.TextSize = h2
 
-	var securityForm *widget.Form
-	var resetSecurityContainer *fyne.Container
 	securityForm = &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "Master Password:", Widget: masterPasswordEntry},
@@ -241,14 +246,6 @@ func getSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 		),
 		container.New(layout.NewHBoxLayout(), layout.NewSpacer()),
 	)
-
-	if app.Preferences().String(constants.MasterPasswordHashKey) != "" {
-		resetSecurityContainer.Show()
-		securityForm.Hide()
-	} else {
-		resetSecurityContainer.Hide()
-		securityForm.Show()
-	}
 
 	gdriveApiKeyEntry := widget.NewEntry()
 	gdriveApiKeyEntry.SetText(app.Preferences().String(constants.GdriveApiKeyKey))
