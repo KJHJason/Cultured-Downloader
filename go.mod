@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	fyne.io/fyne/v2 v2.4.0
-	github.com/KJHJason/Cultured-Downloader-Logic v0.0.0-20230902101408-556b33baa262
+	github.com/KJHJason/Cultured-Downloader-Logic v1.0.2
 	github.com/shirou/gopsutil/v3 v3.23.8
 	golang.org/x/crypto v0.12.0
 )
@@ -40,8 +40,8 @@ require (
 	golang.org/x/image v0.11.0 // indirect
 	golang.org/x/mobile v0.0.0-20230901161150-52620a4a7557 // indirect
 	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/js/dom v0.0.0-20230808055721-96db8f4d5e3b // indirect
 )
