@@ -3,13 +3,14 @@ module github.com/KJHJason/Cultured-Downloader
 go 1.21.0
 
 require (
-	fyne.io/fyne/v2 v2.3.5
+	fyne.io/fyne/v2 v2.4.0
+	github.com/KJHJason/Cultured-Downloader-Logic v0.0.0-20230902101408-556b33baa262
 	github.com/shirou/gopsutil/v3 v3.23.8
 	golang.org/x/crypto v0.12.0
 )
 
 require (
-	fyne.io/systray v1.10.1-0.20230602210930-b6a2d6ca2a7b // indirect
+	fyne.io/systray v1.10.1-0.20230722100817-88df1e0ffa9a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -19,9 +20,9 @@ require (
 	github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
+	github.com/go-text/render v0.0.0-20230619120952-35bccb6164b8 // indirect
 	github.com/go-text/typesetting v0.0.0-20230803102845-24e03d8b5372 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/goki/freetype v1.0.1 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a // indirect
@@ -37,7 +38,7 @@ require (
 	github.com/yuin/goldmark v1.5.6 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/image v0.11.0 // indirect
-	golang.org/x/mobile v0.0.0-20230818142238-7088062f872d // indirect
+	golang.org/x/mobile v0.0.0-20230901161150-52620a4a7557 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect

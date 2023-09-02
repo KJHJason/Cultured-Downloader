@@ -58,7 +58,7 @@ func (p *ProgressBar) Start() {
 func (p *ProgressBar) Stop(hasErr bool) {
 	p.bar.Hide()
 	p.label.Hide()
-	p.bar.SetValue(0)
+	p.bar.SetValue(p.bar.Max)
 	p.bar.Refresh()
 
 	if hasErr {

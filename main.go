@@ -4,11 +4,27 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader/icons"
+	"github.com/KJHJason/Cultured-Downloader/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 )
+
+func errDialog(err error, exit bool, win fyne.Window) {
+	dialog.ShowError(err, win)
+	logger.LogError(err, exit, logger.ERROR)
+}
+
+func panicWithDialog(err error, win fyne.Window) {
+	errDialog(err, true, win)
+}
+
+func showErrDialog(err error, win fyne.Window) {
+	errDialog(err, false, win)
+}
 
 func main() {
 	myApp := app.NewWithID("cultured.downloader")
@@ -22,7 +38,7 @@ func main() {
 	pixivCanvas := widget.NewLabel("Pixiv")
 	kemonoCanvas := widget.NewLabel("Kemono")
 	downloadQueueCanvas := widget.NewLabel("Download Queue")
-	settingsCanvas := getSettingsGUI()
+	settingsCanvas := getSettingsGUI(myApp, myWindow)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("", theme.HomeIcon(), homeCanvas),
@@ -36,5 +52,11 @@ func main() {
 	tabs.SetTabLocation(container.TabLocationLeading)
 
 	myWindow.SetContent(tabs)
-	myWindow.ShowAndRun()
+	myWindow.Show()
+
+	masterPasswordHash := myApp.Preferences().String(constants.MasterPasswordHashKey)
+	if masterPasswordHash != "" {
+		promptMasterPassword(myApp, myWindow)
+	}
+	myApp.Run()
 }

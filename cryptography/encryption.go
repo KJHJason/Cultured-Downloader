@@ -1,27 +1,32 @@
-package main
+package cryptography
 
 import (
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 	"io"
 
 	"fyne.io/fyne/v2"
-	"golang.org/x/crypto/pbkdf2"
-	"golang.org/x/crypto/chacha20poly1305"
 	"github.com/shirou/gopsutil/v3/host"
+	"golang.org/x/crypto/chacha20poly1305"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
 	// see https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 	// for the reasonings behind the values used here
 	saltLength = 16 // (in bytes)
-	iterations = 1000 // higher values increase security but also slow down key derivation
+	iterations = 50000 // higher values increase security but also slow down key derivation
 	keyLength  = 32 // (in bytes)
 
 	// Preferences key
 	masterKeySalt = "masterkey-salt"
 )
+
+// reset the salt for the key derivation function
+func ResetMasterKeySalt(app fyne.App) {
+	app.Preferences().SetString(masterKeySalt, "")
+}
 
 var tag []byte
 func init() {
@@ -49,13 +54,14 @@ func deriveKey(password string) []byte {
 	app := fyne.CurrentApp()
 	if app.Preferences().String(masterKeySalt) == "" {
 		salt = generateNonce(saltLength) // Generate a random 128-bit salt according to NIST SP 800-132
-		app.Preferences().SetString(masterKeySalt, hex.EncodeToString(generateNonce(saltLength)))
+		app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(saltLength)))
 	} else {
-		salt, err = hex.DecodeString(app.Preferences().String(masterKeySalt))
-		if err != nil {
+		salt, err = base64.StdEncoding.DecodeString(app.Preferences().String(masterKeySalt))
+		if err != nil || len(salt) != saltLength {
 			// Shouldn't happen unless the user has tampered with the preferences file,
-			// in which case we should just panic after resetting the salt
-			app.Preferences().SetString(masterKeySalt, hex.EncodeToString(generateNonce(saltLength)))
+			// in which case we should just panic after resetting the salt and the encrypted fields
+			app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(saltLength)))
+			ResetEncryptedFields(app)
 			panic(err)
 		}
 	}
@@ -66,10 +72,10 @@ func deriveKey(password string) []byte {
 
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	// Nonce (unique for each encryption)
-	nonce := generateNonce(chacha20poly1305.NonceSize)
+	nonce := generateNonce(chacha20poly1305.NonceSizeX)
 
-	// Create a ChaCha20-Poly1305 AEAD cipher
-	aead, err := chacha20poly1305.New(key)
+	// Create a XChaCha20-Poly1305 AEAD cipher
+	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
 		return nil, err
 	}
@@ -81,21 +87,21 @@ func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	return append(nonce, ciphertext...), nil
 }
 
-func encryptWithPassword(plaintext []byte, password string) ([]byte, error) {
+func EncryptWithPassword(plaintext []byte, password string) ([]byte, error) {
 	key := deriveKey(password)
 	return encrypt(plaintext, key)
 }
 
 func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
-	// Create a ChaCha20-Poly1305 AEAD cipher
-	aead, err := chacha20poly1305.New(key)
+	// Create a XChaCha20-Poly1305 AEAD cipher
+	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
 		return nil, err
 	}
 
 	// Split nonce and ciphertext
-	nonce := ciphertext[:chacha20poly1305.NonceSize]
-	ciphertext = ciphertext[chacha20poly1305.NonceSize:]
+	nonce := ciphertext[:chacha20poly1305.NonceSizeX]
+	ciphertext = ciphertext[chacha20poly1305.NonceSizeX:]
 
 	// Decrypt the ciphertext
 	plaintext, err := aead.Open(nil, nonce, ciphertext, tag)
@@ -106,7 +112,7 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-func decryptWithPassword(ciphertext []byte, password string) ([]byte, error) {
+func DecryptWithPassword(ciphertext []byte, password string) ([]byte, error) {
 	key := deriveKey(password)
 	return decrypt(ciphertext, key)
 }
