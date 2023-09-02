@@ -1,6 +1,8 @@
 package main
 
 import (
+	xtheme "fyne.io/x/fyne/theme"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -27,6 +29,7 @@ func showErrDialog(err error, win fyne.Window) {
 
 func main() {
 	myApp := app.NewWithID("cultured.downloader")
+	myApp.Settings().SetTheme(xtheme.AdwaitaTheme())
 	myApp.SetIcon(icons.ResourceCulturedDownloaderLogoPng)
 	myWindow := myApp.NewWindow("Cultured Downloader")
 	myWindow.Resize(fyne.NewSize(800, 600))
