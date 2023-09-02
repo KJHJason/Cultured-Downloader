@@ -12,9 +12,9 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-
-	// "fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
@@ -249,11 +249,24 @@ func getSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 
 	gdriveApiKeyEntry := widget.NewEntry()
 	gdriveApiKeyEntry.SetText(app.Preferences().String(constants.GdriveApiKeyKey))
-	gdriveApiKeyEntry.Validator = validators.EmptyStr
+	gdriveApiKeyEntry.Validator = validators.GdriveApiKey
 
 	gdriveServiceAccPathEntry := widget.NewEntry()
 	gdriveServiceAccPathEntry.SetText(app.Preferences().String(constants.GdriveServiceAccKey))
 	gdriveServiceAccPathEntry.Validator = validators.Filepath
+
+	var filePicker *dialog.FileDialog
+	filePicker = dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
+		if err != nil {
+			filePicker.Hide()
+			showErrDialog(err, win)
+			return
+		}
+
+		gdriveServiceAccPathEntry.Text = reader.URI().String()
+		gdriveServiceAccPathEntry.Refresh()
+	}, win)
+	filePicker.SetFilter(storage.NewExtensionFileFilter([]string{".json"}))
 
 	driveTitle := canvas.NewText("Google Drive API", color.White)
 	driveTitle.TextSize = h2
@@ -261,8 +274,15 @@ func getSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 		Items: []*widget.FormItem{
 			{Text: "API Key:", Widget: gdriveApiKeyEntry},
 			{Text: "Service Account Filepath:", Widget: gdriveServiceAccPathEntry},
+			{Text: "", Widget: widget.NewButtonWithIcon("Browse", theme.FileIcon(), func() {
+				filePicker.Show()
+			})},
 		},
 		OnSubmit: func() {
+			if gdriveServiceAccPathEntry.Text == "" && gdriveApiKeyEntry.Text == "" {
+				return
+			}
+
 			if gdriveServiceAccPathEntry.Text != "" {
 				serviceAccPath := iofuncs.CleanPathName(gdriveServiceAccPathEntry.Text)
 				fileBytes, err := readPath(serviceAccPath)
