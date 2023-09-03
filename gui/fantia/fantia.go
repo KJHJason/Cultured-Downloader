@@ -1,4 +1,4 @@
-package main
+package fantia
 
 import (
 	"fmt"
@@ -11,22 +11,24 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader/progress"
+	"github.com/KJHJason/Cultured-Downloader/validators"
+	"github.com/KJHJason/Cultured-Downloader/gui"
 )
 
 func getNewFantiaEntry() *widget.Entry {
 	entry := widget.NewEntry()
 	entry.PlaceHolder = "Enter URL:"
-	entry.Validator = validatorTest
+	entry.Validator = validators.EmptyStr
 	return entry
 }
 
-func getFantiaGUI(win fyne.Window) *container.Scroll {
-	baseGuiEl := getBaseGuiElements("Fantia")
-	grid := baseGuiEl.grid
-	delBtn := baseGuiEl.delBtn
-	addBtn := baseGuiEl.addBtn
-	addTenBtn := baseGuiEl.addTenBtn
-	resetBtn := baseGuiEl.resetBtn
+func GetFantiaGUI(win fyne.Window) *container.Scroll {
+	baseGuiEl := gui.GetBaseGuiElements("Fantia", getNewFantiaEntry)
+	grid := baseGuiEl.Grid()
+	delBtn := baseGuiEl.DelBtn()
+	addBtn := baseGuiEl.AddBtn()
+	addTenBtn := baseGuiEl.AddTenBtn()
+	resetBtn := baseGuiEl.ResetBtn()
 
 	retrieveJsonCon, _ := progress.NewProgressBar(progress.RetrieveJsonLabel, "Something went wrong when obtaining posts details from Fantia!", win)
 
@@ -59,7 +61,7 @@ func getFantiaGUI(win fyne.Window) *container.Scroll {
 	)
 	vBox := container.New(
 		layout.NewVBoxLayout(), 
-		baseGuiEl.title, 
+		baseGuiEl.Title(), 
 		widget.NewSeparator(),
 
 		retrieveJsonCon,

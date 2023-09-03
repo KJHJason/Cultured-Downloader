@@ -1,4 +1,4 @@
-package main
+package gui
 
 import (
 	"image/color"
@@ -6,17 +6,10 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
-
-func getNewEntry() *widget.Entry {
-	entry := widget.NewEntry()
-	entry.PlaceHolder = "Enter URL:"
-	entry.Validator = validatorTest
-	return entry
-}
 
 type baseGuiElements struct {
 	title     *canvas.Text
@@ -27,18 +20,42 @@ type baseGuiElements struct {
 	resetBtn  *widget.Button
 }
 
+func (b baseGuiElements) Title() *canvas.Text {
+	return b.title
+}
+
+func (b baseGuiElements) Grid() *fyne.Container {
+	return b.grid
+}
+
+func (b baseGuiElements) DelBtn() *widget.Button {
+	return b.delBtn
+}
+
+func (b baseGuiElements) AddBtn() *widget.Button {
+	return b.addBtn
+}
+
+func (b baseGuiElements) AddTenBtn() *widget.Button {
+	return b.addTenBtn
+}
+
+func (b baseGuiElements) ResetBtn() *widget.Button {
+	return b.resetBtn
+}
+
 const (
-	h1 = 24
-	h2 = 18
+	H1 = 24
+	H2 = 18
 )
 
-func getBaseGuiElements(titleStr string) baseGuiElements {
+func GetBaseGuiElements(titleStr string, getNewEntry func() *widget.Entry) baseGuiElements {
 	title := canvas.NewText(titleStr, color.White)
 	title.TextStyle = fyne.TextStyle{
 		Bold: true,
 	}
 	title.Alignment = fyne.TextAlignCenter
-	title.TextSize = h1
+	title.TextSize = H1
 
 	grid := container.New(layout.NewGridLayout(1), getNewEntry())
 	delBtn := widget.NewButtonWithIcon("Delete", theme.DeleteIcon(), func() {
@@ -57,7 +74,7 @@ func getBaseGuiElements(titleStr string) baseGuiElements {
 		grid.Refresh()
 	})
 	resetBtn := widget.NewButtonWithIcon("Reset", theme.ContentClearIcon(), func() {
-		grid.Objects = []fyne.CanvasObject{getNewFantiaEntry()}
+		grid.Objects = []fyne.CanvasObject{getNewEntry()}
 		grid.Refresh()
 	})
 	return baseGuiElements{

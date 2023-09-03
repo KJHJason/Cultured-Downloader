@@ -2,7 +2,7 @@ package cryptography
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"io"
 
@@ -16,7 +16,7 @@ const (
 	// see https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 	// for the reasonings behind the values used here
 	saltLength = 16 // (in bytes)
-	iterations = 50000 // higher values increase security but also slow down key derivation
+	iterations = 210000 // higher values increase security but also slow down key derivation
 	keyLength  = 32 // (in bytes)
 
 	// Preferences key
@@ -48,7 +48,7 @@ func generateNonce(n uint8) []byte {
 }
 
 // Uses PBKDF2 to derive a 256-bit key from the password
-func deriveKey(password string) []byte {
+func deriveKey(password string) ([]byte, error) {
 	var salt []byte
 	var err error
 	app := fyne.CurrentApp()
@@ -62,12 +62,12 @@ func deriveKey(password string) []byte {
 			// in which case we should just panic after resetting the salt and the encrypted fields
 			app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(saltLength)))
 			ResetEncryptedFields(app)
-			panic(err)
+			return nil, err
 		}
 	}
 
-	// Derive the key using PBKDF2 with HMAC-SHA256
-	return pbkdf2.Key([]byte(password), salt, iterations, keyLength, sha256.New)
+	// Derive the key using PBKDF2 with HMAC-SHA512
+	return pbkdf2.Key([]byte(password), salt, iterations, keyLength, sha512.New), err
 }
 
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
@@ -88,7 +88,10 @@ func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 }
 
 func EncryptWithPassword(plaintext []byte, password string) ([]byte, error) {
-	key := deriveKey(password)
+	key, err := deriveKey(password)
+	if err != nil {
+		return nil, err
+	}
 	return encrypt(plaintext, key)
 }
 
@@ -113,6 +116,9 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 }
 
 func DecryptWithPassword(ciphertext []byte, password string) ([]byte, error) {
-	key := deriveKey(password)
+	key, err := deriveKey(password)
+	if err != nil {
+		return nil, err
+	}
 	return decrypt(ciphertext, key)
 }

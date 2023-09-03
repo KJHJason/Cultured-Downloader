@@ -6,26 +6,13 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KJHJason/Cultured-Downloader/icons"
-	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
+	"github.com/KJHJason/Cultured-Downloader/gui/fantia"
+	"github.com/KJHJason/Cultured-Downloader/gui/settings"
 )
-
-func errDialog(err error, exit bool, win fyne.Window) {
-	dialog.ShowError(err, win)
-	logger.LogError(err, exit, logger.ERROR)
-}
-
-func panicWithDialog(err error, win fyne.Window) {
-	errDialog(err, true, win)
-}
-
-func showErrDialog(err error, win fyne.Window) {
-	errDialog(err, false, win)
-}
 
 func main() {
 	myApp := app.NewWithID("cultured.downloader")
@@ -35,12 +22,12 @@ func main() {
 	myWindow.Resize(fyne.NewSize(800, 600))
 
 	homeCanvas := widget.NewLabel("Home")
-	fantiaCanvas := getFantiaGUI(myWindow)
+	fantiaCanvas := fantia.GetFantiaGUI(myWindow)
 	pixivFanboxCanvas := widget.NewLabel("Pixiv Fanbox")
 	pixivCanvas := widget.NewLabel("Pixiv")
 	kemonoCanvas := widget.NewLabel("Kemono")
 	downloadQueueCanvas := widget.NewLabel("Download Queue")
-	settingsCanvas := getSettingsGUI(myApp, myWindow)
+	settingsCanvas := settings.GetSettingsGUI(myApp, myWindow)
 
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("", theme.HomeIcon(), homeCanvas),
@@ -55,6 +42,6 @@ func main() {
 
 	myWindow.SetContent(tabs)
 	myWindow.Show()
-	promptMasterPassword(myApp, myWindow)
+	settings.PromptMasterPassword(myApp, myWindow)
 	myApp.Run()
 }

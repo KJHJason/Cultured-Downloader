@@ -2,6 +2,8 @@ package cryptography
 
 import (
 	"encoding/base64"
+	"errors"
+
 	"fyne.io/fyne/v2"
 	"github.com/KJHJason/Cultured-Downloader/constants"
 )
@@ -45,6 +47,14 @@ func reEncryptEncryptedField(encodedCiphertext string, oldMasterPassword, newMas
 }
 
 func ReEncryptEncryptedFields(app fyne.App, oldMasterPassword, newMasterPassword string) error {
+	if newMasterPassword == "" {
+		return errors.New("new master password cannot be empty")
+	}
+
+	if oldMasterPassword == "" || oldMasterPassword == newMasterPassword {
+		return nil // no need to re-encrypt
+	}
+
 	for _, key := range encryptedFields {
 		encodedEncryptedField := app.Preferences().String(key)
 		if encodedEncryptedField != "" {
@@ -68,7 +78,20 @@ func EncryptPlainField(app fyne.App, key string, plaintext []byte, masterPasswor
 	return nil
 }
 
-func DecryptEncryptedField(app fyne.App, key string, masterPassword string) (string, error) {
+func EncryptPlainFields(app fyne.App, masterPassword string) error {
+	for _, key := range encryptedFields {
+		plaintext := app.Preferences().String(key)
+		if plaintext == "" {
+			continue
+		}
+		if err := EncryptPlainField(app, key, []byte(plaintext), masterPassword); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DecryptEncryptedField(app fyne.App, key string, masterPassword string, encode bool) (string, error) {
 	encodedEncryptedField := app.Preferences().String(key)
 	if encodedEncryptedField == "" {
 		return "", nil
@@ -85,12 +108,15 @@ func DecryptEncryptedField(app fyne.App, key string, masterPassword string) (str
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(plaintext), nil
+	if encode {
+		return base64.StdEncoding.EncodeToString(plaintext), nil
+	}
+	return string(plaintext), nil
 }
 
 func DecryptEncryptedFields(app fyne.App, masterPassword string) error {
 	for _, key := range encryptedFields {
-		if decryptedField, err := DecryptEncryptedField(app, key, masterPassword); err != nil {
+		if decryptedField, err := DecryptEncryptedField(app, key, masterPassword, false); err != nil {
 			return err
 		} else {
 			app.Preferences().SetString(key, decryptedField)
