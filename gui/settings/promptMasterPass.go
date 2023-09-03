@@ -18,14 +18,17 @@ import (
 
 func showSensitiveEntries(app fyne.App, win fyne.Window) {
 	if masterPassword == "" {
-		gdriveApiKeyEntry.SetText(app.Preferences().String(constants.GdriveApiKeyKey))
+		gdriveApiKey := app.Preferences().String(constants.GdriveApiKeyKey)
+		gdriveApiKeyEntry1.SetText(gdriveApiKey)
+		gdriveApiKeyEntry2.SetText(gdriveApiKey)
 	} else {
 		decrypted, err := cryptography.DecryptEncryptedField(app, constants.GdriveApiKeyKey, masterPassword, false)
 		if err != nil {
 			app.Preferences().SetString(constants.GdriveApiKeyKey, "")
 			gui.PanicWithDialog(err, win)
 		}
-		gdriveApiKeyEntry.SetText(decrypted)
+		gdriveApiKeyEntry1.SetText(decrypted)
+		gdriveApiKeyEntry2.SetText(decrypted)
 	}
 }
 

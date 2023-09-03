@@ -25,13 +25,21 @@ func EmptyStr(s string) error {
 	return nil
 }
 
-func GdriveApiKey(key string) error {
+func GdriveApiKeyNoEmpty(key string) error {
 	if key == "" {
-		return nil
+		return fmt.Errorf("cannot be empty")
 	}
 
 	if !gdrive.API_KEY_REGEX.MatchString(key) {
 		return fmt.Errorf("invalid API key")
 	}
 	return nil
+}
+
+func GdriveApiKey(key string) error {
+	if key == "" {
+		return nil
+	}
+
+	return GdriveApiKeyNoEmpty(key)
 }

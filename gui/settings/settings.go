@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"image/color"
@@ -13,11 +14,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader/constants"
 	"github.com/KJHJason/Cultured-Downloader/cryptography"
 	"github.com/KJHJason/Cultured-Downloader/validators"
 	"github.com/KJHJason/Cultured-Downloader/gui"
+
+	"github.com/KJHJason/Cultured-Downloader-Logic"
+	cdlconstants "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 )
 
 var (
@@ -26,7 +29,8 @@ var (
 	securityForm           *widget.Form
 	resetSecurityContainer *fyne.Container
 
-	gdriveApiKeyEntry *widget.Entry
+	gdriveApiKeyEntry1 *widget.Entry
+	gdriveApiKeyEntry2 *widget.Entry
 )
 
 func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
@@ -115,8 +119,7 @@ func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 		container.New(layout.NewHBoxLayout(), layout.NewSpacer()),
 	)
 
-	gdriveApiKeyEntry = widget.NewPasswordEntry()
-	gdriveApiKeyEntry.Validator = validators.GdriveApiKey
+	gdriveApiKeyEntry1 = getGdriveApiKeyEntry(validators.GdriveApiKey)
 
 	gdriveServiceAccPathEntry := widget.NewEntry()
 	gdriveServiceAccPathEntry.Validator = validators.Filepath
@@ -125,20 +128,38 @@ func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 
 	driveTitle := canvas.NewText("Google Drive API", color.White)
 	driveTitle.TextSize = gui.H2
-	driveForm := &widget.Form{
+
+	var driveForm, driveFormWithPath *widget.Form
+	driveForm = &widget.Form{
 		Items: []*widget.FormItem{
-			{Text: "API Key:", Widget: gdriveApiKeyEntry},
-			{Text: "Service Account Filepath:", Widget: gdriveServiceAccPathEntry},
-			{Text: "", Widget: widget.NewButtonWithIcon("Browse", theme.FileIcon(), func() {
-				driveFilePicker.Show()
-			})},
+			{Text: "API Key:", Widget: gdriveApiKeyEntry1},
+			{Text: "Service Account Filepath:", Widget: container.New(
+				layout.NewVBoxLayout(),
+				gdriveServiceAccPathEntry,
+				widget.NewButtonWithIcon("Browse", theme.FileIcon(), func() {
+					driveFilePicker.Show()
+				}),
+			)},
 		},
 		OnSubmit: func() {
 			if gdriveServiceAccPathEntry.Text != "" {
-				serviceAccPath := iofuncs.CleanPathName(gdriveServiceAccPathEntry.Text)
-				fileBytes, err := readPath(serviceAccPath)
+				fileBytes, err := readPath(gdriveServiceAccPathEntry.Text)
 				if err != nil {
 					gui.ShowErrDialog(err, win)
+					return
+				}
+
+				if _, err := cdlogic.GetNewGDrive("", cdlconstants.USER_AGENT, fileBytes, 5, context.Background()); err != nil {
+					gui.ShowDialogWithWordWrap(
+						gui.DialogText{
+							Title:    "Error Validating Service Account JSON",
+							Messages: []*widget.Label{
+								widget.NewLabel("Could not validate the service account\nJSON file due to the following error:"),
+								gui.GetDefaultLabelWithWrap(err.Error()),
+							},
+						},
+						win,
+					)
 					return
 				}
 
@@ -153,25 +174,68 @@ func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 				} else {
 					encodedFileBytes = base64.StdEncoding.EncodeToString(fileBytes)
 				}
-				fmt.Println("GDrive Service Account JSON:", encodedFileBytes)
 				app.Preferences().SetString(constants.GdriveServiceAccKey, encodedFileBytes)
+				driveForm.Hide()
+				driveFormWithPath.Show()
+				dialog.ShowInformation("Success!", "Your Google Drive service account JSON has been saved!", win)
 			}
 
-			if gdriveApiKeyEntry.Text != "" {
-				apiKeyToSave := gdriveApiKeyEntry.Text
-				if masterPassword != "" {
-					encryptedApiKey, err := cryptography.EncryptWithPassword([]byte(gdriveApiKeyEntry.Text), masterPassword)
-					if err != nil {
-						gui.PanicWithDialog(err, win)
-					}
-					apiKeyToSave = base64.StdEncoding.EncodeToString(encryptedApiKey)
-				}
-
-				app.Preferences().SetString(constants.GdriveApiKeyKey, apiKeyToSave)
-				dialog.ShowInformation("Success!", "Your Google Drive API key has been saved!", win)
+			if gdriveApiKeyEntry1.Text != "" {
+				gdriveApiKeySubmitLogic(gdriveApiKeyEntry1.Text, app, win)
 			}
 		},
 		SubmitText: "Save",
+	}
+
+	gdriveApiKeyEntry2 = getGdriveApiKeyEntry(validators.GdriveApiKeyNoEmpty)
+	driveFormWithPath = &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "API Key:", Widget: gdriveApiKeyEntry2},
+			{Text: "Service Account JSON:", Widget: container.New(
+				layout.NewVBoxLayout(),
+				widget.NewButtonWithIcon("View Service Account JSON", theme.FileIcon(), func() {
+					var err error
+					var gdriveJson []byte
+					if masterPassword != "" {
+						gdriveJson, err = cryptography.DecryptEncryptedFieldBytes(app, constants.GdriveServiceAccKey, masterPassword)
+					} else {
+						encodedGdriveJson := app.Preferences().String(constants.GdriveServiceAccKey)
+						gdriveJson, err = base64.StdEncoding.DecodeString(encodedGdriveJson)
+					}
+
+					if err != nil {
+						gui.ShowErrDialog(err, win)
+						return
+					}
+
+					gui.ShowDialogWithWordWrap(
+						gui.DialogText{
+							Title:    "Service Account JSON",
+							Messages: []*widget.Label{gui.GetDefaultLabelWithWrap(string(gdriveJson))},
+						}, 
+						win,
+					)
+				}),
+				widget.NewButtonWithIcon("Remove", theme.DeleteIcon(), func() {
+					app.Preferences().SetString(constants.GdriveServiceAccKey, "")
+					driveFormWithPath.Hide()
+					driveForm.Show()
+				}),
+			)},
+		},
+		OnSubmit: func() {
+			if gdriveApiKeyEntry2.Text != "" {
+				gdriveApiKeySubmitLogic(gdriveApiKeyEntry2.Text, app, win)
+			}
+		},
+	}
+
+	if app.Preferences().String(constants.GdriveServiceAccKey) != "" {
+		driveForm.Hide()
+		driveFormWithPath.Show()
+	} else {
+		driveForm.Show()
+		driveFormWithPath.Hide()
 	}
 
 	dlPrefTitle := canvas.NewText("Download Preferences", color.White)
@@ -252,6 +316,7 @@ func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 
 		driveTitle,
 		driveForm,
+		driveFormWithPath,
 		widget.NewSeparator(),
 
 		dlPrefTitle,

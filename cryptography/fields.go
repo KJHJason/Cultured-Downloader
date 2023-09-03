@@ -91,19 +91,27 @@ func EncryptPlainFields(app fyne.App, masterPassword string) error {
 	return nil
 }
 
-func DecryptEncryptedField(app fyne.App, key string, masterPassword string, encode bool) (string, error) {
+func DecryptEncryptedFieldBytes(app fyne.App, key string, masterPassword string) ([]byte, error) {
 	encodedEncryptedField := app.Preferences().String(key)
 	if encodedEncryptedField == "" {
-		return "", nil
+		return nil, nil
 	}
 
 	decodedCipherText, err := base64.StdEncoding.DecodeString(encodedEncryptedField)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// decrypt the ciphertext using the master password
 	plaintext, err := DecryptWithPassword(decodedCipherText, masterPassword)
+	if err != nil {
+		return nil, err
+	}
+	return plaintext, nil
+}
+
+func DecryptEncryptedField(app fyne.App, key string, masterPassword string, encode bool) (string, error) {
+	plaintext, err := DecryptEncryptedFieldBytes(app, key, masterPassword)
 	if err != nil {
 		return "", err
 	}
