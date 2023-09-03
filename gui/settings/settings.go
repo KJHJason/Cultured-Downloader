@@ -56,19 +56,20 @@ func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 				return
 			}
 
+			var err error
 			hash := cryptography.HashPassword(masterPasswordEntry.Text)
 			app.Preferences().SetString(constants.MasterPasswordHashKey, base64.StdEncoding.EncodeToString(hash))
 			if masterPassword != "" {
-				if err := cryptography.ReEncryptEncryptedFields(app, masterPassword, masterPasswordEntry.Text); err != nil {
-					cryptography.ResetEncryptedFields(app)
-					gui.PanicWithDialog(err, win)
-				}
+				err = cryptography.ReEncryptEncryptedFields(app, masterPassword, masterPasswordEntry.Text)
 			} else {
-				if err := cryptography.EncryptPlainFields(app, masterPasswordEntry.Text); err != nil {
-					cryptography.ResetEncryptedFields(app)
-					gui.PanicWithDialog(err, win)
-				}
+				err = cryptography.EncryptPlainFields(app, masterPasswordEntry.Text)
 			}
+
+			if err != nil {
+				cryptography.ResetEncryptedFields(app)
+				gui.PanicWithDialog(err, win)
+			}
+
 			masterPassword = masterPasswordEntry.Text
 			dialog.ShowInformation("Success!", "Your master password has been set!", win)
 			securityForm.Hide()
@@ -87,10 +88,9 @@ func GetSettingsGUI(app fyne.App, win fyne.Window) *container.Scroll {
 			layout.NewHBoxLayout(),
 			layout.NewSpacer(),
 			widget.NewButton("Change Master Password", func() {
-				changeDialog := getChangeDialogContent(app, win)
-				changeDialog.Show()
+				getChangeDialogContent(app, win).Show()
 			}),
-			widget.NewButton("Reset Security", func() {
+			widget.NewButton("Remove Master Password", func() {
 				resetDialog := dialog.NewConfirm(
 					"Reset Security?",
 					"Are you sure you want to reset your security settings?\nThis will delete your master password and will decrypt all encrypted fields!",

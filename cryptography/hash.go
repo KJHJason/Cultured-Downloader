@@ -21,7 +21,7 @@ func HashPassword(password string) []byte {
 	return append(salt, hash...) // prepend salt to hash
 }
 
-// GetKey returns a 32-bit key derived from the password and salt
+// GetKey returns a 32-bytes key derived from the password and salt
 func GetKey(password string, salt []byte) []byte {
 	return argon2.IDKey([]byte(password), salt, timeCost, memoryCost, parallelism, kdfKeyLen)
 }
