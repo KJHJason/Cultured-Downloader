@@ -53,8 +53,8 @@ github.com/Andrew-M-C/go.jsonvalue v1.1.2-0.20211223013816-e873b56b4a84/go.mod h
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/KJHJason/Cultured-Downloader-Logic v0.0.3 h1:x4rt7ox7O+KijWXMOQwRlGxIbu95g28lWLjip1km6P0=
-github.com/KJHJason/Cultured-Downloader-Logic v0.0.3/go.mod h1:C2fRDmhQxZZnPkpk/zUA/PtAWwnvJVVd4XDp8Te8BAE=
+github.com/KJHJason/Cultured-Downloader-Logic v1.0.2 h1:ZkA9e3jKN521fNw5PVdvjMDsqHUozaR7RPtibKJ7tAY=
+github.com/KJHJason/Cultured-Downloader-Logic v1.0.2/go.mod h1:C2fRDmhQxZZnPkpk/zUA/PtAWwnvJVVd4XDp8Te8BAE=
 github.com/PuerkitoBio/goquery v1.8.1 h1:uQxhNlArOIdbrH1tr0UXwdVFgDcZDrZVdcpygAcwmWM=
 github.com/PuerkitoBio/goquery v1.8.1/go.mod h1:Q8ICL1kNUJ2sXGoAhPGUdYDJvgQgHzJsnnd3H7Ho5jQ=
 github.com/akavel/rsrc v0.10.2/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
