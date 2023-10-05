@@ -7,7 +7,7 @@ require (
 	fyne.io/x/fyne v0.0.0-20230717140956-ad10f343f15e
 	github.com/KJHJason/Cultured-Downloader-Logic v0.0.3
 	github.com/shirou/gopsutil/v3 v3.23.8
-	golang.org/x/crypto v0.13.0
+	golang.org/x/crypto v0.14.0
 )
 
 require (
@@ -90,7 +90,7 @@ require (
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/oauth2 v0.11.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.12.1-0.20230818130535-1517d1a3ba60 // indirect
 	google.golang.org/api v0.138.0 // indirect
