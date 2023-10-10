@@ -6,7 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.4.1
 	fyne.io/x/fyne v0.0.0-20230717140956-ad10f343f15e
 	github.com/KJHJason/Cultured-Downloader-Logic v0.0.3
-	github.com/shirou/gopsutil/v3 v3.23.8
+	github.com/shirou/gopsutil/v3 v3.23.9
 	golang.org/x/crypto v0.14.0
 )
 
