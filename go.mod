@@ -1,6 +1,6 @@
 module github.com/KJHJason/Cultured-Downloader
 
-go 1.21.0
+go 1.21.4
 
 require (
 	fyne.io/fyne/v2 v2.4.1
