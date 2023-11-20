@@ -2,11 +2,10 @@ package cryptography
 
 import (
 	"crypto/rand"
-	"encoding/base64"
+	// "encoding/base64"
 	"io"
 	"sync"
 
-	"fyne.io/fyne/v2"
 	"github.com/shirou/gopsutil/v3/host"
 	"golang.org/x/crypto/chacha20poly1305"
 )
@@ -17,9 +16,9 @@ const (
 )
 
 // reset the salt for the key derivation function
-func ResetMasterKeySalt(app fyne.App) {
-	app.Preferences().SetString(masterKeySalt, "")
-}
+// func ResetMasterKeySalt(app fyne.App) {
+// 	app.Preferences().SetString(masterKeySalt, "")
+// }
 
 var tag []byte
 func init() {
@@ -48,21 +47,21 @@ func deriveKey(password string) ([]byte, error) {
 	defer dkMutex.Unlock()
 
 	var salt []byte
-	var err error
-	app := fyne.CurrentApp()
-	if app.Preferences().String(masterKeySalt) == "" {
-		salt = generateNonce(hashKeyLen) // Generate a random 128-bit salt according to NIST SP 800-132
-		app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(salt))
-	} else {
-		salt, err = base64.StdEncoding.DecodeString(app.Preferences().String(masterKeySalt))
-		if err != nil || len(salt) != hashKeyLen {
-			// Shouldn't happen unless the user has tampered with the preferences file,
-			// in which case we should just panic after resetting the salt and the encrypted fields
-			app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(hashKeyLen)))
-			ResetEncryptedFields(app)
-			return nil, err
-		}
-	}
+	// var err error
+	// app := fyne.CurrentApp()
+	// if app.Preferences().String(masterKeySalt) == "" {
+	// 	salt = generateNonce(hashKeyLen) // Generate a random 128-bit salt according to NIST SP 800-132
+	// 	app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(salt))
+	// } else {
+	// 	salt, err = base64.StdEncoding.DecodeString(app.Preferences().String(masterKeySalt))
+	// 	if err != nil || len(salt) != hashKeyLen {
+	// 		// Shouldn't happen unless the user has tampered with the preferences file,
+	// 		// in which case we should just panic after resetting the salt and the encrypted fields
+	// 		app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(hashKeyLen)))
+	// 		ResetEncryptedFields(app)
+	// 		return nil, err
+	// 	}
+	// }
 
 	// Derive the key using Argon2id
 	return GetKey(password, salt), nil

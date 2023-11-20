@@ -1,4 +1,10 @@
+build/bin
+node_modules
+frontend/dist
+
 *.txt
-*.json
+cultureddownloader*.json
 *.exe
 *test*
+
+.vscode
