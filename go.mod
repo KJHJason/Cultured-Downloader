@@ -1,10 +1,9 @@
-module changeme
+module github.com/KJHJason/Cultured-Downloader
 
 go 1.21.4
 
 require (
 	fyne.io/fyne/v2 v2.4.1
-	github.com/KJHJason/Cultured-Downloader v0.0.0-20231120125516-ccb5c0974b76
 	github.com/shirou/gopsutil/v3 v3.23.10
 	github.com/wailsapp/wails/v2 v2.6.0
 	golang.org/x/crypto v0.15.0

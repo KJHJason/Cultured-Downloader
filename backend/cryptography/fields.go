@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"fyne.io/fyne/v2"
-	"github.com/KJHJason/Cultured-Downloader/constants"
+	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 var encryptedFields = [...]string{
 	constants.GdriveApiKeyKey,

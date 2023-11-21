@@ -1,7 +1,5 @@
 fyne.io/fyne/v2 v2.4.1 h1:Es100N6HIhJGg8H2ZAS2j5H/YibfxecXHs2V4A4hbq8=
 fyne.io/fyne/v2 v2.4.1/go.mod h1:AWM1iPM2YfliduZ4u/kQzP9E6ARIWm0gg+57GpYzWro=
-github.com/KJHJason/Cultured-Downloader v0.0.0-20231120125516-ccb5c0974b76 h1:i7oFXuAq0K1DT0cShyaIoVkzgBxNlLBCv8AzwqHv05w=
-github.com/KJHJason/Cultured-Downloader v0.0.0-20231120125516-ccb5c0974b76/go.mod h1:t+K8ZqcHU+7btpF+ae8Pko/UkpM63FvjCSl7ghLYRLE=
 github.com/bep/debounce v1.2.1 h1:v67fRdBA9UQu2NhLFXrSg0Brw7CexQekrBwDMM8bzeY=
 github.com/bep/debounce v1.2.1/go.mod h1:H8yggRPQKLUhUoqrJC1bO2xNya7vanpDl7xR3ISbCJ0=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
