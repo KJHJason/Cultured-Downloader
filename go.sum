@@ -1,5 +1,5 @@
-fyne.io/fyne/v2 v2.4.1 h1:Es100N6HIhJGg8H2ZAS2j5H/YibfxecXHs2V4A4hbq8=
-fyne.io/fyne/v2 v2.4.1/go.mod h1:AWM1iPM2YfliduZ4u/kQzP9E6ARIWm0gg+57GpYzWro=
+fyne.io/fyne/v2 v2.4.2 h1:bt6/p/FTpcv0sZIN6msxto32JvKkgwKe/LzYxqv//B8=
+fyne.io/fyne/v2 v2.4.2/go.mod h1:1h3BKxmQYRJlr2g+RGVxedzr6vLVQ/AJmFWcF9CJnoQ=
 github.com/KJHJason/Cultured-Downloader-Logic v1.0.2 h1:ZkA9e3jKN521fNw5PVdvjMDsqHUozaR7RPtibKJ7tAY=
 github.com/KJHJason/Cultured-Downloader-Logic v1.0.2/go.mod h1:C2fRDmhQxZZnPkpk/zUA/PtAWwnvJVVd4XDp8Te8BAE=
 github.com/bep/debounce v1.2.1 h1:v67fRdBA9UQu2NhLFXrSg0Brw7CexQekrBwDMM8bzeY=
