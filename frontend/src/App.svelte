@@ -1,9 +1,11 @@
 <script>
   import logo from './assets/images/logo-universal.png'
-  import {Greet} from '../wailsjs/go/main/App.js'
+  import {Greet, GetName} from '../wailsjs/go/main/App.js'
 
   let resultText = "Please enter your name below 👇"
   let name
+
+  GetName().then(result => name = result)
 
   function greet() {
     Greet(name).then(result => resultText = result)
