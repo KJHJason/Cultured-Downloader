@@ -7,6 +7,7 @@ import (
 
 const (
 	DefaultPerm = 0755
+	LocalUserAssetDirName = "assets"
 	MasterPasswordHashKey = "masterPasswordHash"
 
 	GdriveApiKeyKey     = "gdriveApiKey"
@@ -23,8 +24,8 @@ const (
 )
 
 var (
-	UserConfigDir string
-	UserConfigDirErr error
+	UserConfigDir 	      string
+	UserConfigDirErr      error
 )
 
 func init() {
