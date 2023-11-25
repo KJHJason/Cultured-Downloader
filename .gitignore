@@ -1,10 +1,12 @@
 build/bin
 node_modules
 frontend/dist
+.vscode/
+.DS_Store
+.idea
 
 *.txt
 cultureddownloader*.json
 *.exe
 *test*
-
-.vscode
+Cultured Downloader-res.syso

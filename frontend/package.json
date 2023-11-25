@@ -1,22 +1,20 @@
 {
-  "name": "cultureddownloader",
-  "private": true,
+  "name": "cultured-downloader",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite dev", 
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^1.0.1",
+    "@sveltejs/vite-plugin-svelte": "^2.4.5",
     "autoprefixer": "^10.4.15",
     "postcss": "^8.4.28",
-    "svelte": "^3.49.0",
-    "tailwindcss": "^3.3.5",
-    "vite": "^3.0.7"
-  },
-  "dependencies": {
+    "svelte": "^4.2.0",
+    "tailwindcss": "^3.3.3",
+    "vite": "^4.4.9",
     "flowbite": "^2.2.0"
   }
-}
+,"author":"KJHJason"}
+
