@@ -1,5 +1,6 @@
 <script>
-  import Navbar from "./components/Navbar.svelte";
+    import Navbar from "./components/Navbar.svelte";
+    let action = "home";
 </script>
 
-<Navbar />\
+<Navbar action={action}/>

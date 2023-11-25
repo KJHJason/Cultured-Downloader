@@ -1,5 +1,4 @@
 // from https://flowbite.com/docs/customize/dark-mode/#content
-
 const themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon");
 const themeToggleLightIcon = document.getElementById("theme-toggle-light-icon");
 const themeToggleBtnText = document.getElementById("theme-toggle-text");
