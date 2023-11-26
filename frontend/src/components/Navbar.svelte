@@ -8,12 +8,13 @@
     import kemonoLogo from "../assets/images/logos/kemono-logo.png";
 
     const logoSizeClass = "h-8 w-8";
-    let name
+    let name = "";
     onMount(async () => {
         name = await GetName();
     });
 
-    export let action;
+    export let action = "";
+    export let actions = {};
     const changeAction = (newAction) => {
         action = newAction;
     };
@@ -74,13 +75,13 @@
     <div class="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-zinc-800">
         <ul class="space-y-2 font-medium">
             <li>
-                <a href="/" class="flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
+                <button on:click={() => changeAction(actions.Home)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
                     <svg class="{logoSizeClass} text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white"  xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"> <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/></svg>
                     <span class="ms-3">Home</span>
-                </a>
+                </button>
             </li>
             <li>
-                <button on:click={() => changeAction("fantia")} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
+                <button on:click={() => changeAction(actions.Fantia)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
                     <img class="flex-shrink-0 {logoSizeClass}" src="{fantiaLogo}">
                     <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Fantia
@@ -88,37 +89,37 @@
                 </button>
             </li>
             <li>
-                <a href="#" class="flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
+                <button on:click={() => changeAction(actions.Pixiv)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
                     <img class="flex-shrink-0 {logoSizeClass}" src="{pixivLogo}">
-                    <span class="flex-1 ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
+                    <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Pixiv
                     </span>
                     <!-- <span class="inline-flex items-center justify-center w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> -->
-                </a>
+                </button>
             </li>
             <li>
-                <a href="#" class="flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
+                <button on:click={() => changeAction(actions.PixivFanbox)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
                     <img class="flex-shrink-0 {logoSizeClass}" src="{pixivFanboxLogo}">
-                    <span class="flex-1 ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
+                    <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Pixiv Fanbox
                     </span>
-                </a>
+                </button>
             </li>
             <li>
-                <a href="#" class="flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
+                <button on:click={() => changeAction(actions.Kemono)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
                     <img class="flex-shrink-0 {logoSizeClass}" src="{kemonoLogo}">
-                    <span class="flex-1 ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
+                    <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Kemono Party
                     </span>
-                </a>
+                </button>
             </li>
             <li>
-                <a href="#" class="flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
+                <button on:click={() => changeAction(actions.Downloads)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
                     <svg class="flex-shrink-0 {logoSizeClass} text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" ><path d="M11 5C11 4.44772 11.4477 4 12 4C12.5523 4 13 4.44772 13 5V12.1578L16.2428 8.91501L17.657 10.3292L12.0001 15.9861L6.34326 10.3292L7.75748 8.91501L11 12.1575V5Z" fill="currentColor" /> <path d="M4 14H6V18H18V14H20V18C20 19.1046 19.1046 20 18 20H6C4.89543 20 4 19.1046 4 18V14Z" fill="currentColor" /> </svg>
-                    <span class="flex-1 ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
+                    <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Download Queues
                     </span>
-                </a>
+                </button>
                 <!-- <button id="theme-toggle" type="button" class="flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group w-full">
                     <div class="flex-shrink-0 {logoSizeClass} text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         <svg id="theme-toggle-dark-icon" class="hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
