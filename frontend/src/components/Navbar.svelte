@@ -40,7 +40,7 @@
                     <div>
                         <button type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
                             <span class="sr-only">Open user menu</span>
-                            <img class="w-8 h-8 rounded-full" src="/profile.png" alt="user photo" />
+                            <img class="w-8 h-8 rounded-full" src="/profile.png" alt="" />
                         </button>
                     </div>
                     <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-zinc-100 rounded shadow dark:bg-zinc-700 dark:divide-zinc-600" id="dropdown-user">
@@ -82,7 +82,7 @@
             </li>
             <li>
                 <button on:click={() => changeAction(actions.Fantia)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
-                    <img class="flex-shrink-0 {logoSizeClass}" src="{fantiaLogo}">
+                    <img class="flex-shrink-0 {logoSizeClass}" src="{fantiaLogo}" alt="Fantia Logo">
                     <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Fantia
                     </span>
@@ -90,7 +90,7 @@
             </li>
             <li>
                 <button on:click={() => changeAction(actions.Pixiv)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
-                    <img class="flex-shrink-0 {logoSizeClass}" src="{pixivLogo}">
+                    <img class="flex-shrink-0 {logoSizeClass}" src="{pixivLogo}" alt="Pixiv Logo">
                     <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Pixiv
                     </span>
@@ -99,7 +99,7 @@
             </li>
             <li>
                 <button on:click={() => changeAction(actions.PixivFanbox)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
-                    <img class="flex-shrink-0 {logoSizeClass}" src="{pixivFanboxLogo}">
+                    <img class="flex-shrink-0 {logoSizeClass}" src="{pixivFanboxLogo}" alt="Pixiv Fanbox Logo">
                     <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Pixiv Fanbox
                     </span>
@@ -107,7 +107,7 @@
             </li>
             <li>
                 <button on:click={() => changeAction(actions.Kemono)} class="w-full flex items-center p-2 text-zinc-900 rounded-lg dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700 group">
-                    <img class="flex-shrink-0 {logoSizeClass}" src="{kemonoLogo}">
+                    <img class="flex-shrink-0 {logoSizeClass}" src="{kemonoLogo}" alt="Kemono Logo">
                     <span class="flex-1 text-left ms-3 whitespace-nowrap text-zinc-500 transition duration-75 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
                         Kemono Party
                     </span>
