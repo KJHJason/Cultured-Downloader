@@ -7,7 +7,7 @@ require (
 	github.com/KJHJason/Cultured-Downloader-Logic v1.0.2
 	github.com/shirou/gopsutil/v3 v3.23.10
 	github.com/wailsapp/wails/v2 v2.6.0
-	golang.org/x/crypto v0.14.0
+	golang.org/x/crypto v0.15.0
 )
 
 require (
@@ -39,8 +39,8 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.6.0 => C:\Users\Admin\go\pkg\mod
