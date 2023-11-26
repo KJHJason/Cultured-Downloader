@@ -12,7 +12,7 @@
     "autoprefixer": "^10.4.15",
     "postcss": "^8.4.28",
     "svelte": "^4.2.0",
-    "tailwindcss": "^3.3.3",
+    "tailwindcss": "^3.3.5",
     "vite": "^4.4.9",
     "flowbite": "^2.2.0"
   }
