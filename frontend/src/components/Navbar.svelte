@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
     import { GetName } from "../lib/wailsjs/go/main/App.js";
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
@@ -13,9 +13,9 @@
         name = await GetName();
     });
 
-    export let action = "";
-    export let actions = {};
-    const changeAction = (newAction) => {
+    export let action: string;
+    export let actions: Record<string, string>;
+    const changeAction = (newAction: string) => {
         action = newAction;
     };
 </script>

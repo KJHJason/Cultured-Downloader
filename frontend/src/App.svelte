@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+    import "./lib/DarkMode";
     import Navbar from "./components/Navbar.svelte";
     import Home from "./components/Home.svelte";
     import Fantia from "./components/Fantia.svelte";
 
-    let action = "home";
-    const actions = {
+    let action: string = "home";
+    const actions: Record<string, string> = {
         Home:        "home",
         Fantia:      "fantia",
         Pixiv:       "pixiv",
