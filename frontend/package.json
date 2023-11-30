@@ -12,7 +12,7 @@
     "@tsconfig/svelte": "^5.0.2",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
-    "svelte": "^4.2.7",
+    "svelte": "^4.2.8",
     "tailwindcss": "^3.3.5",
     "vite": "^4.4.9",
     "flowbite": "^2.2.0",
