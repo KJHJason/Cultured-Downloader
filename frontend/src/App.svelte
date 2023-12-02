@@ -23,7 +23,7 @@
 
 <Navbar action={action} on:changeAction={handleActionChange}/>
 
-<div class="p-4 sm:ml-64">
+<main class="p-4">
     <div class="mt-14">
         {#if action === actions.Home}
             <Home/>
@@ -41,4 +41,4 @@
             <p>Not implemented yet</p>
         {/if}
     </div>
-</div>
+</main>
