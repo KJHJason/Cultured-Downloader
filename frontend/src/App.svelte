@@ -8,6 +8,7 @@
     import PixivFanbox from "./lib/PixivFanbox.svelte";
     import Kemono from "./lib/Kemono.svelte";
     import DownloadQueues from "./lib/DownloadQueues.svelte";
+    import Settings from "./lib/Settings.svelte";
 
     let action: string = "home";
     const handleActionChange = (event: CustomEvent<string>) => {
@@ -37,6 +38,8 @@
             <Kemono/>
         {:else if action === actions.Downloads}
             <DownloadQueues/>
+        {:else if action == actions.Settings}
+            <Settings />
         {:else}
             <p>Not implemented yet</p>
         {/if}
