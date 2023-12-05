@@ -13,7 +13,7 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
     "svelte": "^4.2.8",
-    "tailwindcss": "^3.3.5",
+    "tailwindcss": "^3.3.6",
     "vite": "^4.4.9",
     "flowbite": "^2.2.0",
     "tslib": "^2.6.2",
