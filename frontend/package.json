@@ -18,7 +18,7 @@
     "flowbite": "^2.2.0",
     "flowbite-svelte": "^0.44.20",
     "tslib": "^2.6.2",
-    "typescript": "^5.3.2"
+    "typescript": "^5.3.3"
   },
   "author": "KJHJason"
 }
