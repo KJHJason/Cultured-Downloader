@@ -1,2 +1,3 @@
-<p>settings</p>
-
+<script>
+    import { Input, Label, Helper } from "flowbite-svelte";
+</script>

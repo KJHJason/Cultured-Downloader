@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.text-main {
+    @apply dark:text-white;
+}
+
+p {
+    @apply text-main;
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { GetName } from "../scripts/wailsjs/go/main/App";
-    import { onMount, createEventDispatcher, type EventDispatcher } from "svelte";
+    import { onMount, createEventDispatcher } from "svelte";
     import { actions, changeActionEventType } from "../scripts/constants";
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
     import NavbarBtn from "./NavbarBtn.svelte";
@@ -42,7 +42,7 @@
                 </button>
                 <div class="flex ms-2 md:me-24">
                     <img src="{cdLogo}" class="h-8 me-3" alt="Cultured Downloader Logo" />
-                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Cultured Downloader</span>
+                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-main">Cultured Downloader</span>
                 </div>
             </div>
             <div class="flex items-center">
@@ -53,17 +53,17 @@
                             <img class="w-8 h-8 rounded-full" src="/profile.png" alt="" />
                         </button>
                     </div>
-                    <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-zinc-100 rounded shadow dark:bg-zinc-700 dark:divide-zinc-600" id="dropdown-user">
+                    <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-zinc-200 rounded shadow dark:bg-zinc-800 dark:divide-zinc-600 outline-zinc-200 outline-1 dark:outline-zinc-600 outline" id="dropdown-user">
                         <div class="px-4 py-3" role="none">
                             <p class="text-sm text-zinc-900 dark:text-white" role="none"> {name} </p>
                             <p class="text-sm font-medium text-zinc-900 truncate dark:text-zinc-300" role="none"> neil.sims@flowbite.com </p>
                         </div>
-                        <ul class="py-1" role="none">
+                        <ul class="p-1" role="none">
                             <li>
-                                <a href="/" class="flex justify-center items-center px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-600 dark:hover:text-white" role="menuitem">
+                                <button on:click={() => changeAction(actions.Settings)} class="flex justify-center items-center px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-600 dark:hover:text-white group w-full" role="menuitem">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                                     <span class="flex-1 ms-2 text-left whitespace-nowrap">Settings</span>
-                                </a>
+                                </button>
                             </li>
                             <li>
                                 <button id="theme-toggle" type="button" class="flex justify-center items-center px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-600 dark:hover:text-white group w-full"  role="menuitem">
