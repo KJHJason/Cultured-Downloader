@@ -21,20 +21,20 @@ func ResetEncryptedFields(appData *appdata.AppData) {
 	}
 }
 
-func reEncryptEncryptedField(encodedCiphertext string, oldMasterPassword, newMasterPassword string) (string, error) {
+func reEncryptEncryptedField(appData *appdata.AppData, encodedCiphertext string, oldMasterPassword, newMasterPassword string) (string, error) {
 	decodedCipherText, err := base64.StdEncoding.DecodeString(encodedCiphertext)
 	if err != nil {
 		return "", err
 	}
 
 	// decrypt the ciphertext using the old master password
-	plaintext, err := DecryptWithPassword(decodedCipherText, oldMasterPassword)
+	plaintext, err := DecryptWithPassword(appData, decodedCipherText, oldMasterPassword)
 	if err != nil {
 		return "", err
 	}
 
 	// encrypt the plaintext using the new master password
-	ciphertext, err := EncryptWithPassword(plaintext, newMasterPassword)
+	ciphertext, err := EncryptWithPassword(appData, plaintext, newMasterPassword)
 	if err != nil {
 		return "", err
 	}
@@ -54,7 +54,13 @@ func ReEncryptEncryptedFields(appData *appdata.AppData, oldMasterPassword, newMa
 	for _, key := range encryptedFields {
 		encodedEncryptedField := appData.GetString(key)
 		if encodedEncryptedField != "" {
-			if reEncryptedField, err := reEncryptEncryptedField(encodedEncryptedField, oldMasterPassword, newMasterPassword); err != nil {
+			reEncryptedField, err := reEncryptEncryptedField(
+				appData, 
+				encodedEncryptedField, 
+				oldMasterPassword, 
+				newMasterPassword,
+			)
+			if err != nil {
 				return err
 			} else {
 				appData.SetString(key, reEncryptedField)
@@ -65,7 +71,7 @@ func ReEncryptEncryptedFields(appData *appdata.AppData, oldMasterPassword, newMa
 }
 
 func EncryptPlainField(appData *appdata.AppData, key string, plaintext []byte, masterPassword string) error {
-	ciphertext, err := EncryptWithPassword(plaintext, masterPassword)
+	ciphertext, err := EncryptWithPassword(appData, plaintext, masterPassword)
 	if err != nil {
 		return err
 	}
@@ -99,7 +105,7 @@ func DecryptEncryptedFieldBytes(appData *appdata.AppData, key string, masterPass
 	}
 
 	// decrypt the ciphertext using the master password
-	plaintext, err := DecryptWithPassword(decodedCipherText, masterPassword)
+	plaintext, err := DecryptWithPassword(appData, decodedCipherText, masterPassword)
 	if err != nil {
 		return nil, err
 	}

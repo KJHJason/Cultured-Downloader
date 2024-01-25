@@ -2,12 +2,13 @@ package cryptography
 
 import (
 	"crypto/rand"
-	// "encoding/base64"
+	"encoding/base64"
 	"io"
 	"sync"
 
 	"github.com/shirou/gopsutil/v3/host"
 	"golang.org/x/crypto/chacha20poly1305"
+	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 )
 
 const (
@@ -16,9 +17,9 @@ const (
 )
 
 // reset the salt for the key derivation function
-// func ResetMasterKeySalt(app fyne.App) {
-// 	app.Preferences().SetString(masterKeySalt, "")
-// }
+func ResetMasterKeySalt(appData *appdata.AppData) {
+	appData.SetString(masterKeySalt, "")
+}
 
 var tag []byte
 func init() {
@@ -42,26 +43,25 @@ func generateNonce(n uint8) []byte {
 var dkMutex sync.Mutex
 
 // Uses Argon2id to derive a 256-bit key from the password
-func deriveKey(password string) ([]byte, error) {
+func deriveKey(appData *appdata.AppData, password string) ([]byte, error) {
 	dkMutex.Lock()
 	defer dkMutex.Unlock()
 
 	var salt []byte
-	// var err error
-	// app := fyne.CurrentApp()
-	// if app.Preferences().String(masterKeySalt) == "" {
-	// 	salt = generateNonce(hashKeyLen) // Generate a random 128-bit salt according to NIST SP 800-132
-	// 	app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(salt))
-	// } else {
-	// 	salt, err = base64.StdEncoding.DecodeString(app.Preferences().String(masterKeySalt))
-	// 	if err != nil || len(salt) != hashKeyLen {
-	// 		// Shouldn't happen unless the user has tampered with the preferences file,
-	// 		// in which case we should just panic after resetting the salt and the encrypted fields
-	// 		app.Preferences().SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(hashKeyLen)))
-	// 		ResetEncryptedFields(app)
-	// 		return nil, err
-	// 	}
-	// }
+	var err error
+	if appData.GetString(masterKeySalt) == "" {
+		salt = generateNonce(hashKeyLen) // Generate a random 128-bit salt according to NIST SP 800-132
+		appData.SetString(masterKeySalt, base64.StdEncoding.EncodeToString(salt))
+	} else {
+		salt, err = base64.StdEncoding.DecodeString(appData.GetString(masterKeySalt))
+		if err != nil || len(salt) != hashKeyLen {
+			// Shouldn't happen unless the user has tampered with the preferences file,
+			// in which case we should just panic after resetting the salt and the encrypted fields
+			appData.SetString(masterKeySalt, base64.StdEncoding.EncodeToString(generateNonce(hashKeyLen)))
+			ResetEncryptedFields(appData)
+			return nil, err
+		}
+	}
 
 	// Derive the key using Argon2id
 	return GetKey(password, salt), nil
@@ -84,8 +84,8 @@ func encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	return append(nonce, ciphertext...), nil
 }
 
-func EncryptWithPassword(plaintext []byte, password string) ([]byte, error) {
-	key, err := deriveKey(password)
+func EncryptWithPassword(appData *appdata.AppData, plaintext []byte, password string) ([]byte, error) {
+	key, err := deriveKey(appData, password)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +112,8 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-func DecryptWithPassword(ciphertext []byte, password string) ([]byte, error) {
-	key, err := deriveKey(password)
+func DecryptWithPassword(appData *appdata.AppData, ciphertext []byte, password string) ([]byte, error) {
+	key, err := deriveKey(appData, password)
 	if err != nil {
 		return nil, err
 	}
