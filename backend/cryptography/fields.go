@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"errors"
 
-	"fyne.io/fyne/v2"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
+	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 )
 var encryptedFields = [...]string{
 	constants.GdriveApiKeyKey,
@@ -14,14 +14,10 @@ var encryptedFields = [...]string{
 	constants.FantiaCookieValueKey,
 }
 
-func ResetEncryptedFields(app fyne.App) {
-	if app == nil {
-		app = fyne.CurrentApp()
-	}
-
-	app.Preferences().SetString(masterKeySalt, "") // reset the salt for the key derivation function
+func ResetEncryptedFields(appData *appdata.AppData) {
+	appData.SetString(masterKeySalt, "") // reset the salt for the key derivation function
 	for _, key := range encryptedFields {
-		app.Preferences().SetString(key, "")
+		appData.SetString(key, "")
 	}
 }
 
@@ -46,7 +42,7 @@ func reEncryptEncryptedField(encodedCiphertext string, oldMasterPassword, newMas
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func ReEncryptEncryptedFields(app fyne.App, oldMasterPassword, newMasterPassword string) error {
+func ReEncryptEncryptedFields(appData *appdata.AppData, oldMasterPassword, newMasterPassword string) error {
 	if newMasterPassword == "" {
 		return errors.New("new master password cannot be empty")
 	}
@@ -56,43 +52,43 @@ func ReEncryptEncryptedFields(app fyne.App, oldMasterPassword, newMasterPassword
 	}
 
 	for _, key := range encryptedFields {
-		encodedEncryptedField := app.Preferences().String(key)
+		encodedEncryptedField := appData.GetString(key)
 		if encodedEncryptedField != "" {
 			if reEncryptedField, err := reEncryptEncryptedField(encodedEncryptedField, oldMasterPassword, newMasterPassword); err != nil {
 				return err
 			} else {
-				app.Preferences().SetString(key, reEncryptedField)
+				appData.SetString(key, reEncryptedField)
 			}
 		}
 	}
 	return nil
 }
 
-func EncryptPlainField(app fyne.App, key string, plaintext []byte, masterPassword string) error {
+func EncryptPlainField(appData *appdata.AppData, key string, plaintext []byte, masterPassword string) error {
 	ciphertext, err := EncryptWithPassword(plaintext, masterPassword)
 	if err != nil {
 		return err
 	}
 
-	app.Preferences().SetString(key, base64.StdEncoding.EncodeToString(ciphertext))
+	appData.SetString(key, base64.StdEncoding.EncodeToString(ciphertext))
 	return nil
 }
 
-func EncryptPlainFields(app fyne.App, masterPassword string) error {
+func EncryptPlainFields(appData *appdata.AppData, masterPassword string) error {
 	for _, key := range encryptedFields {
-		plaintext := app.Preferences().String(key)
+		plaintext := appData.GetString(key)
 		if plaintext == "" {
 			continue
 		}
-		if err := EncryptPlainField(app, key, []byte(plaintext), masterPassword); err != nil {
+		if err := EncryptPlainField(appData, key, []byte(plaintext), masterPassword); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DecryptEncryptedFieldBytes(app fyne.App, key string, masterPassword string) ([]byte, error) {
-	encodedEncryptedField := app.Preferences().String(key)
+func DecryptEncryptedFieldBytes(appData *appdata.AppData, key string, masterPassword string) ([]byte, error) {
+	encodedEncryptedField := appData.GetString(key)
 	if encodedEncryptedField == "" {
 		return nil, nil
 	}
@@ -110,8 +106,8 @@ func DecryptEncryptedFieldBytes(app fyne.App, key string, masterPassword string)
 	return plaintext, nil
 }
 
-func DecryptEncryptedField(app fyne.App, key string, masterPassword string, encode bool) (string, error) {
-	plaintext, err := DecryptEncryptedFieldBytes(app, key, masterPassword)
+func DecryptEncryptedField(appData *appdata.AppData, key string, masterPassword string, encode bool) (string, error) {
+	plaintext, err := DecryptEncryptedFieldBytes(appData, key, masterPassword)
 	if err != nil {
 		return "", err
 	}
@@ -122,12 +118,12 @@ func DecryptEncryptedField(app fyne.App, key string, masterPassword string, enco
 	return string(plaintext), nil
 }
 
-func DecryptEncryptedFields(app fyne.App, masterPassword string) error {
+func DecryptEncryptedFields(appData *appdata.AppData, masterPassword string) error {
 	for _, key := range encryptedFields {
-		if decryptedField, err := DecryptEncryptedField(app, key, masterPassword, false); err != nil {
+		if decryptedField, err := DecryptEncryptedField(appData, key, masterPassword, false); err != nil {
 			return err
 		} else {
-			app.Preferences().SetString(key, decryptedField)
+			appData.SetString(key, decryptedField)
 		}
 	}
 	return nil
