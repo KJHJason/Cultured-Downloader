@@ -5,7 +5,7 @@ go 1.21
 require (
 	fyne.io/fyne/v2 v2.4.2
 	github.com/KJHJason/Cultured-Downloader-Logic v1.0.2
-	github.com/shirou/gopsutil/v3 v3.23.11
+	github.com/shirou/gopsutil/v3 v3.23.12
 	github.com/wailsapp/wails/v2 v2.7.1
 	golang.org/x/crypto v0.18.0
 )
