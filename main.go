@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/KJHJason/Cultured-Downloader/backend/app"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 
 	"github.com/wailsapp/wails/v2"
@@ -54,7 +55,7 @@ var icon []byte
 
 func main() {
 	// Create an instance of the app structure
-	app := NewApp()
+	cdApp := app.NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -83,13 +84,13 @@ func main() {
 		Menu:              nil,
 		Logger:            nil,
 		LogLevel:          logger.DEBUG,
-		OnStartup:         app.startup,
+		OnStartup:         cdApp.Startup,
 		// OnDomReady:        app.domReady,
 		// OnBeforeClose:     app.beforeClose,
 		// OnShutdown:        app.shutdown,
 		WindowStartState:  options.Normal,
 		Bind: []interface{}{
-			app,
+			cdApp,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

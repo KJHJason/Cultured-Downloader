@@ -35,15 +35,15 @@ func convertDataMapInterface(values map[string]interface{}) {
 	for k, v := range values {
 		items, isSliceInterface := v.([]interface{})
 		if !isSliceInterface {
-			switch v.(type) {
+			switch t := v.(type) {
 			case bool:
-				values[k] = v.(bool)
+				values[k] = t
 			case float64:
-				values[k] = v.(float64)
+				values[k] = t
 			case int:
-				values[k] = v.(int)
+				values[k] = t
 			case string:
-				values[k] = v.(string)
+				values[k] = t
 			default:
 				logger.MainLogger.Errorf(
 					"Unsupported data type for key %q with type \"%T\", this key will be removed.", k, v)

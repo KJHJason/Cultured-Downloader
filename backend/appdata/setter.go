@@ -31,3 +31,11 @@ func (a *AppData) SetString(key string, value string) error {
 func (a *AppData) SetStringSlice(key string, value []string) error {
 	return a.set(key, value)
 }
+
+func (a *AppData) SetSecureString(key string, value string) error {
+	return a.setSecureS(key, value)
+}
+
+func (a *AppData) SetSecureBytes(key string, value []byte) error {
+	return a.setSecureB(key, value)
+}

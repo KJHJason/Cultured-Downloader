@@ -154,3 +154,27 @@ func (a *AppData) GetStringSliceWithFallback(key string, fallback []string) ([]s
 	}
 	return s
 }
+
+func (a *AppData) GetSecuredString(key string) string {
+	return a.GetSecuredStringWithFallback(key, "")
+}
+
+func (a *AppData) GetSecuredBytes(key string) []byte {
+	return a.GetSecuredBytesWithFallback(key, []byte{})
+}
+
+func (a *AppData) GetSecuredStringWithFallback(key string, fallback string) string {
+	v, exist := a.getSecureS(key)
+	if !exist {
+		return fallback
+	}
+	return v
+}
+
+func (a *AppData) GetSecuredBytesWithFallback(key string, fallback []byte) []byte {
+	v, exist := a.getSecureB(key)
+	if !exist {
+		return fallback
+	}
+	return v
+}

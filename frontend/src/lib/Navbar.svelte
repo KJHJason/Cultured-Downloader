@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { GetName } from "../scripts/wailsjs/go/main/App";
+    import { GetName } from "../scripts/wailsjs/go/app/App";
     import { onMount, createEventDispatcher } from "svelte";
     import { actions, changeActionEventType } from "../scripts/constants";
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
