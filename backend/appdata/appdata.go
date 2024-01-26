@@ -18,11 +18,11 @@ const (
 )
 
 type AppData struct {
-	data               map[string]interface{}
-	dataPath           string
-	masterPassword     string // Used as key to encrypt/decrypt the secured data
-	masterPasswordHash []byte // Mainly to verify if the master password is correct
-	mu                 sync.RWMutex
+	data				map[string]interface{}
+	dataPath			string
+	masterPassword		string // Used as key to encrypt/decrypt the secured data
+	masterPasswordHash	[]byte // Mainly to verify if the master password is correct
+	mu					sync.RWMutex
 }
 
 func NewAppData() (*AppData, error) {

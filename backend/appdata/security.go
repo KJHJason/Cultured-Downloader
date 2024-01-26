@@ -96,7 +96,6 @@ func DecryptWithPassword(appData *AppData, ciphertext []byte, password string) (
 	return crypto.Decrypt(ciphertext, key)
 }
 
-
 func ReEncryptEncryptedFields(appData *AppData, oldMasterPassword, newMasterPassword string) error {
 	if newMasterPassword == "" {
 		return errors.New("new master password cannot be empty")

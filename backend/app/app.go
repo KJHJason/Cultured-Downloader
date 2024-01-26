@@ -10,10 +10,10 @@ import (
 
 // App struct
 type App struct {
-	ctx                context.Context
-	masterPassword     string
-	masterPasswordHash []byte
-	appData 	       *appdata.AppData
+	ctx					context.Context
+	masterPassword		string
+	masterPasswordHash	[]byte
+	appData				*appdata.AppData
 }
 
 // NewApp creates a new App application struct
