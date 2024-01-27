@@ -16,18 +16,6 @@
         action = newAction;
         dispatcher(changeActionEventType, action);
     };
-
-    onMount((): void => {
-        const mainTag = document.querySelector("main");
-        const sidebarBtn = document.querySelector("[data-drawer-toggle=logo-sidebar]");
-        if (!mainTag || !sidebarBtn) {
-            return;
-        }
-
-        sidebarBtn.addEventListener("click", function () {
-            mainTag.classList.toggle("sm:ml-64");
-        });
-    });
 </script>
 
 <nav class="fixed top-0 z-50 w-full border-b bg-item">
