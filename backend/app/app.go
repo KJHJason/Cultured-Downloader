@@ -21,11 +21,6 @@ func NewApp() *App {
 	return &App{}
 }
 
-func (a *App) resetMasterPassword() {
-	a.masterPassword = ""
-	a.masterPasswordHash = nil
-}
-
 func (a *App) GetName() string {
 	return a.appData.GetString("name")
 }

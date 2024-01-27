@@ -14,6 +14,11 @@ func (app *App) CheckMasterPassword(password string) bool {
 	return true
 }
 
+func (a *App) resetMasterPassword() {
+	a.masterPassword = ""
+	a.masterPasswordHash = nil
+}
+
 func (app *App) ResetEncryptedFields() {
 	app.appData.SetString(constants.MasterPasswordHashKey, "")
 	app.resetMasterPassword()

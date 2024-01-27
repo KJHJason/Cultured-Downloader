@@ -36,7 +36,7 @@ func NewAppData() (*AppData, error) {
 		logger.MainLogger.Error("Error loading data from file:", err)
 		return nil, err
 	}
-	appData.masterPasswordHash = appData.GetSecuredBytesWithFallback(constants.MasterPasswordHashKey, nil)
+	appData.masterPasswordHash = appData.GetSecuredBytes(constants.MasterPasswordHashKey)
 	return &appData, nil
 }
 
@@ -172,7 +172,7 @@ func (a *AppData) getSecure(key string) ([]byte, bool) {
 	defer a.mu.RUnlock()
 
 	v, exist := a.data[key]
-	if !exist {
+	if !exist || v == "" {
 		return nil, false
 	}
 

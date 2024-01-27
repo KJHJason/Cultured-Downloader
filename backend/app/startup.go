@@ -43,5 +43,5 @@ func (a *App) Startup(ctx context.Context) {
 }
 
 func (app *App) PromptMasterPassword() bool {
-	return app.appData.GetMasterPasswordHash() != nil
+	return len(app.appData.GetMasterPasswordHash()) > 0
 }

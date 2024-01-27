@@ -11,14 +11,15 @@
     "@sveltejs/vite-plugin-svelte": "^2.5.3",
     "@tsconfig/svelte": "^5.0.2",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "svelte": "^4.2.8",
-    "tailwindcss": "^3.3.6",
-    "vite": "^4.4.9",
     "flowbite": "^2.2.1",
     "flowbite-svelte": "^0.44.21",
+    "postcss": "^8.4.32",
+    "sweetalert2": "^11.10.4",
+    "svelte": "^4.2.8",
+    "tailwindcss": "^3.3.6",
     "tslib": "^2.6.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vite": "^4.4.9"
   },
   "author": "KJHJason"
 }
