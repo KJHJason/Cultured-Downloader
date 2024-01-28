@@ -1,5 +1,11 @@
 package appdata
 
+import (
+	"encoding/base64"
+
+	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
+)
+
 func (a *AppData) GetBool(key string) bool {
 	return a.GetBoolWithFallback(key, false)
 }
@@ -153,6 +159,29 @@ func (a *AppData) GetStringSliceWithFallback(key string, fallback []string) ([]s
 		return fallback
 	}
 	return s
+}
+
+func (a *AppData) GetBytes(key string) []byte {
+	return a.GetBytesWithFallback(key, []byte{})
+}
+
+func (a *AppData) GetBytesWithFallback(key string, fallback []byte) []byte {
+	v, exist := a.get(key)
+	if !exist {
+		return fallback
+	}
+
+	s, isString := v.(string) // should be base64 encoded
+	if !isString {
+		return fallback
+	}
+
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		logger.MainLogger.Errorf("Error decoding base64 string for data key %q: %v", key, err)
+		return fallback
+	}
+	return b
 }
 
 func (a *AppData) GetSecuredString(key string) string {

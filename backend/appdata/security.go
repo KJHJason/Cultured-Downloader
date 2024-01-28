@@ -59,6 +59,22 @@ func ResetEncryptedFields(appData *AppData) {
 	}
 }
 
+func EncryptWithPassword(appData *AppData, plaintext []byte, password string) ([]byte, error) {
+	key, err := deriveKey(appData, password)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Encrypt(plaintext, key)
+}
+
+func DecryptWithPassword(appData *AppData, ciphertext []byte, password string) ([]byte, error) {
+	key, err := deriveKey(appData, password)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.Decrypt(ciphertext, key)
+}
+
 func reEncryptEncryptedField(appData *AppData, encodedCiphertext string, oldMasterPassword, newMasterPassword string) (string, error) {
 	decodedCipherText, err := base64.StdEncoding.DecodeString(encodedCiphertext)
 	if err != nil {
@@ -78,22 +94,6 @@ func reEncryptEncryptedField(appData *AppData, encodedCiphertext string, oldMast
 	}
 
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
-}
-
-func EncryptWithPassword(appData *AppData, plaintext []byte, password string) ([]byte, error) {
-	key, err := deriveKey(appData, password)
-	if err != nil {
-		return nil, err
-	}
-	return crypto.Encrypt(plaintext, key)
-}
-
-func DecryptWithPassword(appData *AppData, ciphertext []byte, password string) ([]byte, error) {
-	key, err := deriveKey(appData, password)
-	if err != nil {
-		return nil, err
-	}
-	return crypto.Decrypt(ciphertext, key)
 }
 
 func ReEncryptEncryptedFields(appData *AppData, oldMasterPassword, newMasterPassword string) error {
@@ -121,69 +121,23 @@ func ReEncryptEncryptedFields(appData *AppData, oldMasterPassword, newMasterPass
 			}
 		}
 	}
-	return nil
-}
-
-func EncryptPlainField(appData *AppData, key string, plaintext []byte, masterPassword string) error {
-	ciphertext, err := EncryptWithPassword(appData, plaintext, masterPassword)
-	if err != nil {
-		return err
-	}
-
-	appData.SetString(key, base64.StdEncoding.EncodeToString(ciphertext))
+	appData.ChangeMasterPassword(newMasterPassword)
 	return nil
 }
 
 func EncryptPlainFields(appData *AppData, masterPassword string) error {
 	for _, key := range encryptedFields {
-		plaintext := appData.GetString(key)
-		if plaintext == "" {
-			continue
-		}
-		if err := EncryptPlainField(appData, key, []byte(plaintext), masterPassword); err != nil {
+		if err := appData.ChangeToSecure(key); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DecryptEncryptedFieldBytes(appData *AppData, key string, masterPassword string) ([]byte, error) {
-	encodedEncryptedField := appData.GetString(key)
-	if encodedEncryptedField == "" {
-		return nil, nil
-	}
-
-	decodedCipherText, err := base64.StdEncoding.DecodeString(encodedEncryptedField)
-	if err != nil {
-		return nil, err
-	}
-
-	// decrypt the ciphertext using the master password
-	plaintext, err := DecryptWithPassword(appData, decodedCipherText, masterPassword)
-	if err != nil {
-		return nil, err
-	}
-	return plaintext, nil
-}
-
-func DecryptEncryptedField(appData *AppData, key string, masterPassword string, encode bool) (string, error) {
-	plaintext, err := DecryptEncryptedFieldBytes(appData, key, masterPassword)
-	if err != nil {
-		return "", err
-	}
-
-	if encode {
-		return base64.StdEncoding.EncodeToString(plaintext), nil
-	}
-	return string(plaintext), nil
-}
-
 func DecryptEncryptedFields(appData *AppData, masterPassword string) error {
 	for _, key := range encryptedFields {
-		if decryptedField, err := DecryptEncryptedField(appData, key, masterPassword, false); err != nil {
+		if err := appData.ChangeToPlaintext(key); err != nil {
 			return err
-		} else {
-			appData.SetString(key, decryptedField)
 		}
 	}
 	return nil

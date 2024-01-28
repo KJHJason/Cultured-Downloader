@@ -2,9 +2,11 @@ package app
 
 import (
 	"context"
+	"container/list"
 	"fmt"
 
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
+	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -14,6 +16,7 @@ type App struct {
 	masterPassword		string
 	masterPasswordHash	[]byte
 	appData				*appdata.AppData
+	downloadQueues		list.List // doubly linked list of DownloadQueue
 }
 
 // NewApp creates a new App application struct
@@ -35,4 +38,12 @@ func (a *App) Greet(name string) string {
 		})
 	}
 	return fmt.Sprintf("Hello %s, Your name has been saved!", name)
+}
+
+func (app *App) GetDarkMode() bool {
+	return app.appData.GetBool(constants.DarkModeKey)
+}
+
+func (app *App) SetDarkMode(darkMode bool) {
+	app.appData.SetBool(constants.DarkModeKey, darkMode)
 }

@@ -3,6 +3,7 @@ package appdata
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -10,6 +11,8 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
+	"github.com/KJHJason/Cultured-Downloader/backend/crypto"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -36,7 +39,7 @@ func NewAppData() (*AppData, error) {
 		logger.MainLogger.Error("Error loading data from file:", err)
 		return nil, err
 	}
-	appData.masterPasswordHash = appData.GetSecuredBytes(constants.MasterPasswordHashKey)
+	appData.masterPasswordHash = appData.GetBytes(constants.MasterPasswordHashKey)
 	return &appData, nil
 }
 
@@ -46,11 +49,16 @@ func (a *AppData) SetMasterPassword(password string) {
 	a.masterPassword = password
 }
 
-func (a *AppData) ChangeMasterPassword(password string, hash []byte) {
+func (a *AppData) ChangeMasterPassword(password string) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.masterPassword = password
+
+	// Get a new hash for the new password
+	hash := crypto.HashPassword(password)
 	a.masterPasswordHash = hash
+	a.mu.Unlock()
+
+	a.SetBytes(constants.MasterPasswordHashKey, hash)
 }
 
 func (a *AppData) GetMasterPassword() string {
@@ -128,10 +136,29 @@ func (a *AppData) set(key string, newValue interface{}) error {
 		return nil
 	}
 
+	// check if the newValue is of []byte type and if it is, convert it to base64 encoded string
+	if bytes, isBytes := newValue.([]byte); isBytes {
+		newValue = base64.StdEncoding.EncodeToString(bytes)
+	}
+
 	a.data[key] = newValue
 	err := a.saveToFile()
 	if err != nil {
 		logger.MainLogger.Errorf("Error saving data to file with key %q: %v", key, err)
+	}
+	return err
+}
+
+func encryptionLogic(a *AppData, key, password string, value []byte) error {
+	encryptedNewValue, err := EncryptWithPassword(a, value, password)
+	if err != nil {
+		return err
+	}
+
+	a.data[key] = base64.StdEncoding.EncodeToString(encryptedNewValue)
+	err = a.saveToFile()
+	if err != nil {
+		logger.MainLogger.Errorf("Error saving data to file for key %q: %v", key, err)
 	}
 	return err
 }
@@ -147,22 +174,62 @@ func (a *AppData) setSecureB(key string, newValue []byte) error {
 		return nil
 	}
 
-	encryptedNewValue, err := EncryptWithPassword(a, newValue, a.masterPassword)
-	if err != nil {
-		return err
-	}
-
-	a.data[key] = base64.StdEncoding.EncodeToString(encryptedNewValue)
-	err = a.saveToFile()
-	if err != nil {
-		logger.MainLogger.Errorf("Error saving data to file for key %q: %v", key, err)
-	}
-	return err
+	return encryptionLogic(a, key, a.masterPassword, newValue)
 }
 
 // Securely stores the newValue (utf-8 encoded) in the appData
 func (a *AppData) setSecureS(key string, newValue string) error {
 	return a.setSecureB(key, []byte(newValue))
+}
+
+// Encrypt the stored plaintext value with the new master password and save it to the appData
+func (a *AppData) ChangeToSecure(key string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	oldValue, exist := a.data[key]
+	if !exist {
+		return nil
+	}
+
+	if plaintext, isString := oldValue.(string); !isString {
+		return fmt.Errorf("value for key %q is not a string", key)
+	} else {
+		return encryptionLogic(a, key, a.masterPassword, []byte(plaintext))
+	}
+}
+
+// Decrypt the stored encrypted value with the master password 
+// and save the decrypted plaintext STRING to the appData
+func (a *AppData) ChangeToPlaintext(key string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	oldValue, exist := a.data[key]
+	if !exist {
+		return nil
+	}
+
+	if encodedEncryptedField, isString := oldValue.(string); !isString {
+		return fmt.Errorf("value for key %q is not a string", key)
+	} else {
+		decodedBytes, err := base64.StdEncoding.DecodeString(encodedEncryptedField)
+		if err != nil {
+			return errors.Wrap(err, "error decoding base64 string for data key " + key)
+		}
+
+		plaintext, err := DecryptWithPassword(a, decodedBytes, a.masterPassword)
+		if err != nil {
+			return err
+		}
+
+		a.data[key] = string(plaintext)
+		err = a.saveToFile()
+		if err != nil {
+			logger.MainLogger.Errorf("Error saving data to file for key %q: %v", key, err)
+		}
+		return err
+	}
 }
 
 // Main logic for securely retrieving the value from the appData

@@ -8,19 +8,20 @@ import (
 const (
 	DefaultPerm = 0755
 	LocalUserAssetDirName = "assets"
-	MasterPasswordHashKey = "masterPasswordHash"
+	MasterPasswordHashKey = "master-password-hash"
+	DarkModeKey           = "dark-mode"
 
-	GdriveApiKeyKey     = "gdriveApiKey"
-	GdriveServiceAccKey = "gdriveServiceAcc"
+	GdriveApiKeyKey     = "gdrive-api-key"
+	GdriveServiceAccKey = "gdrive-service-acc"
 
-	DlThumbnailKey     = "dlThumbnail"
-	DlImagesKey        = "dlImages"
-	DlAttachmentsKey   = "dlAttachments"
-	DlGdriveKey        = "dlGdrive"
-	DetectOtherUrlsKey = "detectOtherUrls"
+	DlThumbnailKey     = "dl-thumbnail"
+	DlImagesKey        = "dl-images"
+	DlAttachmentsKey   = "dl-attachments"
+	DlGdriveKey        = "dl-gdrive"
+	DetectOtherUrlsKey = "detect-other-urls"
 
-	FantiaCookieValueKey = "fantiaCookieValue"
-	FantiaCookiePathKey  = "fantiaCookiePath"
+	FantiaCookieValueKey = "fantia-cookie-value"
+	FantiaCookiePathKey  = "fantia-cookie-path"
 )
 
 var (

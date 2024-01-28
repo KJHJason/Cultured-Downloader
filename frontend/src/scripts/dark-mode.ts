@@ -1,5 +1,7 @@
+import { GetDarkMode, SetDarkMode } from "./wailsjs/go/app/App";
+
 // when domcontentloaded, check if dark mode is enabled
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     // from https://flowbite.com/docs/customize/dark-mode/#content
     const themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon") as HTMLElement;
     const themeToggleLightIcon = document.getElementById("theme-toggle-light-icon") as HTMLElement;
@@ -9,12 +11,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Change the icons inside the button based on previous settings
-    if (localStorage.getItem("color-theme") === "dark" || (!("color-theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    const isDarkMode = await GetDarkMode();
+    if (isDarkMode) {
         themeToggleLightIcon.classList.remove("hidden");
         themeToggleBtnText.textContent = "Light Mode";
+        document.documentElement.classList.add("dark");
     } else {
         themeToggleDarkIcon.classList.remove("hidden");
         themeToggleBtnText.textContent = "Dark Mode";
+        document.documentElement.classList.remove("dark");
     }
 
     const themeToggleBtn = document.getElementById("theme-toggle") as HTMLElement;
@@ -22,34 +27,19 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    themeToggleBtn.addEventListener("click", () => {
+    themeToggleBtn.addEventListener("click", async () => {
         // toggle icons inside button
         themeToggleDarkIcon.classList.toggle("hidden");
         themeToggleLightIcon.classList.toggle("hidden");
 
-        // if set via local storage previously
-        if (localStorage.getItem("color-theme")) {
-            if (localStorage.getItem("color-theme") === "light") {
-                document.documentElement.classList.add("dark");
-                themeToggleBtnText.textContent = "Light Mode";
-                localStorage.setItem("color-theme", "dark");
-            } else {
-                document.documentElement.classList.remove("dark");
-                themeToggleBtnText.textContent = "Dark Mode";
-                localStorage.setItem("color-theme", "light");
-            }
-            return;
-        } 
-
-        // if NOT set via local storage previously
         if (document.documentElement.classList.contains("dark")) {
             document.documentElement.classList.remove("dark");
             themeToggleBtnText.textContent = "Dark Mode";
-            localStorage.setItem("color-theme", "light");
+            await SetDarkMode(false);
             return;
         } 
         document.documentElement.classList.add("dark");
         themeToggleBtnText.textContent = "Light Mode";
-        localStorage.setItem("color-theme", "dark");
+        await SetDarkMode(true);
     });
 });
