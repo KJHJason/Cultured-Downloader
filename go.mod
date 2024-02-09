@@ -6,7 +6,7 @@ require (
 	github.com/KJHJason/Cultured-Downloader-Logic v1.0.2
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.23.12
-	github.com/wailsapp/wails/v2 v2.7.1
+	github.com/wailsapp/wails/v2 v2.8.0
 	golang.org/x/crypto v0.18.0
 )
 
