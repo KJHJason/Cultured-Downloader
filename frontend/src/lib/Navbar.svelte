@@ -1,16 +1,12 @@
 <script lang="ts">
-    import { GetName } from "../scripts/wailsjs/go/app/App";
-    import { onMount, createEventDispatcher } from "svelte";
+    import { createEventDispatcher } from "svelte";
     import { actions, changeActionEventType, fallbackUserProfile } from "../scripts/constants";
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
     import NavbarBtn from "./navbar/NavbarBtn.svelte";
 
     export let action: string;
+    export let username: string;
 
-    let name = "";
-    onMount(async (): Promise<void> => {
-        name = await GetName();
-    });
     const dispatcher = createEventDispatcher();
     const changeAction = (newAction: string): void => {
         action = newAction;
@@ -43,8 +39,8 @@
                     </div>
                     <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-zinc-200 rounded shadow dark:bg-zinc-800 dark:divide-zinc-600 outline-zinc-200 outline-1 dark:outline-zinc-600 outline" id="dropdown-user">
                         <div class="px-4 py-3" role="none">
-                            <p class="text-sm text-zinc-900 dark:text-white" role="none"> {name} </p>
-                            <p class="text-sm font-medium text-zinc-900 truncate dark:text-zinc-300" role="none"> neil.sims@flowbite.com </p>
+                            <p class="text-sm text-zinc-900 dark:text-white" role="none"> {username} </p>
+                            <p class="text-sm font-medium text-zinc-900 truncate dark:text-zinc-300" role="none"> {username}@cd.kjhjason.com </p>
                         </div>
                         <ul class="p-1" role="none">
                             <li>

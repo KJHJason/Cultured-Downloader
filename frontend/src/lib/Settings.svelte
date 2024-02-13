@@ -1,8 +1,11 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
     import { Tabs, TabItem } from "flowbite-svelte";
     import { UserCircleSolid, DownloadSolid, InfoCircleSolid, AdjustmentsVerticalSolid } from "flowbite-svelte-icons";
     import General from "./settings/General.svelte";
+
+    export let username: string;
+    export let handleActionChange: (event: CustomEvent<string>) => void;
 
     const changeDefaultDividerColour = () => {
         const settingsContent = document.getElementById("settingsContent");
@@ -27,7 +30,7 @@
                 <UserCircleSolid size="sm" />
                 General
             </div>
-            <General />
+            <General username={username} on:changeUsername={handleActionChange} />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">

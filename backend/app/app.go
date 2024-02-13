@@ -1,9 +1,11 @@
 package app
 
 import (
-	"context"
 	"container/list"
+	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -12,9 +14,9 @@ import (
 
 // App struct
 type App struct {
-	ctx							context.Context
-	appData						*appdata.AppData
-	downloadQueues				list.List // doubly linked list of DownloadQueue
+	ctx            context.Context
+	appData        *appdata.AppData
+	downloadQueues list.List // doubly linked list of DownloadQueue
 }
 
 // NewApp creates a new App application struct
@@ -22,21 +24,21 @@ func NewApp() *App {
 	return &App{}
 }
 
-func (a *App) GetName() string {
-	return a.appData.GetString("name")
+func (a *App) GetUsername() string {
+	return a.appData.GetString(constants.UsernameKey)
 }
 
 // Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	if err := a.appData.SetString("name", name); err != nil {
-		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:          runtime.ErrorDialog,
-			Title:         "Error saving name!",
-			Message:       "Please refer to the logs or report this issue on GitHub.",
-		})
-	}
-	return fmt.Sprintf("Hello %s, Your name has been saved!", name)
-}
+// func (a *App) Greet(name string) string {
+// 	if err := a.appData.SetString("name", name); err != nil {
+// 		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+// 			Type:    runtime.ErrorDialog,
+// 			Title:   "Error saving name!",
+// 			Message: "Please refer to the logs or report this issue on GitHub.",
+// 		})
+// 	}
+// 	return fmt.Sprintf("Hello %s, Your name has been saved!", name)
+// }
 
 func (app *App) GetDarkMode() bool {
 	return app.appData.GetBool(constants.DarkModeKey)
@@ -44,4 +46,91 @@ func (app *App) GetDarkMode() bool {
 
 func (app *App) SetDarkMode(darkMode bool) {
 	app.appData.SetBool(constants.DarkModeKey, darkMode)
+}
+
+func (app *App) SetUsername(username string) {
+	app.appData.SetString(constants.UsernameKey, username)
+}
+
+type ProfilePic struct {
+	Path		string
+	Type		string
+	Filename	string
+	Data		[]byte
+}
+
+func (app *App) SelectProfilePic() (ProfilePic, error) {
+	selection, err := runtime.OpenFileDialog(app.ctx, runtime.OpenDialogOptions{
+		Title: "Select File",
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Images (*.png;*.jpg,*.jpeg,*.gif;*.webp)",
+				Pattern:     "*.png;*.jpg;*.jpeg;*.gif;*.webp",
+			},
+		},
+	})
+
+	var pic ProfilePic
+	if err != nil {
+		return pic, err
+	}
+
+	if selection == "" {
+		return pic, nil
+	}
+
+	if _, err = os.Stat(selection); err != nil {
+		return pic, fmt.Errorf("file does not exist")
+	}
+
+	data, err := os.ReadFile(selection)
+	if err != nil {
+		return pic, err
+	}
+
+	// https://www.freeformatter.com/mime-types-list.html#mime-types-list
+	pic.Type = filepath.Ext(selection)[1:] // remove the dot
+	if pic.Type == "jpg" {
+		pic.Type = "jpeg"
+	}
+
+	pic.Path = selection
+	pic.Data = data
+	pic.Filename = filepath.Base(selection)
+	return pic, nil
+}
+
+func (app *App) UploadProfilePic(picPath string) error {
+	fileName := filepath.Base(picPath)
+	data, err := os.ReadFile(picPath)
+	if err != nil {
+		return err
+	}
+
+	picPathToSave := filepath.Join(constants.UserConfigDir, fileName)
+	app.appData.SetString(constants.ProfilePicPathKey, picPathToSave)
+	file, err := os.OpenFile(picPathToSave, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) HasProfilePic() bool {
+	_, err := os.Stat(app.appData.GetString(constants.ProfilePicPathKey))
+	return err == nil
+}
+
+func (app *App) DeleteProfilePic() error {
+	filePath := app.appData.GetString(constants.ProfilePicPathKey)
+	if filePath == "" {
+		return nil
+	}
+	return os.Remove(filePath)
 }

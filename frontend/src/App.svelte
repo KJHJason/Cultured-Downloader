@@ -5,7 +5,7 @@
     import "@sweetalert2/theme-dark/dark.css";
 
     import { onMount, createEventDispatcher } from "svelte";
-    import { swal, actions, changeActionEventType, invertedSwal } from "./scripts/constants";
+    import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, ResetEncryptedFields } from "./scripts/wailsjs/go/app/App";
 
     import Navbar from "./lib/Navbar.svelte";
@@ -40,11 +40,16 @@
         triggerSwalError(errorMsg);
     });
 
-    let action: string = "home";
+    $: username = "";
+    $: action = "home";
     const handleActionChange = (event: CustomEvent<string>): void => {
+        const value = event.detail;
         switch (event.type) {
             case changeActionEventType:
-                action = event.detail;
+                action = value;
+                break;
+            case changeUsernameEventType:
+                username = value;
                 break;
             default:
                 throw new Error(`Unknown event type: ${event.type}`);
@@ -114,11 +119,11 @@
     });
 </script>
 
-<Navbar action={action} on:changeAction={handleActionChange}/>
+<Navbar username={username} action={action} on:changeAction={handleActionChange}/>
 
 <main class="p-4">
     <div class="mt-14">
-        <Settings />
+        <Settings username={username} handleActionChange={handleActionChange} />
         <!-- {#if action === actions.Home}
             <Home/>
         {:else if action === actions.Fantia}
@@ -132,7 +137,7 @@
         {:else if action === actions.Downloads}
             <DownloadQueues/>
         {:else if action == actions.Settings}
-            <Settings />
+            <Settings username={username} />
         {:else}
             <p>Not implemented yet</p>
         {/if} -->

@@ -11,6 +11,8 @@ const (
 	HashOfMasterPasswordHashKey = "master-password-hash"
 	MasterPasswordSaltKey 		= "master-password-salt"
 	DarkModeKey           		= "dark-mode"
+	UsernameKey					= "username"
+	ProfilePicPathKey			= "profile-pic-path"
 
 	GdriveApiKeyKey     = "gdrive-api-key"
 	GdriveServiceAccKey = "gdrive-service-acc"
