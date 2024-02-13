@@ -24,7 +24,8 @@ type AppData struct {
 	data				map[string]interface{}
 	dataPath			string
 	masterPassword		string // Used as key to encrypt/decrypt the secured data
-	masterPasswordHash	[]byte // Mainly to verify if the master password is correct
+	masterPasswordSalt  []byte
+	hashOfMasterPasswordHash	[]byte // Mainly to verify if the master password is correct
 	mu					sync.RWMutex
 }
 
@@ -39,7 +40,8 @@ func NewAppData() (*AppData, error) {
 		logger.MainLogger.Error("Error loading data from file:", err)
 		return nil, err
 	}
-	appData.masterPasswordHash = appData.GetBytes(constants.MasterPasswordHashKey)
+	appData.masterPasswordSalt = appData.GetBytes(constants.MasterPasswordSaltKey)
+	appData.hashOfMasterPasswordHash = appData.GetBytes(constants.HashOfMasterPasswordHashKey)
 	return &appData, nil
 }
 
@@ -49,16 +51,33 @@ func (a *AppData) SetMasterPassword(password string) {
 	a.masterPassword = password
 }
 
-func (a *AppData) ChangeMasterPassword(password string) {
+func (a *AppData) changeMasterPassword(password string) {
 	a.mu.Lock()
 	a.masterPassword = password
 
+	// Get a new salt for the new password
+	salt := crypto.GenerateNonce(crypto.HashSaltLen)
+	a.masterPasswordSalt = salt
+
 	// Get a new hash for the new password
-	hash := crypto.HashPassword(password)
-	a.masterPasswordHash = hash
+	hash := crypto.HashStringWithSalt(password, salt)
+	a.hashOfMasterPasswordHash = crypto.HashData(hash)
 	a.mu.Unlock()
 
-	a.SetBytes(constants.MasterPasswordHashKey, hash)
+	a.SetBytes(constants.MasterPasswordSaltKey, salt)
+	a.SetBytes(constants.HashOfMasterPasswordHashKey, a.hashOfMasterPasswordHash)
+}
+
+func (a *AppData) ResetMasterPassword() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.masterPassword = ""
+	a.masterPasswordSalt = nil
+	a.hashOfMasterPasswordHash = nil
+
+	a.SetBytes(constants.MasterPasswordSaltKey, nil)
+	a.SetBytes(constants.HashOfMasterPasswordHashKey, nil)
+	a.ResetEncryptedFields()
 }
 
 func (a *AppData) GetMasterPassword() string {
@@ -67,10 +86,10 @@ func (a *AppData) GetMasterPassword() string {
 	return a.masterPassword
 }
 
-func (a *AppData) GetMasterPasswordHash() []byte {
+func (a *AppData) GetMasterPasswordHash() (hash, salt []byte) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	return a.masterPasswordHash
+	return a.hashOfMasterPasswordHash, a.masterPasswordSalt
 }
 
 // Remember to lock the mutex before calling this function
@@ -126,6 +145,14 @@ func (a *AppData) get(key string) (interface{}, bool) {
 	return v, exist
 }
 
+func (a *AppData) unset(key string) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	delete(a.data, key)
+	return a.saveToFile()
+}
+
 func (a *AppData) set(key string, newValue interface{}) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -149,8 +176,8 @@ func (a *AppData) set(key string, newValue interface{}) error {
 	return err
 }
 
-func encryptionLogic(a *AppData, key, password string, value []byte) error {
-	encryptedNewValue, err := EncryptWithPassword(a, value, password)
+func (a *AppData) encryptionLogic(key, password string, value []byte) error {
+	encryptedNewValue, err := a.EncryptWithPassword(value, a.masterPasswordSalt, password)
 	if err != nil {
 		return err
 	}
@@ -174,7 +201,7 @@ func (a *AppData) setSecureB(key string, newValue []byte) error {
 		return nil
 	}
 
-	return encryptionLogic(a, key, a.masterPassword, newValue)
+	return a.encryptionLogic(key, a.masterPassword, newValue)
 }
 
 // Securely stores the newValue (utf-8 encoded) in the appData
@@ -195,7 +222,7 @@ func (a *AppData) ChangeToSecure(key string) error {
 	if plaintext, isString := oldValue.(string); !isString {
 		return fmt.Errorf("value for key %q is not a string", key)
 	} else {
-		return encryptionLogic(a, key, a.masterPassword, []byte(plaintext))
+		return a.encryptionLogic(key, a.masterPassword, []byte(plaintext))
 	}
 }
 
@@ -218,7 +245,7 @@ func (a *AppData) ChangeToPlaintext(key string) error {
 			return errors.Wrap(err, "error decoding base64 string for data key " + key)
 		}
 
-		plaintext, err := DecryptWithPassword(a, decodedBytes, a.masterPassword)
+		plaintext, err := a.DecryptWithPassword(decodedBytes, a.masterPasswordSalt, a.masterPassword)
 		if err != nil {
 			return err
 		}
@@ -259,7 +286,7 @@ func (a *AppData) getSecure(key string) ([]byte, bool) {
 		return nil, false
 	}
 
-	decryptedVal, err := DecryptWithPassword(a, valBytes, a.masterPassword)
+	decryptedVal, err := a.DecryptWithPassword(valBytes, a.masterPasswordSalt, a.masterPassword)
 	if err != nil {
 		logger.MainLogger.Errorf("Error decrypting value for data %q: %v", key, err)
 

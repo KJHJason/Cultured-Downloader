@@ -5,6 +5,8 @@ import {httpfuncs} from '../models';
 
 export function CancelQueue(arg1:number):Promise<void>;
 
+export function ChangeMasterPassword(arg1:string,arg2:string):Promise<void>;
+
 export function CheckMasterPassword(arg1:string):Promise<boolean>;
 
 export function GetDarkMode():Promise<boolean>;
@@ -20,3 +22,5 @@ export function PromptMasterPassword():Promise<boolean>;
 export function ResetEncryptedFields():Promise<void>;
 
 export function SetDarkMode(arg1:boolean):Promise<void>;
+
+export function SetMasterPassword(arg1:string):Promise<void>;

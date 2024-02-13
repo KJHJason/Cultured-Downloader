@@ -1,9 +1,9 @@
 <script lang="ts">
     import { GetName } from "../scripts/wailsjs/go/app/App";
     import { onMount, createEventDispatcher } from "svelte";
-    import { actions, changeActionEventType } from "../scripts/constants";
+    import { actions, changeActionEventType, fallbackUserProfile } from "../scripts/constants";
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
-    import NavbarBtn from "./NavbarBtn.svelte";
+    import NavbarBtn from "./navbar/NavbarBtn.svelte";
 
     export let action: string;
 
@@ -38,7 +38,7 @@
                     <div>
                         <button type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
                             <span class="sr-only">Open user menu</span>
-                            <img class="w-8 h-8 rounded-full" src="/profile.png" alt="" />
+                            <img class="w-8 h-8 rounded-full border-2 border-gray-200" src="{fallbackUserProfile}" alt="" />
                         </button>
                     </div>
                     <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-zinc-200 rounded shadow dark:bg-zinc-800 dark:divide-zinc-600 outline-zinc-200 outline-1 dark:outline-zinc-600 outline" id="dropdown-user">

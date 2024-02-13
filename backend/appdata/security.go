@@ -9,36 +9,16 @@ import (
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
-const (
-	// Preferences key
-	masterKeySalt = "masterkey-salt"
-)
-
-// reset the salt for the key derivation function
-func ResetMasterKeySalt(appData *AppData) {
-	appData.SetString(masterKeySalt, "")
-}
-
 var dkMutex sync.Mutex
 // Uses Argon2id to derive a 256-bit key from the password
-func deriveKey(appData *AppData, password string) ([]byte, error) {
+func (a *AppData) deriveKey(password string) ([]byte, error) {
 	dkMutex.Lock()
 	defer dkMutex.Unlock()
 
-	var salt []byte
-	var err error
-	if appData.GetString(masterKeySalt) == "" {
-		salt = crypto.GenerateNonce(crypto.HashKeyLen)
-		appData.SetString(masterKeySalt, base64.StdEncoding.EncodeToString(salt))
-	} else {
-		salt, err = base64.StdEncoding.DecodeString(appData.GetString(masterKeySalt))
-		if err != nil || len(salt) != crypto.HashKeyLen {
-			// Shouldn't happen unless the user has tampered with the preferences file,
-			// in which case we should just panic after resetting the salt and the encrypted fields
-			appData.SetString(masterKeySalt, base64.StdEncoding.EncodeToString(crypto.GenerateNonce(crypto.HashKeyLen)))
-			ResetEncryptedFields(appData)
-			return nil, err
-		}
+	salt := a.masterPasswordSalt
+	if (salt == nil) {
+		a.unset(constants.MasterPasswordSaltKey)
+		panic("master password salt is nil") // should never happen
 	}
 
 	// Derive the key using Argon2id
@@ -52,43 +32,42 @@ var encryptedFields = [...]string{
 	constants.FantiaCookieValueKey,
 }
 
-func ResetEncryptedFields(appData *AppData) {
-	appData.SetString(masterKeySalt, "") // reset the salt for the key derivation function
+func (a *AppData) ResetEncryptedFields() {
 	for _, key := range encryptedFields {
-		appData.SetString(key, "")
+		a.Unset(key)
 	}
 }
 
-func EncryptWithPassword(appData *AppData, plaintext []byte, password string) ([]byte, error) {
-	key, err := deriveKey(appData, password)
+func (a *AppData) EncryptWithPassword(plaintext, salt []byte, password string) ([]byte, error) {
+	key, err := a.deriveKey(password)
 	if err != nil {
 		return nil, err
 	}
 	return crypto.Encrypt(plaintext, key)
 }
 
-func DecryptWithPassword(appData *AppData, ciphertext []byte, password string) ([]byte, error) {
-	key, err := deriveKey(appData, password)
+func (a *AppData) DecryptWithPassword(ciphertext, salt []byte, password string) ([]byte, error) {
+	key, err := a.deriveKey(password)
 	if err != nil {
 		return nil, err
 	}
 	return crypto.Decrypt(ciphertext, key)
 }
 
-func reEncryptEncryptedField(appData *AppData, encodedCiphertext string, oldMasterPassword, newMasterPassword string) (string, error) {
+func (a *AppData) reEncryptEncryptedField(encodedCiphertext string, oldMasterPassword string, oldMasterPasswordSalt []byte) (string, error) {
 	decodedCipherText, err := base64.StdEncoding.DecodeString(encodedCiphertext)
 	if err != nil {
 		return "", err
 	}
 
 	// decrypt the ciphertext using the old master password
-	plaintext, err := DecryptWithPassword(appData, decodedCipherText, oldMasterPassword)
+	plaintext, err := a.DecryptWithPassword(decodedCipherText, oldMasterPasswordSalt, oldMasterPassword)
 	if err != nil {
 		return "", err
 	}
 
 	// encrypt the plaintext using the new master password
-	ciphertext, err := EncryptWithPassword(appData, plaintext, newMasterPassword)
+	ciphertext, err := a.EncryptWithPassword(plaintext, a.masterPasswordSalt, a.masterPassword)
 	if err != nil {
 		return "", err
 	}
@@ -96,47 +75,66 @@ func reEncryptEncryptedField(appData *AppData, encodedCiphertext string, oldMast
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func ReEncryptEncryptedFields(appData *AppData, oldMasterPassword, newMasterPassword string) error {
+func (a *AppData) VerifyMasterPassword(password string) bool {
+	hashOfMasterPasswordHash, masterPasswordSalt := a.GetMasterPasswordHash()
+	hashedPassword := crypto.HashStringWithSalt(password, masterPasswordSalt)
+	if !crypto.VerifyBytes(hashedPassword, hashOfMasterPasswordHash) {
+		return false
+	}
+	if a.masterPassword == "" {
+		a.SetMasterPassword(password)
+	}
+	return true
+}
+
+func (a *AppData) ChangeMasterPassword(oldMasterPassword, newMasterPassword string) error {
 	if newMasterPassword == "" {
 		return errors.New("new master password cannot be empty")
 	}
 
-	if oldMasterPassword == "" || oldMasterPassword == newMasterPassword {
+	if oldMasterPassword == newMasterPassword {
 		return nil // no need to re-encrypt
 	}
 
+	if oldMasterPassword == "" {
+		a.changeMasterPassword(newMasterPassword)
+		return a.EncryptPlainFields(newMasterPassword)
+	} else if !a.VerifyMasterPassword(oldMasterPassword) {
+		return errors.New("old master password is incorrect")
+	}
+
+	oldMasterPasswordSalt := a.masterPasswordSalt
+	a.changeMasterPassword(newMasterPassword)
 	for _, key := range encryptedFields {
-		encodedEncryptedField := appData.GetString(key)
+		encodedEncryptedField := a.GetString(key)
 		if encodedEncryptedField != "" {
-			reEncryptedField, err := reEncryptEncryptedField(
-				appData, 
+			reEncryptedField, err := a.reEncryptEncryptedField( 
 				encodedEncryptedField, 
 				oldMasterPassword, 
-				newMasterPassword,
+				oldMasterPasswordSalt,
 			)
 			if err != nil {
 				return err
 			} else {
-				appData.SetString(key, reEncryptedField)
+				a.SetString(key, reEncryptedField)
 			}
 		}
 	}
-	appData.ChangeMasterPassword(newMasterPassword)
 	return nil
 }
 
-func EncryptPlainFields(appData *AppData, masterPassword string) error {
+func (a *AppData) EncryptPlainFields(masterPassword string) error {
 	for _, key := range encryptedFields {
-		if err := appData.ChangeToSecure(key); err != nil {
+		if err := a.ChangeToSecure(key); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func DecryptEncryptedFields(appData *AppData, masterPassword string) error {
+func (a *AppData) DecryptEncryptedFields(masterPassword string) error {
 	for _, key := range encryptedFields {
-		if err := appData.ChangeToPlaintext(key); err != nil {
+		if err := a.ChangeToPlaintext(key); err != nil {
 			return err
 		}
 	}

@@ -1,8 +1,13 @@
 <script lang="ts">
     import Swal from "sweetalert2";
-    import { onMount, createEventDispatcher } from "svelte";
     import "./scripts/dark-mode";
+    import "@sweetalert2/theme-default/default.css";
+    import "@sweetalert2/theme-dark/dark.css";
+
+    import { onMount, createEventDispatcher } from "svelte";
     import { swal, actions, changeActionEventType, invertedSwal } from "./scripts/constants";
+    import { PromptMasterPassword, CheckMasterPassword, ResetEncryptedFields } from "./scripts/wailsjs/go/app/App";
+
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
     import Fantia from "./lib/Fantia.svelte";
@@ -11,7 +16,29 @@
     import Kemono from "./lib/Kemono.svelte";
     import DownloadQueues from "./lib/DownloadQueues.svelte";
     import Settings from "./lib/Settings.svelte";
-    import { PromptMasterPassword, CheckMasterPassword, ResetEncryptedFields } from "./scripts/wailsjs/go/app/App";
+
+    const triggerSwalError = (message: string): void => {
+        swal.fire({
+            title: "Unexpected error",
+            text: message,
+            icon: "error",
+        });
+    };
+    window.onerror = (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error): void => {
+        const errorMsg = event.toString();
+        console.error(errorMsg, source, lineno, colno, error);
+        triggerSwalError(errorMsg);
+    };
+    window.addEventListener("error", (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error): void => {
+        const errorMsg = event.toString();
+        console.error(errorMsg, source, lineno, colno, error);
+        triggerSwalError(errorMsg);
+    });
+    window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent): void => {
+        const errorMsg = event.reason ? event.reason.toString() : "Unknown error";
+        console.error(errorMsg);
+        triggerSwalError(errorMsg);
+    });
 
     let action: string = "home";
     const handleActionChange = (event: CustomEvent<string>): void => {

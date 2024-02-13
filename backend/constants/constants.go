@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	DefaultPerm = 0755
-	LocalUserAssetDirName = "assets"
-	MasterPasswordHashKey = "master-password-hash"
-	DarkModeKey           = "dark-mode"
+	DefaultPerm 				= 0755
+	LocalUserAssetDirName 		= "assets"
+	HashOfMasterPasswordHashKey = "master-password-hash"
+	MasterPasswordSaltKey 		= "master-password-salt"
+	DarkModeKey           		= "dark-mode"
 
 	GdriveApiKeyKey     = "gdrive-api-key"
 	GdriveServiceAccKey = "gdrive-service-acc"

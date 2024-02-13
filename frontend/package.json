@@ -17,11 +17,13 @@
     "vite": "^4.4.9"
   },
   "dependencies": {
+    "@sweetalert2/theme-dark": "^5.0.16",
+    "@sweetalert2/theme-default": "^5.0.16",
     "flowbite": "^2.2.1",
     "flowbite-svelte": "^0.44.21",
     "flowbite-svelte-icons": "^1.0.3",
     "svelte": "^4.2.9",
-    "sweetalert2": "^11.10.4",
+    "sweetalert2": "^11.10.5",
     "tailwindcss": "^3.3.6"
   },
   "author": "KJHJason"

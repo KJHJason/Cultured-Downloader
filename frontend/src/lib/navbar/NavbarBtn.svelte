@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { actions, logoImgSrc, navbarLogoSize } from "../scripts/constants";
-    import { actionTitleCase } from "../scripts/utils/string";
+    import { actions, logoImgSrc, navbarLogoSize } from "../../scripts/constants";
+    import { actionTitleCase } from "../../scripts/utils/string";
 
     export let action: string;
     export let btnRole: string;

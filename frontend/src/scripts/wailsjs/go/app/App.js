@@ -6,6 +6,10 @@ export function CancelQueue(arg1) {
   return window['go']['app']['App']['CancelQueue'](arg1);
 }
 
+export function ChangeMasterPassword(arg1, arg2) {
+  return window['go']['app']['App']['ChangeMasterPassword'](arg1, arg2);
+}
+
 export function CheckMasterPassword(arg1) {
   return window['go']['app']['App']['CheckMasterPassword'](arg1);
 }
@@ -36,4 +40,8 @@ export function ResetEncryptedFields() {
 
 export function SetDarkMode(arg1) {
   return window['go']['app']['App']['SetDarkMode'](arg1);
+}
+
+export function SetMasterPassword(arg1) {
+  return window['go']['app']['App']['SetMasterPassword'](arg1);
 }

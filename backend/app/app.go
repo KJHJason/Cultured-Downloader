@@ -12,11 +12,9 @@ import (
 
 // App struct
 type App struct {
-	ctx					context.Context
-	masterPassword		string
-	masterPasswordHash	[]byte
-	appData				*appdata.AppData
-	downloadQueues		list.List // doubly linked list of DownloadQueue
+	ctx							context.Context
+	appData						*appdata.AppData
+	downloadQueues				list.List // doubly linked list of DownloadQueue
 }
 
 // NewApp creates a new App application struct

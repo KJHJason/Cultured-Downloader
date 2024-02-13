@@ -15,9 +15,21 @@ const (
 	kdfKeyLen   = 32
 )
 
-func HashPassword(password string) []byte {
+func HashStringData(data string) []byte {
+	return HashData([]byte(data))
+}
+
+func HashData(data []byte) []byte {
 	salt := GenerateNonce(HashSaltLen)
-	hash := argon2.IDKey([]byte(password), salt, timeCost, memoryCost, parallelism, HashKeyLen)
+	return HashDataWithSalt(data, salt)
+}
+
+func HashStringWithSalt(data string, salt []byte) []byte {
+	return HashDataWithSalt([]byte(data), salt)
+}
+
+func HashDataWithSalt(data, salt []byte) []byte {
+	hash := argon2.IDKey(data, salt, timeCost, memoryCost, parallelism, HashKeyLen)
 	return append(salt, hash...) // prepend salt to hash
 }
 
@@ -26,8 +38,12 @@ func GetKey(password string, salt []byte) []byte {
 	return argon2.IDKey([]byte(password), salt, timeCost, memoryCost, parallelism, kdfKeyLen)
 }
 
-func VerifyPassword(password string, hash []byte) bool {
+func VerifyString(data string, hash []byte) bool {
+	return VerifyBytes([]byte(data), hash)
+}
+
+func VerifyBytes(data []byte, hash []byte) bool {
 	salt := hash[:HashSaltLen]
 	hash = hash[HashSaltLen:]
-	return bytes.Equal(hash, argon2.IDKey([]byte(password), salt, timeCost, memoryCost, parallelism, uint32(len(hash))))
+	return bytes.Equal(hash, argon2.IDKey(data, salt, timeCost, memoryCost, parallelism, uint32(len(hash))))
 }
