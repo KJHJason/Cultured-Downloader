@@ -19,7 +19,7 @@
   "dependencies": {
     "@sweetalert2/theme-dark": "^5.0.16",
     "@sweetalert2/theme-default": "^5.0.16",
-    "flowbite": "^2.2.1",
+    "flowbite": "^2.3.0",
     "flowbite-svelte": "^0.44.21",
     "flowbite-svelte-icons": "^1.0.3",
     "svelte": "^4.2.9",
