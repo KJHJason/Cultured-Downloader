@@ -53,10 +53,42 @@ func (app *App) SetUsername(username string) {
 }
 
 type ProfilePic struct {
-	Path		string
-	Type		string
-	Filename	string
-	Data		[]byte
+	Path     string
+	Type     string
+	Filename string
+	Data     []byte
+}
+
+func NewProfilePic(path string) (ProfilePic, error) {
+	var err error
+	var pic ProfilePic
+	if err != nil {
+		return pic, err
+	}
+
+	if path == "" {
+		return pic, nil
+	}
+
+	if _, err = os.Stat(path); err != nil {
+		return pic, fmt.Errorf("file does not exist")
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return pic, err
+	}
+
+	// https://www.freeformatter.com/mime-types-list.html#mime-types-list
+	pic.Type = filepath.Ext(path)[1:] // remove the dot
+	if pic.Type == "jpg" {
+		pic.Type = "jpeg"
+	}
+
+	pic.Path = path
+	pic.Data = data
+	pic.Filename = filepath.Base(path)
+	return pic, nil
 }
 
 func (app *App) SelectProfilePic() (ProfilePic, error) {
@@ -70,34 +102,10 @@ func (app *App) SelectProfilePic() (ProfilePic, error) {
 		},
 	})
 
-	var pic ProfilePic
 	if err != nil {
-		return pic, err
+		return ProfilePic{}, err
 	}
-
-	if selection == "" {
-		return pic, nil
-	}
-
-	if _, err = os.Stat(selection); err != nil {
-		return pic, fmt.Errorf("file does not exist")
-	}
-
-	data, err := os.ReadFile(selection)
-	if err != nil {
-		return pic, err
-	}
-
-	// https://www.freeformatter.com/mime-types-list.html#mime-types-list
-	pic.Type = filepath.Ext(selection)[1:] // remove the dot
-	if pic.Type == "jpg" {
-		pic.Type = "jpeg"
-	}
-
-	pic.Path = selection
-	pic.Data = data
-	pic.Filename = filepath.Base(selection)
-	return pic, nil
+	return NewProfilePic(selection)
 }
 
 func (app *App) UploadProfilePic(picPath string) error {
@@ -105,6 +113,12 @@ func (app *App) UploadProfilePic(picPath string) error {
 	data, err := os.ReadFile(picPath)
 	if err != nil {
 		return err
+	}
+
+	oldProfilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	if oldProfilePicPath != "" {
+		// If there is an old profile pic, delete it
+		os.Remove(oldProfilePicPath)
 	}
 
 	picPathToSave := filepath.Join(constants.UserConfigDir, fileName)
@@ -123,8 +137,20 @@ func (app *App) UploadProfilePic(picPath string) error {
 }
 
 func (app *App) HasProfilePic() bool {
-	_, err := os.Stat(app.appData.GetString(constants.ProfilePicPathKey))
+	profilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	_, err := os.Stat(profilePicPath)
+
+	hasProfilePic := err == nil
+	if profilePicPath != "" && !hasProfilePic {
+		// If the path is set but the file does not exist, unset the path
+		app.appData.Unset(constants.ProfilePicPathKey)
+	}
 	return err == nil
+}
+
+func (app *App) GetProfilePic() (ProfilePic, error) {
+	profilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	return NewProfilePic(profilePicPath)
 }
 
 func (app *App) DeleteProfilePic() error {

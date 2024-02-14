@@ -5,6 +5,11 @@ import (
 	"github.com/KJHJason/Cultured-Downloader/backend/crypto"
 )
 
+func (app *App) PromptMasterPassword() bool {
+	hashOfMasterPasswordHash, masterPasswordSalt := app.appData.GetMasterPasswordHash()
+	return len(hashOfMasterPasswordHash) > 0 && len(masterPasswordSalt) > 0
+}
+
 func (app *App) CheckMasterPassword(password string) bool {
 	hashOfMasterPasswordHash, masterPasswordSalt := app.appData.GetMasterPasswordHash()
 	hashedPassword := crypto.HashStringWithSalt(password, masterPasswordSalt)

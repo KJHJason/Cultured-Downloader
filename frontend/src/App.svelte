@@ -1,10 +1,9 @@
 <script lang="ts">
     import Swal from "sweetalert2";
-    import "./scripts/dark-mode";
     import "@sweetalert2/theme-default/default.css";
     import "@sweetalert2/theme-dark/dark.css";
 
-    import { onMount, createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
     import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, ResetEncryptedFields } from "./scripts/wailsjs/go/app/App";
 
@@ -137,7 +136,7 @@
         {:else if action === actions.Downloads}
             <DownloadQueues/>
         {:else if action == actions.Settings}
-            <Settings username={username} />
+            <Settings username={username} handleActionChange={handleActionChange} />
         {:else}
             <p>Not implemented yet</p>
         {/if} -->

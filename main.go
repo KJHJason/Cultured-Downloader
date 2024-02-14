@@ -3,14 +3,8 @@ package main
 import (
 	"embed"
 	"log"
-	"net/http"
-	"os"
-	"strings"
-	"fmt"
-	"path/filepath"
 
 	"github.com/KJHJason/Cultured-Downloader/backend/app"
-	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -22,33 +16,6 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
-
-type FileLoader struct {
-    http.Handler
-}
-
-func NewFileLoader() *FileLoader {
-    return &FileLoader{}
-}
-
-func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-    var err error
-    requestedFilename := strings.TrimPrefix(req.URL.Path, "/")
-
-	localFilePath := filepath.Join(
-		constants.UserConfigDir, 
-		constants.LocalUserAssetDirName,
-		requestedFilename,
-	)
-	os.MkdirAll(filepath.Dir(localFilePath), constants.DefaultPerm)
-    fileData, err := os.ReadFile(localFilePath)
-    if err != nil {
-        res.WriteHeader(http.StatusBadRequest)
-        res.Write([]byte(fmt.Sprintf("Could not load file %s", requestedFilename)))
-    }
-
-    res.Write(fileData)
-}
 
 //go:embed build/appicon.png
 var icon []byte
@@ -79,7 +46,6 @@ func main() {
 		},
 		AssetServer:		&assetserver.Options{
 			Assets: assets,
-			Handler: NewFileLoader(),
 		},
 		Menu:				nil,
 		Logger:				nil,

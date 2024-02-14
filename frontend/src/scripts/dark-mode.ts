@@ -1,7 +1,7 @@
 import { GetDarkMode, SetDarkMode } from "./wailsjs/go/app/App";
 
 // when domcontentloaded, check if dark mode is enabled
-document.addEventListener("DOMContentLoaded", async () => {
+export const InitialiseDarkModeConfig = async (): Promise<void> => {
     // from https://flowbite.com/docs/customize/dark-mode/#content
     const themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon") as HTMLElement;
     const themeToggleLightIcon = document.getElementById("theme-toggle-light-icon") as HTMLElement;
@@ -66,7 +66,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         // toggle icons inside button
         themeToggleDarkIcon.classList.toggle("hidden");
         themeToggleLightIcon.classList.toggle("hidden");
-        console.log("swalDarkStyleElement", swalDarkStyleElement.disabled);
 
         if (document.documentElement.classList.contains("dark")) {
             document.documentElement.classList.remove("dark");
@@ -83,4 +82,4 @@ document.addEventListener("DOMContentLoaded", async () => {
         swalDefaultStyleElement.disabled = true;
         await SetDarkMode(true);
     });
-});
+};
