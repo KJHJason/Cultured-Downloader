@@ -180,6 +180,9 @@
                     cancelButtonText: "Cancel",
                     confirmButtonText: "Submit",
                     preConfirm: (password: string): void => {
+                        if (password === "") {
+                            return Swal.showValidationMessage("Password cannot be empty");
+                        }
                         if (password !== masterPassword) {
                             return Swal.showValidationMessage("Entered password does not match your master password!");
                         }
@@ -251,6 +254,9 @@
                 cancelButtonText: "Cancel",
                 confirmButtonText: "Submit",
                 preConfirm: (password: string): void => {
+                    if (password === "") {
+                        return Swal.showValidationMessage("Password cannot be empty");
+                    }
                     if (password !== newMasterPassword) {
                         return Swal.showValidationMessage("Entered password does not match your new master password!");
                     }

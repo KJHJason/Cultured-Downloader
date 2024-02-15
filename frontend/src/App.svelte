@@ -74,6 +74,10 @@
             cancelButtonText: "Remove",
             confirmButtonText: "Submit",
             preConfirm: async (password: string): Promise<void> => {
+                if (password === "") {
+                    return Swal.showValidationMessage("Password cannot be empty");
+                }
+
                 const result = await CheckMasterPassword(password);
                 if (!result) {
                     return Swal.showValidationMessage("Incorrect password");
