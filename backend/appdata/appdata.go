@@ -45,7 +45,7 @@ func NewAppData() (*AppData, error) {
 	return &appData, nil
 }
 
-func (a *AppData) SetMasterPassword(password string) {
+func (a *AppData) SetMasterPasswordInMem(password string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.masterPassword = password
@@ -68,16 +68,24 @@ func (a *AppData) changeMasterPassword(password string) {
 	a.SetBytes(constants.HashOfMasterPasswordHashKey, a.hashOfMasterPasswordHash)
 }
 
-func (a *AppData) ResetMasterPassword() {
+func (a *AppData) ResetMasterPassword() error {
 	a.mu.Lock()
-	defer a.mu.Unlock()
 	a.masterPassword = ""
 	a.masterPasswordSalt = nil
 	a.hashOfMasterPasswordHash = nil
+	a.mu.Unlock()
 
-	a.SetBytes(constants.MasterPasswordSaltKey, nil)
-	a.SetBytes(constants.HashOfMasterPasswordHashKey, nil)
-	a.ResetEncryptedFields()
+	err := a.Unset(constants.MasterPasswordSaltKey)
+	if err != nil {
+		return err
+	}
+
+	err = a.Unset(constants.HashOfMasterPasswordHashKey)
+	if err != nil {
+		return err
+	}
+
+	return a.ResetEncryptedFields()
 }
 
 func (a *AppData) GetMasterPassword() string {

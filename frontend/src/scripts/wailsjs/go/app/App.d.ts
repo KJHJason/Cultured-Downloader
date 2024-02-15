@@ -24,7 +24,7 @@ export function NewDownloadQueue(arg1:context.Context,arg2:Array<httpfuncs.Reque
 
 export function PromptMasterPassword():Promise<boolean>;
 
-export function ResetEncryptedFields():Promise<void>;
+export function RemoveMasterPassword():Promise<void>;
 
 export function SelectProfilePic():Promise<app.ProfilePic>;
 

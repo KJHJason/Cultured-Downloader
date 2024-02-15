@@ -5,6 +5,7 @@
     import bufferGif from "../assets/images/buffer.gif";
     import NavbarBtn from "./navbar/NavbarBtn.svelte";
     import { InitialiseDarkModeConfig } from "../scripts/dark-mode";
+    import { GetProfilePicURL } from "../scripts/image";
 
     export let action: string;
     export let username: string;
@@ -18,6 +19,11 @@
         action = newAction;
         dispatcher(changeActionEventType, action);
     };
+
+    onMount(async () => {
+        const navbarUserProfile = document.getElementById("navbar-user-profile") as HTMLImageElement;
+        navbarUserProfile.src = await GetProfilePicURL();
+    });
 </script>
 
 <nav class="fixed top-0 z-50 w-full border-b bg-item">

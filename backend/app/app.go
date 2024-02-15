@@ -116,13 +116,14 @@ func (app *App) UploadProfilePic(picPath string) error {
 	}
 
 	oldProfilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	oldProfilePicPath = filepath.Join(constants.UserConfigDir, oldProfilePicPath)
 	if oldProfilePicPath != "" {
 		// If there is an old profile pic, delete it
 		os.Remove(oldProfilePicPath)
 	}
 
 	picPathToSave := filepath.Join(constants.UserConfigDir, fileName)
-	app.appData.SetString(constants.ProfilePicPathKey, picPathToSave)
+	app.appData.SetString(constants.ProfilePicPathKey, fileName)
 	file, err := os.OpenFile(picPathToSave, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
@@ -138,6 +139,11 @@ func (app *App) UploadProfilePic(picPath string) error {
 
 func (app *App) HasProfilePic() bool {
 	profilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	if profilePicPath == "" {
+		return false
+	}
+
+	profilePicPath = filepath.Join(constants.UserConfigDir, profilePicPath)
 	_, err := os.Stat(profilePicPath)
 
 	hasProfilePic := err == nil
@@ -150,11 +156,13 @@ func (app *App) HasProfilePic() bool {
 
 func (app *App) GetProfilePic() (ProfilePic, error) {
 	profilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	profilePicPath = filepath.Join(constants.UserConfigDir, profilePicPath)
 	return NewProfilePic(profilePicPath)
 }
 
 func (app *App) DeleteProfilePic() error {
 	filePath := app.appData.GetString(constants.ProfilePicPathKey)
+	filePath = filepath.Join(constants.UserConfigDir, filePath)
 	if filePath == "" {
 		return nil
 	}

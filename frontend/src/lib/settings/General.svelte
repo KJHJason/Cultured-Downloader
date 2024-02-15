@@ -1,11 +1,12 @@
 <script lang="ts">
     import bufferGif from "../../assets/images/buffer.gif";
     import { Input, Label, Helper, Fileupload, Hr } from "flowbite-svelte";
-    import { swal, changeUsernameEventType } from "../../scripts/constants";
-    import { GetFallbackUserProfileDataUrl } from "../../scripts/image";
+    import Swal from "sweetalert2";
+    import { swal, changeUsernameEventType, invertedSwal } from "../../scripts/constants";
+    import { GetFallbackUserProfileDataUrl, GetProfilePicURL } from "../../scripts/image";
     import { ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
     import { onMount, createEventDispatcher } from "svelte";
-    import { PromptMasterPassword, GetUsername, SetMasterPassword, SetUsername, SelectProfilePic, UploadProfilePic, GetProfilePic, DeleteProfilePic } from "../../scripts/wailsjs/go/app/App";
+    import { PromptMasterPassword, CheckMasterPassword, ChangeMasterPassword, RemoveMasterPassword, GetUsername, SetMasterPassword, SetUsername, SelectProfilePic, UploadProfilePic, DeleteProfilePic } from "../../scripts/wailsjs/go/app/App";
     import { HasProfilePic } from "../../scripts/wailsjs/go/app/App";
     import PasswordToggle from "../common/PasswordToggle.svelte";
 
@@ -130,14 +131,7 @@
         };
 
         if (hasProfilePic) {
-            const { Data, Type } = await GetProfilePic();;
-            const mimetype = `image/${Type}`;
-            // const dumpedJSON = JSON.stringify({ data: Data, mimetype });
-            // console.log("Profile pic data:", dumpedJSON);
-            // changeProfilePic(dumpedJSON);
-
-            const file = Base64ImgStringToFile(Data, "profile-pic.png", mimetype);
-            uploadedProfilePicURL = await ImgFileToDataURL(file);
+            uploadedProfilePicURL = await GetProfilePicURL(true);
             navbarUserProfile.src = uploadedProfilePicURL;
             profileImageEl.src = uploadedProfilePicURL;
         } else {
@@ -156,26 +150,54 @@
         deleteProfileImageBtn.addEventListener("click", handleDeleteProfilePic);
     });
 
+    $: hasMasterPassword = false;
     onMount(async () => {
         const masterPasswordForm = document.getElementById("master-password-form") as HTMLFormElement;
         const masterPasswordFormResetBtn = document.getElementById("master-password-form-reset-btn") as HTMLButtonElement;
-        const hasMasterPassword = await PromptMasterPassword();
+        hasMasterPassword = await PromptMasterPassword();
+        if (hasMasterPassword) {
+            masterPasswordFormResetBtn.classList.remove("hidden");
+        }
 
-        const handleMasterPasswordFormSubmit = async (e: Event): Promise<void> => {
-            e.preventDefault();
-            const form = e.target as HTMLFormElement;
-            const formData = new FormData(form);
-            const masterPassword = formData.get("master-password") as string;
+        const setupMasterPassword = async (masterPassword: string): Promise<void> => {
+            if (masterPassword === "") {
+                return;
+            }
 
             try {
-                if (masterPassword !== "") {
-                    await SetMasterPassword(masterPassword);
-                    swal.fire({
-                        title: "Success",
-                        text: "Master password has been updated.",
-                        icon: "success",
-                    });
+                const result = await swal.fire({
+                    title: "Confirm Master Password",
+                    text: "Please enter your master password again as confirmation.",
+                    input: "password",
+                    inputAttributes: {
+                        autocapitalize: "off",
+                        autocorrect: "off",
+                    },
+                    showCancelButton: true,
+                    allowEscapeKey: false,
+                    allowOutsideClick: false,
+                    showLoaderOnConfirm: true,
+                    cancelButtonText: "Cancel",
+                    confirmButtonText: "Submit",
+                    preConfirm: (password: string): void => {
+                        if (password !== masterPassword) {
+                            return Swal.showValidationMessage("Entered password does not match your master password!");
+                        }
+                        return;
+                    },
+                })
+                if (!result.isConfirmed) {
+                    return;
                 }
+
+                await SetMasterPassword(masterPassword);
+                swal.fire({
+                    title: "Success",
+                    text: "Master password has been updated.",
+                    icon: "success",
+                });
+                hasMasterPassword = true;
+                masterPasswordFormResetBtn.classList.remove("hidden");
             } catch (e) {
                 console.error(e);
                 swal.fire({
@@ -186,19 +208,111 @@
             }
         };
 
-        const masterPasswordDefault = hasMasterPassword ? "********" : "";
-        const masterPasswordInput = document.getElementById("master-password") as HTMLInputElement;
-        const resetMasterPasswordForm = (): void => {
-            if (!hasMasterPassword) {
-                masterPasswordInput.value = masterPasswordDefault;
+        const changeMasterPassword = async (currentMasterPassword: string, newMasterPassword: string) => {
+            if (currentMasterPassword === "" || newMasterPassword === "") {
+                swal.fire({
+                    title: "Error",
+                    text: "Please fill in the current and new master password fields.",
+                    icon: "error",
+                });
                 return;
             }
+
+            if (currentMasterPassword === newMasterPassword) {
+                swal.fire({
+                    title: "Error",
+                    text: "The new master password is the same as the current one.",
+                    icon: "error",
+                });
+                return;
+            }
+
+            if (!await CheckMasterPassword(currentMasterPassword)) {
+                swal.fire({
+                    title: "Error",
+                    text: "The current master password is incorrect.",
+                    icon: "error",
+                });
+                return;
+            }
+
+            const result = await swal.fire({
+                title: "Confirm Master Password Change",
+                text: "Please enter your new master password again to confirm the change.",
+                input: "password",
+                inputAttributes: {
+                    autocapitalize: "off",
+                    autocorrect: "off",
+                },
+                showCancelButton: true,
+                allowEscapeKey: false,
+                allowOutsideClick: false,
+                showLoaderOnConfirm: true,
+                cancelButtonText: "Cancel",
+                confirmButtonText: "Submit",
+                preConfirm: (password: string): void => {
+                    if (password !== newMasterPassword) {
+                        return Swal.showValidationMessage("Entered password does not match your new master password!");
+                    }
+                    return;
+                },
+            })
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            try {
+                await ChangeMasterPassword(currentMasterPassword, newMasterPassword);
+                swal.fire({
+                    title: "Success",
+                    text: "Master password has been updated.",
+                    icon: "success",
+                });
+            } catch (e) {
+                console.error(e);
+                swal.fire({
+                    title: "Error",
+                    text: "An error occurred while setting the master password. Please try again later.",
+                    icon: "error",
+                });
+            }
         };
-        if (masterPasswordInput && hasMasterPassword) {
-            // TODO: make the masterPasswordInput disabled first unless user clicks on the edit button
-            masterPasswordInput.value = masterPasswordDefault;
-            masterPasswordInput.disabled = true;
-        }
+
+        const handleMasterPasswordFormSubmit = async (e: Event): Promise<void> => {
+            e.preventDefault();
+            const form = e.target as HTMLFormElement;
+            const formData = new FormData(form);
+            const masterPassword = formData.get("master-password") as string;
+            const currentMasterPassword = formData.get("current-master-password") as string;
+            const newMasterPassword = formData.get("new-master-password") as string;
+
+            if (!hasMasterPassword) {
+                await setupMasterPassword(masterPassword);
+                return;
+            }
+            await changeMasterPassword(currentMasterPassword, newMasterPassword);
+        };
+
+        const resetMasterPasswordForm = async (): Promise<void> => {
+            const result = await invertedSwal.fire({
+                title: "Remove Master Password?",
+                text: "All your saved encrypted config data will be lost.",
+                icon: "info",
+                showCancelButton: true,
+            })
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            await RemoveMasterPassword();
+            hasMasterPassword = false;
+            masterPasswordFormResetBtn.classList.add("hidden");
+            swal.fire({
+                title: "Master password removed",
+                text: "You have removed your master password and all your saved encrypted config data have been removed.",
+                icon: "success",
+            });
+        };
 
         masterPasswordForm.addEventListener("submit", handleMasterPasswordFormSubmit);
         masterPasswordFormResetBtn.addEventListener("click", resetMasterPasswordForm);
@@ -230,32 +344,35 @@
     </form>
     <form class="md:col-start-2 md:col-span-3" id="master-password-form">
         <Hr />
-        <div class="flex mt-4">
-            <div class="w-full">
-                <Label for="master-password" class="pb-2">Master Password:</Label>
-                <PasswordToggle inputId="master-password">
-                    <Input name="master-password" id="master-password" type="password" />
-                </PasswordToggle>
+        {#if hasMasterPassword}
+            <div class="flex">
+                <div class="w-full" id="current-master-password-div">
+                    <Label for="current-master-password" class="pb-2">Current Master Password:</Label>
+                    <PasswordToggle>
+                        <Input name="current-master-password" id="current-master-password" type="password" />
+                    </PasswordToggle>
+                </div>
             </div>
-        </div>
-        <div class="flex">
-            <div class="mt-4 w-full hidden" id="current-master-password-div">
-                <Label for="current-master-password" class="pb-2">Current Master Password:</Label>
-                <PasswordToggle inputId="current-master-password">
-                    <Input name="current-master-password" id="current-master-password" type="password" />
-                </PasswordToggle>
+            <div class="flex">
+                <div class="mt-4 w-full" id="new-master-password-div">
+                    <Label for="new-master-password" class="pb-2">New Master Password:</Label>
+                    <PasswordToggle>
+                        <Input name="new-master-password" id="new-master-password" type="password" />
+                    </PasswordToggle>
+                </div>
             </div>
-        </div>
-        <div class="flex">
-            <div class="mt-4 w-full hidden" id="new-master-password-div">
-                <Label for="new-master-password" class="pb-2">New Master Password:</Label>
-                <PasswordToggle inputId="new-master-password">
-                    <Input name="new-master-password" id="new-master-password" type="password" />
-                </PasswordToggle>
+        {:else}
+            <div class="flex">
+                <div class="w-full">
+                    <Label for="master-password" class="pb-2">Master Password:</Label>
+                    <PasswordToggle>
+                        <Input name="master-password" id="master-password" type="password" />
+                    </PasswordToggle>
+                </div>
             </div>
-        </div>
+        {/if}
         <div class="text-right mt-4">
-            <button id="master-password-form-reset-btn" type="button" class="btn btn-danger">Reset</button>
+            <button id="master-password-form-reset-btn" type="button" class="btn btn-danger hidden">Reset</button>
             <button type="submit" class="btn btn-success">Save</button>
         </div>
     </form>

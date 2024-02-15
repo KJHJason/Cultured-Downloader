@@ -1,4 +1,5 @@
-import { fallbackUserProfile } from './constants';
+import { fallbackUserProfile } from "./constants";
+import { HasProfilePic, GetProfilePic } from "./wailsjs/go/app/App";;
 
 export const ChangeImgElSrcToFileData = async (imageEl: HTMLImageElement, file: File): Promise<void> => {
     const dataUrl = await ImgFileToDataURL(file);
@@ -41,4 +42,17 @@ export const GetFallbackUserProfileDataUrl = async (): Promise<string> => {
 
     fallbackUserProfileDataUrl = await ImgFileToDataURL(fallbackUserProfileFile);
     return fallbackUserProfileDataUrl;
+};
+
+export const GetProfilePicURL = async (hasProfilePic: boolean | null = null): Promise<string> => {
+    if ((hasProfilePic !== null && !hasProfilePic) || !(await HasProfilePic())) {
+        return await GetFallbackUserProfileDataUrl();
+    }
+
+    const { Data, Type } = await GetProfilePic();;
+    const mimetype = `image/${Type}`;
+
+    const file = Base64ImgStringToFile(Data, "profile-pic.png", mimetype);
+    const uploadedProfilePicURL = await ImgFileToDataURL(file);
+    return uploadedProfilePicURL;
 };

@@ -1,8 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    export let inputId: string;
-
     const randomId = Math.random().toString(36).substring(2);
     const showId = `show-${randomId}`;
     const hideId = `hide-${randomId}`;
@@ -10,19 +8,25 @@
     onMount(() => {
         const btn = document.getElementById(btnId) as HTMLButtonElement;
         if (!btn) {
-            throw new Error(`Element with id btn-${randomId} not found`);
+            throw new Error(`Element with id ${btnId} not found`);
         }
         const show = document.getElementById(showId) as unknown as SVGElement;
         if (!show) {
-            throw new Error(`Element with id show-${randomId} not found`);
+            throw new Error(`Element with id ${showId} not found`);
         }
         const hide = document.getElementById(hideId) as unknown as SVGElement;
         if (!hide) {
-            throw new Error(`Element with id hide-${randomId} not found`);
+            throw new Error(`Element with id ${hideId} not found`);
         }
-        const input = document.getElementById(inputId) as HTMLInputElement;
+
+        const mainDiv = document.getElementById(randomId) as HTMLDivElement;
+        if (!mainDiv) {
+            throw new Error(`Element with id ${randomId} not found`);
+        }
+
+        const input = mainDiv.querySelector("input") as HTMLInputElement;
         if (!input) {
-            throw new Error(`Element with id ${inputId} not found`);
+            throw new Error(`Input element in PasswordToggle not found`);
         }
 
         btn.addEventListener("click", () => {
@@ -39,7 +43,7 @@
     });
 </script>
 
-<div class="relative">
+<div class="relative" id={randomId}>
     <slot />
     <button class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-700 dark:text-white" type="button" id={btnId}>
         <svg class="h-6" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" id={showId}>

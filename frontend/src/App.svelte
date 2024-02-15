@@ -5,7 +5,7 @@
 
     import { onMount } from "svelte";
     import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";
-    import { PromptMasterPassword, CheckMasterPassword, ResetEncryptedFields } from "./scripts/wailsjs/go/app/App";
+    import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword } from "./scripts/wailsjs/go/app/App";
 
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
@@ -73,7 +73,7 @@
             showLoaderOnConfirm: true,
             cancelButtonText: "Remove",
             confirmButtonText: "Submit",
-            preConfirm: async (password): Promise<void> => {
+            preConfirm: async (password: string): Promise<void> => {
                 const result = await CheckMasterPassword(password);
                 if (!result) {
                     return Swal.showValidationMessage("Incorrect password");
@@ -86,7 +86,7 @@
             swal.fire({
                 icon: "success",
                 title: "Correct password",
-                text: "You have entered the correct password",
+                text: "You have entered the correct password.",
             });
             return;
         } 
@@ -97,12 +97,12 @@
             allowOutsideClick: false,
             icon: "info",
             title: "Remove master password?",
-            text: "All your saved encrypted config data will be lost",
+            text: "All your saved encrypted config data will be lost.",
             confirmButtonText: "Remove",
             cancelButtonText: "Back",
         }).then(async (result): Promise<void> => {
             if (result.isConfirmed) {
-                await ResetEncryptedFields();
+                await RemoveMasterPassword();
                 swal.fire({
                     icon: "success",
                     title: "Master password removed",

@@ -42,8 +42,8 @@ export function PromptMasterPassword() {
   return window['go']['app']['App']['PromptMasterPassword']();
 }
 
-export function ResetEncryptedFields() {
-  return window['go']['app']['App']['ResetEncryptedFields']();
+export function RemoveMasterPassword() {
+  return window['go']['app']['App']['RemoveMasterPassword']();
 }
 
 export function SelectProfilePic() {

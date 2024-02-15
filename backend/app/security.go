@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
-	"github.com/KJHJason/Cultured-Downloader/backend/crypto"
 )
 
 func (app *App) PromptMasterPassword() bool {
@@ -11,13 +10,7 @@ func (app *App) PromptMasterPassword() bool {
 }
 
 func (app *App) CheckMasterPassword(password string) bool {
-	hashOfMasterPasswordHash, masterPasswordSalt := app.appData.GetMasterPasswordHash()
-	hashedPassword := crypto.HashStringWithSalt(password, masterPasswordSalt)
-	if !crypto.VerifyBytes(hashedPassword, hashOfMasterPasswordHash) {
-		return false
-	}
-	app.appData.SetMasterPassword(password)
-	return true
+	return app.appData.VerifyMasterPassword(password)
 }
 
 func (app *App) SetMasterPassword(password string) error {
@@ -28,8 +21,16 @@ func (app *App) ChangeMasterPassword(oldPassword, newPassword string) error {
 	return app.appData.ChangeMasterPassword(oldPassword, newPassword)
 }
 
-func (app *App) ResetEncryptedFields() {
-	app.appData.Unset(constants.MasterPasswordSaltKey)
-	app.appData.Unset(constants.HashOfMasterPasswordHashKey)
-	app.appData.ResetMasterPassword()
+func (app *App) RemoveMasterPassword() error {
+	err := app.appData.Unset(constants.MasterPasswordSaltKey)
+	if err != nil {
+		return err
+	}
+
+	err = app.appData.Unset(constants.HashOfMasterPasswordHashKey)
+	if err != nil {
+		return err
+	}
+
+	return app.appData.ResetMasterPassword()
 }

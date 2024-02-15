@@ -32,10 +32,15 @@ var encryptedFields = [...]string{
 	constants.FantiaCookieValueKey,
 }
 
-func (a *AppData) ResetEncryptedFields() {
+func (a *AppData) ResetEncryptedFields() error {
+	var err error
 	for _, key := range encryptedFields {
-		a.Unset(key)
+		err = a.Unset(key)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (a *AppData) EncryptWithPassword(plaintext, salt []byte, password string) ([]byte, error) {
@@ -82,7 +87,7 @@ func (a *AppData) VerifyMasterPassword(password string) bool {
 		return false
 	}
 	if a.masterPassword == "" {
-		a.SetMasterPassword(password)
+		a.SetMasterPasswordInMem(password)
 	}
 	return true
 }
