@@ -126,7 +126,8 @@
 
 <main class="p-4">
     <div class="mt-14">
-        <Settings username={username} handleActionChange={handleActionChange} />
+        <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
+        <Fantia/>
         <!-- {#if action === actions.Home}
             <Home/>
         {:else if action === actions.Fantia}

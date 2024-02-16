@@ -6,9 +6,20 @@
     import { GetFallbackUserProfileDataUrl, GetProfilePicURL } from "../../scripts/image";
     import { ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
     import { onMount, createEventDispatcher } from "svelte";
-    import { PromptMasterPassword, CheckMasterPassword, ChangeMasterPassword, RemoveMasterPassword, GetUsername, SetMasterPassword, SetUsername, SelectProfilePic, UploadProfilePic, DeleteProfilePic } from "../../scripts/wailsjs/go/app/App";
     import { HasProfilePic } from "../../scripts/wailsjs/go/app/App";
     import PasswordToggle from "../common/PasswordToggle.svelte";
+    import {
+        PromptMasterPassword,
+        CheckMasterPassword,
+        ChangeMasterPassword,
+        RemoveMasterPassword,
+        GetUsername,
+        SetMasterPassword,
+        SetUsername,
+        SelectProfilePic,
+        UploadProfilePic,
+        DeleteProfilePic
+    } from "../../scripts/wailsjs/go/app/App";
 
     export let username: string;
 

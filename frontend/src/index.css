@@ -6,8 +6,32 @@
     @apply dark:text-white;
 }
 
-p {
+h1, h2, h3, h4, h5, h6, p {
     @apply text-main;
+}
+
+h1 {
+    @apply text-5xl font-extrabold;
+}
+
+h2 {
+    @apply text-4xl font-bold;
+}
+
+h3 {
+    @apply text-3xl font-bold;
+}
+
+h4 {
+    @apply text-2xl font-bold;
+}
+
+h5 {
+    @apply text-xl font-bold;
+}
+
+h6 {
+    @apply text-lg font-bold;
 }
 
 .bg-item {

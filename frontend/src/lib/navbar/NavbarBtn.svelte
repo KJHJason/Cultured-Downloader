@@ -10,7 +10,6 @@
     $: actionMatches = btnRole === action;
 </script>
 
-
 <button 
     on:click={() => changeAction(btnRole)} 
     class="w-full flex items-center p-2 rounded-lg group {

@@ -45,7 +45,7 @@
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
                 <AdjustmentsVerticalSolid size="sm" />
-                Settings
+                Platforms
             </div>
             <p class="text-sm text-gray-500 dark:text-gray-400">
             <b>Settings:</b>
