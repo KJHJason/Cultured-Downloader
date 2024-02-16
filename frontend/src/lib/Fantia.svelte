@@ -22,9 +22,11 @@
     import PlatformBase from "./PlatformBase.svelte";
     import { Checkbox, Helper, Hr } from "flowbite-svelte";
 
-    const urlValidationFn = (textareaInput: string): boolean => {
-        const urls = textareaInput.split("\n");
-        const urlRegex = /https:\/\/fantia.jp\/(posts|fanclubs)\/\d+/;
+    const urlValidationFn = (urls: string | string[]): boolean => {
+        if (typeof urls === "string") {
+            urls = urls.split("\n");
+        }
+        const urlRegex = /^https:\/\/fantia.jp\/(posts|fanclubs)\/\d+$/;
         for (const url of urls) {
             if (!urlRegex.test(url)) {
                 return false;
@@ -36,6 +38,10 @@
     const settingConfigFn = async (): Promise<void> => {
 
     };
+
+    const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {
+        return inputUrl.startsWith("https://fantia.jp/fanclubs/");
+    };
 </script>
 
 <PlatformBase 
@@ -43,17 +49,9 @@
     inputPlaceholder={"https://fantia.jp/posts/2239524\nhttps://fantia.jp/fanclubs/5744"} 
     urlValidationFn={urlValidationFn}
     settingConfigFn={settingConfigFn}
+    checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
 >
-    <Helper>This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!</Helper>
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 ">
-        <Checkbox name="dl-post-thumbnail" id="dl-post-thumbnail">Post Thumbnail</Checkbox>
-        <Checkbox name="dl-post-images" id="dl-post-images">Post Images</Checkbox>
-        <Checkbox name="dl-post-attachments" id="dl-post-attachments">Post Attachments</Checkbox>
-        <Checkbox name="dl-gdrive-links" id="dl-gdrive-links">GDrive Links</Checkbox>
-        <Checkbox name="detect-other-links" id="detect-other-links">Detect Other URL(s) like MEGA</Checkbox>
-    </div>
-    <Hr />
-    <div class="text-right">
-        <button class="btn btn-success">Save Settings Globally</button>
-    </div>
+    <Checkbox name="dl-gdrive-links" id="dl-gdrive-links">GDrive Links</Checkbox>
+    <Checkbox name="detect-other-links" id="detect-other-links">Detect Other URL(s) like MEGA</Checkbox>
+    <Checkbox name="auto-solve-recaptcha" id="auto-solve-recaptcha">Auto-solve reCAPTCHA</Checkbox>
 </PlatformBase>
