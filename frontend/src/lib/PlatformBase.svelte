@@ -220,7 +220,7 @@
             <Checkbox name="dl-post-thumbnail" id="dl-post-thumbnail">Post Thumbnail</Checkbox>
             <Checkbox name="dl-post-images" id="dl-post-images">Post Images</Checkbox>
             <Checkbox name="dl-post-attachments" id="dl-post-attachments">Post Attachments</Checkbox>
-            <Checkbox name="dl-gdrive-links" id="dl-gdrive-links">Overwrite Files</Checkbox>
+            <Checkbox name="overwrite-files" id="overwrite-files">Overwrite Files</Checkbox>
             <slot />
         </div>
         <Hr />

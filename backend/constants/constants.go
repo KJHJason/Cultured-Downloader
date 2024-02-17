@@ -20,11 +20,25 @@ const (
 	DlThumbnailKey     = "dl-thumbnail"
 	DlImagesKey        = "dl-images"
 	DlAttachmentsKey   = "dl-attachments"
+	OverwriteFilesKey  = "overwrite-files"
 	DlGdriveKey        = "dl-gdrive"
 	DetectOtherUrlsKey = "detect-other-urls"
 
-	FantiaCookieValueKey = "fantia-cookie-value"
-	FantiaCookiePathKey  = "fantia-cookie-path"
+	AutoSolveReCaptchaKey = "auto-solve-recaptcha"
+	FantiaCookieValueKey        = "fantia-cookie-value"
+
+	PixivFanboxCookieValueKey  = "pixiv-fanbox-cookie-value"
+
+	PixivCookieValueKey        = "pixiv-cookie-value"
+	PixivArtworkTypeKey        = "pixiv-artwork-type"
+	PixivDeleteUgoiraZipKey    = "pixiv-delete-ugoira-zip"
+	PixivRatingModeKey         = "pixiv-rating-mode"
+	PixivSearchModeKey         = "pixiv-search-mode"
+	PixivSortOrderKey          = "pixiv-sort-order"
+	PixivUgoiraOutputFormatKey = "pixiv-ugoira-output-format"
+	PixivUgoiraQualityKey      = "pixiv-ugoira-quality"
+
+	KemonoCookieValueKey = "kemono-cookie-value"
 )
 
 var (

@@ -39,18 +39,26 @@
             </div>
             <p class="text-sm text-gray-500 dark:text-gray-400">
             <b>Preferences:</b>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
+            <ul>
+                <li>Download Preferences</li>
+                <li>Sessions for the various platforms</li>
+            </ul>
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
                 <AdjustmentsVerticalSolid size="sm" />
-                Platforms
+                Advanced
             </div>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-            <b>Settings:</b>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            <b>Advanced Settings:</b>
             </p>
+
+            <ul>
+                <li>User agents</li>
+                <li>Download location</li>
+                <li>GDrive Setup</li>
+            </ul>
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">

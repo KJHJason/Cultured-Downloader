@@ -14,6 +14,8 @@ export function DeleteProfilePic():Promise<void>;
 
 export function GetDarkMode():Promise<boolean>;
 
+export function GetPreferences():Promise<void>;
+
 export function GetProfilePic():Promise<app.ProfilePic>;
 
 export function GetUsername():Promise<string>;

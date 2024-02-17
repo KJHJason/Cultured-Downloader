@@ -22,6 +22,10 @@ export function GetDarkMode() {
   return window['go']['app']['App']['GetDarkMode']();
 }
 
+export function GetPreferences() {
+  return window['go']['app']['App']['GetPreferences']();
+}
+
 export function GetProfilePic() {
   return window['go']['app']['App']['GetProfilePic']();
 }

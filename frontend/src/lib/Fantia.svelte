@@ -1,23 +1,3 @@
-<!-- <script lang="ts">
-    import { Textarea, Label, Card, Hr  } from "flowbite-svelte";
-
-    const placeholderPrefix = "Examples of Fantia URLs:\n";
-    const inputPlaceholder = placeholderPrefix + "https://fantia.jp/posts/2239524\nhttps://fantia.jp/fanclubs/5744";
-</script>
-
-<div class="container mx-auto">
-    <Card class="max-w-full" size="xl">
-        <h3>Input Fantia URLs</h3>
-        <Hr />
-        <Textarea id="fantiaUrls" rows="8" placeholder="{inputPlaceholder}" />
-    </Card>
-
-    <Card class="mt-4 max-w-full" size="xl">
-        <h3>Fantia Settings</h3>
-        <Hr />
-    </Card>
-</div> -->
-
 <script lang="ts">
     import PlatformBase from "./PlatformBase.svelte";
     import { Checkbox, Helper, Hr } from "flowbite-svelte";
