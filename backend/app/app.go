@@ -28,18 +28,6 @@ func (a *App) GetUsername() string {
 	return a.appData.GetString(constants.UsernameKey)
 }
 
-// Greet returns a greeting for the given name
-// func (a *App) Greet(name string) string {
-// 	if err := a.appData.SetString("name", name); err != nil {
-// 		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-// 			Type:    runtime.ErrorDialog,
-// 			Title:   "Error saving name!",
-// 			Message: "Please refer to the logs or report this issue on GitHub.",
-// 		})
-// 	}
-// 	return fmt.Sprintf("Hello %s, Your name has been saved!", name)
-// }
-
 func (app *App) GetDarkMode() bool {
 	return app.appData.GetBool(constants.DarkModeKey)
 }

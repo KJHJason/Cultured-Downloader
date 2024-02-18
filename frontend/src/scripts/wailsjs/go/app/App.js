@@ -62,6 +62,10 @@ export function SetMasterPassword(arg1) {
   return window['go']['app']['App']['SetMasterPassword'](arg1);
 }
 
+export function SetPreferences(arg1, arg2) {
+  return window['go']['app']['App']['SetPreferences'](arg1, arg2);
+}
+
 export function SetUsername(arg1) {
   return window['go']['app']['App']['SetUsername'](arg1);
 }

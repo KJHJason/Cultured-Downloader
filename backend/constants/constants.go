@@ -6,13 +6,19 @@ import (
 )
 
 const (
-	DefaultPerm 				= 0755
-	LocalUserAssetDirName 		= "assets"
+	DefaultPerm                 = 0755
+	LocalUserAssetDirName       = "assets"
 	HashOfMasterPasswordHashKey = "master-password-hash"
-	MasterPasswordSaltKey 		= "master-password-salt"
-	DarkModeKey           		= "dark-mode"
-	UsernameKey					= "username"
-	ProfilePicPathKey			= "profile-pic-path"
+	MasterPasswordSaltKey       = "master-password-salt"
+	DarkModeKey                 = "dark-mode"
+	UsernameKey                 = "username"
+	ProfilePicPathKey           = "profile-pic-path"
+
+	// Platform names
+	Fantia = "fantia"
+	Pixiv  = "pixiv"
+	PixivFanbox = "pixiv_fanbox"
+	Kemono = "kemono"
 
 	GdriveApiKeyKey     = "gdrive-api-key"
 	GdriveServiceAccKey = "gdrive-service-acc"
@@ -25,9 +31,9 @@ const (
 	DetectOtherUrlsKey = "detect-other-urls"
 
 	AutoSolveReCaptchaKey = "auto-solve-recaptcha"
-	FantiaCookieValueKey        = "fantia-cookie-value"
+	FantiaCookieValueKey  = "fantia-cookie-value"
 
-	PixivFanboxCookieValueKey  = "pixiv-fanbox-cookie-value"
+	PixivFanboxCookieValueKey = "pixiv-fanbox-cookie-value"
 
 	PixivCookieValueKey        = "pixiv-cookie-value"
 	PixivArtworkTypeKey        = "pixiv-artwork-type"
@@ -42,8 +48,8 @@ const (
 )
 
 var (
-	UserConfigDir		string
-	UserConfigDirErr	error
+	UserConfigDir    string
+	UserConfigDirErr error
 )
 
 func init() {

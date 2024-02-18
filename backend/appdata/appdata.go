@@ -117,6 +117,20 @@ func (a *AppData) saveToFile() error {
 	return nil
 }
 
+func initialiseSettingsMap() map[string]interface{} {
+	return map[string]interface{}{
+		// General
+		constants.DarkModeKey: false,
+		constants.UsernameKey: "Ojisan",
+		constants.ProfilePicPathKey: "",
+
+		// Download preferences
+		constants.DlThumbnailKey: true,
+		constants.DlImagesKey: true,
+		constants.DlAttachmentsKey: true,
+	}
+}
+
 func (a *AppData) loadFromFile() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -126,7 +140,9 @@ func (a *AppData) loadFromFile() error {
 
 	fileSize, _ := iofuncs.GetFileSize(a.dataPath)
 	if !iofuncs.PathExists(a.dataPath) ||  fileSize == 0 {
-		return nil
+		a.data = initialiseSettingsMap()
+		err := a.saveToFile()
+		return err
 	}
 
 	fileData, err := os.ReadFile(a.dataPath)

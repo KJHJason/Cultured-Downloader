@@ -5,7 +5,7 @@
 
     import { onMount } from "svelte";
     import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";
-    import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword } from "./scripts/wailsjs/go/app/App";
+    import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
 
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
@@ -118,6 +118,7 @@
         });
     };
     onMount(async () => {
+        username = await GetUsername();
         await checkMasterPassword();
     });
 </script>
@@ -127,7 +128,8 @@
 <main class="p-4">
     <div class="mt-14">
         <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
-        <Fantia/>
+        <!-- <Fantia/> -->
+        <Pixiv />
         <!-- {#if action === actions.Home}
             <Home/>
         {:else if action === actions.Fantia}

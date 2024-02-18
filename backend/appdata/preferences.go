@@ -7,13 +7,13 @@ import (
 type Preferences struct {
 	DlPostThumbnail   bool
 	DlPostImages      bool
-	DlpostAttachments bool
+	DlPostAttachments bool
 	OverwriteFiles    bool
 
 	DlGDrive         bool
 	DetectOtherLinks bool
 
-	// Fantia
+	// Fantia only as of 02/2024
 	AutoSolveReCaptcha bool
 
 	// Pixiv
@@ -27,7 +27,8 @@ type Preferences struct {
 }
 
 const (
-	PixivArtworkTypeIllustAndUgoira = iota
+	None = iota
+	PixivArtworkTypeIllustAndUgoira
 	PixivArtworkTypeManga
 	PixivArtworkTypeAll
 
@@ -53,6 +54,8 @@ const (
 	PixivUgoiraOutputFormatWebp
 	PixivUgoiraOutputFormatWebm
 	PixivUgoiraOutputFormatMp4
+
+	UnknownValue = "Unknown"
 )
 
 func GetReadableArtworkType(artworkType int) string {
@@ -64,7 +67,7 @@ func GetReadableArtworkType(artworkType int) string {
 	case PixivArtworkTypeAll:
 		return "All"
 	}
-	return "Unknown"
+	return UnknownValue
 }
 
 func GetReadableRatingMode(ratingMode int) string {
@@ -76,7 +79,7 @@ func GetReadableRatingMode(ratingMode int) string {
 	case PixivRatingModeAll:
 		return "All"
 	}
-	return "Unknown"
+	return UnknownValue
 }
 
 func GetReadableSearchMode(searchMode int) string {
@@ -88,7 +91,7 @@ func GetReadableSearchMode(searchMode int) string {
 	case PixivSearchModeTC:
 		return "Title and Caption"
 	}
-	return "Unknown"
+	return UnknownValue
 }
 
 func GetReadableSortOrder(sortOrder int) string {
@@ -110,14 +113,36 @@ func GetReadableSortOrder(sortOrder int) string {
 	case PixivSortOrderPopularFemaleDesc:
 		return "Popular (Female/Descending)"
 	}
-	return "Unknown"
+	return UnknownValue
+}
+
+func GetReadableUgoiraFileFormat(format int) string {
+	switch format {
+	case PixivUgoiraOutputFormatGif:
+		return ".gif"
+	case PixivUgoiraOutputFormatApng:
+		return ".apng"
+	case PixivUgoiraOutputFormatWebp:
+		return ".webp"
+	case PixivUgoiraOutputFormatWebm:
+		return ".webm"
+	case PixivUgoiraOutputFormatMp4:
+		return ".mp4"
+	}
+	return UnknownValue
 }
 
 func (a *AppData) GetPreferences() Preferences {
+	// 0-51 for mp4, 0-63 for webm
+	ugoiraQuality := a.GetInt(constants.PixivUgoiraQualityKey)
+	if ugoiraQuality < 0 || ugoiraQuality > 63 {
+		ugoiraQuality = 0
+	}
+
 	pref := Preferences{
 		DlPostThumbnail:   a.GetBool(constants.DlThumbnailKey),
 		DlPostImages:      a.GetBool(constants.DlImagesKey),
-		DlpostAttachments: a.GetBool(constants.DlAttachmentsKey),
+		DlPostAttachments: a.GetBool(constants.DlAttachmentsKey),
 		OverwriteFiles:    a.GetBool(constants.OverwriteFilesKey),
 
 		DlGDrive:         a.GetBool(constants.DlGdriveKey),
@@ -131,7 +156,87 @@ func (a *AppData) GetPreferences() Preferences {
 		SearchMode:         a.GetInt(constants.PixivSearchModeKey),
 		SortOrder:          a.GetInt(constants.PixivSortOrderKey),
 		UgoiraOutputFormat: a.GetInt(constants.PixivUgoiraOutputFormatKey),
-		UgoiraQuality:      uint8(a.GetInt(constants.PixivUgoiraQualityKey)),
+		UgoiraQuality:      uint8(ugoiraQuality),
 	}
 	return pref
+}
+
+func (a *AppData) SetPreferences(platform string, p Preferences) error {
+	var err error
+	if err = a.SetBool(constants.DlThumbnailKey, p.DlPostThumbnail); err != nil {
+		return err
+	}
+	if err = a.SetBool(constants.DlImagesKey, p.DlPostImages); err != nil {
+		return err
+	}
+	if err = a.SetBool(constants.DlAttachmentsKey, p.DlPostAttachments); err != nil {
+		return err
+	}
+	if err = a.SetBool(constants.OverwriteFilesKey, p.OverwriteFiles); err != nil {
+		return err
+	}
+
+	if err = a.SetBool(constants.DlGdriveKey, p.DlGDrive); err != nil {
+		return err
+	}
+	if err = a.SetBool(constants.DetectOtherUrlsKey, p.DetectOtherLinks); err != nil {
+		return err
+	}
+
+	if platform == constants.Fantia {
+		if err = a.SetBool(constants.AutoSolveReCaptchaKey, p.AutoSolveReCaptcha); err != nil {
+			return err
+		}
+	}
+
+	// Below are Pixiv specific settings
+	if platform != constants.Pixiv {
+		return nil
+	}
+	if GetReadableArtworkType(p.ArtworkType) == UnknownValue {
+		p.ArtworkType = PixivArtworkTypeIllustAndUgoira
+	}
+	if err = a.SetInt(constants.PixivArtworkTypeKey, p.ArtworkType); err != nil {
+		return err
+	}
+
+	if err = a.SetBool(constants.PixivDeleteUgoiraZipKey, p.DeleteUgoiraZip); err != nil {
+		return err
+	}
+
+	if GetReadableRatingMode(p.RatingMode) == UnknownValue {
+		p.RatingMode = PixivRatingModeSafe
+	}
+	if err = a.SetInt(constants.PixivRatingModeKey, p.RatingMode); err != nil {
+		return err
+	}
+
+	if GetReadableSearchMode(p.SearchMode) == UnknownValue {
+		p.SearchMode = PixivSearchModeTag
+	}
+	if err = a.SetInt(constants.PixivSearchModeKey, p.SearchMode); err != nil {
+		return err
+	}
+
+	if GetReadableSortOrder(p.SortOrder) == UnknownValue {
+		p.SortOrder = PixivSortOrderDate
+	}
+	if err = a.SetInt(constants.PixivSortOrderKey, p.SortOrder); err != nil {
+		return err
+	}
+
+	if GetReadableUgoiraFileFormat(p.UgoiraOutputFormat) == UnknownValue {
+		p.UgoiraOutputFormat = PixivUgoiraOutputFormatGif
+	}
+	if err = a.SetInt(constants.PixivUgoiraOutputFormatKey, p.UgoiraOutputFormat); err != nil {
+		return err
+	}
+
+	// 0-51 for mp4, 0-63 for webm
+	if p.UgoiraOutputFormat == PixivUgoiraOutputFormatMp4 && p.UgoiraQuality <= 51 {
+		err = a.SetInt(constants.PixivUgoiraQualityKey, int(p.UgoiraQuality))
+	} else if p.UgoiraOutputFormat == PixivUgoiraOutputFormatWebm && p.UgoiraQuality <= 63 {
+		err = a.SetInt(constants.PixivUgoiraQualityKey, int(p.UgoiraQuality))
+	}
+	return err
 }

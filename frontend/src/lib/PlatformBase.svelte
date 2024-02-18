@@ -1,18 +1,14 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Textarea, Helper, Card, Hr, Checkbox  } from "flowbite-svelte";
-    import { swal } from "../scripts/constants";
+    import { Toggle, Label, Select, Textarea, Helper, Card, Hr, Checkbox, Input  } from "flowbite-svelte";
+    import { actions, swal } from "../scripts/constants";
     import { ArrowDownToBracketSolid } from "flowbite-svelte-icons";
+    import { SetPreferences, GetPreferences } from "../scripts/wailsjs/go/app/App";
 
     export let platformName: string;
     export let inputPlaceholder: string;
     export let urlValidationFn: (urls: string | string[]) => boolean;
     export let checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
-    export let settingConfigFn: () => Promise<void>;
-
-    onMount(() => {
-        settingConfigFn();
-    });
 
     const GetPageNoInputs = (url: string): HTMLInputElement => {
         const input = document.createElement("input");
@@ -33,9 +29,47 @@
         return label;
     };
 
+    let pixivArtworkType = 3;
+    const pixivArtworkTypes = [
+        { value: 1, name: "Illustrations and Ugoira" },
+        { value: 2, name: "Manga" },
+        { value: 3, name: "All" }
+    ];
+    let pixivRating = 6;
+    const pixivRatings = [
+        { value: 4, name: "R-18" },
+        { value: 5, name: "Safe" },
+        { value: 6, name: "All" }
+    ];
+    let pixivSearchMode = 9;
+    const pixivSearchModes = [
+        { value: 7, name: "Similar Tag Names" },
+        { value: 8, name: "Tags" },
+        { value: 9, name: "Title and Caption" },
+    ];
+    let pixivSortOrder = 10;
+    const pixivSortOrders = [
+        { value: 10, name: "By Date" },
+        { value: 11, name: "By Date (Descending)" },
+        { value: 12, name: "By Popularity" },
+        { value: 13, name: "By Popularity (Descending)" },
+        { value: 14, name: "By Popularity (Male)" },
+        { value: 15, name: "By Popularity (Descending/Male)" },
+        { value: 16, name: "By Popularity (Female)" },
+        { value: 17, name: "By Popularity (Descending/Female)" },
+    ];
+    let pixivUgoiraFormat = 18;
+    const pixivUgoiraFormats = [
+        { value: 18, name: ".gif" },
+        { value: 19, name: ".apng" },
+        { value: 20, name: ".webp" },
+        { value: 21, name: ".webm" },
+        { value: 22, name: ".mp4" },
+    ];
+
     $: hasPageNoFilter = false;
     const divId = `${platformName}-base`;
-    onMount(() => {
+    onMount(async () => {
         const divEl = document.getElementById(divId) as HTMLDivElement;
         const textareaEl = divEl.querySelector("textarea") as HTMLTextAreaElement;
         const helperEl = document.getElementById("url-helper") as HTMLParagraphElement;
@@ -132,6 +166,41 @@
             }
         });
 
+        // TODO: Pixiv specific settings (has other input types than boolean)
+        const downloadSettingsForm = document.getElementById("download-settings-form") as HTMLFormElement;
+        const checkboxes = downloadSettingsForm.querySelectorAll("input[type=checkbox]") as NodeListOf<HTMLInputElement>;
+        const getDownloadSettingsFromForm = (): Record<string, boolean> => {
+            const settings: Record<string, boolean> = {};
+            for (const checkbox of checkboxes) {
+                settings[checkbox.name] = checkbox.checked;
+            }
+            return settings;
+        };
+        downloadSettingsForm.addEventListener("submit", (e: Event): void => {
+            e.preventDefault();
+            const downloadSettings = getDownloadSettingsFromForm();
+            SetPreferences(platformName, downloadSettings)
+                .then(() => {
+                    swal.fire({
+                        title: "Success",
+                        text: "Download settings have been saved globally!",
+                        icon: "success",
+                    });
+                })
+                .catch((err) => {
+                    console.error(err);
+                    swal.fire({
+                        title: "Error",
+                        text: "Something went wrong when trying to save your download settings!",
+                        icon: "error",
+                    });
+                });
+        });
+        const initialGlobalSettings = await GetPreferences();
+        for (const checkbox of checkboxes) {
+            checkbox.checked = initialGlobalSettings[checkbox.name];
+        }
+
         const addToQueueForm = document.getElementById("add-to-queue-form") as HTMLFormElement;
         addToQueueForm.addEventListener("submit", (e: Event): void => {
             e.preventDefault();
@@ -169,6 +238,7 @@
             }
 
             const formData = new FormData(addToQueueForm);
+            const downloadPreferences = getDownloadSettingsFromForm();
 
             // TODO: Add to queue in backend
             swal.fire({
@@ -184,9 +254,10 @@
 <div class="container mx-auto" id={divId}>
     <form id="add-to-queue-form">
         <Card class="max-w-full" size="xl">
-            <h4>{platformName} URLs</h4>
+            <h4 class="capitalize">{platformName.replaceAll("_", "")} Inputs</h4>
             <Hr />
             <Textarea 
+                name="inputs"
                 rows="6" 
                 placeholder={`Input example:\n` + inputPlaceholder}
             />
@@ -212,20 +283,87 @@
         </Card>
     </form>
 
-    <Card class="mt-2 max-w-full" size="xl">
-        <h4>Download Settings</h4>
-        <Hr />
-        <Helper>This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!</Helper>
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 ">
-            <Checkbox name="dl-post-thumbnail" id="dl-post-thumbnail">Post Thumbnail</Checkbox>
-            <Checkbox name="dl-post-images" id="dl-post-images">Post Images</Checkbox>
-            <Checkbox name="dl-post-attachments" id="dl-post-attachments">Post Attachments</Checkbox>
-            <Checkbox name="overwrite-files" id="overwrite-files">Overwrite Files</Checkbox>
-            <slot />
-        </div>
-        <Hr />
-        <div class="text-right">
-            <button class="btn btn-success">Save Settings Globally</button>
-        </div>
-    </Card>
+    <form id="download-settings-form">
+        <Card class="mt-2 max-w-full" size="xl">
+            <h4>Download Settings</h4>
+            <Hr />
+            <Helper>This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!</Helper>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Toggle color="green" name="DlPostThumbnail">Post Thumbnail</Toggle>
+                <Toggle color="green" name="DlPostImages">Post Images</Toggle>
+                <Toggle color="green" name="DlPostAttachments">Post Attachments</Toggle>
+                <Toggle color="green" name="OverwriteFiles">Overwrite Files</Toggle>
+                <slot />
+            </div>
+            {#if platformName === actions.Pixiv}
+            <Hr />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <Label for="ArtworkType">Artwork Type:</Label>
+                        <Select 
+                            class="mt-2" 
+                            name="ArtworkType" 
+                            id="ArtworkType" 
+                            items={pixivArtworkTypes} 
+                            bind:value={pixivArtworkType} 
+                        />
+                    </div>
+                    <div>
+                        <Label for="RatingMode">Rating Mode:</Label>
+                        <Select 
+                            class="mt-2" 
+                            name="RatingMode" 
+                            id="RatingMode" 
+                            items={pixivRatings} 
+                            bind:value={pixivRating} 
+                        />
+                    </div>
+                    <div>
+                        <Label for="SearchMode">Search Mode:</Label>
+                        <Select 
+                            class="mt-2" 
+                            name="SearchMode" 
+                            id="SearchMode" 
+                            items={pixivSearchModes} 
+                            bind:value={pixivSearchMode} 
+                        />
+                    </div>
+                    <div>
+                        <Label for="SortOrder">Sort Order:</Label>
+                        <Select 
+                            class="mt-2" 
+                            name="SortOrder" 
+                            id="SortOrder" 
+                            items={pixivSortOrders} 
+                            bind:value={pixivSortOrder} 
+                        />
+                    </div>
+                    <div>
+                        <Label for="UgoiraOutputFormat">Ugoira Output File Format:</Label>
+                        <Select 
+                            class="mt-2" 
+                            name="UgoiraOutputFormat" 
+                            id="UgoiraOutputFormat" 
+                            items={pixivUgoiraFormats} 
+                            bind:value={pixivUgoiraFormat} 
+                        />
+                    </div>
+                    <div>
+                        <Label for="UgoiraQuality">Ugoira Quality:</Label>
+                        <Input 
+                            class="mt-2" 
+                            name="UgoiraQuality" 
+                            id="UgoiraQuality" 
+                            type="number"
+                            placeholder="0-51 for mp4, 0-63 for webm"
+                        />
+                    </div>
+                </div>
+            {/if}
+            <Hr />
+            <div class="text-right">
+                <button type="submit" class="btn btn-success">Save Settings Globally</button>
+            </div>
+        </Card>
+    </form>
 </div>
