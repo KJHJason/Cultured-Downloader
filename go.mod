@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/KJHJason/Cultured-Downloader-Logic v1.0.2
 	github.com/pkg/errors v0.9.1
-	github.com/shirou/gopsutil/v3 v3.24.1
+	github.com/shirou/gopsutil/v3 v3.24.2
 	github.com/wailsapp/wails/v2 v2.8.0
 	golang.org/x/crypto v0.19.0
 )
