@@ -21,7 +21,7 @@
     "@sweetalert2/theme-default": "^5.0.16",
     "flowbite": "^2.3.0",
     "flowbite-svelte": "^0.44.21",
-    "flowbite-svelte-icons": "^1.0.3",
+    "flowbite-svelte-icons": "^1.4.3",
     "svelte": "^4.2.11",
     "sweetalert2": "^11.10.5",
     "tailwindcss": "^3.3.6"
