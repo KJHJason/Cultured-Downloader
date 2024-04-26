@@ -14,6 +14,7 @@ type DownloadQueue struct {
 	ctx			context.Context
 	cancel		context.CancelFunc
 	toDownload	[]*httpfuncs.RequestArgs
+	progressBar *ProgressBar
 }
 
 func (app *App) NewDownloadQueue(ctx context.Context, reqs []*httpfuncs.RequestArgs) {
