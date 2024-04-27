@@ -65,7 +65,7 @@ type FrontendDownloadQueue struct {
 // For the frontend
 func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 	var queues []FrontendDownloadQueue
-	for e := app.downloadQueues.Front(); e != nil; e = e.Next() {
+	for e := app.downloadQueues.Back(); e != nil; e = e.Prev() {
 		val := e.Value.(*DownloadQueue)
 		queues = append(queues, FrontendDownloadQueue{
 			Id:             val.id,
