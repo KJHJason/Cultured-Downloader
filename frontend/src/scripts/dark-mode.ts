@@ -11,31 +11,8 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
     }
 
     // Find a style element containing @sweetalert2/theme-dark/dark.css
-    let swalDarkStyleEl: HTMLStyleElement | null = null;
-    let swalDefaultStyleEl: HTMLStyleElement | null = null;
-    const styleElements = document.head.getElementsByTagName("style");
-    for (const styleElement of styleElements) {
-        const attributes = styleElement.attributes;
-        for (const attribute of attributes) {
-            const value = attribute.value;
-            if (value.includes("@sweetalert2/theme-dark/dark.css")) {
-                swalDarkStyleEl = styleElement;
-                break;
-            }
-
-            if (value.includes("@sweetalert2/theme-default/default.css")) {
-                swalDefaultStyleEl = styleElement;
-                break;
-            }
-        }
-
-        if (swalDarkStyleEl && swalDefaultStyleEl) {
-            break;
-        }
-    }
-    if (!swalDarkStyleEl || !swalDefaultStyleEl) {
-        throw new Error("Could not find sweetalert2 style elements");
-    }
+    const swalDarkStyleEl: HTMLStyleElement = document.getElementById("swal-theme-dark") as HTMLStyleElement;
+    const swalDefaultStyleEl: HTMLStyleElement = document.getElementById("swal-theme-default") as HTMLStyleElement;
 
     // Change the icons inside the button based on previous settings
     const isDarkMode = await GetDarkMode();
@@ -58,10 +35,6 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
         throw new Error("Could not find theme toggle button");
     }
 
-    // Initialise again to avoid null errors
-    const swalDarkStyleElement = swalDarkStyleEl;
-    const swalDefaultStyleElement = swalDefaultStyleEl;
-
     themeToggleBtn.addEventListener("click", async () => {
         // toggle icons inside button
         themeToggleDarkIcon.classList.toggle("hidden");
@@ -70,16 +43,16 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
         if (document.documentElement.classList.contains("dark")) {
             document.documentElement.classList.remove("dark");
             themeToggleBtnText.textContent = "Dark Mode";
-            swalDarkStyleElement.disabled = true;
-            swalDefaultStyleElement.disabled = false;
+            swalDarkStyleEl.disabled = true;
+            swalDefaultStyleEl.disabled = false;
             await SetDarkMode(false);
             return;
         } 
         document.documentElement.classList.add("dark");
         themeToggleBtnText.textContent = "Light Mode";
 
-        swalDarkStyleElement.disabled = false;
-        swalDefaultStyleElement.disabled = true;
+        swalDarkStyleEl.disabled = false;
+        swalDefaultStyleEl.disabled = true;
         await SetDarkMode(true);
     });
 };

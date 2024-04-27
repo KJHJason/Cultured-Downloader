@@ -1,7 +1,5 @@
 <script lang="ts">
     import Swal from "sweetalert2";
-    import "@sweetalert2/theme-default/default.css";
-    import "@sweetalert2/theme-dark/dark.css";
 
     import { onMount } from "svelte";
     import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";

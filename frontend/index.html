@@ -4,6 +4,10 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Cultured Downloader</title>
+
+        <!-- Note: Using cdn instead of local files due to how wails compiles the frontend assets in production env -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@latest/dark.css" id="swal-theme-dark"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-default@latest/default.css" id="swal-theme-default"/>
     </head>
     <body class="bg-white dark:bg-zinc-700">
         <script type="module" src="/src/main.ts"></script>

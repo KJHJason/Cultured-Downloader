@@ -45,6 +45,12 @@ const (
 	PixivUgoiraQualityKey      = "pixiv-ugoira-quality"
 
 	KemonoCookieValueKey = "kemono-cookie-value"
+
+	// For download workers
+	FANTIA_WORKERS = 2
+	PIXIV_WORKERS = 1
+	PIXIV_FANBOX_WORKERS = 1
+	KEMONO_WORKERS = 1
 )
 
 var (
