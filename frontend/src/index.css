@@ -6,6 +6,10 @@
     @apply text-black dark:text-white;
 }
 
+.progress-bar {
+    transition: width 1s ease;
+}
+
 h1, h2, h3, h4, h5, h6, p {
     @apply text-main;
 }
@@ -36,6 +40,10 @@ h6 {
 
 .bg-item {
     @apply bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700;
+}
+
+.bg-item-hover {
+    @apply hover:bg-zinc-100 dark:hover:bg-zinc-900;
 }
 
 .btn {

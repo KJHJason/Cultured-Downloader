@@ -50,9 +50,6 @@ type ProfilePic struct {
 func NewProfilePic(path string) (ProfilePic, error) {
 	var err error
 	var pic ProfilePic
-	if err != nil {
-		return pic, err
-	}
 
 	if path == "" {
 		return pic, nil

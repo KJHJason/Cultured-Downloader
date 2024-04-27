@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { Toggle, Label, Select, Textarea, Helper, Card, Hr, Checkbox, Input  } from "flowbite-svelte";
     import { actions, swal } from "../scripts/constants";
-    import { ArrowDownToBracketSolid } from "flowbite-svelte-icons";
+    import { ArrowLeftOutline } from "flowbite-svelte-icons";
     import { SetPreferences, GetPreferences } from "../scripts/wailsjs/go/app/App";
 
     export let platformName: string;
@@ -169,6 +169,7 @@
         // TODO: Pixiv specific settings (has other input types than boolean)
         const downloadSettingsForm = document.getElementById("download-settings-form") as HTMLFormElement;
         const checkboxes = downloadSettingsForm.querySelectorAll("input[type=checkbox]") as NodeListOf<HTMLInputElement>;
+        const ugoiraQualityInput = document.getElementById("UgoiraQuality") as HTMLInputElement;
         const getDownloadSettingsFromForm = (): Record<string, boolean> => {
             const settings: Record<string, boolean> = {};
             for (const checkbox of checkboxes) {
@@ -265,7 +266,7 @@
                 <Helper id="url-helper" color="red" />
                 <button type="submit" class="mt-2 btn btn-success" id="add-to-queue-btn">
                     <div class="flex">
-                        <ArrowDownToBracketSolid />
+                        <ArrowLeftOutline />
                         Add to queue!
                     </div>
                 </button>
