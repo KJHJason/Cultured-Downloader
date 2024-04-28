@@ -34,12 +34,64 @@ h6 {
     @apply text-lg font-bold;
 }
 
+.text-primary {
+    @apply text-blue-700 dark:text-blue-600;
+}
+
+.text-success {
+    @apply text-green-700 dark:text-green-600;
+}
+
+.text-danger {
+    @apply text-red-700 dark:text-red-600;
+}
+
+.text-info {
+    @apply text-cyan-400 dark:text-cyan-600;
+}
+
+.text-warning {
+    @apply text-yellow-400 dark:text-yellow-600;
+}
+
+.text-link {
+    @apply text-blue-500 dark:text-blue-400;
+}
+
 .bg-item {
     @apply bg-white border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700;
 }
 
 .bg-item-hover {
     @apply hover:bg-zinc-100 dark:hover:bg-zinc-900;
+}
+
+.btn-text {
+    @apply hover:text-gray-500 dark:hover:text-gray-400;
+}
+
+.btn-text-primary {
+    @apply text-primary hover:text-blue-800 dark:hover:text-blue-700;
+}
+
+.btn-text-success {
+    @apply text-success hover:text-green-800 dark:hover:text-green-700;
+}
+
+.btn-text-danger {
+    @apply text-danger hover:text-red-800 dark:hover:text-red-700;
+}
+
+.btn-text-info {
+    @apply text-info hover:text-cyan-500 dark:hover:text-cyan-700;
+}
+
+.btn-text-warning {
+    @apply text-warning hover:text-yellow-500 dark:hover:text-yellow-700;
+}
+
+.btn-text-link {
+    @apply text-link hover:text-blue-600 dark:hover:text-blue-500;
 }
 
 .btn {
@@ -67,5 +119,5 @@ h6 {
 }
 
 .btn-link {
-    @apply text-blue-500 hover:text-blue-600 focus:ring-blue-300 dark:text-blue-400 dark:hover:text-blue-500 dark:focus:ring-blue-800;
+    @apply btn-text-link focus:ring-blue-300 dark:focus:ring-blue-800;
 }

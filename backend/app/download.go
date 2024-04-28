@@ -38,7 +38,7 @@ func releaseWorker(website string) {
 	}
 }
 
-type dlProgressBars  *[]*ProgressBar
+type dlProgressBars  *[]*DownloadProgressBar
 type taskHandlerFunc func(progBars dlProgressBars) error
 
 type DownloadQueue struct {
@@ -57,9 +57,22 @@ type DownloadQueue struct {
 type FrontendDownloadQueue struct {
 	Id             int
 	Website        string
+	Msg            string
+	SuccessMsg     string
+	ErrMsg         string
 	ProgressBar    *ProgressBar
-	DlProgressBars dlProgressBars
+	DlProgressBars []FrontendDownloadDetails
 	Finished       bool
+}
+
+type FrontendDownloadDetails struct {
+	Msg           string
+	SuccessMsg    string
+	ErrMsg        string
+	Filename      string
+	DownloadSpeed float64
+	DownloadETA   float64
+	Percentage    int
 }
 
 // For the frontend
@@ -67,11 +80,28 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 	var queues []FrontendDownloadQueue
 	for e := app.downloadQueues.Back(); e != nil; e = e.Prev() {
 		val := e.Value.(*DownloadQueue)
+
+		dlDetails := make([]FrontendDownloadDetails, len(*val.dlProgressBars))
+		for i, dlProg := range *val.dlProgressBars {
+			dlDetails[i] = FrontendDownloadDetails{
+				Msg:           dlProg.msg,
+				SuccessMsg:    dlProg.successMsg,
+				ErrMsg:        dlProg.errMsg,
+				Filename:      dlProg.filename,
+				DownloadSpeed: dlProg.downloadSpeed,
+				DownloadETA:   dlProg.downloadETA,
+				Percentage:    dlProg.percentage,
+			}
+		}
+
 		queues = append(queues, FrontendDownloadQueue{
 			Id:             val.id,
 			Website:        val.website,
+			Msg:			val.mainProgressBar.msg,
+			SuccessMsg:     val.mainProgressBar.successMsg,
+			ErrMsg:         val.mainProgressBar.errMsg,
 			ProgressBar:    val.mainProgressBar,
-			DlProgressBars: val.dlProgressBars,
+			DlProgressBars: dlDetails,
 			Finished:       val.finished,
 		})
 	}
@@ -90,8 +120,17 @@ func getDemoProgressBar(ctx context.Context) *ProgressBar {
 		FolderPath:   `C:\Users\Admin\Pictures`,
 		MainUrl:      "https://fantia.jp",
 	}
-	demo := New(ctx, msgs, progressDetails, 10)
+	demo := NewProgressBar(ctx, msgs, progressDetails, 10)
 	return demo
+}
+
+func getDemoDlProgressBar(ctx context.Context) *DownloadProgressBar {
+	msgs := Messages{
+		Msg:        "Downloading...",
+		SuccessMsg: "Download complete!",
+		ErrMsg:     "Download failed!",
+	}
+	return NewDlProgressBar(ctx, msgs)
 }
 
 func (app *App) NewDownloadQueue(taskHandler taskHandlerFunc) {
@@ -99,7 +138,11 @@ func (app *App) NewDownloadQueue(taskHandler taskHandlerFunc) {
 	ctx, cancel := context.WithCancel(app.ctx)
 	count++
 
-	dlProgressBars := make([]*ProgressBar, 0)
+	// TODO: remove demo progress bar and dl progress bars
+	dlProgressBars := make([]*DownloadProgressBar, 3)
+	for i := 0; i < 3; i++ {
+		dlProgressBars[i] = getDemoDlProgressBar(ctx)
+	}
 	dlQueue := &DownloadQueue{
 		id:			     id,
 		ctx:             ctx,
@@ -163,8 +206,11 @@ func (app *App) StartNewQueues() {
 	// loop through the doubly linked list of download queues
 	for e := app.downloadQueues.Front(); e != nil; e = e.Next() {
 		dq := e.Value.(*DownloadQueue)
-		website := dq.website
+		if dq.mainProgressBar.active || dq.finished {
+			continue
+		}
 
+		website := dq.website
 		var workersUsed int
 		var maxWorkers  int
 		switch website {
@@ -197,10 +243,6 @@ func (app *App) StartNewQueues() {
 			kemonoWorking++
 		}
 
-		if dq.mainProgressBar.active {
-			continue
-		}
-
 		go dq.Start()
 	}
 }
@@ -220,7 +262,8 @@ func (q *DownloadQueue) Start() {
 			time.Sleep(5 * time.Second)
 			prog.Increment()
 		}
-		prog.Stop()
+		prog.Stop(false)
+		q.finished = true
 	}()
 }
 
@@ -232,7 +275,7 @@ func (q *DownloadQueue) CancelQueue() {
 	}
 
 	q.cancel()
-	q.mainProgressBar.Stop()
+	q.mainProgressBar.Stop(true)
 	q.releaseWorker()
 	q.finished = true
 }
