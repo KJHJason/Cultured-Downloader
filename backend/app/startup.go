@@ -42,6 +42,12 @@ func (a *App) Startup(ctx context.Context) {
 	}
 	a.appData = appData
 
+	lang := a.appData.GetString(constants.LanguageKey)
+	if lang == "" {
+		lang = "en"
+	}
+	a.lang = lang
+
 	ticker := time.NewTicker(2 * time.Second) // check for new queues every few second
 	go func() {
 		for {

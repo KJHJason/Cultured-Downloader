@@ -38,20 +38,27 @@ func releaseWorker(website string) {
 	}
 }
 
-type dlProgressBars  *[]*DownloadProgressBar
+type dlProgressBars []*DownloadProgressBar
 type taskHandlerFunc func(progBars dlProgressBars) error
 
+type Input struct {
+	Input string
+	Url   string
+}
+
 type DownloadQueue struct {
-	id			int
-	ctx			context.Context
-	cancel		context.CancelFunc
+	id          int
+	ctx         context.Context
+	cancel      context.CancelFunc
 	website     string
 	taskHandler taskHandlerFunc // function to handle the API request and downloads
 	finished    bool
 	mu          sync.Mutex
 
+	// for frontend
+	inputs []Input
 	mainProgressBar *ProgressBar
-	dlProgressBars   dlProgressBars
+	dlProgressBars  dlProgressBars
 }
 
 type FrontendDownloadQueue struct {
@@ -60,6 +67,7 @@ type FrontendDownloadQueue struct {
 	Msg            string
 	SuccessMsg     string
 	ErrMsg         string
+	Inputs         []Input
 	ProgressBar    *ProgressBar
 	DlProgressBars []FrontendDownloadDetails
 	Finished       bool
@@ -81,25 +89,35 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 	for e := app.downloadQueues.Back(); e != nil; e = e.Prev() {
 		val := e.Value.(*DownloadQueue)
 
-		dlDetails := make([]FrontendDownloadDetails, len(*val.dlProgressBars))
-		for i, dlProg := range *val.dlProgressBars {
-			dlDetails[i] = FrontendDownloadDetails{
-				Msg:           dlProg.msg,
-				SuccessMsg:    dlProg.successMsg,
-				ErrMsg:        dlProg.errMsg,
-				Filename:      dlProg.filename,
-				DownloadSpeed: dlProg.downloadSpeed,
-				DownloadETA:   dlProg.downloadETA,
-				Percentage:    dlProg.percentage,
+		derefDlDetails := val.dlProgressBars
+		dlDetailsLen := len(derefDlDetails)
+		dlDetails := make([]FrontendDownloadDetails, dlDetailsLen)
+		if dlDetailsLen > 0 {
+			idx := 0
+			// reverse the order of the download progress bars
+			// so that the latest download progress bar is at the top
+			for i := dlDetailsLen - 1; i >= 0; i-- {
+				dlProg := derefDlDetails[i]
+				dlDetails[idx] = FrontendDownloadDetails{
+					Msg:           dlProg.msg,
+					SuccessMsg:    dlProg.successMsg,
+					ErrMsg:        dlProg.errMsg,
+					Filename:      dlProg.filename,
+					DownloadSpeed: dlProg.downloadSpeed,
+					DownloadETA:   dlProg.downloadETA,
+					Percentage:    dlProg.percentage,
+				}
+				idx++
 			}
 		}
 
 		queues = append(queues, FrontendDownloadQueue{
 			Id:             val.id,
 			Website:        val.website,
-			Msg:			val.mainProgressBar.msg,
+			Msg:            val.mainProgressBar.msg,
 			SuccessMsg:     val.mainProgressBar.successMsg,
 			ErrMsg:         val.mainProgressBar.errMsg,
+			Inputs:         val.inputs,
 			ProgressBar:    val.mainProgressBar,
 			DlProgressBars: dlDetails,
 			Finished:       val.finished,
@@ -115,10 +133,7 @@ func getDemoProgressBar(ctx context.Context) *ProgressBar {
 		ErrMsg:     "Download failed!",
 	}
 	progressDetails := ProgressDetails{
-		Title:        "Demo Title",
-		ThumbnailUrl: "https://pbs.twimg.com/media/GMBZzHdbkAAntIt?format=jpg&name=4096x4096",
 		FolderPath:   `C:\Users\Admin\Pictures`,
-		MainUrl:      "https://fantia.jp",
 	}
 	demo := NewProgressBar(ctx, msgs, progressDetails, 10)
 	return demo
@@ -144,15 +159,18 @@ func (app *App) NewDownloadQueue(taskHandler taskHandlerFunc) {
 		dlProgressBars[i] = getDemoDlProgressBar(ctx)
 	}
 	dlQueue := &DownloadQueue{
-		id:			     id,
+		id:              id,
 		ctx:             ctx,
 		cancel:          cancel,
 		website:         cdlConst.FANTIA,
 		taskHandler:     taskHandler,
 		finished:        false,
 		mainProgressBar: getDemoProgressBar(ctx),
-		dlProgressBars:  &dlProgressBars,
+		dlProgressBars:  dlProgressBars,
 		mu:              sync.Mutex{},
+
+		// TODO: remove demo inputs
+		inputs:          []Input{{Input: "fantia", Url: "http://fantia.jp"}},
 	}
 	app.downloadQueues.PushBack(dlQueue)
 }
@@ -175,7 +193,7 @@ func (app *App) DeleteQueue(id int) {
 	// by comparing the distance between the first and last element of the list
 	var dlQueue *list.Element
 	var direction int
-	if id - firstQueue.id < lastQueue.id - id {
+	if id-firstQueue.id < lastQueue.id-id {
 		dlQueue = firstEl
 		direction = 1
 	} else {
@@ -212,7 +230,7 @@ func (app *App) StartNewQueues() {
 
 		website := dq.website
 		var workersUsed int
-		var maxWorkers  int
+		var maxWorkers int
 		switch website {
 		case cdlConst.FANTIA:
 			workersUsed = fantiaWorking
@@ -228,7 +246,7 @@ func (app *App) StartNewQueues() {
 			maxWorkers = constants.KEMONO_WORKERS
 		}
 
-		if workersUsed + 1 > maxWorkers {
+		if workersUsed+1 > maxWorkers {
 			continue
 		}
 
@@ -252,7 +270,7 @@ func (q *DownloadQueue) releaseWorker() {
 }
 
 func (q *DownloadQueue) Start() {
-	// TODO: call the taskHandler function in a goroutine and handle releaseWorker and change finished to true 
+	// TODO: call the taskHandler function in a goroutine and handle releaseWorker and change finished to true
 	// err := q.taskHandler(q.dlProgressBars)
 
 	prog := q.mainProgressBar

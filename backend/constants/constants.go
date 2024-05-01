@@ -8,6 +8,7 @@ import (
 const (
 	DefaultPerm                 = 0755
 	LocalUserAssetDirName       = "assets"
+	LanguageKey                 = "lang"
 	HashOfMasterPasswordHashKey = "master-password-hash"
 	MasterPasswordSaltKey       = "master-password-salt"
 	DarkModeKey                 = "dark-mode"

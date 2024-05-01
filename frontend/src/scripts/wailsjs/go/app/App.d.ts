@@ -15,6 +15,8 @@ export function GetDarkMode():Promise<boolean>;
 
 export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 
+export function GetLanguage():Promise<string>;
+
 export function GetPreferences():Promise<appdata.Preferences>;
 
 export function GetProfilePic():Promise<app.ProfilePic>;
@@ -32,6 +34,8 @@ export function RemoveMasterPassword():Promise<void>;
 export function SelectProfilePic():Promise<app.ProfilePic>;
 
 export function SetDarkMode(arg1:boolean):Promise<void>;
+
+export function SetLanguage(arg1:string):Promise<string>;
 
 export function SetMasterPassword(arg1:string):Promise<void>;
 

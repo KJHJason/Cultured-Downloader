@@ -26,6 +26,10 @@ export function GetDownloadQueues() {
   return window['go']['app']['App']['GetDownloadQueues']();
 }
 
+export function GetLanguage() {
+  return window['go']['app']['App']['GetLanguage']();
+}
+
 export function GetPreferences() {
   return window['go']['app']['App']['GetPreferences']();
 }
@@ -60,6 +64,10 @@ export function SelectProfilePic() {
 
 export function SetDarkMode(arg1) {
   return window['go']['app']['App']['SetDarkMode'](arg1);
+}
+
+export function SetLanguage(arg1) {
+  return window['go']['app']['App']['SetLanguage'](arg1);
 }
 
 export function SetMasterPassword(arg1) {

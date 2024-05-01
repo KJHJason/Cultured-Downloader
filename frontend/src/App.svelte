@@ -2,8 +2,10 @@
     import Swal from "sweetalert2";
 
     import { onMount } from "svelte";
+    import { Spinner } from "flowbite-svelte";
     import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
+    import { InitialiseLanguage } from "./scripts/language";
 
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
@@ -125,26 +127,32 @@
 
 <main class="p-4">
     <div class="mt-14">
-        <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
-        <!-- <Fantia /> -->
-        <!-- <Pixiv /> -->
-        <DownloadQueues/>
-        <!-- {#if action === actions.Home}
-            <Home/>
-        {:else if action === actions.Fantia}
-            <Fantia/>
-        {:else if action === actions.Pixiv}
-            <Pixiv/>
-        {:else if action === actions.PixivFanbox}
-            <PixivFanbox/>
-        {:else if action === actions.Kemono}
-            <Kemono/>
-        {:else if action === actions.Downloads}
+        {#await InitialiseLanguage()}
+            <Spinner color="blue" />
+        {:then}
+            <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
+            <!-- <Fantia /> -->
+            <!-- <Pixiv /> -->
             <DownloadQueues/>
-        {:else if action == actions.Settings}
-            <Settings username={username} handleActionChange={handleActionChange} />
-        {:else}
-            <p>Not implemented yet</p>
-        {/if} -->
+            <!-- {#if action === actions.Home}
+                <Home/>
+            {:else if action === actions.Fantia}
+                <Fantia/>
+            {:else if action === actions.Pixiv}
+                <Pixiv/>
+            {:else if action === actions.PixivFanbox}
+                <PixivFanbox/>
+            {:else if action === actions.Kemono}
+                <Kemono/>
+            {:else if action === actions.Downloads}
+                <DownloadQueues/>
+            {:else if action == actions.Settings}
+                <Settings username={username} handleActionChange={handleActionChange} />
+            {:else}
+                <p>Not implemented yet</p>
+            {/if} -->
+        {:catch error}
+            <p>Unexpected error!: {error.message}</p>
+        {/await}
     </div>
 </main>

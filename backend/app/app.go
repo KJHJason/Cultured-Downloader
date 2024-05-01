@@ -16,6 +16,7 @@ import (
 type App struct {
 	ctx            context.Context
 	appData        *appdata.AppData
+	lang           string
 	downloadQueues list.List // doubly linked list of DownloadQueue
 }
 
