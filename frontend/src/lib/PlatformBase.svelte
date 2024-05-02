@@ -1,14 +1,15 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Toggle, Label, Select, Textarea, Helper, Card, Hr, Checkbox, Input  } from "flowbite-svelte";
+    import { Toggle, Label, Select, Textarea, Helper, Card, Hr, Checkbox, Input, ButtonGroup, InputAddon } from "flowbite-svelte";
     import { actions, swal } from "../scripts/constants";
-    import { ArrowLeftOutline } from "flowbite-svelte-icons";
+    import { ArrowLeftOutline, MinusOutline, PlusOutline } from "flowbite-svelte-icons";
     import { SetPreferences, GetPreferences } from "../scripts/wailsjs/go/app/App";
 
     export let platformName: string;
     export let inputPlaceholder: string;
-    export let urlValidationFn: (urls: string | string[]) => boolean;
+    export let urlValidationFn: (urls: string | string[]) => Promise<boolean>;
     export let checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
+    export let addToQueueFn: (inputs: string[], downloadSettings: Record<string, any>) => Promise<void>;
 
     const GetPageNoInputs = (url: string): HTMLInputElement => {
         const input = document.createElement("input");
@@ -88,7 +89,7 @@
                         return;
                     } 
 
-                    const inputRegex = /^\d+(-\d+)?$/;
+                    const inputRegex = /^\d+(?:-\d+)?$/;
                     if (inputRegex.test(input)) {
                         pageNoFilterHelper.classList.add("hidden");
                         inputEl.classList.remove("!border-red-500");
@@ -109,7 +110,7 @@
             pageNoDivEl.classList.add("hidden");
             hasPageNoFilter = false;
         };
-        textareaEl.addEventListener("input", () => {
+        textareaEl.addEventListener("input", async () => {
             const textareaInput = textareaEl.value;
             pageNoFilterHelper.classList.add("hidden");
             if (!textareaInput) {
@@ -156,7 +157,7 @@
                 initialisePageNoValidations();
             }
 
-            const isValid = urlValidationFn(uniqueUrls);
+            const isValid = await urlValidationFn(uniqueUrls);
             if (isValid) {
                 helperEl.textContent = "";
                 textareaEl.classList.remove("!border-red-500");
@@ -203,7 +204,7 @@
         }
 
         const addToQueueForm = document.getElementById("add-to-queue-form") as HTMLFormElement;
-        addToQueueForm.addEventListener("submit", (e: Event): void => {
+        addToQueueForm.addEventListener("submit", async (e: Event): Promise<void> => {
             e.preventDefault();
 
             const textareaInput = textareaEl.value;
@@ -212,17 +213,6 @@
                 swal.fire({
                     title: "Input Error",
                     text: `No ${platformName} URL(s)!`,
-                    icon: "error",
-                });
-                return;
-            }
-
-            const isValid = urlValidationFn(textareaInput);
-            if (!isValid) {
-                helperEl.textContent = "Input Error: Invalid URL(s)!";
-                swal.fire({
-                    title: "Input Error",
-                    text: `Invalid ${platformName} URL(s)!`,
                     icon: "error",
                 });
                 return;
@@ -238,10 +228,28 @@
                 return;
             }
 
-            const formData = new FormData(addToQueueForm);
+            const inputs = textareaInput.split("\n");
             const downloadPreferences = getDownloadSettingsFromForm();
+            for (let i = 0; i < inputs.length; i++) {
+                const input = inputs[i];
+                const pageNoInput = pageNoInputsDivEl.querySelector(`input[name="${input}"]`) as HTMLInputElement;
+                if (pageNoInput && pageNoInput.value !== "") {
+                    inputs[i] += `;${pageNoInput.value}`;
+                }
+            }
 
-            // TODO: Add to queue in backend
+            const isValid = await urlValidationFn(inputs);
+            if (!isValid) {
+                helperEl.textContent = "Input Error: Invalid URL(s)!";
+                swal.fire({
+                    title: "Input Error",
+                    text: `Invalid ${platformName} URL(s)!`,
+                    icon: "error",
+                });
+                return;
+            }
+
+            await addToQueueFn(inputs, downloadPreferences);
             swal.fire({
                 title: "Added to Queue!",
                 text: "The URL(s) have been added to the download queue!",

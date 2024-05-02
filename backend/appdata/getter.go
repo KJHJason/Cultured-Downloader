@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
+	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
 func (a *AppData) GetBool(key string) bool {
@@ -193,6 +194,10 @@ func (a *AppData) GetSecuredBytes(key string) []byte {
 }
 
 func (a *AppData) GetSecuredStringWithFallback(key string, fallback string) string {
+	if a.GetString(constants.HashOfMasterPasswordHashKey) == "" {
+		return a.GetStringWithFallback(key, fallback) // not encrypted
+	}
+
 	v, exist := a.getSecureS(key)
 	if !exist {
 		return fallback
@@ -201,6 +206,10 @@ func (a *AppData) GetSecuredStringWithFallback(key string, fallback string) stri
 }
 
 func (a *AppData) GetSecuredBytesWithFallback(key string, fallback []byte) []byte {
+	if a.GetString(constants.HashOfMasterPasswordHashKey) == "" {
+		return a.GetBytesWithFallback(key, fallback) // not encrypted
+	}
+
 	v, exist := a.getSecureB(key)
 	if !exist {
 		return fallback

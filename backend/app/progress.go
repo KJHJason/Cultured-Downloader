@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 )
 
 type ProgressBar struct {
@@ -12,6 +14,7 @@ type ProgressBar struct {
 	errMsg     string
 
 	// For the frontend
+	IsSpinner      bool
 	Count          int
 	MaxCount       int
 	Active         bool
@@ -21,6 +24,9 @@ type ProgressBar struct {
 	FolderPath     string
 	DateTime       time.Time
 	NestedProgBars []NestedProgressBar
+
+	// download progress bars for more detailed information
+	DownloadProgressBars []*progress.DownloadProgressBar
 
 	count    int
 	maxCount int
@@ -45,44 +51,33 @@ type Messages struct {
 	ErrMsg     string
 }
 
-type ProgressDetails struct {
-	FolderPath   string
-}
-
-func NewProgressBar(ctx context.Context, messages Messages, progressDetails ProgressDetails, maxCount int) *ProgressBar {
+func NewProgressBar(ctx context.Context) *ProgressBar {
 	return &ProgressBar{
-		msg:        messages.Msg,
-		successMsg: messages.SuccessMsg,
-		errMsg:     messages.ErrMsg,
-
+		IsSpinner:      true,
 		Count:          0,
-		MaxCount:       maxCount,
 		Active:         false,
 		Finished:       false,
 		HasError:       false,
 		Percentage:     0,
-		FolderPath:     progressDetails.FolderPath,
 		DateTime:       time.Now().UTC(),
-		NestedProgBars: []NestedProgressBar{
-			// TODO: REMOVE TEST DATA
-			{
-				Msg:        "Downloading...",
-				SuccessMsg: "Download complete!",
-				ErrMsg:     "Download failed!",
-			
-				HasError:   false,
-				Finished:   true,
-				Percentage: 100,
-
-				DateTime: time.Now().UTC(),
-			},
-		},
+		NestedProgBars: []NestedProgressBar{},
 
 		count:    0,
-		maxCount: maxCount,
 		active:   false,
 		mu:       &sync.RWMutex{},
 	}
+}
+
+func (p *ProgressBar) Add(i int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if !p.active {
+		return
+	}
+
+	p.count += i
+	p.Count = p.count
+	p.Percentage = p.count * 100 / p.maxCount
 }
 
 func (p *ProgressBar) Start() {
@@ -101,16 +96,50 @@ func (p *ProgressBar) Stop(hasErr bool) {
 	p.HasError = hasErr
 }
 
-func (p *ProgressBar) Increment() {
+func (p *ProgressBar) SetToSpinner() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if !p.active {
-		return
-	}
+	p.IsSpinner = true
+}
 
-	p.count++
-	p.Count = p.count
-	p.Percentage = p.count * 100 / p.maxCount
+func (p *ProgressBar) SetToProgressBar() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.IsSpinner = false
+}
+
+func (p *ProgressBar) StopInterrupt(errMsg string) {
+	p.UpdateErrorMsg(errMsg)
+	p.Stop(true)
+}
+
+func (p *ProgressBar) UpdateBaseMsg(msg string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.msg = msg
+}
+
+func (p *ProgressBar) UpdateMax(max int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.maxCount = max
+	p.MaxCount = max
+}
+
+func (p *ProgressBar) Increment() {
+	p.Add(1)
+}
+
+func (p *ProgressBar) UpdateSuccessMsg(successMsg string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.successMsg = successMsg
+}
+
+func (p *ProgressBar) UpdateErrorMsg(errMsg string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.errMsg = errMsg
 }
 
 func (p *ProgressBar) SnapshotTask() {
@@ -137,51 +166,8 @@ func (p *ProgressBar) SnapshotTask() {
 	p.Percentage = 0
 }
 
-type DownloadProgressBar struct {
-	msg        string
-	successMsg string
-	errMsg     string
-
-	percentage int // -1 if unknown, 0-100 otherwise if there's a known ETA
-
-	filename      string
-	downloadSpeed float64
-	downloadETA   float64
-	mu            *sync.RWMutex
-}
-
-func (dlP *DownloadProgressBar) UpdateFilename(filename string) {
-	dlP.mu.Lock()
-	defer dlP.mu.Unlock()
-
-	dlP.filename = filename
-}
-
-func (dlP *DownloadProgressBar) UpdateDownloadSpeed(speed float64) {
-	dlP.mu.Lock()
-	defer dlP.mu.Unlock()
-
-	dlP.downloadSpeed = speed
-}
-
-func (dlP *DownloadProgressBar) UpdateDownloadETA(eta float64) {
-	dlP.mu.Lock()
-	defer dlP.mu.Unlock()
-
-	dlP.downloadETA = eta
-}
-
-func NewDlProgressBar(ctx context.Context, messages Messages) *DownloadProgressBar {
-	return &DownloadProgressBar{
-		msg:        messages.Msg,
-		successMsg: messages.SuccessMsg,
-		errMsg:     messages.ErrMsg,
-
-		percentage: 0,
-
-		filename:   "",
-		downloadSpeed: 0,
-		downloadETA:   -1,
-		mu:        &sync.RWMutex{},
-	}
+func (p *ProgressBar) UpdateFolderPath(folderPath string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.FolderPath = folderPath
 }

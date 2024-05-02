@@ -6,20 +6,23 @@ import (
 )
 
 const (
-	DefaultPerm                 = 0755
-	LocalUserAssetDirName       = "assets"
-	LanguageKey                 = "lang"
+	DEFAULT_PERM                = 0755
+	LOCAL_USER_ASSET_DIR_NAME   = "assets"
+	LANGUAGE_KEY                = "lang"
+	// TODO: uppercase all consts
 	HashOfMasterPasswordHashKey = "master-password-hash"
 	MasterPasswordSaltKey       = "master-password-salt"
 	DarkModeKey                 = "dark-mode"
 	UsernameKey                 = "username"
+	UserAgentKey                = "user-agent"
 	ProfilePicPathKey           = "profile-pic-path"
+	DOWNLOAD_KEY                = "download"
 
 	// Platform names
-	Fantia = "fantia"
-	Pixiv  = "pixiv"
+	Fantia      = "fantia"
+	Pixiv       = "pixiv"
 	PixivFanbox = "pixiv_fanbox"
-	Kemono = "kemono"
+	Kemono      = "kemono"
 
 	GdriveApiKeyKey     = "gdrive-api-key"
 	GdriveServiceAccKey = "gdrive-service-acc"
@@ -48,10 +51,10 @@ const (
 	KemonoCookieValueKey = "kemono-cookie-value"
 
 	// For download workers
-	FANTIA_WORKERS = 2
-	PIXIV_WORKERS = 1
+	FANTIA_WORKERS       = 2
+	PIXIV_WORKERS        = 1
 	PIXIV_FANBOX_WORKERS = 1
-	KEMONO_WORKERS = 1
+	KEMONO_WORKERS       = 1
 )
 
 var (
@@ -70,5 +73,5 @@ func init() {
 	UserConfigDir = filepath.Join(UserConfigDir, "cultured.downloader")
 
 	// Create the directory if it doesn't exist
-	os.MkdirAll(UserConfigDir, DefaultPerm)
+	os.MkdirAll(UserConfigDir, DEFAULT_PERM)
 }

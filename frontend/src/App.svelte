@@ -131,9 +131,9 @@
             <Spinner color="blue" />
         {:then}
             <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
-            <!-- <Fantia /> -->
+            <Fantia />
             <!-- <Pixiv /> -->
-            <DownloadQueues/>
+            <!-- <DownloadQueues/> -->
             <!-- {#if action === actions.Home}
                 <Home/>
             {:else if action === actions.Fantia}

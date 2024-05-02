@@ -21,8 +21,8 @@ func getLangKey(lang string) string {
 
 func (a *App) SetLanguage(lang string) string {
 	a.lang = getLangKey(lang)
-	a.appData.SetString(constants.LanguageKey, a.lang);
-	return a.lang;
+	a.appData.SetString(constants.LANGUAGE_KEY, a.lang)
+	return a.lang
 }
 
 func (a *App) GetLanguage() string {

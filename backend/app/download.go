@@ -8,6 +8,7 @@ import (
 	"time"
 
 	cdlConst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -38,12 +39,14 @@ func releaseWorker(website string) {
 	}
 }
 
-type dlProgressBars []*DownloadProgressBar
-type taskHandlerFunc func(progBars dlProgressBars) error
+type dlProgressBars []*progress.DownloadProgressBar
+type taskHandlerFunc func() []*error
 
 type Input struct {
-	Input string
-	Url   string
+	id      string
+	pageNum string
+	Input   string
+	Url     string
 }
 
 type DownloadQueue struct {
@@ -99,13 +102,13 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 			for i := dlDetailsLen - 1; i >= 0; i-- {
 				dlProg := derefDlDetails[i]
 				dlDetails[idx] = FrontendDownloadDetails{
-					Msg:           dlProg.msg,
-					SuccessMsg:    dlProg.successMsg,
-					ErrMsg:        dlProg.errMsg,
-					Filename:      dlProg.filename,
-					DownloadSpeed: dlProg.downloadSpeed,
-					DownloadETA:   dlProg.downloadETA,
-					Percentage:    dlProg.percentage,
+					Msg:           dlProg.GetMsg(),
+					SuccessMsg:    dlProg.GetSuccessMsg(),
+					ErrMsg:        dlProg.GetErrMsg(),
+					Filename:      dlProg.GetFilename(),
+					DownloadSpeed: dlProg.GetDownloadSpeed(),
+					DownloadETA:   dlProg.GetDownloadETA(),
+					Percentage:    dlProg.GetPercentage(),
 				}
 				idx++
 			}
@@ -126,38 +129,11 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 	return queues
 }
 
-func getDemoProgressBar(ctx context.Context) *ProgressBar {
-	msgs := Messages{
-		Msg:        "Downloading...",
-		SuccessMsg: "Download complete!",
-		ErrMsg:     "Download failed!",
-	}
-	progressDetails := ProgressDetails{
-		FolderPath:   `C:\Users\Admin\Pictures`,
-	}
-	demo := NewProgressBar(ctx, msgs, progressDetails, 10)
-	return demo
-}
-
-func getDemoDlProgressBar(ctx context.Context) *DownloadProgressBar {
-	msgs := Messages{
-		Msg:        "Downloading...",
-		SuccessMsg: "Download complete!",
-		ErrMsg:     "Download failed!",
-	}
-	return NewDlProgressBar(ctx, msgs)
-}
-
-func (app *App) NewDownloadQueue(taskHandler taskHandlerFunc) {
+func (app *App) newDownloadQueue(inputs []Input, mainProgBar *ProgressBar, taskHandler taskHandlerFunc) *DownloadQueue {
 	id := count
 	ctx, cancel := context.WithCancel(app.ctx)
 	count++
 
-	// TODO: remove demo progress bar and dl progress bars
-	dlProgressBars := make([]*DownloadProgressBar, 3)
-	for i := 0; i < 3; i++ {
-		dlProgressBars[i] = getDemoDlProgressBar(ctx)
-	}
 	dlQueue := &DownloadQueue{
 		id:              id,
 		ctx:             ctx,
@@ -165,14 +141,13 @@ func (app *App) NewDownloadQueue(taskHandler taskHandlerFunc) {
 		website:         cdlConst.FANTIA,
 		taskHandler:     taskHandler,
 		finished:        false,
-		mainProgressBar: getDemoProgressBar(ctx),
-		dlProgressBars:  dlProgressBars,
+		mainProgressBar: mainProgBar,
+		dlProgressBars:  []*progress.DownloadProgressBar{},
 		mu:              sync.Mutex{},
-
-		// TODO: remove demo inputs
-		inputs:          []Input{{Input: "fantia", Url: "http://fantia.jp"}},
+		inputs:          inputs,
 	}
 	app.downloadQueues.PushBack(dlQueue)
+	return dlQueue
 }
 
 func (app *App) DeleteQueue(id int) {
@@ -217,7 +192,7 @@ func (app *App) DeleteQueue(id int) {
 	}
 }
 
-func (app *App) StartNewQueues() {
+func (app *App) startNewQueues() {
 	workerMu.Lock()
 	defer workerMu.Unlock()
 

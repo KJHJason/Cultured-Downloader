@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -18,6 +19,7 @@ type App struct {
 	appData        *appdata.AppData
 	lang           string
 	downloadQueues list.List // doubly linked list of DownloadQueue
+	gdriveClient   *gdrive.GDrive
 }
 
 // NewApp creates a new App application struct

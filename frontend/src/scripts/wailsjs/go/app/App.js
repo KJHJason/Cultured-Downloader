@@ -22,8 +22,16 @@ export function GetDarkMode() {
   return window['go']['app']['App']['GetDarkMode']();
 }
 
+export function GetDownloadDir() {
+  return window['go']['app']['App']['GetDownloadDir']();
+}
+
 export function GetDownloadQueues() {
   return window['go']['app']['App']['GetDownloadQueues']();
+}
+
+export function GetGdriveClient() {
+  return window['go']['app']['App']['GetGdriveClient']();
 }
 
 export function GetLanguage() {
@@ -44,10 +52,6 @@ export function GetUsername() {
 
 export function HasProfilePic() {
   return window['go']['app']['App']['HasProfilePic']();
-}
-
-export function NewDownloadQueue(arg1) {
-  return window['go']['app']['App']['NewDownloadQueue'](arg1);
 }
 
 export function PromptMasterPassword() {
@@ -82,10 +86,14 @@ export function SetUsername(arg1) {
   return window['go']['app']['App']['SetUsername'](arg1);
 }
 
-export function StartNewQueues() {
-  return window['go']['app']['App']['StartNewQueues']();
+export function SubmitFantiaToQueue(arg1, arg2) {
+  return window['go']['app']['App']['SubmitFantiaToQueue'](arg1, arg2);
 }
 
 export function UploadProfilePic(arg1) {
   return window['go']['app']['App']['UploadProfilePic'](arg1);
+}
+
+export function ValidateFantiaUrls(arg1) {
+  return window['go']['app']['App']['ValidateFantiaUrls'](arg1);
 }

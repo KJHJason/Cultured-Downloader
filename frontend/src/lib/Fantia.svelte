@@ -2,18 +2,17 @@
     import { actions } from "../scripts/constants";
     import PlatformBase from "./PlatformBase.svelte";
     import { Toggle } from "flowbite-svelte";
+    import { ValidateFantiaUrls, SubmitFantiaToQueue } from "../scripts/wailsjs/go/app/App";
 
-    const urlValidationFn = (urls: string | string[]): boolean => {
+    const urlValidationFn = async (urls: string | string[]): Promise<boolean> => {
         if (typeof urls === "string") {
             urls = urls.split("\n");
         }
-        const urlRegex = /^https:\/\/fantia.jp\/(posts|fanclubs)\/\d+$/;
-        for (const url of urls) {
-            if (!urlRegex.test(url)) {
-                return false;
-            }
-        }
-        return true;
+        return await ValidateFantiaUrls(urls);
+    };
+
+    const addToQueueFn = async (inputs: string[], options: Record<string, any>): Promise<void> => {
+        await SubmitFantiaToQueue(inputs, options);
     };
 
     const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {
@@ -23,11 +22,14 @@
 
 <PlatformBase 
     platformName={actions.Fantia}
-    inputPlaceholder={"https://fantia.jp/posts/2239524\nhttps://fantia.jp/fanclubs/5744"} 
+    inputPlaceholder={`https://fantia.jp/posts/2239524
+https://fantia.jp/fanclubs/5744
+https://fantia.jp/fanclubs/5744
+https://fantia.jp/fanclubs/5744`} 
     urlValidationFn={urlValidationFn}
+    addToQueueFn={addToQueueFn}
     checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
 >
     <Toggle color="green" name="DlGDrive">GDrive Links</Toggle>
     <Toggle color="green" name="DetectOtherLinks">Detect Other URL(s) like MEGA</Toggle>
-    <Toggle color="green" name="AutoSolveReCaptcha">Auto-solve reCAPTCHA</Toggle>
 </PlatformBase>

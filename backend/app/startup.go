@@ -2,13 +2,48 @@ package app
 
 import (
 	"context"
+	"os"
 	"time"
+	"path/filepath"
 
+	cdconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+func (a *App) GetDownloadDir() (dirPath string, hasErr bool) {
+	savedDirPath := a.appData.GetString(constants.DOWNLOAD_KEY)
+	if savedDirPath != "" && iofuncs.PathExists(savedDirPath) {
+		return savedDirPath, false
+	}
+
+	desktopDir, err := os.UserHomeDir()
+	if err != nil {
+		logger.MainLogger.Errorf("Error getting user home directory: %w", err)
+		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error getting user home directory!",
+			Message: "Please manually set the download directory in the settings.",
+		})
+		if err != nil {
+			logger.MainLogger.Errorf(
+				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", 
+				err, err,
+			)
+		}	
+		return "", true
+	}
+
+	desktopDir = filepath.Join(desktopDir, "Cultured Downloader")
+	if err := os.MkdirAll(desktopDir, constants.DEFAULT_PERM); err != nil {
+		panic(err)
+	}
+	a.appData.SetString(constants.DOWNLOAD_KEY, desktopDir)
+	return desktopDir, false
+}
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
@@ -42,11 +77,19 @@ func (a *App) Startup(ctx context.Context) {
 	}
 	a.appData = appData
 
-	lang := a.appData.GetString(constants.LanguageKey)
+	userAgent := a.appData.GetString(constants.UserAgentKey)
+	if userAgent == "" {
+		userAgent = cdconst.USER_AGENT
+		a.appData.SetString(constants.UserAgentKey, userAgent)
+	}
+
+	lang := a.appData.GetString(constants.LANGUAGE_KEY)
 	if lang == "" {
 		lang = "en"
 	}
 	a.lang = lang
+
+	
 
 	ticker := time.NewTicker(2 * time.Second) // check for new queues every few second
 	go func() {
@@ -56,11 +99,8 @@ func (a *App) Startup(ctx context.Context) {
 				ticker.Stop()
 				return
 			case <-ticker.C:
-				a.StartNewQueues()
+				a.startNewQueues()
 			}
 		}
 	}()
-
-	// TODO: remove demo queue
-	a.NewDownloadQueue(func(dlProgressBars dlProgressBars) error {return nil})
 }

@@ -16,24 +16,24 @@ import (
 )
 
 const (
-	filename = "data.json"
+	filename   = "data.json"
 	jsonIndent = "    "
 )
 
 type AppData struct {
-	data				map[string]interface{}
-	dataPath			string
-	masterPassword		string // Used as key to encrypt/decrypt the secured data
-	masterPasswordSalt  []byte
-	hashOfMasterPasswordHash	[]byte // Mainly to verify if the master password is correct
-	mu					sync.RWMutex
+	data                     map[string]interface{}
+	dataPath                 string
+	masterPassword           string // Used as key to encrypt/decrypt the secured data
+	masterPasswordSalt       []byte
+	hashOfMasterPasswordHash []byte // Mainly to verify if the master password is correct
+	mu                       sync.RWMutex
 }
 
 func NewAppData() (*AppData, error) {
 	appData := AppData{
-		data:      make(map[string]interface{}),
-		dataPath:  filepath.Join(constants.UserConfigDir, filename),
-		mu:        sync.RWMutex{},
+		data:     make(map[string]interface{}),
+		dataPath: filepath.Join(constants.UserConfigDir, filename),
+		mu:       sync.RWMutex{},
 	}
 	err := appData.loadFromFile()
 	if err != nil {
@@ -107,8 +107,8 @@ func (a *AppData) saveToFile() error {
 		return err
 	}
 
-	os.MkdirAll(constants.UserConfigDir, constants.DefaultPerm)
-	err = os.WriteFile(a.dataPath, jsonData, constants.DefaultPerm)
+	os.MkdirAll(constants.UserConfigDir, constants.DEFAULT_PERM)
+	err = os.WriteFile(a.dataPath, jsonData, constants.DEFAULT_PERM)
 	if err != nil {
 		return err
 	}
@@ -120,13 +120,13 @@ func (a *AppData) saveToFile() error {
 func initialiseSettingsMap() map[string]interface{} {
 	return map[string]interface{}{
 		// General
-		constants.DarkModeKey: false,
-		constants.UsernameKey: "Ojisan",
+		constants.DarkModeKey:       false,
+		constants.UsernameKey:       "Ojisan",
 		constants.ProfilePicPathKey: "",
 
 		// Download preferences
-		constants.DlThumbnailKey: true,
-		constants.DlImagesKey: true,
+		constants.DlThumbnailKey:   true,
+		constants.DlImagesKey:      true,
 		constants.DlAttachmentsKey: true,
 	}
 }
@@ -136,10 +136,10 @@ func (a *AppData) loadFromFile() error {
 	defer a.mu.Unlock()
 
 	var data map[string]interface{}
-	os.MkdirAll(constants.UserConfigDir, constants.DefaultPerm)
+	os.MkdirAll(constants.UserConfigDir, constants.DEFAULT_PERM)
 
 	fileSize, _ := iofuncs.GetFileSize(a.dataPath)
-	if !iofuncs.PathExists(a.dataPath) ||  fileSize == 0 {
+	if !iofuncs.PathExists(a.dataPath) || fileSize == 0 {
 		a.data = initialiseSettingsMap()
 		err := a.saveToFile()
 		return err
@@ -250,7 +250,7 @@ func (a *AppData) ChangeToSecure(key string) error {
 	}
 }
 
-// Decrypt the stored encrypted value with the master password 
+// Decrypt the stored encrypted value with the master password
 // and save the decrypted plaintext STRING to the appData
 func (a *AppData) ChangeToPlaintext(key string) error {
 	a.mu.Lock()
@@ -266,7 +266,7 @@ func (a *AppData) ChangeToPlaintext(key string) error {
 	} else {
 		decodedBytes, err := base64.StdEncoding.DecodeString(encodedEncryptedField)
 		if err != nil {
-			return errors.Wrap(err, "error decoding base64 string for data key " + key)
+			return errors.Wrap(err, "error decoding base64 string for data key "+key)
 		}
 
 		plaintext, err := a.DecryptWithPassword(decodedBytes, a.masterPasswordSalt, a.masterPassword)

@@ -81,8 +81,8 @@
                         <Modal bind:open={inputModalsId[dlQ.Id]} title="Your Inputs" id="view-inputs-{dlQ.Id}" size="md" autoclose>
                             <Table hoverable={false} shadow={true}>
                                 <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
-                                    <TableHeadCell>Input</TableHeadCell>
-                                    <TableHeadCell>Parsed URL (*may be inaccurate)</TableHeadCell>
+                                    <TableHeadCell>{Translate("Input")}</TableHeadCell>
+                                    <TableHeadCell>{Translate("Parsed URL (*may be inaccurate)")}</TableHeadCell>
                                 </TableHead>
                                 <TableBody tableBodyClass="divide-y">
                                     <TableBodyRow>
@@ -125,8 +125,8 @@
                         <!-- TODO: nested progress bar -->
                         {#if dlQ.ProgressBar?.NestedProgBars.length > 0}
                             <div class="text-right mt-2">
-                                <button type="button" id="view-prog-{dlQ.Id}" on:click={() => {progHistoryModalsId[dlQ.Id] = true}} class="btn-text-info">
-                                    View More...
+                                <button type="button" class="btn-text-info text-xs" id="view-prog-{dlQ.Id}" on:click={() => {progHistoryModalsId[dlQ.Id] = true}}>
+                                    {Translate("View previous tasks...")}
                                 </button>
                             </div>
                             <Modal bind:open={progHistoryModalsId[dlQ.Id]} title="Tasks History" id="view-prog-{dlQ.Id}" size="md" autoclose>
@@ -170,12 +170,11 @@
                     </TableBodyCell>
 
                     <TableBodyCell tdClass="text-center">
-                        <!-- TODO: remove the ! in the condition check after testing -->
-                        {#if !dlQ.ProgressBar.Finished}
+                        {#if dlQ.ProgressBar.Finished}
                             <button type="button" id="view-{dlQ.Id}" on:click={() => BrowserOpenURL(dlQ.ProgressBar.FolderPath)} class="view btn btn-success">
                                 <FolderSolid />
                             </button>
-                            <Tooltip triggeredBy="#view-{dlQ.Id}">View Downloaded Files</Tooltip>
+                            <Tooltip triggeredBy="#view-{dlQ.Id}">{Translate("View Downloaded Files")}</Tooltip>
                         {:else}
                             <button type="button" class="btn-text-info" id="details-{dlQ.Id}" on:click={() => {modalsId[dlQ.Id] = true}}>
                                 <NewspaperSolid />
@@ -186,16 +185,16 @@
                             <button type="button" class="btn-text-danger" id="remove-{dlQ.Id}">
                                 <TrashBinSolid />
                             </button>
-                            <Tooltip triggeredBy="#details-{dlQ.Id}">View Download Details</Tooltip>
-                            <Tooltip triggeredBy="#stop-{dlQ.Id}">Stop Download</Tooltip>
-                            <Tooltip triggeredBy="#remove-{dlQ.Id}">Remove from Queue</Tooltip>
+                            <Tooltip triggeredBy="#details-{dlQ.Id}">{Translate("View Download Details")}</Tooltip>
+                            <Tooltip triggeredBy="#stop-{dlQ.Id}">{Translate("Stop Download")}</Tooltip>
+                            <Tooltip triggeredBy="#remove-{dlQ.Id}">{Translate("Remove from Queue")}</Tooltip>
 
                             <Modal bind:open={modalsId[dlQ.Id]} title="Download Details" id="view-details-{dlQ.Id}" size="lg" autoclose>
                                 <Table hoverable={false} shadow={true}>
                                     <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
-                                        <TableHeadCell>Filename</TableHeadCell>
-                                        <TableHeadCell>Download Speed</TableHeadCell>
-                                        <TableHeadCell>Progress/ETA</TableHeadCell>
+                                        <TableHeadCell>{Translate("Filename")}</TableHeadCell>
+                                        <TableHeadCell>{Translate("Download Speed")}</TableHeadCell>
+                                        <TableHeadCell>{Translate("Progress/ETA")}</TableHeadCell>
                                     </TableHead>
                                     <TableBody tableBodyClass="divide-y">
                                         {#each dlQ.DlProgressBars as dlDetails}
@@ -220,11 +219,11 @@
                                                         <div class="flex justify-between mb-1">
                                                             <span class="font-medium pr-2">
                                                                 {#if dlDetails.DownloadETA > 60}
-                                                                    {(parseFloat(dlDetails.DownloadETA)/ 60).toFixed(2)} minutes
+                                                                    {(parseFloat(dlDetails.DownloadETA)/ 60).toFixed(2)} {Translate("minutes").toLocaleLowerCase()}
                                                                 {:else if dlDetails.DownloadETA == 0}
-                                                                    Downloaded!
+                                                                    {Translate("Downloaded!")}
                                                                 {:else}
-                                                                    {parseFloat(dlDetails.DownloadETA).toFixed(2)} seconds
+                                                                    {parseFloat(dlDetails.DownloadETA).toFixed(2)} {Translate("seconds").toLocaleLowerCase()}
                                                                 {/if}
                                                             </span>
                                                         </div>
