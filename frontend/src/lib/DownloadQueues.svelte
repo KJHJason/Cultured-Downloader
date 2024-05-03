@@ -49,6 +49,10 @@
         // make a polling request to get the download queues
         setInterval(async () => {
             const retrievedQueues = await GetDownloadQueues();
+            console.log(retrievedQueues);
+            if (retrievedQueues === null) {
+                return;
+            }
 
             modalLogic(modalsId, retrievedQueues);
             modalLogic(progHistoryModalsId, retrievedQueues);
@@ -69,6 +73,13 @@
             <TableHeadCell>{Translate("Actions")}</TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
+            {#if downloadQueues.length === 0}
+                <TableBodyRow>
+                    <TableBodyCell tdClass="text-center p-3" colspan="4">
+                        {Translate("There are no download queues at the moment.")}
+                    </TableBodyCell>
+                </TableBodyRow>
+            {:else}
             {#each downloadQueues as dlQ}
                 <TableBodyRow>
                     <TableBodyCell>
@@ -118,12 +129,14 @@
                             <Progressbar progress="100" color="green" animate={true} />
                         {:else if hasError}
                             <Progressbar progress="100" color="red" animate={true} />
+                        {:else if dlQ.ProgressBar.IsSpinner}
+                            <Spinner color="blue" />
                         {:else}
                             <Progressbar progress="{dlQ.ProgressBar.Percentage}" color="blue" animate={true} />
                         {/if}
 
                         <!-- TODO: nested progress bar -->
-                        {#if dlQ.ProgressBar?.NestedProgBars.length > 0}
+                        {#if dlQ.NestedProgressBar.length > 0}
                             <div class="text-right mt-2">
                                 <button type="button" class="btn-text-info text-xs" id="view-prog-{dlQ.Id}" on:click={() => {progHistoryModalsId[dlQ.Id] = true}}>
                                     {Translate("View previous tasks...")}
@@ -136,7 +149,7 @@
                                         <TableHeadCell>{Translate("Progress")}</TableHeadCell>
                                     </TableHead>
                                     <TableBody tableBodyClass="divide-y">
-                                        {#each dlQ.ProgressBar.NestedProgBars as nestedProgBar}
+                                        {#each dlQ.NestedProgressBar as nestedProgBar}
                                             <TableBodyRow>
                                                 <TableBodyCell>
                                                     {makeDateTimeReadable(nestedProgBar.DateTime, true)}
@@ -197,6 +210,13 @@
                                         <TableHeadCell>{Translate("Progress/ETA")}</TableHeadCell>
                                     </TableHead>
                                     <TableBody tableBodyClass="divide-y">
+                                        {#if dlQ.DlProgressBars.length === 0}
+                                            <TableBodyRow>
+                                                <TableBodyCell tdClass="text-center p-3" colspan="3">
+                                                    {Translate("Nothing here!")}
+                                                </TableBodyCell>
+                                            </TableBodyRow>
+                                        {:else}
                                         {#each dlQ.DlProgressBars as dlDetails}
                                             <TableBodyRow>
                                                 <TableBodyCell>
@@ -209,12 +229,12 @@
                                                     </span>
                                                 </TableBodyCell>
                                                 <TableBodyCell>
-                                                    <span>{parseFloat(dlDetails.DownloadSpeed).toFixed(2)}</span>
+                                                    <span>{parseFloat(dlDetails.DownloadSpeed).toFixed(2)} MB/s</span>
                                                 </TableBodyCell>
                                                 <TableBodyCell>
                                                     {#if dlDetails.DownloadETA == -1}
                                                         <Spinner color="yellow" />
-                                                        <span class="pl-2">Unknown ETA...</span>
+                                                        <span class="pl-2">{Translate("Unknown ETA...")}</span>
                                                     {:else}
                                                         <div class="flex justify-between mb-1">
                                                             <span class="font-medium pr-2">
@@ -227,11 +247,19 @@
                                                                 {/if}
                                                             </span>
                                                         </div>
-                                                        <Progressbar progress="{dlDetails.Percentage}" color="blue" animate={true} />
+
+                                                        {#if dlDetails.Finished}
+                                                            <Progressbar progress="100" color="green" animate={true} />
+                                                        {:else if dlDetails.HasError}
+                                                            <Progressbar progress="100" color="red" animate={true} />
+                                                        {:else}
+                                                            <Progressbar progress="{dlDetails.Percentage}" color="blue" animate={true} />
+                                                        {/if}
                                                     {/if}
                                                 </TableBodyCell>
                                             </TableBodyRow>
                                         {/each}
+                                        {/if}
                                     </TableBody>
                                 </Table>
                             </Modal>
@@ -239,6 +267,7 @@
                     </TableBodyCell>
                 </TableBodyRow>
             {/each}
+            {/if}
         </TableBody>
     </Table>
 </div>

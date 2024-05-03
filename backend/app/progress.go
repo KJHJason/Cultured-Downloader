@@ -23,7 +23,7 @@ type ProgressBar struct {
 	Percentage     int
 	FolderPath     string
 	DateTime       time.Time
-	NestedProgBars []NestedProgressBar
+	nestedProgBars []NestedProgressBar
 
 	// download progress bars for more detailed information
 	DownloadProgressBars []*progress.DownloadProgressBar
@@ -39,6 +39,9 @@ type NestedProgressBar struct {
 	SuccessMsg string
 	ErrMsg 	   string
 
+	IsSpinner  bool
+
+	Count      int
 	HasError   bool
 	Finished   bool
 	Percentage int
@@ -60,7 +63,7 @@ func NewProgressBar(ctx context.Context) *ProgressBar {
 		HasError:       false,
 		Percentage:     0,
 		DateTime:       time.Now().UTC(),
-		NestedProgBars: []NestedProgressBar{},
+		nestedProgBars: []NestedProgressBar{},
 
 		count:    0,
 		active:   false,
@@ -108,6 +111,18 @@ func (p *ProgressBar) SetToProgressBar() {
 	p.IsSpinner = false
 }
 
+func (p *ProgressBar) GetIsSpinner() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.IsSpinner
+}
+
+func (p *ProgressBar) GetIsProgBar() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return !p.IsSpinner
+}
+
 func (p *ProgressBar) StopInterrupt(errMsg string) {
 	p.UpdateErrorMsg(errMsg)
 	p.Stop(true)
@@ -146,10 +161,12 @@ func (p *ProgressBar) SnapshotTask() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.NestedProgBars = append(p.NestedProgBars, NestedProgressBar{
+	p.nestedProgBars = append(p.nestedProgBars, NestedProgressBar{
 		Msg:        p.msg,
 		SuccessMsg: p.successMsg,
 		ErrMsg:     p.errMsg,
+		IsSpinner:  p.IsSpinner,
+		Count:      p.Count,
 		HasError:   p.HasError,
 		Percentage: p.Percentage,
 		DateTime:   time.Now().UTC(),

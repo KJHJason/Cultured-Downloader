@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"time"
+	"fmt"
 	"path/filepath"
 
 	cdconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
@@ -14,27 +15,16 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) GetDownloadDir() (dirPath string, hasErr bool) {
+func (a *App) GetDownloadDir() (dirPath string, err error) {
 	savedDirPath := a.appData.GetString(constants.DOWNLOAD_KEY)
 	if savedDirPath != "" && iofuncs.PathExists(savedDirPath) {
-		return savedDirPath, false
+		return savedDirPath, nil
 	}
 
 	desktopDir, err := os.UserHomeDir()
 	if err != nil {
 		logger.MainLogger.Errorf("Error getting user home directory: %w", err)
-		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.ErrorDialog,
-			Title:   "Error getting user home directory!",
-			Message: "Please manually set the download directory in the settings.",
-		})
-		if err != nil {
-			logger.MainLogger.Errorf(
-				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", 
-				err, err,
-			)
-		}	
-		return "", true
+		return "", fmt.Errorf("error getting user home directory: %w\nPlease manually set the download directory in the settings.", err)
 	}
 
 	desktopDir = filepath.Join(desktopDir, "Cultured Downloader")
@@ -42,7 +32,7 @@ func (a *App) GetDownloadDir() (dirPath string, hasErr bool) {
 		panic(err)
 	}
 	a.appData.SetString(constants.DOWNLOAD_KEY, desktopDir)
-	return desktopDir, false
+	return desktopDir, nil
 }
 
 // startup is called when the app starts. The context is saved
@@ -89,9 +79,7 @@ func (a *App) Startup(ctx context.Context) {
 	}
 	a.lang = lang
 
-	
-
-	ticker := time.NewTicker(2 * time.Second) // check for new queues every few second
+	ticker := time.NewTicker(1 * time.Second) // check for new queues every few second
 	go func() {
 		for {
 			select {

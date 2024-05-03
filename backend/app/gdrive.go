@@ -31,6 +31,11 @@ func (a *App) GetGdriveClient() *gdrive.GDrive {
 	}
 
 	credJson := a.appData.GetSecuredBytes(constants.GdriveServiceAccKey)
+	if len(credJson) == 0 {
+		logger.MainLogger.Infof("No GDrive API key or service account credentials found.")
+		return nil
+	}
+
 	gdriveClient, err := gdrive.GetNewGDrive(
 		a.ctx,
 		"",

@@ -3,9 +3,9 @@ package app
 import (
 	"container/list"
 	"context"
+	"fmt"
+	"strings"
 	"sync"
-
-	"time"
 
 	cdlConst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
@@ -39,7 +39,6 @@ func releaseWorker(website string) {
 	}
 }
 
-type dlProgressBars []*progress.DownloadProgressBar
 type taskHandlerFunc func() []*error
 
 type Input struct {
@@ -55,31 +54,37 @@ type DownloadQueue struct {
 	cancel      context.CancelFunc
 	website     string
 	taskHandler taskHandlerFunc // function to handle the API request and downloads
+	active      bool
 	finished    bool
 	mu          sync.Mutex
+	errSlice    []*error
 
 	// for frontend
-	inputs []Input
+	inputs          []Input
 	mainProgressBar *ProgressBar
-	dlProgressBars  dlProgressBars
+	dlProgressBars  *[]*progress.DownloadProgressBar
 }
 
 type FrontendDownloadQueue struct {
-	Id             int
-	Website        string
-	Msg            string
-	SuccessMsg     string
-	ErrMsg         string
-	Inputs         []Input
-	ProgressBar    *ProgressBar
-	DlProgressBars []FrontendDownloadDetails
-	Finished       bool
+	Id                int
+	Website           string
+	Msg               string
+	SuccessMsg        string
+	ErrMsg            string
+	ErrSlice          []*error
+	Inputs            []Input
+	ProgressBar       *ProgressBar
+	NestedProgressBar []NestedProgressBar
+	DlProgressBars    []FrontendDownloadDetails
+	Finished          bool
 }
 
 type FrontendDownloadDetails struct {
 	Msg           string
 	SuccessMsg    string
 	ErrMsg        string
+	Finished      bool
+	HasError      bool
 	Filename      string
 	DownloadSpeed float64
 	DownloadETA   float64
@@ -92,7 +97,7 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 	for e := app.downloadQueues.Back(); e != nil; e = e.Prev() {
 		val := e.Value.(*DownloadQueue)
 
-		derefDlDetails := val.dlProgressBars
+		derefDlDetails := *val.dlProgressBars
 		dlDetailsLen := len(derefDlDetails)
 		dlDetails := make([]FrontendDownloadDetails, dlDetailsLen)
 		if dlDetailsLen > 0 {
@@ -105,6 +110,8 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 					Msg:           dlProg.GetMsg(),
 					SuccessMsg:    dlProg.GetSuccessMsg(),
 					ErrMsg:        dlProg.GetErrMsg(),
+					Finished:      dlProg.IsFinished(),
+					HasError:      dlProg.HasError(),
 					Filename:      dlProg.GetFilename(),
 					DownloadSpeed: dlProg.GetDownloadSpeed(),
 					DownloadETA:   dlProg.GetDownloadETA(),
@@ -114,22 +121,41 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 			}
 		}
 
+		nestedProgressBar := make([]NestedProgressBar, len(val.mainProgressBar.nestedProgBars))
+		for idx, val := range val.mainProgressBar.nestedProgBars {
+			if val.IsSpinner || !strings.Contains(val.Msg, "%d") {
+				nestedProgressBar[idx] = val
+				continue
+			}
+
+			nestedProgressBar[idx].Msg = fmt.Sprintf(val.Msg, val.Count)
+		}
+
+		var msg string
+		if !val.mainProgressBar.GetIsSpinner() && strings.Contains(val.mainProgressBar.msg, "%d") {
+			msg = fmt.Sprintf(val.mainProgressBar.msg, val.mainProgressBar.count)
+		} else {
+			msg = val.mainProgressBar.msg
+		}
+
 		queues = append(queues, FrontendDownloadQueue{
-			Id:             val.id,
-			Website:        val.website,
-			Msg:            val.mainProgressBar.msg,
-			SuccessMsg:     val.mainProgressBar.successMsg,
-			ErrMsg:         val.mainProgressBar.errMsg,
-			Inputs:         val.inputs,
-			ProgressBar:    val.mainProgressBar,
-			DlProgressBars: dlDetails,
-			Finished:       val.finished,
+			Id:                val.id,
+			Website:           val.website,
+			Msg:               msg,
+			SuccessMsg:        val.mainProgressBar.successMsg,
+			ErrMsg:            val.mainProgressBar.errMsg,
+			ErrSlice:          val.errSlice,
+			Inputs:            val.inputs,
+			ProgressBar:       val.mainProgressBar,
+			NestedProgressBar: nestedProgressBar,
+			DlProgressBars:    dlDetails,
+			Finished:          val.finished,
 		})
 	}
 	return queues
 }
 
-func (app *App) newDownloadQueue(inputs []Input, mainProgBar *ProgressBar, taskHandler taskHandlerFunc) *DownloadQueue {
+func (app *App) newDownloadQueue(website string, inputs []Input, mainProgBar *ProgressBar, dlProgressBars *[]*progress.DownloadProgressBar, taskHandler taskHandlerFunc) *DownloadQueue {
 	id := count
 	ctx, cancel := context.WithCancel(app.ctx)
 	count++
@@ -138,11 +164,12 @@ func (app *App) newDownloadQueue(inputs []Input, mainProgBar *ProgressBar, taskH
 		id:              id,
 		ctx:             ctx,
 		cancel:          cancel,
-		website:         cdlConst.FANTIA,
+		website:         website,
 		taskHandler:     taskHandler,
+		active:          false,
 		finished:        false,
 		mainProgressBar: mainProgBar,
-		dlProgressBars:  []*progress.DownloadProgressBar{},
+		dlProgressBars:  dlProgressBars,
 		mu:              sync.Mutex{},
 		inputs:          inputs,
 	}
@@ -193,13 +220,10 @@ func (app *App) DeleteQueue(id int) {
 }
 
 func (app *App) startNewQueues() {
-	workerMu.Lock()
-	defer workerMu.Unlock()
-
 	// loop through the doubly linked list of download queues
 	for e := app.downloadQueues.Front(); e != nil; e = e.Next() {
 		dq := e.Value.(*DownloadQueue)
-		if dq.mainProgressBar.active || dq.finished {
+		if active, finished := dq.GetStatus(); active || finished {
 			continue
 		}
 
@@ -225,6 +249,7 @@ func (app *App) startNewQueues() {
 			continue
 		}
 
+		workerMu.Lock()
 		switch website {
 		case cdlConst.FANTIA:
 			fantiaWorking++
@@ -235,6 +260,7 @@ func (app *App) startNewQueues() {
 		case cdlConst.KEMONO:
 			kemonoWorking++
 		}
+		workerMu.Unlock()
 
 		go dq.Start()
 	}
@@ -244,19 +270,31 @@ func (q *DownloadQueue) releaseWorker() {
 	releaseWorker(q.website)
 }
 
-func (q *DownloadQueue) Start() {
-	// TODO: call the taskHandler function in a goroutine and handle releaseWorker and change finished to true
-	// err := q.taskHandler(q.dlProgressBars)
+func (q *DownloadQueue) GetStatus() (active bool, finished bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.active, q.finished
+}
 
-	prog := q.mainProgressBar
-	prog.Start()
+func (q *DownloadQueue) setActive(active bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.active = active
+}
+
+func (q *DownloadQueue) SetFinished(finished bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.finished = finished
+}
+
+func (q *DownloadQueue) Start() {
+	q.setActive(true)
 	go func() {
-		for range 10 {
-			time.Sleep(5 * time.Second)
-			prog.Increment()
-		}
-		prog.Stop(false)
-		q.finished = true
+		q.errSlice = q.taskHandler()
+		q.releaseWorker()
+		q.SetFinished(true)
+		q.setActive(false)
 	}()
 }
 

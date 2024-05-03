@@ -14,7 +14,7 @@ export function DeleteQueue(arg1:number):Promise<void>;
 
 export function GetDarkMode():Promise<boolean>;
 
-export function GetDownloadDir():Promise<string|boolean>;
+export function GetDownloadDir():Promise<string>;
 
 export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 

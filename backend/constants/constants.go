@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	PROGRAM_NAME                = "Cultured Downloader"
 	DEFAULT_PERM                = 0755
 	LOCAL_USER_ASSET_DIR_NAME   = "assets"
 	LANGUAGE_KEY                = "lang"
