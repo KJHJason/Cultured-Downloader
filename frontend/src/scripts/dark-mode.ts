@@ -1,5 +1,25 @@
 import { GetDarkMode, SetDarkMode } from "./wailsjs/go/app/App";
 
+const linkId = "swal-theme-link";
+const ToggleCSSThemes = (isDarkMode: boolean): void => {
+    const existingLink = document.getElementById(linkId);
+    if (existingLink) {
+        existingLink.remove();
+    }
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.id = linkId;
+
+    // Note: Using cdn instead of using imports via node.js due to how wails compiles the frontend assets in production env
+    if (isDarkMode) {
+        link.href = "https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@latest/dark.css";
+    } else {
+        link.href = "https://cdn.jsdelivr.net/npm/@sweetalert2/theme-default@latest/default.css";
+    }
+    document.head.appendChild(link);
+}
+
 // when domcontentloaded, check if dark mode is enabled
 export const InitialiseDarkModeConfig = async (): Promise<void> => {
     // from https://flowbite.com/docs/customize/dark-mode/#content
@@ -21,6 +41,7 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
         themeToggleBtnText.textContent = "Dark Mode";
         document.documentElement.classList.remove("dark");
     }
+    ToggleCSSThemes(isDarkMode)
 
     const themeToggleBtn = document.getElementById("theme-toggle") as HTMLElement;
     if (!themeToggleBtn) {
@@ -32,14 +53,15 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
         themeToggleDarkIcon.classList.toggle("hidden");
         themeToggleLightIcon.classList.toggle("hidden");
 
-        if (document.documentElement.classList.contains("dark")) {
+        const isCurrentlyDarkMode = document.documentElement.classList.contains("dark");
+        if (isCurrentlyDarkMode) {
             document.documentElement.classList.remove("dark");
-            themeToggleBtnText.textContent = "Dark Mode";
-            await SetDarkMode(false);
-            return;
-        } 
-        document.documentElement.classList.add("dark");
-        themeToggleBtnText.textContent = "Light Mode";
-        await SetDarkMode(true);
+            themeToggleBtnText.textContent = "Dark Mode"; // text for the user to change back to dark mode
+        } else {
+            document.documentElement.classList.add("dark");
+            themeToggleBtnText.textContent = "Light Mode"; // text for the user to change back to light mode
+        }
+        ToggleCSSThemes(!isCurrentlyDarkMode);
+        await SetDarkMode(!isCurrentlyDarkMode);
     });
 };
