@@ -5,7 +5,7 @@ import (
 )
 
 func validatePixivTag(tag *string) (valid bool, pageNum string) {
-	// split by ";" and get the last element, 
+	// split by ";" and get the last element,
 	// for the other elements, just join them back with ";"
 	splitTag := strings.Split(*tag, ";")
 	if len(splitTag) == 0 {

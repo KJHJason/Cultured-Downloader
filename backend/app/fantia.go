@@ -2,8 +2,10 @@ package app
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic"
+	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/fantia"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
@@ -14,7 +16,7 @@ import (
 
 func validateFantiaUrls(inputs []string) (bool, []Input, *fantia.FantiaDl) {
 	fantiaDl := fantia.FantiaDl{}
-	inputsForRef := make([]Input, len(inputs)) 
+	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
 		creatorUrlMatch := cdlconsts.FANTIA_CREATOR_URL_REGEX.FindStringSubmatch(input)
 		postUrlMatch := cdlconsts.FANTIA_POST_URL_REGEX.FindStringSubmatch(input)
@@ -55,7 +57,7 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar,err error) {
+func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
 	fantiaSession := a.appData.GetSecuredString(constants.FantiaCookieValueKey)
 	downloadPath, err := a.GetDownloadDir()
 	if err != nil {
@@ -68,16 +70,21 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 	}
 
 	mainProgBar = NewProgressBar(a.ctx)
+	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.FANTIA_TITLE)
+	os.MkdirAll(baseDlDirPath, constants.DEFAULT_PERM)
+	mainProgBar.UpdateFolderPath(baseDlDirPath)
+
 	fantiaDlOptions = &fantia.FantiaDlOptions{
-		DlThumbnails: settings["DlPostThumbnail"],
-		DlImages: settings["DlPostImages"],
-		DlAttachments: settings["DlPostAttachments"],
-		DlGdrive: settings["DlGDrive"],
+		DlThumbnails:        settings["DlPostThumbnail"],
+		DlImages:            settings["DlPostImages"],
+		DlAttachments:       settings["DlPostAttachments"],
+		DlGdrive:            settings["DlGDrive"],
+		BaseDownloadDirPath: baseDlDirPath,
 
 		GdriveClient: a.GetGdriveClient(),
 
 		Configs: &configs.Config{
-			DownloadPath: downloadPath,
+			DownloadPath:   downloadPath,
 			FfmpegPath:     "",
 			OverwriteFiles: settings["OverwriteFiles"],
 			LogUrls:        settings["DetectOtherLinks"],
@@ -85,7 +92,7 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 		},
 
 		SessionCookieId: fantiaSession,
-		SessionCookies: nil,
+		SessionCookies:  nil,
 
 		Notifier: notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME),
 
@@ -98,7 +105,7 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 		return nil, nil, err
 	}
 	return fantiaDlOptions, mainProgBar, nil
-} 
+}
 
 func (a *App) SubmitFantiaToQueue(inputs []string, settings map[string]bool) error {
 	valid, inputsForRef, fantiaDl := validateFantiaUrls(inputs)
@@ -111,10 +118,11 @@ func (a *App) SubmitFantiaToQueue(inputs []string, settings map[string]bool) err
 		return errors.New("error getting download directory")
 	}
 
-	a.newDownloadQueue(cdlconsts.FANTIA, inputsForRef, mainProgBar, fantiaDlOptions.DownloadProgressBars, func() []*error {
+	a.newDownloadQueue(cdlconsts.FANTIA, inputsForRef, mainProgBar, fantiaDlOptions.DownloadProgressBars, func() []error {
 		defer fantiaDlOptions.Notifier.Release()
 
-		errSlice := cdlogic.FantiaDownloadProcess(fantiaDl, fantiaDlOptions)		
+		errSlice := cdlogic.FantiaDownloadProcess(fantiaDl, fantiaDlOptions)
+		mainProgBar.MakeLatestSnapshotMain()
 		return errSlice
 	})
 	return nil

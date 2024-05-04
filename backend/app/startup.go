@@ -23,8 +23,8 @@ func (a *App) GetDownloadDir() (dirPath string, err error) {
 
 	desktopDir, err := os.UserHomeDir()
 	if err != nil {
-		logger.MainLogger.Errorf("Error getting user home directory: %w", err)
-		return "", fmt.Errorf("error getting user home directory: %w\nPlease manually set the download directory in the settings.", err)
+		logger.MainLogger.Errorf("Error getting user home directory: %v", err)
+		return "", fmt.Errorf("error getting user home directory: %w\nPlease manually set the download directory in the settings", err)
 	}
 
 	desktopDir = filepath.Join(desktopDir, "Cultured Downloader")

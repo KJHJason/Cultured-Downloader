@@ -75,7 +75,7 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
 
 3. As a user of this program, you must never share any data such as your cookie files to other people. This is not permissible as it may cause damages to the artists that you are downloading from. If you have been found to be sharing YOUR data or using OTHER people's data, this program and the developer(s) will not be liable for the damages caused but the user(s) involved will be.
 
-4. Users that are using this program MUST agree to the terms and conditions stated above. If you do not agree to the terms and conditions, you may not edit the code or use this program.
+4. By using this program, you agree to the terms and conditions stated above. If you do not agree to the terms and conditions, you are not permitted to for the repository, edit the source code, or use this program.
 
 ## Features
 

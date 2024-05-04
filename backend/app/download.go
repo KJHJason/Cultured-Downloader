@@ -39,7 +39,7 @@ func releaseWorker(website string) {
 	}
 }
 
-type taskHandlerFunc func() []*error
+type taskHandlerFunc func() []error
 
 type Input struct {
 	id      string
@@ -57,7 +57,7 @@ type DownloadQueue struct {
 	active      bool
 	finished    bool
 	mu          sync.Mutex
-	errSlice    []*error
+	errSlice    []error
 
 	// for frontend
 	inputs          []Input
@@ -71,7 +71,7 @@ type FrontendDownloadQueue struct {
 	Msg               string
 	SuccessMsg        string
 	ErrMsg            string
-	ErrSlice          []*error
+	ErrSlice          []error
 	Inputs            []Input
 	ProgressBar       *ProgressBar
 	NestedProgressBar []NestedProgressBar
@@ -121,30 +121,37 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 			}
 		}
 
-		nestedProgressBar := make([]NestedProgressBar, len(val.mainProgressBar.nestedProgBars))
-		for idx, val := range val.mainProgressBar.nestedProgBars {
-			if val.IsSpinner || !strings.Contains(val.Msg, "%d") {
-				nestedProgressBar[idx] = val
-				continue
-			}
+		// since the latest/main progress bar is at the end of the slice
+		var nestedProgressBar []NestedProgressBar
+		nestedProgBarLen := len(val.mainProgressBar.nestedProgBars)
+		if nestedProgBarLen > 0 {
+			lastElIdx := nestedProgBarLen - 1
+			nestedProgressBar = make([]NestedProgressBar, lastElIdx)
+			for idx, val := range val.mainProgressBar.nestedProgBars {
+				if idx == lastElIdx {
+					break
+				}
 
-			nestedProgressBar[idx].Msg = fmt.Sprintf(val.Msg, val.Count)
+				nestedProgressBar[idx] = val
+				if val.IsSpinner || !strings.Contains(val.Msg, "%d") {
+					continue
+				}
+				nestedProgressBar[idx].Msg = fmt.Sprintf(val.Msg, val.Count)
+			}
 		}
 
-		var msg string
-		if !val.mainProgressBar.GetIsSpinner() && strings.Contains(val.mainProgressBar.msg, "%d") {
-			msg = fmt.Sprintf(val.mainProgressBar.msg, val.mainProgressBar.count)
-		} else {
-			msg = val.mainProgressBar.msg
+		msg := val.mainProgressBar.GetBaseMsg()
+		if !val.mainProgressBar.GetIsSpinner() && strings.Contains(msg, "%d") {
+			msg = fmt.Sprintf(msg, val.mainProgressBar.count)
 		}
 
 		queues = append(queues, FrontendDownloadQueue{
 			Id:                val.id,
 			Website:           val.website,
 			Msg:               msg,
-			SuccessMsg:        val.mainProgressBar.successMsg,
-			ErrMsg:            val.mainProgressBar.errMsg,
-			ErrSlice:          val.errSlice,
+			SuccessMsg:        val.mainProgressBar.GetSuccessMsg(),
+			ErrMsg:            val.mainProgressBar.GetErrorMsg(),
+			ErrSlice:          val.GetErrSlice(),
 			Inputs:            val.inputs,
 			ProgressBar:       val.mainProgressBar,
 			NestedProgressBar: nestedProgressBar,
@@ -288,10 +295,23 @@ func (q *DownloadQueue) SetFinished(finished bool) {
 	q.finished = finished
 }
 
+func (q *DownloadQueue) UpdateErrSlice(errSlice []error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.errSlice = errSlice
+}
+
+func (q *DownloadQueue) GetErrSlice() []error {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.errSlice
+}
+
 func (q *DownloadQueue) Start() {
 	q.setActive(true)
 	go func() {
-		q.errSlice = q.taskHandler()
+		errSlice := q.taskHandler()
+		q.UpdateErrSlice(errSlice)
 		q.releaseWorker()
 		q.SetFinished(true)
 		q.setActive(false)

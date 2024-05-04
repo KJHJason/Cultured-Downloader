@@ -43,7 +43,6 @@ type NestedProgressBar struct {
 
 	Count      int
 	HasError   bool
-	Finished   bool
 	Percentage int
 	DateTime   time.Time
 }
@@ -134,6 +133,12 @@ func (p *ProgressBar) UpdateBaseMsg(msg string) {
 	p.msg = msg
 }
 
+func (p *ProgressBar) GetBaseMsg() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.msg
+}
+
 func (p *ProgressBar) UpdateMax(max int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -151,10 +156,22 @@ func (p *ProgressBar) UpdateSuccessMsg(successMsg string) {
 	p.successMsg = successMsg
 }
 
+func (p *ProgressBar) GetSuccessMsg() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.successMsg
+}
+
 func (p *ProgressBar) UpdateErrorMsg(errMsg string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.errMsg = errMsg
+}
+
+func (p *ProgressBar) GetErrorMsg() string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.errMsg
 }
 
 func (p *ProgressBar) SnapshotTask() {
@@ -172,7 +189,7 @@ func (p *ProgressBar) SnapshotTask() {
 		DateTime:   time.Now().UTC(),
 	})
 
-	p.Count = p.count
+	p.Count = 0
 	p.count = 0
 	p.MaxCount = 0
 	p.maxCount = 0
@@ -181,6 +198,24 @@ func (p *ProgressBar) SnapshotTask() {
 	p.Finished = false
 	p.HasError = false
 	p.Percentage = 0
+}
+
+func (p *ProgressBar) MakeLatestSnapshotMain() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.nestedProgBars) == 0 {
+		return
+	}
+
+	latest := p.nestedProgBars[len(p.nestedProgBars)-1]
+	p.msg        = latest.Msg
+	p.successMsg = latest.SuccessMsg
+	p.errMsg     = latest.ErrMsg
+	p.IsSpinner  = latest.IsSpinner
+	p.Count      = latest.Count
+	p.HasError   = latest.HasError
+	p.Percentage = latest.Percentage
+	p.DateTime   = latest.DateTime
 }
 
 func (p *ProgressBar) UpdateFolderPath(folderPath string) {
