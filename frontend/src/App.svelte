@@ -130,11 +130,11 @@
         {#await InitialiseLanguage()}
             <Spinner color="blue" />
         {:then}
-            <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
+            <Settings username={username} handleActionChange={handleActionChange} />
             <!-- <Fantia /> -->
             <!-- <Pixiv /> -->
             <!-- <DownloadQueues/> -->
-            {#if action === actions.Home}
+            <!-- {#if action === actions.Home}
                 <Home/>
             {:else if action === actions.Fantia}
                 <Fantia/>
@@ -150,7 +150,7 @@
                 <Settings username={username} handleActionChange={handleActionChange} />
             {:else}
                 <p>Not implemented yet</p>
-            {/if}
+            {/if} -->
         {:catch error}
             <p>Unexpected error!: {error.message}</p>
         {/await}

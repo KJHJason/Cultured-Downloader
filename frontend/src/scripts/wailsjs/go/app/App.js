@@ -82,12 +82,20 @@ export function SetPreferences(arg1, arg2) {
   return window['go']['app']['App']['SetPreferences'](arg1, arg2);
 }
 
+export function SetSessionValue(arg1, arg2) {
+  return window['go']['app']['App']['SetSessionValue'](arg1, arg2);
+}
+
 export function SetUsername(arg1) {
   return window['go']['app']['App']['SetUsername'](arg1);
 }
 
 export function SubmitFantiaToQueue(arg1, arg2) {
   return window['go']['app']['App']['SubmitFantiaToQueue'](arg1, arg2);
+}
+
+export function UploadCookieFile(arg1) {
+  return window['go']['app']['App']['UploadCookieFile'](arg1);
 }
 
 export function UploadProfilePic(arg1) {

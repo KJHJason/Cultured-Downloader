@@ -44,9 +44,13 @@ export function SetMasterPassword(arg1:string):Promise<void>;
 
 export function SetPreferences(arg1:string,arg2:appdata.Preferences):Promise<void>;
 
+export function SetSessionValue(arg1:string,arg2:string):Promise<void>;
+
 export function SetUsername(arg1:string):Promise<void>;
 
 export function SubmitFantiaToQueue(arg1:Array<string>,arg2:{[key: string]: boolean}):Promise<void>;
+
+export function UploadCookieFile(arg1:string):Promise<void>;
 
 export function UploadProfilePic(arg1:string):Promise<void>;
 

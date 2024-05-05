@@ -64,10 +64,7 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 		return nil, nil, err
 	}
 
-	userAgent := a.appData.GetString(constants.UserAgentKey)
-	if userAgent == "" {
-		userAgent = cdlconsts.USER_AGENT
-	}
+	userAgent := a.appData.GetStringWithFallback(constants.UserAgentKey, cdlconsts.USER_AGENT)
 
 	mainProgBar = NewProgressBar(a.ctx)
 	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.FANTIA_TITLE)

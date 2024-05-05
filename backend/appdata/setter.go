@@ -1,5 +1,9 @@
 package appdata
 
+import (
+	"github.com/KJHJason/Cultured-Downloader/backend/constants"
+)
+
 func (a *AppData) Unset(key string) error {
 	return a.unset(key)
 }
@@ -62,6 +66,11 @@ func (a *AppData) SetSecureString(key string, value string) error {
 	if (value == "") {
 		return a.unset(key)
 	}
+
+	if a.GetString(constants.HashOfMasterPasswordHashKey) == "" {
+		return a.SetString(key, value) // can't encrypt without master password
+	}
+
 	return a.setSecureS(key, value)
 }
 
@@ -69,5 +78,10 @@ func (a *AppData) SetSecureBytes(key string, value []byte) error {
 	if (value == nil) {
 		return a.unset(key)
 	}
+
+	if a.GetString(constants.HashOfMasterPasswordHashKey) == "" {
+		return a.setSecureB(key, value) // can't encrypt without master password
+	}
+
 	return a.setSecureB(key, value)
 }

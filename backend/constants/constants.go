@@ -37,10 +37,16 @@ const (
 
 	AutoSolveReCaptchaKey = "auto-solve-recaptcha"
 	FantiaCookieValueKey  = "fantia-cookie-value"
+	FantiaCookieJsonKey   = "fantia-cookie-json"
+	FantiaCookieTxtKey    = "fantia-cookie-txt"
 
-	PixivFanboxCookieValueKey = "pixiv-fanbox-cookie-value"
+	PixivFanboxCookieValueKey = "fanbox-cookie-value"
+	PixivFanboxCookieJsonKey  = "fanbox-cookie-json"
+	PixivFanboxCookieTxtKey   = "fanbox-cookie-txt"
 
 	PixivCookieValueKey        = "pixiv-cookie-value"
+	PixivCookieJsonKey         = "pixiv-cookie-json"
+	PixivCookieTxtKey          = "pixiv-cookie-txt"
 	PixivArtworkTypeKey        = "pixiv-artwork-type"
 	PixivDeleteUgoiraZipKey    = "pixiv-delete-ugoira-zip"
 	PixivRatingModeKey         = "pixiv-rating-mode"
@@ -50,6 +56,8 @@ const (
 	PixivUgoiraQualityKey      = "pixiv-ugoira-quality"
 
 	KemonoCookieValueKey = "kemono-cookie-value"
+	KemonoCookieJsonKey  = "kemono-cookie-json"
+	KemonoCookieTxtKey   = "kemono-cookie-txt"
 
 	// For download workers
 	FANTIA_WORKERS       = 2

@@ -84,7 +84,7 @@ func (app *App) SelectProfilePic() (ProfilePic, error) {
 		Title: "Select File",
 		Filters: []runtime.FileFilter{
 			{
-				DisplayName: "Images (*.png;*.jpg,*.jpeg,*.gif;*.webp)",
+				DisplayName: "Images (*.png,*.jpg,*.jpeg,*.gif,*.webp)",
 				Pattern:     "*.png;*.jpg;*.jpeg;*.gif;*.webp",
 			},
 		},
