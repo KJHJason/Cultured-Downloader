@@ -1,8 +1,14 @@
 import { GetLanguage } from "./wailsjs/go/app/App";
 
 let cachedLang: string = "";
+
 const EN = "en";
 const JP = "ja";
+export const LANGUAGES = [
+    { value: EN, name: "English" },
+    { value: JP, name: "日本語" },
+]
+
 const textMap: Record<string, Record<string, string>> = {
     "hello": {
 		[EN]: "Hello",

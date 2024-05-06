@@ -22,12 +22,12 @@ func (app *App) ChangeMasterPassword(oldPassword, newPassword string) error {
 }
 
 func (app *App) RemoveMasterPassword() error {
-	err := app.appData.Unset(constants.MasterPasswordSaltKey)
+	err := app.appData.Unset(constants.MASTER_PASS_SALT_KEY)
 	if err != nil {
 		return err
 	}
 
-	err = app.appData.Unset(constants.HashOfMasterPasswordHashKey)
+	err = app.appData.Unset(constants.HASH_OF_MASTER_PASS_HASH_KEY)
 	if err != nil {
 		return err
 	}

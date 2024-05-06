@@ -58,17 +58,17 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 }
 
 func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
-	fantiaSession := a.appData.GetSecuredString(constants.FantiaCookieValueKey)
+	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
 	downloadPath, err := a.GetDownloadDir()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.UserAgentKey, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
 
 	mainProgBar = NewProgressBar(a.ctx)
 	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.FANTIA_TITLE)
-	os.MkdirAll(baseDlDirPath, constants.DEFAULT_PERM)
+	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	fantiaDlOptions = &fantia.FantiaDlOptions{

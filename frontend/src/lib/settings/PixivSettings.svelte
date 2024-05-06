@@ -42,7 +42,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2 mt-4">
-        <Toggle color="green" name="DeleteUgoiraZip">Delete Ugoira Zip</Toggle>
+        <Toggle color="green" name="DeleteUgoiraZip">Delete Ugoira Zip After Conversion</Toggle>
     </div>
     <div>
         <Label for="ArtworkType">Artwork Type:</Label>

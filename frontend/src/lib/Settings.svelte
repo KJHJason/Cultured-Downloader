@@ -5,6 +5,7 @@
     import General from "./settings/General.svelte";
     import Preferences from "./settings/Preferences.svelte";
   import Sessions from "./settings/Sessions.svelte";
+  import Advanced from "./settings/Advanced.svelte";
 
     export let username: string;
     export let handleActionChange: (event: CustomEvent<string>) => void;
@@ -39,13 +40,6 @@
                 <DownloadSolid size="sm" />
                 Preferences
             </div>
-            <!-- <p class="text-sm text-gray-500 dark:text-gray-400">
-            <b>Preferences:</b>
-            </p>
-            <ul>
-                <li>Download Preferences</li>
-                <li>Sessions for the various platforms</li>
-            </ul> -->
             <Preferences />
         </TabItem>
         <TabItem class="text-main">
@@ -60,15 +54,7 @@
                 <AdjustmentsVerticalSolid size="sm" />
                 Advanced
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-            <b>Advanced Settings:</b>
-            </p>
-
-            <ul>
-                <li>User agents</li>
-                <li>Download location</li>
-                <li>GDrive Setup</li>
-            </ul>
+            <Advanced />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">

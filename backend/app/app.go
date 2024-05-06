@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
+	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -28,19 +29,19 @@ func NewApp() *App {
 }
 
 func (a *App) GetUsername() string {
-	return a.appData.GetString(constants.UsernameKey)
+	return a.appData.GetString(constants.USERNAME_KEY)
 }
 
 func (app *App) GetDarkMode() bool {
-	return app.appData.GetBool(constants.DarkModeKey)
+	return app.appData.GetBool(constants.DARK_MODE_KEY)
 }
 
 func (app *App) SetDarkMode(darkMode bool) {
-	app.appData.SetBool(constants.DarkModeKey, darkMode)
+	app.appData.SetBool(constants.DARK_MODE_KEY, darkMode)
 }
 
 func (app *App) SetUsername(username string) {
-	app.appData.SetString(constants.UsernameKey, username)
+	app.appData.SetString(constants.USERNAME_KEY, username)
 }
 
 type ProfilePic struct {
@@ -103,15 +104,15 @@ func (app *App) UploadProfilePic(picPath string) error {
 		return err
 	}
 
-	oldProfilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
-	oldProfilePicPath = filepath.Join(constants.UserConfigDir, oldProfilePicPath)
+	oldProfilePicPath := app.appData.GetString(constants.PROFILE_PIC_PATH_KEY)
+	oldProfilePicPath = filepath.Join(iofuncs.APP_PATH, oldProfilePicPath)
 	if oldProfilePicPath != "" {
 		// If there is an old profile pic, delete it
 		os.Remove(oldProfilePicPath)
 	}
 
-	picPathToSave := filepath.Join(constants.UserConfigDir, fileName)
-	app.appData.SetString(constants.ProfilePicPathKey, fileName)
+	picPathToSave := filepath.Join(iofuncs.APP_PATH, fileName)
+	app.appData.SetString(constants.PROFILE_PIC_PATH_KEY, fileName)
 	file, err := os.OpenFile(picPathToSave, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
@@ -126,31 +127,31 @@ func (app *App) UploadProfilePic(picPath string) error {
 }
 
 func (app *App) HasProfilePic() bool {
-	profilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
+	profilePicPath := app.appData.GetString(constants.PROFILE_PIC_PATH_KEY)
 	if profilePicPath == "" {
 		return false
 	}
 
-	profilePicPath = filepath.Join(constants.UserConfigDir, profilePicPath)
+	profilePicPath = filepath.Join(iofuncs.APP_PATH, profilePicPath)
 	_, err := os.Stat(profilePicPath)
 
 	hasProfilePic := err == nil
 	if profilePicPath != "" && !hasProfilePic {
 		// If the path is set but the file does not exist, unset the path
-		app.appData.Unset(constants.ProfilePicPathKey)
+		app.appData.Unset(constants.PROFILE_PIC_PATH_KEY)
 	}
 	return err == nil
 }
 
 func (app *App) GetProfilePic() (ProfilePic, error) {
-	profilePicPath := app.appData.GetString(constants.ProfilePicPathKey)
-	profilePicPath = filepath.Join(constants.UserConfigDir, profilePicPath)
+	profilePicPath := app.appData.GetString(constants.PROFILE_PIC_PATH_KEY)
+	profilePicPath = filepath.Join(iofuncs.APP_PATH, profilePicPath)
 	return NewProfilePic(profilePicPath)
 }
 
 func (app *App) DeleteProfilePic() error {
-	filePath := app.appData.GetString(constants.ProfilePicPathKey)
-	filePath = filepath.Join(constants.UserConfigDir, filePath)
+	filePath := app.appData.GetString(constants.PROFILE_PIC_PATH_KEY)
+	filePath = filepath.Join(iofuncs.APP_PATH, filePath)
 	if filePath == "" {
 		return nil
 	}

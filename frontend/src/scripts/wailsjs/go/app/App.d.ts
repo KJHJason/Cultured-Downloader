@@ -26,6 +26,10 @@ export function GetPreferences():Promise<appdata.Preferences>;
 
 export function GetProfilePic():Promise<app.ProfilePic>;
 
+export function GetSessionValue(arg1:string):Promise<string>;
+
+export function GetUserAgent():Promise<string>;
+
 export function GetUsername():Promise<string>;
 
 export function HasProfilePic():Promise<boolean>;
@@ -34,9 +38,15 @@ export function PromptMasterPassword():Promise<boolean>;
 
 export function RemoveMasterPassword():Promise<void>;
 
+export function ResetSession(arg1:string):Promise<void>;
+
+export function SelectDlDirPath():Promise<void>;
+
 export function SelectProfilePic():Promise<app.ProfilePic>;
 
 export function SetDarkMode(arg1:boolean):Promise<void>;
+
+export function SetDlDirPath(arg1:string):Promise<void>;
 
 export function SetLanguage(arg1:string):Promise<string>;
 
@@ -45,6 +55,8 @@ export function SetMasterPassword(arg1:string):Promise<void>;
 export function SetPreferences(arg1:string,arg2:appdata.Preferences):Promise<void>;
 
 export function SetSessionValue(arg1:string,arg2:string):Promise<void>;
+
+export function SetUserAgent(arg1:string):Promise<void>;
 
 export function SetUsername(arg1:string):Promise<void>;
 

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -32,7 +33,7 @@ type AppData struct {
 func NewAppData() (*AppData, error) {
 	appData := AppData{
 		data:     make(map[string]interface{}),
-		dataPath: filepath.Join(constants.UserConfigDir, filename),
+		dataPath: filepath.Join(iofuncs.APP_PATH, filename),
 		mu:       sync.RWMutex{},
 	}
 	err := appData.loadFromFile()
@@ -40,8 +41,8 @@ func NewAppData() (*AppData, error) {
 		logger.MainLogger.Error("Error loading data from file:", err)
 		return nil, err
 	}
-	appData.masterPasswordSalt = appData.GetBytes(constants.MasterPasswordSaltKey)
-	appData.hashOfMasterPasswordHash = appData.GetBytes(constants.HashOfMasterPasswordHashKey)
+	appData.masterPasswordSalt = appData.GetBytes(constants.MASTER_PASS_SALT_KEY)
+	appData.hashOfMasterPasswordHash = appData.GetBytes(constants.HASH_OF_MASTER_PASS_HASH_KEY)
 	return &appData, nil
 }
 
@@ -51,7 +52,7 @@ func (a *AppData) SetMasterPasswordInMem(password string) {
 	a.masterPassword = password
 }
 
-func (a *AppData) changeMasterPassword(password string) {
+func (a *AppData) changeMasterPassword(password string) error {
 	a.mu.Lock()
 	a.masterPassword = password
 
@@ -64,8 +65,18 @@ func (a *AppData) changeMasterPassword(password string) {
 	a.hashOfMasterPasswordHash = crypto.HashData(hash)
 	a.mu.Unlock()
 
-	a.SetBytes(constants.MasterPasswordSaltKey, salt)
-	a.SetBytes(constants.HashOfMasterPasswordHashKey, a.hashOfMasterPasswordHash)
+	err := a.SetBytes(constants.MASTER_PASS_SALT_KEY, salt)
+	if err != nil {
+		return err
+	}
+
+	err = a.SetBytes(constants.HASH_OF_MASTER_PASS_HASH_KEY, a.hashOfMasterPasswordHash)
+	if err != nil {
+		a.Unset(constants.MASTER_PASS_SALT_KEY)
+		return err
+	}
+
+	return nil
 }
 
 func (a *AppData) ResetMasterPassword() error {
@@ -75,12 +86,12 @@ func (a *AppData) ResetMasterPassword() error {
 	a.hashOfMasterPasswordHash = nil
 	a.mu.Unlock()
 
-	err := a.Unset(constants.MasterPasswordSaltKey)
+	err := a.Unset(constants.MASTER_PASS_SALT_KEY)
 	if err != nil {
 		return err
 	}
 
-	err = a.Unset(constants.HashOfMasterPasswordHashKey)
+	err = a.Unset(constants.HASH_OF_MASTER_PASS_HASH_KEY)
 	if err != nil {
 		return err
 	}
@@ -107,8 +118,8 @@ func (a *AppData) saveToFile() error {
 		return err
 	}
 
-	os.MkdirAll(constants.UserConfigDir, constants.DEFAULT_PERM)
-	err = os.WriteFile(a.dataPath, jsonData, constants.DEFAULT_PERM)
+	os.MkdirAll(iofuncs.APP_PATH, cdlconst.DEFAULT_PERMS)
+	err = os.WriteFile(a.dataPath, jsonData, cdlconst.DEFAULT_PERMS)
 	if err != nil {
 		return err
 	}
@@ -120,14 +131,14 @@ func (a *AppData) saveToFile() error {
 func initialiseSettingsMap() map[string]interface{} {
 	return map[string]interface{}{
 		// General
-		constants.DarkModeKey:       false,
-		constants.UsernameKey:       "Ojisan",
-		constants.ProfilePicPathKey: "",
+		constants.DARK_MODE_KEY:        false,
+		constants.USERNAME_KEY:         "Ojisan",
+		constants.PROFILE_PIC_PATH_KEY: "",
 
 		// Download preferences
-		constants.DlThumbnailKey:   true,
-		constants.DlImagesKey:      true,
-		constants.DlAttachmentsKey: true,
+		constants.DL_THUMBNAIL_KEY:  true,
+		constants.DL_IMAGES_KEY:     true,
+		constants.DL_ATTACHMENT_KEY: true,
 	}
 }
 
@@ -136,7 +147,7 @@ func (a *AppData) loadFromFile() error {
 	defer a.mu.Unlock()
 
 	var data map[string]interface{}
-	os.MkdirAll(constants.UserConfigDir, constants.DEFAULT_PERM)
+	os.MkdirAll(iofuncs.APP_PATH, cdlconst.DEFAULT_PERMS)
 
 	fileSize, _ := iofuncs.GetFileSize(a.dataPath)
 	if !iofuncs.PathExists(a.dataPath) || fileSize == 0 {
@@ -172,6 +183,10 @@ func (a *AppData) get(key string) (interface{}, bool) {
 func (a *AppData) unset(key string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+
+	if _, exist := a.data[key]; !exist {
+		return nil
+	}
 
 	delete(a.data, key)
 	return a.saveToFile()

@@ -2,12 +2,12 @@ package app
 
 import (
 	"context"
-	"os"
-	"time"
 	"fmt"
+	"os"
 	"path/filepath"
+	"time"
 
-	cdconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
@@ -28,7 +28,7 @@ func (a *App) GetDownloadDir() (dirPath string, err error) {
 	}
 
 	desktopDir = filepath.Join(desktopDir, "Cultured Downloader")
-	if err := os.MkdirAll(desktopDir, constants.DEFAULT_PERM); err != nil {
+	if err := os.MkdirAll(desktopDir, cdlconst.DEFAULT_PERMS); err != nil {
 		panic(err)
 	}
 	a.appData.SetString(constants.DOWNLOAD_KEY, desktopDir)
@@ -39,19 +39,6 @@ func (a *App) GetDownloadDir() (dirPath string, err error) {
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	if constants.UserConfigDirErr != nil {
-		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.ErrorDialog,
-			Title:   "Error getting config directory path!",
-			Message: "Your OS might not be supported. Please refer to the logs or report this issue on GitHub.",
-		})
-		if err != nil {
-			logger.MainLogger.Errorf(
-				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", err, constants.UserConfigDirErr)
-		}
-		panic("Error getting config directory path!")
-	}
-
 	appData, initialLoadErr := appdata.NewAppData()
 	if initialLoadErr != nil {
 		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
@@ -67,10 +54,10 @@ func (a *App) Startup(ctx context.Context) {
 	}
 	a.appData = appData
 
-	userAgent := a.appData.GetString(constants.UserAgentKey)
+	userAgent := a.appData.GetString(constants.USER_AGENT_KEY)
 	if userAgent == "" {
-		userAgent = cdconst.USER_AGENT
-		a.appData.SetString(constants.UserAgentKey, userAgent)
+		userAgent = cdlconst.USER_AGENT
+		a.appData.SetString(constants.USER_AGENT_KEY, userAgent)
 	}
 
 	lang := a.appData.GetString(constants.LANGUAGE_KEY)

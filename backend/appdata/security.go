@@ -1,35 +1,20 @@
 package appdata
 
 import (
-	"errors"
 	"encoding/base64"
-	"sync"
+	"errors"
 
-	"github.com/KJHJason/Cultured-Downloader/backend/crypto"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
+	"github.com/KJHJason/Cultured-Downloader/backend/crypto"
 )
 
-var dkMutex sync.Mutex
-// Uses Argon2id to derive a 256-bit key from the password
-func (a *AppData) deriveKey(password string) ([]byte, error) {
-	dkMutex.Lock()
-	defer dkMutex.Unlock()
-
-	salt := a.masterPasswordSalt
-	if (salt == nil) {
-		a.unset(constants.MasterPasswordSaltKey)
-		panic("master password salt is nil") // should never happen
-	}
-
-	// Derive the key using Argon2id
-	return crypto.GetKey(password, salt), nil
-}
-
 var encryptedFields = [...]string{
-	constants.GdriveApiKeyKey,
-	constants.GdriveServiceAccKey,
+	constants.GDRIVE_API_KEY_KEY,
+	constants.GDRIVE_SERVICE_ACC_KEY,
 
-	constants.FantiaCookieValueKey,
+	constants.FANTIA_COOKIE_VALUE_KEY,
+	constants.FANTIA_COOKIE_JSON_KEY,
+	constants.FANTIA_COOKIE_TXT_KEY,
 }
 
 func (a *AppData) ResetEncryptedFields() error {
@@ -44,7 +29,7 @@ func (a *AppData) ResetEncryptedFields() error {
 }
 
 func (a *AppData) EncryptWithPassword(plaintext, salt []byte, password string) ([]byte, error) {
-	key, err := a.deriveKey(password)
+	key, err := crypto.DeriveKey(password, salt)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +37,7 @@ func (a *AppData) EncryptWithPassword(plaintext, salt []byte, password string) (
 }
 
 func (a *AppData) DecryptWithPassword(ciphertext, salt []byte, password string) ([]byte, error) {
-	key, err := a.deriveKey(password)
+	key, err := crypto.DeriveKey(password, salt)
 	if err != nil {
 		return nil, err
 	}
@@ -102,20 +87,30 @@ func (a *AppData) ChangeMasterPassword(oldMasterPassword, newMasterPassword stri
 	}
 
 	if oldMasterPassword == "" {
-		a.changeMasterPassword(newMasterPassword)
+		// Note: not changing master password
+		err := a.changeMasterPassword(newMasterPassword)
+		if err != nil {
+			return err
+		}
+
 		return a.EncryptPlainFields(newMasterPassword)
 	} else if !a.VerifyMasterPassword(oldMasterPassword) {
 		return errors.New("old master password is incorrect")
 	}
 
+	// User has an old master password, changing it below
 	oldMasterPasswordSalt := a.masterPasswordSalt
-	a.changeMasterPassword(newMasterPassword)
+	err := a.changeMasterPassword(newMasterPassword)
+	if err != nil {
+		return err
+	}
+
 	for _, key := range encryptedFields {
 		encodedEncryptedField := a.GetString(key)
 		if encodedEncryptedField != "" {
-			reEncryptedField, err := a.reEncryptEncryptedField( 
-				encodedEncryptedField, 
-				oldMasterPassword, 
+			reEncryptedField, err := a.reEncryptEncryptedField(
+				encodedEncryptedField,
+				oldMasterPassword,
 				oldMasterPasswordSalt,
 			)
 			if err != nil {

@@ -15,7 +15,7 @@ func (a *AppData) GetBoolSlice(key string) []bool {
 	return a.GetBoolSliceWithFallback(key, []bool{})
 }
 
-func (a *AppData) GetBoolWithFallback(key string, fallback bool) (bool) {
+func (a *AppData) GetBoolWithFallback(key string, fallback bool) bool {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -28,7 +28,7 @@ func (a *AppData) GetBoolWithFallback(key string, fallback bool) (bool) {
 	return b
 }
 
-func (a *AppData) GetBoolSliceWithFallback(key string, fallback []bool) ([]bool) {
+func (a *AppData) GetBoolSliceWithFallback(key string, fallback []bool) []bool {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -49,7 +49,7 @@ func (a *AppData) GetFloatSlice(key string) []float64 {
 	return a.GetFloatSliceWithFallback(key, []float64{})
 }
 
-func (a *AppData) GetFloatWithFallback(key string, fallback float64) (float64) {
+func (a *AppData) GetFloatWithFallback(key string, fallback float64) float64 {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -62,7 +62,7 @@ func (a *AppData) GetFloatWithFallback(key string, fallback float64) (float64) {
 	return f
 }
 
-func (a *AppData) GetFloatSliceWithFallback(key string, fallback []float64) ([]float64) {
+func (a *AppData) GetFloatSliceWithFallback(key string, fallback []float64) []float64 {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -92,7 +92,7 @@ func (a *AppData) GetIntSlice(key string) []int {
 	return a.GetIntSliceWithFallback(key, []int{})
 }
 
-func (a *AppData) GetIntWithFallback(key string, fallback int) (int) {
+func (a *AppData) GetIntWithFallback(key string, fallback int) int {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -105,7 +105,7 @@ func (a *AppData) GetIntWithFallback(key string, fallback int) (int) {
 	return i
 }
 
-func (a *AppData) GetIntSliceWithFallback(key string, fallback []int) ([]int) {
+func (a *AppData) GetIntSliceWithFallback(key string, fallback []int) []int {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -136,7 +136,7 @@ func (a *AppData) GetStringSlice(key string) []string {
 	return a.GetStringSliceWithFallback(key, []string{})
 }
 
-func (a *AppData) GetStringWithFallback(key string, fallback string) (string) {
+func (a *AppData) GetStringWithFallback(key string, fallback string) string {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -149,7 +149,7 @@ func (a *AppData) GetStringWithFallback(key string, fallback string) (string) {
 	return s
 }
 
-func (a *AppData) GetStringSliceWithFallback(key string, fallback []string) ([]string) {
+func (a *AppData) GetStringSliceWithFallback(key string, fallback []string) []string {
 	v, exist := a.get(key)
 	if !exist {
 		return fallback
@@ -194,7 +194,7 @@ func (a *AppData) GetSecuredBytes(key string) []byte {
 }
 
 func (a *AppData) GetSecuredStringWithFallback(key string, fallback string) string {
-	if a.GetString(constants.HashOfMasterPasswordHashKey) == "" {
+	if a.GetString(constants.HASH_OF_MASTER_PASS_HASH_KEY) == "" {
 		return a.GetStringWithFallback(key, fallback) // not encrypted
 	}
 
@@ -206,7 +206,7 @@ func (a *AppData) GetSecuredStringWithFallback(key string, fallback string) stri
 }
 
 func (a *AppData) GetSecuredBytesWithFallback(key string, fallback []byte) []byte {
-	if a.GetString(constants.HashOfMasterPasswordHashKey) == "" {
+	if a.GetString(constants.HASH_OF_MASTER_PASS_HASH_KEY) == "" {
 		return a.GetBytesWithFallback(key, fallback) // not encrypted
 	}
 

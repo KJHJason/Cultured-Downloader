@@ -46,6 +46,14 @@ export function GetProfilePic() {
   return window['go']['app']['App']['GetProfilePic']();
 }
 
+export function GetSessionValue(arg1) {
+  return window['go']['app']['App']['GetSessionValue'](arg1);
+}
+
+export function GetUserAgent() {
+  return window['go']['app']['App']['GetUserAgent']();
+}
+
 export function GetUsername() {
   return window['go']['app']['App']['GetUsername']();
 }
@@ -62,12 +70,24 @@ export function RemoveMasterPassword() {
   return window['go']['app']['App']['RemoveMasterPassword']();
 }
 
+export function ResetSession(arg1) {
+  return window['go']['app']['App']['ResetSession'](arg1);
+}
+
+export function SelectDlDirPath() {
+  return window['go']['app']['App']['SelectDlDirPath']();
+}
+
 export function SelectProfilePic() {
   return window['go']['app']['App']['SelectProfilePic']();
 }
 
 export function SetDarkMode(arg1) {
   return window['go']['app']['App']['SetDarkMode'](arg1);
+}
+
+export function SetDlDirPath(arg1) {
+  return window['go']['app']['App']['SetDlDirPath'](arg1);
 }
 
 export function SetLanguage(arg1) {
@@ -84,6 +104,10 @@ export function SetPreferences(arg1, arg2) {
 
 export function SetSessionValue(arg1, arg2) {
   return window['go']['app']['App']['SetSessionValue'](arg1, arg2);
+}
+
+export function SetUserAgent(arg1) {
+  return window['go']['app']['App']['SetUserAgent'](arg1);
 }
 
 export function SetUsername(arg1) {

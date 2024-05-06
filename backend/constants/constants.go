@@ -1,63 +1,55 @@
 package constants
 
-import (
-	"os"
-	"path/filepath"
-)
-
 const (
-	PROGRAM_NAME                = "Cultured Downloader"
-	DEFAULT_PERM                = 0755
-	LOCAL_USER_ASSET_DIR_NAME   = "assets"
-	LANGUAGE_KEY                = "lang"
-	// TODO: uppercase all consts
-	HashOfMasterPasswordHashKey = "master-password-hash"
-	MasterPasswordSaltKey       = "master-password-salt"
-	DarkModeKey                 = "dark-mode"
-	UsernameKey                 = "username"
-	UserAgentKey                = "user-agent"
-	ProfilePicPathKey           = "profile-pic-path"
-	DOWNLOAD_KEY                = "download"
+	PROGRAM_NAME              = "Cultured Downloader"
+	LOCAL_USER_ASSET_DIR_NAME = "assets"
+	LANGUAGE_KEY              = "lang"
+	HASH_OF_MASTER_PASS_HASH_KEY = "master-password-hash"
+	MASTER_PASS_SALT_KEY         = "master-password-salt"
+	DARK_MODE_KEY                = "dark-mode"
+	USERNAME_KEY                 = "username"
+	USER_AGENT_KEY               = "user-agent"
+	PROFILE_PIC_PATH_KEY         = "profile-pic-path"
+	DOWNLOAD_KEY                 = "download"
 
 	// Platform names
-	Fantia      = "fantia"
-	Pixiv       = "pixiv"
-	PixivFanbox = "pixiv_fanbox"
-	Kemono      = "kemono"
+	FANTIA       = "fantia"
+	PIXIV        = "pixiv"
+	PIXIV_FANBOX = "pixiv_fanbox"
+	KEMONO       = "kemono"
 
-	GdriveApiKeyKey     = "gdrive-api-key"
-	GdriveServiceAccKey = "gdrive-service-acc"
+	GDRIVE_API_KEY_KEY     = "gdrive-api-key"
+	GDRIVE_SERVICE_ACC_KEY = "gdrive-service-acc"
 
-	DlThumbnailKey     = "dl-thumbnail"
-	DlImagesKey        = "dl-images"
-	DlAttachmentsKey   = "dl-attachments"
-	OverwriteFilesKey  = "overwrite-files"
-	DlGdriveKey        = "dl-gdrive"
-	DetectOtherUrlsKey = "detect-other-urls"
+	DL_THUMBNAIL_KEY      = "dl-thumbnail"
+	DL_IMAGES_KEY         = "dl-images"
+	DL_ATTACHMENT_KEY     = "dl-attachments"
+	OVERWRITE_FILES_KEY   = "overwrite-files"
+	DL_GDRIVE_KEY         = "dl-gdrive"
+	DETECT_OTHER_URLS_KEY = "detect-other-urls"
 
-	AutoSolveReCaptchaKey = "auto-solve-recaptcha"
-	FantiaCookieValueKey  = "fantia-cookie-value"
-	FantiaCookieJsonKey   = "fantia-cookie-json"
-	FantiaCookieTxtKey    = "fantia-cookie-txt"
+	FANTIA_COOKIE_VALUE_KEY = "fantia-cookie-value"
+	FANTIA_COOKIE_JSON_KEY  = "fantia-cookie-json"
+	FANTIA_COOKIE_TXT_KEY   = "fantia-cookie-txt"
 
-	PixivFanboxCookieValueKey = "fanbox-cookie-value"
-	PixivFanboxCookieJsonKey  = "fanbox-cookie-json"
-	PixivFanboxCookieTxtKey   = "fanbox-cookie-txt"
+	PIXIV_FANBOX_COOKIE_VALUE_KEY = "fanbox-cookie-value"
+	PIXIV_FANBOX_COOKIE_JSON_KEY  = "fanbox-cookie-json"
+	PIXIV_FANBOX_COOKIE_TXT_KEY   = "fanbox-cookie-txt"
 
-	PixivCookieValueKey        = "pixiv-cookie-value"
-	PixivCookieJsonKey         = "pixiv-cookie-json"
-	PixivCookieTxtKey          = "pixiv-cookie-txt"
-	PixivArtworkTypeKey        = "pixiv-artwork-type"
-	PixivDeleteUgoiraZipKey    = "pixiv-delete-ugoira-zip"
-	PixivRatingModeKey         = "pixiv-rating-mode"
-	PixivSearchModeKey         = "pixiv-search-mode"
-	PixivSortOrderKey          = "pixiv-sort-order"
-	PixivUgoiraOutputFormatKey = "pixiv-ugoira-output-format"
-	PixivUgoiraQualityKey      = "pixiv-ugoira-quality"
+	PIXIV_COOKIE_VALUE_KEY         = "pixiv-cookie-value"
+	PIXIV_COOKIE_JSON_KEY          = "pixiv-cookie-json"
+	PIXIV_COOKIE_TXT_KEY           = "pixiv-cookie-txt"
+	PIXIV_ARTWORK_TYPE_KEY         = "pixiv-artwork-type"
+	PIXIV_DELETE_UGOIRA_ZIP_KEY    = "pixiv-delete-ugoira-zip"
+	PIXIV_RATING_MODE_KEY          = "pixiv-rating-mode"
+	PIXIV_SEARCH_MODE_KEY          = "pixiv-search-mode"
+	PIXIV_SORT_ORDER_KEY           = "pixiv-sort-order"
+	PIXIV_UGOIRA_OUTPUT_FORMAT_KEY = "pixiv-ugoira-output-format"
+	PIXIV_UGOIRA_QUALITY_KEY       = "pixiv-ugoira-quality"
 
-	KemonoCookieValueKey = "kemono-cookie-value"
-	KemonoCookieJsonKey  = "kemono-cookie-json"
-	KemonoCookieTxtKey   = "kemono-cookie-txt"
+	KEMONO_COOKIE_VALUE_KEY = "kemono-cookie-value"
+	KEMONO_COOKIE_JSON_KEY  = "kemono-cookie-json"
+	KEMONO_COOKIE_TXT_KEY   = "kemono-cookie-txt"
 
 	// For download workers
 	FANTIA_WORKERS       = 2
@@ -65,22 +57,3 @@ const (
 	PIXIV_FANBOX_WORKERS = 1
 	KEMONO_WORKERS       = 1
 )
-
-var (
-	UserConfigDir    string
-	UserConfigDirErr error
-)
-
-func init() {
-	// Try to get the OS specific path to the user config directory
-	UserConfigDir, UserConfigDirErr = os.UserConfigDir()
-	if UserConfigDirErr != nil {
-		panic(UserConfigDirErr)
-	}
-
-	// If we got the path, append the app name to it
-	UserConfigDir = filepath.Join(UserConfigDir, "cultured.downloader")
-
-	// Create the directory if it doesn't exist
-	os.MkdirAll(UserConfigDir, DEFAULT_PERM)
-}

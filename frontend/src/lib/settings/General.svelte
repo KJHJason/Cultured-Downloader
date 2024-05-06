@@ -1,12 +1,12 @@
 <script lang="ts">
     import bufferGif from "../../assets/images/buffer.gif";
-    import { Input, Label, Helper, Fileupload, Hr } from "flowbite-svelte";
+    import { Input, Label, Helper, Fileupload, Hr, Select } from "flowbite-svelte";
     import Swal from "sweetalert2";
     import { swal, changeUsernameEventType, invertedSwal } from "../../scripts/constants";
-    import { GetFallbackUserProfileDataUrl, GetProfilePicURL } from "../../scripts/image";
-    import { ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
+    import { GetFallbackUserProfileDataUrl, GetProfilePicURL, ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
+    import { LANGUAGES } from "../../scripts/language";
     import { onMount, createEventDispatcher } from "svelte";
-    import { HasProfilePic } from "../../scripts/wailsjs/go/app/App";
+    import { GetLanguage, HasProfilePic, SetLanguage } from "../../scripts/wailsjs/go/app/App";
     import PasswordToggle from "../common/PasswordToggle.svelte";
     import {
         PromptMasterPassword,
@@ -21,6 +21,8 @@
         DeleteProfilePic
     } from "../../scripts/wailsjs/go/app/App";
 
+    let lang = "";
+    let savedLang = "";
     export let username: string;
 
     const dispatcher = createEventDispatcher();
@@ -29,6 +31,8 @@
     };
 
     onMount(async () => {
+        lang = await GetLanguage();
+        savedLang = lang;
         const navbarUserProfile = document.getElementById("navbar-user-profile") as HTMLImageElement;
 
         const generalForm = document.getElementById("general-form") as HTMLFormElement;
@@ -83,6 +87,7 @@
         const resetGeneralForm = (): void => {
             generalForm.reset();
             usernameInput.value = username;
+            lang = savedLang;
         };
 
         const handleGeneralFormSubmit = async (e: Event): Promise<void> => {
@@ -111,6 +116,11 @@
                 await SetUsername(newUsername);
                 changeUsername(newUsername);
                 username = newUsername;
+            }
+
+            if (lang !== savedLang) {
+                await SetLanguage(lang);
+                savedLang = lang;
             }
 
             resetGeneralForm();
@@ -350,7 +360,19 @@
         </div>
         <div class="flex mt-4">
             <div class="w-full">
-                <Label for="profile-image" class="pb-2">Upload file</Label>
+                <Label for="language">Language:</Label>
+                <Select 
+                    class="my-2" 
+                    name="language" 
+                    id="language" 
+                    items={LANGUAGES} 
+                    bind:value={lang} 
+                />
+            </div>
+        </div>
+        <div class="flex mt-4">
+            <div class="w-full">
+                <Label for="profile-image" class="pb-2">Upload Profile Image:</Label>
                 <Fileupload name="profile-image" id="profile-image" class="mb-2" />
                 <Helper>PNG, JPG, GIF or WEBP.</Helper>
                 <Input name="profile-image-path" id="profile-image-path" type="hidden" />

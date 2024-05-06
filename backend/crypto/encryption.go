@@ -10,6 +10,7 @@ import (
 )
 
 var tag []byte
+
 func init() {
 	// use the user's desktop name as the tag
 	hostId, err := host.HostID()
@@ -32,12 +33,12 @@ var ErrInvalidSaltLen = fmt.Errorf("invalid salt length must be %d bytes", HashK
 
 // Generate a random 128-bit salt according to NIST SP 800-132
 // Uses Argon2id to derive a 256-bit key from the password
-func DeriveKey(salt []byte, password string) ([]byte, error) {
+func DeriveKey(password string, salt []byte) ([]byte, error) {
 	if len(salt) != HashKeyLen {
 		return nil, ErrInvalidSaltLen
 	}
 	// Derive the key using Argon2id
-	return GetKey(password, salt), nil
+	return getKey(password, salt), nil
 }
 
 func Encrypt(plaintext []byte, key []byte) ([]byte, error) {

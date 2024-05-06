@@ -1,6 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
+    export let hideByDefault = false;
+    export let elClass = "";
+
     const randomId = Math.random().toString(36).substring(2);
     const showId = `show-${randomId}`;
     const hideId = `hide-${randomId}`;
@@ -40,10 +43,14 @@
                 hide.classList.add("hidden");
             }
         });
+
+        if (hideByDefault) {
+            btn.click();
+        }
     });
 </script>
 
-<div class="relative" id={randomId}>
+<div class="relative {elClass}" id={randomId}>
     <slot />
     <button class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-700 dark:text-white" type="button" id={btnId}>
         <svg class="h-6" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" id={showId}>

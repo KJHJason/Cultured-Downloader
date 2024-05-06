@@ -10,3 +10,5 @@ cultureddownloader*.json
 *.exe
 *test*
 Cultured Downloader-res.syso
+
+!*_test.go

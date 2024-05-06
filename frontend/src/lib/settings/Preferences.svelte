@@ -7,11 +7,11 @@
     <div>
         <h4>General</h4>
         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Toggle color="green" name="DlPostThumbnail">Post Thumbnail</Toggle>
-            <Toggle color="green" name="DlPostImages">Post Images</Toggle>
-            <Toggle color="green" name="DlPostAttachments">Post Attachments</Toggle>
+            <Toggle color="green" name="DlPostThumbnail">Download Post Thumbnail</Toggle>
+            <Toggle color="green" name="DlPostImages">Download Post Images</Toggle>
+            <Toggle color="green" name="DlPostAttachments">Download Post Attachments</Toggle>
+            <Toggle color="green" name="DlGDrive">Download GDrive Links</Toggle>
             <Toggle color="green" name="OverwriteFiles">Overwrite Files</Toggle>
-            <Toggle color="green" name="DlGDrive">GDrive Links</Toggle>
             <Toggle color="green" name="DetectOtherLinks">Detect Other URL(s) like MEGA</Toggle>
         </div>
     </div>
