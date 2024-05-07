@@ -6,6 +6,9 @@
     import Inputs from "./queues/Inputs.svelte";
     import Tasks from "./queues/Tasks.svelte";
     import Actions from "./queues/Actions.svelte";
+  import { actions } from "../scripts/constants";
+
+    export let action: string;
 
     let inputModalsId: Record<number, boolean> = {};
     let progHistoryModalsId: Record<number, boolean> = {}; 
@@ -48,6 +51,10 @@
     onMount(async () => {
         // make a polling request to get the download queues
         setInterval(async () => {
+            if (action !== actions.Downloads) {
+                return;
+            }
+
             const retrievedQueues = await GetDownloadQueues();
             if (retrievedQueues === null) {
                 return;

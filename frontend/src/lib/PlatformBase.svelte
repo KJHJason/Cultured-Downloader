@@ -1,10 +1,18 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Toggle, Label, Select, Textarea, Helper, Card, Hr, Checkbox, Input, ButtonGroup, InputAddon } from "flowbite-svelte";
+    import { Textarea, Helper, Card, Hr, Spinner } from "flowbite-svelte";
     import { actions, swal } from "../scripts/constants";
     import { ArrowLeftOutline, MinusOutline, PlusOutline } from "flowbite-svelte-icons";
-    import { SetPreferences, GetPreferences } from "../scripts/wailsjs/go/app/App";
     import PixivSettings from "./settings/PixivSettings.svelte";
+    import GeneralSettings from "./settings/GeneralSettings.svelte";
+    import MergedSettings from "./settings/MergedSettings.svelte";
+    import { GetPreferences } from "../scripts/wailsjs/go/app/App";
+
+    let pixivArtworkType: number;
+    let pixivRating: number;
+    let pixivSearchMode: number;
+    let pixivSortOrder: number;
+    let pixivUgoiraFormat: number;
 
     export let platformName: string;
     export let inputPlaceholder: string;
@@ -130,41 +138,34 @@
             }
         });
 
-        // TODO: Pixiv specific settings (has other input types than boolean)
-        const downloadSettingsForm = document.getElementById("download-settings-form") as HTMLFormElement;
-        const checkboxes = downloadSettingsForm.querySelectorAll("input[type=checkbox]") as NodeListOf<HTMLInputElement>;
-        const ugoiraQualityInput = document.getElementById("UgoiraQuality") as HTMLInputElement;
-        const getDownloadSettingsFromForm = (): Record<string, boolean> => {
-            const settings: Record<string, boolean> = {};
+        const settingsCard = document.getElementById("settings-card") as HTMLDivElement;
+        const getDownloadSettingsFromForm = (): Record<string, boolean | number> => {
+            const checkboxes = settingsCard.querySelectorAll("input[type=checkbox]") as NodeListOf<HTMLInputElement>;
+            const inputs = settingsCard.querySelectorAll("input") as NodeListOf<HTMLInputElement>;
+            const downloadPreferences: Record<string, boolean | number> = {
+                ArtworkType:        pixivArtworkType,
+                RatingMode:         pixivRating,
+                SearchMode:         pixivSearchMode,
+                SortOrder:          pixivSortOrder,
+                UgoiraOutputFormat: pixivUgoiraFormat,
+            };
+
             for (const checkbox of checkboxes) {
-                settings[checkbox.name] = checkbox.checked;
+                downloadPreferences[checkbox.name] = checkbox.checked;
             }
-            return settings;
+            for (const input of inputs) {
+                if (input.type === "checkbox") {
+                    continue;
+                }
+
+                if (input.type === "number") {
+                    downloadPreferences[input.name] = parseInt(input.value);
+                } else {
+                    throw new Error("Unknown input type!");
+                }
+            }
+            return downloadPreferences;
         };
-        downloadSettingsForm.addEventListener("submit", (e: Event): void => {
-            e.preventDefault();
-            const downloadSettings = getDownloadSettingsFromForm();
-            SetPreferences(platformName, downloadSettings)
-                .then(() => {
-                    swal.fire({
-                        title: "Success",
-                        text: "Download settings have been saved globally!",
-                        icon: "success",
-                    });
-                })
-                .catch((err) => {
-                    console.error(err);
-                    swal.fire({
-                        title: "Error",
-                        text: "Something went wrong when trying to save your download settings!",
-                        icon: "error",
-                    });
-                });
-        });
-        const initialGlobalSettings = await GetPreferences();
-        for (const checkbox of checkboxes) {
-            checkbox.checked = initialGlobalSettings[checkbox.name];
-        }
 
         const addToQueueForm = document.getElementById("add-to-queue-form") as HTMLFormElement;
         addToQueueForm.addEventListener("submit", async (e: Event): Promise<void> => {
@@ -255,26 +256,22 @@
         </Card>
     </form>
 
-    <form id="download-settings-form">
-        <Card class="mt-2 max-w-full" size="xl">
-            <h4>Download Settings</h4>
-            <Hr />
-            <Helper>This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!</Helper>
-            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Toggle color="green" name="DlPostThumbnail">Post Thumbnail</Toggle>
-                <Toggle color="green" name="DlPostImages">Post Images</Toggle>
-                <Toggle color="green" name="DlPostAttachments">Post Attachments</Toggle>
-                <Toggle color="green" name="OverwriteFiles">Overwrite Files</Toggle>
-                <slot />
+    <Card class="mt-2 max-w-full" size="xl" id="settings-card">
+        <h4>Download Settings</h4>
+        <Hr />
+        {#await GetPreferences()}
+            <div class="flex">
+                <Spinner color="blue" /> <p class="ms-3">Loading form...</p>
             </div>
+        {:then preferences}
+            <Helper>This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!</Helper>
+            <GeneralSettings promptSuccess={false} preferences={preferences}  />
             {#if platformName === actions.Pixiv}
             <Hr />
-                <PixivSettings />
+                <PixivSettings promptSuccess={false} preferences={preferences} bind:pixivArtworkType bind:pixivRating bind:pixivSearchMode bind:pixivSortOrder bind:pixivUgoiraFormat />
             {/if}
             <Hr />
-            <div class="text-right">
-                <button type="submit" class="btn btn-success">Save Settings Globally</button>
-            </div>
-        </Card>
-    </form>
+            <MergedSettings btnString="Save Settings Globally" />
+        {/await}
+    </Card>
 </div>

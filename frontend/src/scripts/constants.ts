@@ -4,9 +4,13 @@ import pixivFanboxLogo from "../assets/images/logos/pixiv-fanbox-logo.png";
 import pixivLogo from "../assets/images/logos/pixiv-logo.png";
 import kemonoLogo from "../assets/images/logos/kemono-logo.png";
 
+export const generalFormId = "generalForm";
+export const pixivFormId = "pixivForm";
+
 export const swal = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-success",
+        denyButton:    "btn btn-danger",
         cancelButton:  "btn btn-danger",
     },
     buttonsStyling: false,
@@ -15,6 +19,7 @@ export const swal = Swal.mixin({
 export const invertedSwal = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-danger",
+        denyButton:    "btn btn-success",
         cancelButton:  "btn btn-success",
     },
     buttonsStyling: false,
@@ -23,6 +28,7 @@ export const invertedSwal = Swal.mixin({
 export const infoSwal = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-info",
+        denyButton:    "btn btn-danger",
         cancelButton:  "btn btn-danger",
     },
     buttonsStyling: false,
@@ -45,7 +51,6 @@ export const logoImgSrc = {
     [actions.Kemono]:      kemonoLogo,
 };
 
-export const changeActionEventType = "changeAction";
 export const changeUsernameEventType = "changeUsername";
 
 export const navbarLogoSize = "h-8 w-8";

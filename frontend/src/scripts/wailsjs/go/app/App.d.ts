@@ -6,6 +6,8 @@ import {appdata} from '../models';
 
 export function ChangeMasterPassword(arg1:string,arg2:string):Promise<void>;
 
+export function CheckForUpdates():Promise<boolean>;
+
 export function CheckMasterPassword(arg1:string):Promise<boolean>;
 
 export function DeleteProfilePic():Promise<void>;
@@ -18,17 +20,25 @@ export function GetDownloadDir():Promise<string>;
 
 export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 
+export function GetGDriveAPIKey():Promise<string>;
+
+export function GetGDriveServiceAccount():Promise<string>;
+
 export function GetGdriveClient():Promise<gdrive.GDrive>;
 
 export function GetLanguage():Promise<string>;
+
+export function GetPixivRefreshToken():Promise<string>;
 
 export function GetPreferences():Promise<appdata.Preferences>;
 
 export function GetProfilePic():Promise<app.ProfilePic>;
 
+export function GetProgramInfo():Promise<app.ProgramInfo>;
+
 export function GetSessionValue(arg1:string):Promise<string>;
 
-export function GetUserAgent():Promise<string>;
+export function GetUserAgent():Promise<app.UserAgentResponse>;
 
 export function GetUsername():Promise<string>;
 
@@ -42,17 +52,25 @@ export function ResetSession(arg1:string):Promise<void>;
 
 export function SelectDlDirPath():Promise<void>;
 
+export function SelectGDriveServiceAccount():Promise<void>;
+
 export function SelectProfilePic():Promise<app.ProfilePic>;
 
 export function SetDarkMode(arg1:boolean):Promise<void>;
 
 export function SetDlDirPath(arg1:string):Promise<void>;
 
+export function SetGDriveAPIKey(arg1:string):Promise<void>;
+
+export function SetGeneralPreferences(arg1:appdata.Preferences):Promise<void>;
+
 export function SetLanguage(arg1:string):Promise<string>;
 
 export function SetMasterPassword(arg1:string):Promise<void>;
 
-export function SetPreferences(arg1:string,arg2:appdata.Preferences):Promise<void>;
+export function SetPixivOAuthRefreshToken(arg1:string):Promise<void>;
+
+export function SetPixivPreferences(arg1:appdata.Preferences):Promise<void>;
 
 export function SetSessionValue(arg1:string,arg2:string):Promise<void>;
 
@@ -60,10 +78,16 @@ export function SetUserAgent(arg1:string):Promise<void>;
 
 export function SetUsername(arg1:string):Promise<void>;
 
-export function SubmitFantiaToQueue(arg1:Array<string>,arg2:{[key: string]: boolean}):Promise<void>;
+export function StartPixivOAuth():Promise<string>;
+
+export function SubmitFantiaToQueue(arg1:Array<string>,arg2:appdata.Preferences):Promise<void>;
+
+export function UnsetGDriveServiceAccount():Promise<void>;
 
 export function UploadCookieFile(arg1:string):Promise<void>;
 
 export function UploadProfilePic(arg1:string):Promise<void>;
 
 export function ValidateFantiaUrls(arg1:Array<string>):Promise<boolean>;
+
+export function VerifyPixivOAuthCode(arg1:string):Promise<void>;

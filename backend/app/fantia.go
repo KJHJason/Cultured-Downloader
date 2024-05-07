@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
+	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 )
@@ -57,8 +59,16 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseSettingsMap(pref appdata.Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
 	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
+	var fantiaSessions []*http.Cookie
+	if fantiaSession == "" {
+		fantiaSessions, err = a.getSessionCookies(constants.FANTIA)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	downloadPath, err := a.GetDownloadDir()
 	if err != nil {
 		return nil, nil, err
@@ -72,10 +82,10 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	fantiaDlOptions = &fantia.FantiaDlOptions{
-		DlThumbnails:        settings["DlPostThumbnail"],
-		DlImages:            settings["DlPostImages"],
-		DlAttachments:       settings["DlPostAttachments"],
-		DlGdrive:            settings["DlGDrive"],
+		DlThumbnails:        pref.DlPostThumbnail,
+		DlImages:            pref.DlPostImages,
+		DlAttachments:       pref.DlPostAttachments,
+		DlGdrive:            pref.DlGDrive,
 		BaseDownloadDirPath: baseDlDirPath,
 
 		GdriveClient: a.GetGdriveClient(),
@@ -83,13 +93,13 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
 			FfmpegPath:     "",
-			OverwriteFiles: settings["OverwriteFiles"],
-			LogUrls:        settings["DetectOtherLinks"],
+			OverwriteFiles: pref.OverwriteFiles,
+			LogUrls:        pref.DetectOtherLinks,
 			UserAgent:      userAgent,
 		},
 
 		SessionCookieId: fantiaSession,
-		SessionCookies:  nil,
+		SessionCookies:  fantiaSessions,
 
 		Notifier: notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME),
 
@@ -104,13 +114,13 @@ func (a *App) parseSettingsMap(settings map[string]bool) (fantiaDlOptions *fanti
 	return fantiaDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitFantiaToQueue(inputs []string, settings map[string]bool) error {
+func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) error {
 	valid, inputsForRef, fantiaDl := validateFantiaUrls(inputs)
 	if !valid {
 		return errors.New("invalid Fantia URL(s)")
 	}
 
-	fantiaDlOptions, mainProgBar, err := a.parseSettingsMap(settings)
+	fantiaDlOptions, mainProgBar, err := a.parseSettingsMap(prefs)
 	if err != nil {
 		return errors.New("error getting download directory")
 	}

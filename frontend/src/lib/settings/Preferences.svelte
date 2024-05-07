@@ -1,27 +1,25 @@
 <script lang="ts">
-    import { Toggle } from "flowbite-svelte";
+    import { Spinner } from "flowbite-svelte";
     import PixivSettings from "./PixivSettings.svelte";
+    import { GetPreferences } from "../../scripts/wailsjs/go/app/App";
+    import GeneralSettings from "./GeneralSettings.svelte";
+    import MergedSettings from "./MergedSettings.svelte";
 </script>
 
 <div class="grid grid-cols-1 gap-y-6">
-    <div>
-        <h4>General</h4>
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Toggle color="green" name="DlPostThumbnail">Download Post Thumbnail</Toggle>
-            <Toggle color="green" name="DlPostImages">Download Post Images</Toggle>
-            <Toggle color="green" name="DlPostAttachments">Download Post Attachments</Toggle>
-            <Toggle color="green" name="DlGDrive">Download GDrive Links</Toggle>
-            <Toggle color="green" name="OverwriteFiles">Overwrite Files</Toggle>
-            <Toggle color="green" name="DetectOtherLinks">Detect Other URL(s) like MEGA</Toggle>
+    {#await GetPreferences()}
+        <div class="flex">
+            <Spinner color="blue" /> <p class="ms-3">Loading form...</p>
         </div>
-    </div>
-    <div>
-        <h4>Pixiv Specific</h4>
-        <PixivSettings />
-    </div>
+    {:then preferences}
+        <div>
+            <h4>General</h4>
+            <GeneralSettings promptSuccess={false} preferences={preferences} />
+        </div>
+        <div>
+            <h4>Pixiv Specific</h4>
+            <PixivSettings promptSuccess={false} preferences={preferences} />
+        </div>
+    {/await}
 </div>
-<div class="text-right mt-4">
-    <button class="btn btn-success">
-        Save All
-    </button>
-</div>
+<MergedSettings btnString="Save All" />

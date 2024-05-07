@@ -2,10 +2,10 @@
     import bufferGif from "../../assets/images/buffer.gif";
     import { Input, Label, Helper, Fileupload, Hr, Select } from "flowbite-svelte";
     import Swal from "sweetalert2";
-    import { swal, changeUsernameEventType, invertedSwal } from "../../scripts/constants";
+    import { swal, invertedSwal } from "../../scripts/constants";
     import { GetFallbackUserProfileDataUrl, GetProfilePicURL, ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
     import { LANGUAGES } from "../../scripts/language";
-    import { onMount, createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
     import { GetLanguage, HasProfilePic, SetLanguage } from "../../scripts/wailsjs/go/app/App";
     import PasswordToggle from "../common/PasswordToggle.svelte";
     import {
@@ -24,11 +24,6 @@
     let lang = "";
     let savedLang = "";
     export let username: string;
-
-    const dispatcher = createEventDispatcher();
-    const changeUsername = (newUsername: string): void => {
-        dispatcher(changeUsernameEventType, newUsername);
-    };
 
     onMount(async () => {
         lang = await GetLanguage();
@@ -80,7 +75,6 @@
         let hasProfilePic = await HasProfilePic();
 
         username = await GetUsername() || "User";
-        changeUsername(username);
         const usernameInput = document.getElementById("username") as HTMLInputElement;
         usernameInput.value = username;
 
@@ -114,7 +108,6 @@
             const newUsername = formData.get("username") as string;
             if (newUsername !== "") {
                 await SetUsername(newUsername);
-                changeUsername(newUsername);
                 username = newUsername;
             }
 
@@ -376,8 +369,8 @@
                 <Fileupload name="profile-image" id="profile-image" class="mb-2" />
                 <Helper>PNG, JPG, GIF or WEBP.</Helper>
                 <Input name="profile-image-path" id="profile-image-path" type="hidden" />
-                <button type="submit" class="btn btn-success mt-4 float-end">Save</button>
-                <button id="delete-profile-image-btn" type="button" class="btn btn-danger mt-4 float-end">Reset</button>
+                <button id="delete-profile-image-btn" type="button" class="btn btn-danger mt-4 ms-3 float-end">Reset</button>
+                <button type="submit" class="btn btn-success mt-4 float-end !me-0">Save All</button>
             </div>
         </div>
     </form>
@@ -412,7 +405,7 @@
         {/if}
         <div class="text-right mt-4">
             <button id="master-password-form-reset-btn" type="button" class="btn btn-danger hidden">Reset</button>
-            <button type="submit" class="btn btn-success">Save</button>
+            <button type="submit" class="btn btn-success !me-0">Save</button>
         </div>
     </form>
 </div>

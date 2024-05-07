@@ -4,18 +4,12 @@ import (
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
-// Note: rmb to edit language.ts as well
-const (
-	EN = "en"
-	JA = "ja"
-)
-
 func getLangKey(lang string) string {
 	switch lang {
-	case JA:
-		return JA
+	case constants.JA:
+		return constants.JA
 	default:
-		return EN
+		return constants.EN
 	}
 }
 

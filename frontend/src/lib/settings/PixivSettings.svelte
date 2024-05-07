@@ -1,25 +1,32 @@
 <script lang="ts">
     import { Label, Select, Input, Toggle } from "flowbite-svelte";
+    import { onMount } from "svelte";
+    import { GetPreferences, SetPixivPreferences } from "../../scripts/wailsjs/go/app/App";
+    import { pixivFormId, swal } from "../../scripts/constants";
 
-    let pixivArtworkType = 3;
+    export let formId = pixivFormId;
+    export let promptSuccess: boolean;
+    export let preferences: any = undefined;
+
+    export let pixivArtworkType: number = 3;
     const pixivArtworkTypes = [
         { value: 1, name: "Illustrations and Ugoira" },
         { value: 2, name: "Manga" },
         { value: 3, name: "All" }
     ];
-    let pixivRating = 6;
+    export let pixivRating: number = 6;
     const pixivRatings = [
         { value: 4, name: "R-18" },
         { value: 5, name: "Safe" },
         { value: 6, name: "All" }
     ];
-    let pixivSearchMode = 9;
+    export let pixivSearchMode: number = 8;
     const pixivSearchModes = [
         { value: 7, name: "Similar Tag Names" },
         { value: 8, name: "Tags" },
         { value: 9, name: "Title and Caption" },
     ];
-    let pixivSortOrder = 10;
+    export let pixivSortOrder: number = 10;
     const pixivSortOrders = [
         { value: 10, name: "By Date" },
         { value: 11, name: "By Date (Descending)" },
@@ -30,7 +37,7 @@
         { value: 16, name: "By Popularity (Female)" },
         { value: 17, name: "By Popularity (Descending/Female)" },
     ];
-    let pixivUgoiraFormat = 18;
+    export let pixivUgoiraFormat: number = 18;
     const pixivUgoiraFormats = [
         { value: 18, name: ".gif" },
         { value: 19, name: ".apng" },
@@ -38,11 +45,52 @@
         { value: 21, name: ".webm" },
         { value: 22, name: ".mp4" },
     ];
+
+    onMount(async() => {
+        // Pixiv Specific
+        const DeleteUgoiraZipInp = document.getElementById("DeleteUgoiraZip") as HTMLInputElement;
+        const UgoiraQualityInp = document.getElementById("UgoiraQuality") as HTMLInputElement;
+
+        if (preferences === undefined) {
+            preferences = await GetPreferences();
+        }
+
+        DeleteUgoiraZipInp.checked = preferences.DeleteUgoiraZip;
+        pixivArtworkType           = preferences.ArtworkType;
+        pixivRating                = preferences.RatingMode;
+        pixivSearchMode            = preferences.SearchMode;
+        pixivSortOrder             = preferences.SortOrder;
+        pixivUgoiraFormat          = preferences.UgoiraOutputFormat;
+        UgoiraQualityInp.value     = preferences.UgoiraQuality;
+
+        const prefForm = document.getElementById(formId) as HTMLFormElement;
+        prefForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const prefs = {
+                DeleteUgoiraZip:    DeleteUgoiraZipInp.checked,
+                ArtworkType:        pixivArtworkType,
+                RatingMode:         pixivRating,
+                SearchMode:         pixivSearchMode,
+                SortOrder:          pixivSortOrder,
+                UgoiraOutputFormat: pixivUgoiraFormat,
+                UgoiraQuality:      parseInt(UgoiraQualityInp.value),
+            };
+            await SetPixivPreferences(prefs);
+
+            if (promptSuccess) {
+                swal.fire({
+                    title: "Success",
+                    text: "Preferences saved successfully",
+                    icon: "success",
+                });
+            }
+        });
+    });
 </script>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<form id={formId} class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2 mt-4">
-        <Toggle color="green" name="DeleteUgoiraZip">Delete Ugoira Zip After Conversion</Toggle>
+        <Toggle color="green" id="DeleteUgoiraZip" name="DeleteUgoiraZip">Delete Ugoira Zip After Conversion</Toggle>
     </div>
     <div>
         <Label for="ArtworkType">Artwork Type:</Label>
@@ -104,4 +152,4 @@
             placeholder="0-51 for mp4, 0-63 for webm"
         />
     </div>
-</div>
+</form>

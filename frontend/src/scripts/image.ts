@@ -14,11 +14,11 @@ export const Base64ImgStringToFile = (base64EncodedImageString: string, fileName
 };
 
 // opposite of Uint8Array.from(atob(base64EncodedImageString), c => c.charCodeAt(0)); // decode base64 string
-export const GetBase64ImgStringFromFile = async (file: File): Promise<string> => {
-    const data = await file.arrayBuffer();
-    const base64String = btoa(new Uint8Array(data).reduce((data, byte) => data + String.fromCharCode(byte), ''));
-    return base64String;
-}
+// export const GetBase64ImgStringFromFile = async (file: File): Promise<string> => {
+//     const data = await file.arrayBuffer();
+//     const base64String = btoa(new Uint8Array(data).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+//     return base64String;
+// }
 
 export const ImgFileToDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {

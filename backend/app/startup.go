@@ -54,12 +54,6 @@ func (a *App) Startup(ctx context.Context) {
 	}
 	a.appData = appData
 
-	userAgent := a.appData.GetString(constants.USER_AGENT_KEY)
-	if userAgent == "" {
-		userAgent = cdlconst.USER_AGENT
-		a.appData.SetString(constants.USER_AGENT_KEY, userAgent)
-	}
-
 	lang := a.appData.GetString(constants.LANGUAGE_KEY)
 	if lang == "" {
 		lang = "en"

@@ -8,13 +8,27 @@ import (
 	"github.com/KJHJason/Cultured-Downloader/backend/crypto"
 )
 
+// IMPORTANT: Update this when adding new encrypted fields
 var encryptedFields = [...]string{
 	constants.GDRIVE_API_KEY_KEY,
 	constants.GDRIVE_SERVICE_ACC_KEY,
 
-	constants.FANTIA_COOKIE_VALUE_KEY,
 	constants.FANTIA_COOKIE_JSON_KEY,
 	constants.FANTIA_COOKIE_TXT_KEY,
+	constants.FANTIA_COOKIE_VALUE_KEY,
+
+	constants.PIXIV_FANBOX_COOKIE_JSON_KEY,
+	constants.PIXIV_FANBOX_COOKIE_TXT_KEY,
+	constants.PIXIV_FANBOX_COOKIE_VALUE_KEY,
+
+	constants.PIXIV_COOKIE_JSON_KEY,
+	constants.PIXIV_COOKIE_TXT_KEY,
+	constants.PIXIV_COOKIE_VALUE_KEY,
+	constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY,
+
+	constants.KEMONO_COOKIE_JSON_KEY,
+	constants.KEMONO_COOKIE_TXT_KEY,
+	constants.KEMONO_COOKIE_VALUE_KEY,
 }
 
 func (a *AppData) ResetEncryptedFields() error {

@@ -10,5 +10,9 @@
   "author": {
     "name": "KJHJason",
     "email": "kjhjson@gmail.com"
+  },
+  "info": {
+    "copyright": "© KJHJason, GPL-3.0 License",
+    "productVersion": "5.0.0a"
   }
 }

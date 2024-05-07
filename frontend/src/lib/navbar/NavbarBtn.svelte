@@ -4,14 +4,13 @@
 
     export let action: string;
     export let btnRole: string;
-    export let changeAction: (action: string) => void;
 
     const actionTitle = actionTitleCase(btnRole);
     $: actionMatches = btnRole === action;
 </script>
 
 <button 
-    on:click={() => changeAction(btnRole)} 
+    on:click={() => {action = btnRole}} 
     class="w-full flex items-center p-2 rounded-lg group {
         actionMatches ? 
         "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white" : 

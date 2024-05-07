@@ -1,7 +1,11 @@
 package app
 
 import (
+	"errors"
 	"strings"
+
+	pixivmobile "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/mobile"
+	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
 func validatePixivTag(tag *string) (valid bool, pageNum string) {
@@ -19,4 +23,36 @@ func validatePixivTag(tag *string) (valid bool, pageNum string) {
 	}
 
 	return true, pageNum
+}
+
+var codeVerifier string
+
+func (a *App) StartPixivOAuth() string {
+	var url string
+	url, codeVerifier = pixivmobile.GetOAuthURL()
+	return url
+}
+
+func (a *App) VerifyPixivOAuthCode(code string) error {
+	if codeVerifier == "" {
+		return errors.New("code verifier is empty, please start the OAuth process first")
+	}
+
+	refreshToken, err := pixivmobile.VerifyOAuthCode(code, codeVerifier, 15)
+	if err != nil {
+		return err
+	}
+
+	return a.appData.SetSecureString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY, refreshToken)
+}
+
+func (a *App) SetPixivOAuthRefreshToken(refreshToken string) error {
+	if _, err := pixivmobile.RefreshAccessToken(15, refreshToken); err != nil {
+		return err
+	}
+	return a.appData.SetSecureString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY, refreshToken)
+}
+
+func (a *App) GetPixivRefreshToken() string {
+	return a.appData.GetSecuredString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY)
 }

@@ -145,18 +145,18 @@ func (a *AppData) GetPreferences() Preferences {
 		DlGDrive:         a.GetBool(constants.DL_GDRIVE_KEY),
 		DetectOtherLinks: a.GetBool(constants.DETECT_OTHER_URLS_KEY),
 
-		ArtworkType:        a.GetInt(constants.PIXIV_ARTWORK_TYPE_KEY),
+		ArtworkType:        a.GetIntWithFallback(constants.PIXIV_ARTWORK_TYPE_KEY, 3),
 		DeleteUgoiraZip:    a.GetBool(constants.PIXIV_DELETE_UGOIRA_ZIP_KEY),
-		RatingMode:         a.GetInt(constants.PIXIV_RATING_MODE_KEY),
-		SearchMode:         a.GetInt(constants.PIXIV_SEARCH_MODE_KEY),
-		SortOrder:          a.GetInt(constants.PIXIV_SORT_ORDER_KEY),
-		UgoiraOutputFormat: a.GetInt(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY),
+		RatingMode:         a.GetIntWithFallback(constants.PIXIV_RATING_MODE_KEY, 6),
+		SearchMode:         a.GetIntWithFallback(constants.PIXIV_SEARCH_MODE_KEY, 8),
+		SortOrder:          a.GetIntWithFallback(constants.PIXIV_SORT_ORDER_KEY, 10),
+		UgoiraOutputFormat: a.GetIntWithFallback(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY, 18),
 		UgoiraQuality:      uint8(ugoiraQuality),
 	}
 	return pref
 }
 
-func (a *AppData) SetPreferences(platform string, p Preferences) error {
+func (a *AppData) SetGeneralPreferences(p Preferences) error {
 	var err error
 	if err = a.SetBool(constants.DL_THUMBNAIL_KEY, p.DlPostThumbnail); err != nil {
 		return err
@@ -177,14 +177,15 @@ func (a *AppData) SetPreferences(platform string, p Preferences) error {
 	if err = a.SetBool(constants.DETECT_OTHER_URLS_KEY, p.DetectOtherLinks); err != nil {
 		return err
 	}
+	return nil
+}
 
-	// Below are Pixiv specific settings
-	if platform != constants.PIXIV {
-		return nil
-	}
+func (a *AppData) SetPixivPreferences(p Preferences) error {
 	if GetReadableArtworkType(p.ArtworkType) == UnknownValue {
 		p.ArtworkType = PixivArtworkTypeIllustAndUgoira
 	}
+
+	var err error
 	if err = a.SetInt(constants.PIXIV_ARTWORK_TYPE_KEY, p.ArtworkType); err != nil {
 		return err
 	}

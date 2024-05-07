@@ -34,6 +34,10 @@ const textMap: Record<string, Record<string, string>> = {
         [EN]: "Current Task",
         [JP]: "現在のタスク",
     },
+    "save": {
+        [EN]: "Save",
+        [JP]: "保存",
+    },
 }
 
 export const InitialiseLanguage = async (): Promise<void> => {

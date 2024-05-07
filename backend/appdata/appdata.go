@@ -21,6 +21,22 @@ const (
 	jsonIndent = "    "
 )
 
+func initialiseSettingsMap() map[string]interface{} {
+	return map[string]interface{}{
+		// General
+		constants.DARK_MODE_KEY:        false,
+		constants.USERNAME_KEY:         "Ojisan",
+		constants.PROFILE_PIC_PATH_KEY: "",
+		constants.DOWNLOAD_KEY:         iofuncs.APP_PATH,
+		constants.LANGUAGE_KEY:         constants.EN,
+
+		// Download preferences
+		constants.DL_THUMBNAIL_KEY:  true,
+		constants.DL_IMAGES_KEY:     true,
+		constants.DL_ATTACHMENT_KEY: true,
+	}
+}
+
 type AppData struct {
 	data                     map[string]interface{}
 	dataPath                 string
@@ -126,20 +142,6 @@ func (a *AppData) saveToFile() error {
 
 	logger.MainLogger.Info("Data saved to", a.dataPath)
 	return nil
-}
-
-func initialiseSettingsMap() map[string]interface{} {
-	return map[string]interface{}{
-		// General
-		constants.DARK_MODE_KEY:        false,
-		constants.USERNAME_KEY:         "Ojisan",
-		constants.PROFILE_PIC_PATH_KEY: "",
-
-		// Download preferences
-		constants.DL_THUMBNAIL_KEY:  true,
-		constants.DL_IMAGES_KEY:     true,
-		constants.DL_ATTACHMENT_KEY: true,
-	}
 }
 
 func (a *AppData) loadFromFile() error {

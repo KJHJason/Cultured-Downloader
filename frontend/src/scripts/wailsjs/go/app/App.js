@@ -6,6 +6,10 @@ export function ChangeMasterPassword(arg1, arg2) {
   return window['go']['app']['App']['ChangeMasterPassword'](arg1, arg2);
 }
 
+export function CheckForUpdates() {
+  return window['go']['app']['App']['CheckForUpdates']();
+}
+
 export function CheckMasterPassword(arg1) {
   return window['go']['app']['App']['CheckMasterPassword'](arg1);
 }
@@ -30,6 +34,14 @@ export function GetDownloadQueues() {
   return window['go']['app']['App']['GetDownloadQueues']();
 }
 
+export function GetGDriveAPIKey() {
+  return window['go']['app']['App']['GetGDriveAPIKey']();
+}
+
+export function GetGDriveServiceAccount() {
+  return window['go']['app']['App']['GetGDriveServiceAccount']();
+}
+
 export function GetGdriveClient() {
   return window['go']['app']['App']['GetGdriveClient']();
 }
@@ -38,12 +50,20 @@ export function GetLanguage() {
   return window['go']['app']['App']['GetLanguage']();
 }
 
+export function GetPixivRefreshToken() {
+  return window['go']['app']['App']['GetPixivRefreshToken']();
+}
+
 export function GetPreferences() {
   return window['go']['app']['App']['GetPreferences']();
 }
 
 export function GetProfilePic() {
   return window['go']['app']['App']['GetProfilePic']();
+}
+
+export function GetProgramInfo() {
+  return window['go']['app']['App']['GetProgramInfo']();
 }
 
 export function GetSessionValue(arg1) {
@@ -78,6 +98,10 @@ export function SelectDlDirPath() {
   return window['go']['app']['App']['SelectDlDirPath']();
 }
 
+export function SelectGDriveServiceAccount() {
+  return window['go']['app']['App']['SelectGDriveServiceAccount']();
+}
+
 export function SelectProfilePic() {
   return window['go']['app']['App']['SelectProfilePic']();
 }
@@ -90,6 +114,14 @@ export function SetDlDirPath(arg1) {
   return window['go']['app']['App']['SetDlDirPath'](arg1);
 }
 
+export function SetGDriveAPIKey(arg1) {
+  return window['go']['app']['App']['SetGDriveAPIKey'](arg1);
+}
+
+export function SetGeneralPreferences(arg1) {
+  return window['go']['app']['App']['SetGeneralPreferences'](arg1);
+}
+
 export function SetLanguage(arg1) {
   return window['go']['app']['App']['SetLanguage'](arg1);
 }
@@ -98,8 +130,12 @@ export function SetMasterPassword(arg1) {
   return window['go']['app']['App']['SetMasterPassword'](arg1);
 }
 
-export function SetPreferences(arg1, arg2) {
-  return window['go']['app']['App']['SetPreferences'](arg1, arg2);
+export function SetPixivOAuthRefreshToken(arg1) {
+  return window['go']['app']['App']['SetPixivOAuthRefreshToken'](arg1);
+}
+
+export function SetPixivPreferences(arg1) {
+  return window['go']['app']['App']['SetPixivPreferences'](arg1);
 }
 
 export function SetSessionValue(arg1, arg2) {
@@ -114,8 +150,16 @@ export function SetUsername(arg1) {
   return window['go']['app']['App']['SetUsername'](arg1);
 }
 
+export function StartPixivOAuth() {
+  return window['go']['app']['App']['StartPixivOAuth']();
+}
+
 export function SubmitFantiaToQueue(arg1, arg2) {
   return window['go']['app']['App']['SubmitFantiaToQueue'](arg1, arg2);
+}
+
+export function UnsetGDriveServiceAccount() {
+  return window['go']['app']['App']['UnsetGDriveServiceAccount']();
 }
 
 export function UploadCookieFile(arg1) {
@@ -128,4 +172,8 @@ export function UploadProfilePic(arg1) {
 
 export function ValidateFantiaUrls(arg1) {
   return window['go']['app']['App']['ValidateFantiaUrls'](arg1);
+}
+
+export function VerifyPixivOAuthCode(arg1) {
+  return window['go']['app']['App']['VerifyPixivOAuthCode'](arg1);
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Input, Tooltip, ButtonGroup } from "flowbite-svelte";
+    import { Input, Tooltip, ButtonGroup, Label } from "flowbite-svelte";
     import { UploadCookieFile, GetSessionValue, SetSessionValue, ResetSession } from "../../scripts/wailsjs/go/app/App";
     import { UploadSolid } from "flowbite-svelte-icons";
     import { swal } from "../../scripts/constants";
@@ -84,7 +84,7 @@
 </script>
 
 <div>
-    <h4>{title}</h4>
+    <Label for={elId}>{title}</Label>
     <ButtonGroup class="w-full">
         <PasswordToggle elClass="w-full" hideByDefault={true}>
             <Input 

@@ -29,7 +29,4 @@ https://fantia.jp/fanclubs/5744`}
     urlValidationFn={urlValidationFn}
     addToQueueFn={addToQueueFn}
     checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
->
-    <Toggle color="green" name="DlGDrive">GDrive Links</Toggle>
-    <Toggle color="green" name="DetectOtherLinks">Detect Other URL(s) like MEGA</Toggle>
-</PlatformBase>
+/>

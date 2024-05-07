@@ -3,7 +3,7 @@
 
     import { onMount } from "svelte";
     import { Spinner } from "flowbite-svelte";
-    import { swal, actions, changeActionEventType, changeUsernameEventType, invertedSwal } from "./scripts/constants";
+    import { swal, actions, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
     import { InitialiseLanguage } from "./scripts/language";
 
@@ -41,19 +41,7 @@
 
     $: username = "";
     $: action = "home";
-    const handleActionChange = (event: CustomEvent<string>): void => {
-        const value = event.detail;
-        switch (event.type) {
-            case changeActionEventType:
-                action = value;
-                break;
-            case changeUsernameEventType:
-                username = value;
-                break;
-            default:
-                throw new Error(`Unknown event type: ${event.type}`);
-        }
-    };
+    $: lastSavedUpdateStr = "";
 
     const checkMasterPassword = async (): Promise<void> => {
         if (!await PromptMasterPassword()) {
@@ -123,18 +111,18 @@
     });
 </script>
 
-<Navbar username={username} action={action} on:changeAction={handleActionChange}/>
+<Navbar bind:username bind:action />
 
 <main class="p-4">
     <div class="mt-14">
         {#await InitialiseLanguage()}
             <Spinner color="blue" />
         {:then}
-            <Settings username={username} handleActionChange={handleActionChange} />
+            <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
             <!-- <Fantia /> -->
             <!-- <Pixiv /> -->
-            <!-- <DownloadQueues/> -->
-            <!-- {#if action === actions.Home}
+            <!-- <DownloadQueues bind:action /> -->
+            {#if action === actions.Home}
                 <Home/>
             {:else if action === actions.Fantia}
                 <Fantia/>
@@ -145,12 +133,12 @@
             {:else if action === actions.Kemono}
                 <Kemono/>
             {:else if action === actions.Downloads}
-                <DownloadQueues/>
+                <DownloadQueues bind:action />
             {:else if action == actions.Settings}
-                <Settings username={username} handleActionChange={handleActionChange} />
+                <Settings bind:username bind:lastSavedUpdateStr />
             {:else}
                 <p>Not implemented yet</p>
-            {/if} -->
+            {/if}
         {:catch error}
             <p>Unexpected error!: {error.message}</p>
         {/await}

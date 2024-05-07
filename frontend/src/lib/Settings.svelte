@@ -4,11 +4,12 @@
     import { UserCircleSolid, DownloadSolid, InfoCircleSolid, AdjustmentsVerticalSolid, UserSettingsSolid } from "flowbite-svelte-icons";
     import General from "./settings/General.svelte";
     import Preferences from "./settings/Preferences.svelte";
-  import Sessions from "./settings/Sessions.svelte";
-  import Advanced from "./settings/Advanced.svelte";
+    import Sessions from "./settings/Sessions.svelte";
+    import Advanced from "./settings/Advanced.svelte";
+    import ProgramInfo from "./settings/ProgramInfo.svelte";
 
     export let username: string;
-    export let handleActionChange: (event: CustomEvent<string>) => void;
+    export let lastSavedUpdateStr: string;
 
     const changeDefaultDividerColour = () => {
         const settingsContent = document.getElementById("settingsContent");
@@ -33,7 +34,7 @@
                 <UserCircleSolid size="sm" />
                 General
             </div>
-            <General username={username} on:changeUsername={handleActionChange} />
+            <General bind:username />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
@@ -61,10 +62,7 @@
                 <InfoCircleSolid size="sm" />
                 Program Info
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-            <b>Users:</b>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-            </p>
+            <ProgramInfo bind:lastSavedUpdateStr />
         </TabItem>
     </Tabs>
 </div>

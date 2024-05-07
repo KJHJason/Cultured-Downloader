@@ -6,6 +6,23 @@
     @apply text-black dark:text-white;
 }
 
+.swal2-input {
+    @apply text-black;
+}
+
+.rotate-animation {
+    @apply animate-spin;
+}
+
+@keyframes animate-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 h1, h2, h3, h4, h5, h6, p, span {
     @apply text-main;
 }

@@ -1,9 +1,10 @@
 package constants
 
 const (
-	PROGRAM_NAME              = "Cultured Downloader"
-	LOCAL_USER_ASSET_DIR_NAME = "assets"
-	LANGUAGE_KEY              = "lang"
+	PROGRAM_NAME                 = "Cultured Downloader"
+	PROGRAM_VER                  = "5.0.0a"
+	LOCAL_USER_ASSET_DIR_NAME    = "assets"
+	LANGUAGE_KEY                 = "lang"
 	HASH_OF_MASTER_PASS_HASH_KEY = "master-password-hash"
 	MASTER_PASS_SALT_KEY         = "master-password-salt"
 	DARK_MODE_KEY                = "dark-mode"
@@ -11,6 +12,9 @@ const (
 	USER_AGENT_KEY               = "user-agent"
 	PROFILE_PIC_PATH_KEY         = "profile-pic-path"
 	DOWNLOAD_KEY                 = "download"
+
+	EN = "en"
+	JA = "ja"
 
 	// Platform names
 	FANTIA       = "fantia"
@@ -36,6 +40,7 @@ const (
 	PIXIV_FANBOX_COOKIE_JSON_KEY  = "fanbox-cookie-json"
 	PIXIV_FANBOX_COOKIE_TXT_KEY   = "fanbox-cookie-txt"
 
+	PIXIV_MOBILE_REFRESH_TOKEN_KEY = "pixiv-mobile-refresh-token"
 	PIXIV_COOKIE_VALUE_KEY         = "pixiv-cookie-value"
 	PIXIV_COOKIE_JSON_KEY          = "pixiv-cookie-json"
 	PIXIV_COOKIE_TXT_KEY           = "pixiv-cookie-txt"

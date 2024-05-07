@@ -20,8 +20,12 @@ func (app *App) GetPreferences() appdata.Preferences {
 	return app.appData.GetPreferences()
 }
 
-func (app *App) SetPreferences(platform string, preferences appdata.Preferences) error {
-	return app.appData.SetPreferences(platform, preferences)
+func (app *App) SetGeneralPreferences(preferences appdata.Preferences) error {
+	return app.appData.SetGeneralPreferences(preferences)
+}
+
+func (app *App) SetPixivPreferences(preferences appdata.Preferences) error {
+	return app.appData.SetPixivPreferences(preferences)
 }
 
 func (a *App) SelectDlDirPath() error {
@@ -49,8 +53,18 @@ func (a *App) SetDlDirPath(dirPath string) error {
 	return a.appData.SetString(constants.DOWNLOAD_KEY, dirPath)
 }
 
-func (a *App) GetUserAgent() string {
-	return a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+type UserAgentResponse struct {
+	UserAgent string
+	IsDefault bool
+}
+
+func (a *App) GetUserAgent() UserAgentResponse {
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	isDefault := userAgent == cdlconsts.USER_AGENT
+	return UserAgentResponse{
+		UserAgent: userAgent,
+		IsDefault: isDefault,
+	}
 }
 
 func (a *App) SetUserAgent(userAgent string) error {
@@ -203,6 +217,24 @@ func (a *App) ResetSession(website string) error {
 	}
 
 	return nil
+}
+
+// for backend use only
+func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
+	_, dataTxtKey, dataJsonKey, err := getCookieDataKeys(website)
+	if err != nil {
+		return nil, err
+	}
+
+	cookieInfoArgs := parsers.NewCookieInfoArgsByWebsite(website)
+	if val := a.appData.GetSecuredString(dataTxtKey); val != "" {
+		return parsers.ParseTxtCookie(val, cookieInfoArgs)
+	}
+
+	if val := a.appData.GetSecuredBytes(dataJsonKey); val != nil {
+		return parsers.ParseJsonCookie(val, cookieInfoArgs)
+	}
+	return nil, nil
 }
 
 func getSessionValFromCookies(website string, cookies []*http.Cookie) (string, error) {
