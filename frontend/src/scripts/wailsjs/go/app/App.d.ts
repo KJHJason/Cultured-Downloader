@@ -4,6 +4,8 @@ import {app} from '../models';
 import {gdrive} from '../models';
 import {appdata} from '../models';
 
+export function CancelQueue(arg1:number):Promise<void>;
+
 export function ChangeMasterPassword(arg1:string,arg2:string):Promise<void>;
 
 export function CheckForUpdates():Promise<boolean>;

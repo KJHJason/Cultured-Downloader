@@ -1,18 +1,20 @@
 <script lang="ts">
     import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
-    import { onMount } from "svelte";
+    import { onDestroy } from "svelte";
     import { GetDownloadQueues } from "../scripts/wailsjs/go/app/App";
     import { Translate, GetLocale } from "../scripts/language";
     import Inputs from "./queues/Inputs.svelte";
     import Tasks from "./queues/Tasks.svelte";
     import Actions from "./queues/Actions.svelte";
-  import { actions } from "../scripts/constants";
+    import { actions } from "../scripts/constants";
+    import type { Writable } from "svelte/store";
 
-    export let action: string;
+    export let action: Writable<string>;
 
     let inputModalsId: Record<number, boolean> = {};
     let progHistoryModalsId: Record<number, boolean> = {}; 
     let modalsId: Record<number, boolean> = {};
+    let errModalsId: Record<number, boolean> = {};
     let downloadQueues: any[] = [];
 
     const modalLogic = (oldRecord: Record<number, boolean>, queues: Record<any, any>): void => {
@@ -48,13 +50,14 @@
         return date.toLocaleString(GetLocale(), options);
     };
 
-    onMount(async () => {
-        // make a polling request to get the download queues
-        setInterval(async () => {
-            if (action !== actions.Downloads) {
-                return;
-            }
+    // make a polling request to get the download queues
+    let intervalId: number;    
+    const unsubscribeAction = action.subscribe((curAction: string) => {
+        if (curAction !== actions.Downloads) {
+            return;
+        }
 
+        intervalId = setInterval(async () => {
             const retrievedQueues = await GetDownloadQueues();
             if (retrievedQueues === null) {
                 return;
@@ -63,9 +66,15 @@
             modalLogic(modalsId, retrievedQueues);
             modalLogic(progHistoryModalsId, retrievedQueues);
             modalLogic(inputModalsId, retrievedQueues);
+            modalLogic(errModalsId, retrievedQueues);
 
             downloadQueues = [...retrievedQueues];
-        }, 400);
+        }, 500);
+    });
+
+    onDestroy(() => {
+        clearInterval(intervalId);
+        unsubscribeAction();
     });
 </script>
 
@@ -98,7 +107,7 @@
                         <Tasks {dlQ} {progHistoryModalsId} {makeDateTimeReadable} />
                     </TableBodyCell>
                     <TableBodyCell tdClass="text-center">
-                        <Actions {dlQ} {modalsId} />
+                        <Actions {dlQ} {modalsId} {errModalsId} />
                     </TableBodyCell>
                 </TableBodyRow>
             {/each}

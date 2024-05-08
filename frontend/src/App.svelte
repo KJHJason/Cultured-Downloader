@@ -2,6 +2,7 @@
     import Swal from "sweetalert2";
 
     import { onMount } from "svelte";
+    import { writable } from "svelte/store";
     import { Spinner } from "flowbite-svelte";
     import { swal, actions, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
@@ -40,8 +41,8 @@
     });
 
     $: username = "";
-    $: action = "home";
     $: lastSavedUpdateStr = "";
+    const action = writable(actions.Home);
 
     const checkMasterPassword = async (): Promise<void> => {
         if (!await PromptMasterPassword()) {
@@ -111,7 +112,7 @@
     });
 </script>
 
-<Navbar bind:username bind:action />
+<Navbar bind:username {action} />
 
 <main class="p-4">
     <div class="mt-14">
@@ -122,19 +123,19 @@
             <!-- <Fantia /> -->
             <!-- <Pixiv /> -->
             <!-- <DownloadQueues bind:action /> -->
-            {#if action === actions.Home}
+            {#if $action === actions.Home}
                 <Home/>
-            {:else if action === actions.Fantia}
+            {:else if $action === actions.Fantia}
                 <Fantia/>
-            {:else if action === actions.Pixiv}
+            {:else if $action === actions.Pixiv}
                 <Pixiv/>
-            {:else if action === actions.PixivFanbox}
+            {:else if $action === actions.PixivFanbox}
                 <PixivFanbox/>
-            {:else if action === actions.Kemono}
+            {:else if $action === actions.Kemono}
                 <Kemono/>
-            {:else if action === actions.Downloads}
-                <DownloadQueues bind:action />
-            {:else if action == actions.Settings}
+            {:else if $action === actions.Downloads}
+                <DownloadQueues {action} />
+            {:else if $action == actions.Settings}
                 <Settings bind:username bind:lastSavedUpdateStr />
             {:else}
                 <p>Not implemented yet</p>

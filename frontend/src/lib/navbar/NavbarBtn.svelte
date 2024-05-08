@@ -1,16 +1,18 @@
 <script lang="ts">
     import { actions, logoImgSrc, navbarLogoSize } from "../../scripts/constants";
     import { actionTitleCase } from "../../scripts/utils/string";
+    import type { Writable } from "svelte/store";
 
-    export let action: string;
+    export let action: Writable<string>;
+
     export let btnRole: string;
 
     const actionTitle = actionTitleCase(btnRole);
-    $: actionMatches = btnRole === action;
+    $: actionMatches = $action === btnRole;
 </script>
 
 <button 
-    on:click={() => {action = btnRole}} 
+    on:click={() => {action.set(btnRole)}} 
     class="w-full flex items-center p-2 rounded-lg group {
         actionMatches ? 
         "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white" : 

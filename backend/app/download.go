@@ -71,7 +71,7 @@ type FrontendDownloadQueue struct {
 	Msg               string
 	SuccessMsg        string
 	ErrMsg            string
-	ErrSlice          []error
+	ErrSlice          []string
 	Inputs            []Input
 	ProgressBar       *ProgressBar
 	NestedProgressBar []NestedProgressBar
@@ -145,13 +145,19 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 			msg = fmt.Sprintf(msg, val.mainProgressBar.count)
 		}
 
+		errSlice := val.GetErrSlice()
+		errStringSlice := make([]string, len(errSlice))
+		for idx, err := range errSlice {
+			errStringSlice[idx] = err.Error()
+		}
+
 		queues = append(queues, FrontendDownloadQueue{
 			Id:                val.id,
 			Website:           val.website,
 			Msg:               msg,
 			SuccessMsg:        val.mainProgressBar.GetSuccessMsg(),
 			ErrMsg:            val.mainProgressBar.GetErrorMsg(),
-			ErrSlice:          val.GetErrSlice(),
+			ErrSlice:          errStringSlice,
 			Inputs:            val.inputs,
 			ProgressBar:       val.mainProgressBar,
 			NestedProgressBar: nestedProgressBar,
@@ -184,9 +190,9 @@ func (app *App) newDownloadQueue(website string, inputs []Input, mainProgBar *Pr
 	return dlQueue
 }
 
-func (app *App) DeleteQueue(id int) {
+func (app *App) getQueueEl(id int) (*list.Element, *DownloadQueue) {
 	if app.downloadQueues.Len() == 0 {
-		return
+		return nil, nil
 	}
 
 	// check if id is valid since we are using a counter based id system
@@ -195,7 +201,7 @@ func (app *App) DeleteQueue(id int) {
 	firstQueue := firstEl.Value.(*DownloadQueue)
 	lastQueue := lastEl.Value.(*DownloadQueue)
 	if id < firstQueue.id || id > lastQueue.id {
-		return
+		return nil, nil
 	}
 
 	// Decide which direction is the best to iterate through the list
@@ -213,9 +219,7 @@ func (app *App) DeleteQueue(id int) {
 	for dlQueue != nil {
 		el := dlQueue.Value.(*DownloadQueue)
 		if el.id == id {
-			el.CancelQueue()
-			app.downloadQueues.Remove(dlQueue)
-			return
+			return dlQueue, el
 		}
 
 		if direction == 1 {
@@ -224,6 +228,26 @@ func (app *App) DeleteQueue(id int) {
 			dlQueue = dlQueue.Prev()
 		}
 	}
+	return nil, nil
+}
+
+func (app *App) DeleteQueue(id int) {
+	listEl, queue := app.getQueueEl(id)
+	if queue == nil || listEl == nil {
+		return
+	}
+
+	queue.CancelQueue()
+	app.downloadQueues.Remove(listEl)
+}
+
+func (app *App) CancelQueue(id int) {
+	_, queue := app.getQueueEl(id)
+	if queue == nil {
+		return
+	}
+
+	queue.CancelQueue()
 }
 
 func (app *App) startNewQueues() {
