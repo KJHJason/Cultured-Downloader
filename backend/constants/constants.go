@@ -12,6 +12,7 @@ const (
 	USER_AGENT_KEY               = "user-agent"
 	PROFILE_PIC_PATH_KEY         = "profile-pic-path"
 	DOWNLOAD_KEY                 = "download"
+	FFMPEG_KEY                   = "ffmpeg"
 
 	EN = "en"
 	JA = "ja"

@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	goruntime "runtime"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
+	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/parsers"
@@ -51,6 +53,61 @@ func (a *App) SetDlDirPath(dirPath string) error {
 	}
 
 	return a.appData.SetString(constants.DOWNLOAD_KEY, dirPath)
+}
+
+func (a *App) SetFfmpegPath(ffmpegPath string) error {
+	if ffmpegPath == "" || ffmpegPath == "ffmpeg" {
+		return a.appData.Unset(constants.FFMPEG_KEY)
+	}
+
+	if err := configs.ValidateFfmpegPathLogic(a.ctx, ffmpegPath); err != nil {
+		return err
+	}
+
+	return a.appData.SetString(constants.FFMPEG_KEY, ffmpegPath)
+}
+
+func (a *App) SelectFfmpegPath() error {
+	var filters []runtime.FileFilter
+	if goruntime.GOOS == "windows" {
+		filters = []runtime.FileFilter{
+			{
+				DisplayName: "Executable Files (*.exe)",
+				Pattern:     "*.exe",
+			},
+		}
+	} else {
+		filters = []runtime.FileFilter{
+			{
+				DisplayName: "All Files",
+				Pattern:     "*",
+			},
+		}
+	}
+
+	ffmpegPath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:   "Select FFmpeg executable",
+		Filters: filters,
+	})
+	if err != nil {
+		return err
+	}
+	if ffmpegPath == "" {
+		return errors.New("no file selected")
+	}
+
+	if err := configs.ValidateFfmpegPathLogic(a.ctx, ffmpegPath); err != nil {
+		return err
+	}
+	return a.SetFfmpegPath(ffmpegPath)
+}
+
+func (a *App) GetFfmpegPath() string {
+	path := a.appData.GetStringWithFallback(constants.FFMPEG_KEY, "ffmpeg")
+	if err := configs.ValidateFfmpegPathLogic(a.ctx, path); err != nil {
+		return ""
+	}
+	return path
 }
 
 type UserAgentResponse struct {

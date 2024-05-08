@@ -15,6 +15,9 @@
         VerifyPixivOAuthCode,
         SetPixivOAuthRefreshToken,
         GetPixivRefreshToken,
+        SelectFfmpegPath,
+        SetFfmpegPath,
+        GetFfmpegPath,
     } from "../../scripts/wailsjs/go/app/App";
     import { onMount } from "svelte";
     import { invertedSwal, swal } from "../../scripts/constants";
@@ -26,6 +29,7 @@
     let savedUserAgent: string;
     let savedDownloadLoc: string;
     let savedGdriveJson: string;
+    let savedFfmpegPath: string;
     let gdriveJsonText: HTMLButtonElement;
     let dlLocationInp: HTMLInputElement;
     const SelectDownloadDir = async () => {
@@ -47,6 +51,23 @@
             savedDownloadLoc = await GetDownloadDir();
             dlLocationInp.value = savedDownloadLoc;
         }
+    };
+
+    const SelectFfmpegPathFn = async (): Promise<void> => {
+        try {
+            await SelectFfmpegPath();
+        } catch (e) {
+            if (e === "no file selected") {
+                return;
+            }
+            throw e;
+        }
+
+        swal.fire({
+            title: "Success",
+            text: "FFmpeg location set successfully",
+            icon: "success",
+        });
     };
 
     const handleGdriveResponse = (val: string): void => {
@@ -136,6 +157,10 @@
             handleGdriveResponse(savedGdriveJsonBytes);
         }
 
+        const ffmpegLocationInp = document.getElementById("ffmpegLocation") as HTMLInputElement;
+        savedFfmpegPath = await GetFfmpegPath();
+        ffmpegLocationInp.value = savedFfmpegPath;
+
         gdriveJsonText.addEventListener("click", async () => {
             const result = await swal.fire({
                 title: "Google Drive API JSON",
@@ -173,6 +198,7 @@
             const downloadLocation = dlLocationInp.value;
             const userAgent = userAgentInp.value;
             const pixivOauthCode = pixivOauthInp.value;
+            const ffmpegLocation = ffmpegLocationInp.value;
 
             if (userAgent && userAgent !== savedUserAgent) {
                 await SetUserAgent(userAgent);
@@ -182,6 +208,11 @@
             if (downloadLocation !== savedDownloadLoc) {
                 await SetDlDirPath(downloadLocation);
                 savedDownloadLoc = downloadLocation;
+            }
+
+            if (savedFfmpegPath !== ffmpegLocation) {
+                await SetFfmpegPath(ffmpegLocation);
+                savedFfmpegPath = ffmpegLocation;
             }
 
             if (pixivOauthCode) {
@@ -241,8 +272,27 @@
                 </ButtonGroupBtn>
             </ButtonGroup>
             <Helper class="mt-2">
-                *If you're unsure what to do after clicking "Start OAuth", please refer to this 
-                <button type="button" class="btn-link" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md")}>guide</button>.
+                *{Translate("If you're unsure what to do after clicking \"Start OAuth\", please refer to the guide below.")} 
+            </Helper>
+            <Helper>
+                <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md")}>
+                    https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md
+                </button>
+            </Helper>
+        </div>
+        <div>
+            <Label for="ffmpegLocation">{Translate("FFmpeg Location:")}</Label>
+            <ButtonGroup class="w-full">
+                <Input class="mt-2" name="ffmpegLocation" id="ffmpegLocation" placeholder="C:\ffmpeg\bin\ffmpeg.exe" required />
+                <ButtonGroupBtn elId="browseFfmpegLocation" clickFn={SelectFfmpegPathFn}>{Translate("Browse")}</ButtonGroupBtn>
+            </ButtonGroup>
+            <Helper class="mt-2">
+                *{Translate("This is used for Pixiv Ugoira downloads. If you're not downloading from Pixiv, you can ignore this. Otherwise you can install it from the link below.")}
+            </Helper>
+            <Helper>
+                <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://ffmpeg.org/download.html")}>
+                    https://ffmpeg.org/download.html
+                </button>
             </Helper>
         </div>
     </div>

@@ -20,6 +20,8 @@ export function GetDownloadDir():Promise<string>;
 
 export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 
+export function GetFfmpegPath():Promise<string>;
+
 export function GetGDriveAPIKey():Promise<string>;
 
 export function GetGDriveServiceAccount():Promise<string>;
@@ -52,6 +54,8 @@ export function ResetSession(arg1:string):Promise<void>;
 
 export function SelectDlDirPath():Promise<void>;
 
+export function SelectFfmpegPath():Promise<void>;
+
 export function SelectGDriveServiceAccount():Promise<void>;
 
 export function SelectProfilePic():Promise<app.ProfilePic>;
@@ -59,6 +63,8 @@ export function SelectProfilePic():Promise<app.ProfilePic>;
 export function SetDarkMode(arg1:boolean):Promise<void>;
 
 export function SetDlDirPath(arg1:string):Promise<void>;
+
+export function SetFfmpegPath(arg1:string):Promise<void>;
 
 export function SetGDriveAPIKey(arg1:string):Promise<void>;
 

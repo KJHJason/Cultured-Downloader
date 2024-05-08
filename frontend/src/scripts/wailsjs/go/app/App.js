@@ -34,6 +34,10 @@ export function GetDownloadQueues() {
   return window['go']['app']['App']['GetDownloadQueues']();
 }
 
+export function GetFfmpegPath() {
+  return window['go']['app']['App']['GetFfmpegPath']();
+}
+
 export function GetGDriveAPIKey() {
   return window['go']['app']['App']['GetGDriveAPIKey']();
 }
@@ -98,6 +102,10 @@ export function SelectDlDirPath() {
   return window['go']['app']['App']['SelectDlDirPath']();
 }
 
+export function SelectFfmpegPath() {
+  return window['go']['app']['App']['SelectFfmpegPath']();
+}
+
 export function SelectGDriveServiceAccount() {
   return window['go']['app']['App']['SelectGDriveServiceAccount']();
 }
@@ -112,6 +120,10 @@ export function SetDarkMode(arg1) {
 
 export function SetDlDirPath(arg1) {
   return window['go']['app']['App']['SetDlDirPath'](arg1);
+}
+
+export function SetFfmpegPath(arg1) {
+  return window['go']['app']['App']['SetFfmpegPath'](arg1);
 }
 
 export function SetGDriveAPIKey(arg1) {
