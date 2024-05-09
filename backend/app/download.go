@@ -16,7 +16,7 @@ var (
 	count = 0
 
 	// no. of workers used for each platform
-	workerMu           = &sync.Mutex{}
+	workerMu           = sync.Mutex{}
 	fantiaWorking      = 0
 	pixivWorking       = 0
 	pixivFanboxWorking = 0
@@ -42,10 +42,10 @@ func releaseWorker(website string) {
 type taskHandlerFunc func() []error
 
 type Input struct {
-	id      string
-	pageNum string
-	Input   string
-	Url     string
+	//id      string
+	//pageNum string
+	Input string
+	Url   string
 }
 
 type DownloadQueue struct {
@@ -92,9 +92,9 @@ type FrontendDownloadDetails struct {
 }
 
 // For the frontend
-func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
+func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 	var queues []FrontendDownloadQueue
-	for e := app.downloadQueues.Back(); e != nil; e = e.Prev() {
+	for e := a.downloadQueues.Back(); e != nil; e = e.Prev() {
 		val := e.Value.(*DownloadQueue)
 
 		derefDlDetails := *val.dlProgressBars
@@ -168,9 +168,9 @@ func (app *App) GetDownloadQueues() []FrontendDownloadQueue {
 	return queues
 }
 
-func (app *App) newDownloadQueue(website string, inputs []Input, mainProgBar *ProgressBar, dlProgressBars *[]*progress.DownloadProgressBar, taskHandler taskHandlerFunc) *DownloadQueue {
+func (a *App) newDownloadQueue(website string, inputs []Input, mainProgBar *ProgressBar, dlProgressBars *[]*progress.DownloadProgressBar, taskHandler taskHandlerFunc) *DownloadQueue {
 	id := count
-	ctx, cancel := context.WithCancel(app.ctx)
+	ctx, cancel := context.WithCancel(a.ctx)
 	count++
 
 	dlQueue := &DownloadQueue{
@@ -186,18 +186,18 @@ func (app *App) newDownloadQueue(website string, inputs []Input, mainProgBar *Pr
 		mu:              sync.Mutex{},
 		inputs:          inputs,
 	}
-	app.downloadQueues.PushBack(dlQueue)
+	a.downloadQueues.PushBack(dlQueue)
 	return dlQueue
 }
 
-func (app *App) getQueueEl(id int) (*list.Element, *DownloadQueue) {
-	if app.downloadQueues.Len() == 0 {
+func (a *App) getQueueEl(id int) (*list.Element, *DownloadQueue) {
+	if a.downloadQueues.Len() == 0 {
 		return nil, nil
 	}
 
 	// check if id is valid since we are using a counter based id system
-	firstEl := app.downloadQueues.Front()
-	lastEl := app.downloadQueues.Back()
+	firstEl := a.downloadQueues.Front()
+	lastEl := a.downloadQueues.Back()
 	firstQueue := firstEl.Value.(*DownloadQueue)
 	lastQueue := lastEl.Value.(*DownloadQueue)
 	if id < firstQueue.id || id > lastQueue.id {
@@ -231,18 +231,18 @@ func (app *App) getQueueEl(id int) (*list.Element, *DownloadQueue) {
 	return nil, nil
 }
 
-func (app *App) DeleteQueue(id int) {
-	listEl, queue := app.getQueueEl(id)
+func (a *App) DeleteQueue(id int) {
+	listEl, queue := a.getQueueEl(id)
 	if queue == nil || listEl == nil {
 		return
 	}
 
 	queue.CancelQueue()
-	app.downloadQueues.Remove(listEl)
+	a.downloadQueues.Remove(listEl)
 }
 
-func (app *App) CancelQueue(id int) {
-	_, queue := app.getQueueEl(id)
+func (a *App) CancelQueue(id int) {
+	_, queue := a.getQueueEl(id)
 	if queue == nil {
 		return
 	}
@@ -250,9 +250,9 @@ func (app *App) CancelQueue(id int) {
 	queue.CancelQueue()
 }
 
-func (app *App) startNewQueues() {
+func (a *App) startNewQueues() {
 	// loop through the doubly linked list of download queues
-	for e := app.downloadQueues.Front(); e != nil; e = e.Next() {
+	for e := a.downloadQueues.Front(); e != nil; e = e.Next() {
 		dq := e.Value.(*DownloadQueue)
 		if active, finished := dq.GetStatus(); active || finished {
 			continue

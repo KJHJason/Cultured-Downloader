@@ -135,7 +135,7 @@
                 <Kemono/>
             {:else if $action === actions.Downloads}
                 <DownloadQueues {action} />
-            {:else if $action == actions.Settings}
+            {:else if $action === actions.Settings}
                 <Settings bind:username bind:lastSavedUpdateStr />
             {:else}
                 <p>Not implemented yet</p>

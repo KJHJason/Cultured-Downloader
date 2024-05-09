@@ -90,6 +90,10 @@ export function StartPixivOAuth():Promise<string>;
 
 export function SubmitFantiaToQueue(arg1:Array<string>,arg2:appdata.Preferences):Promise<void>;
 
+export function SubmitKemonoToQueue(arg1:Array<string>,arg2:appdata.Preferences):Promise<void>;
+
+export function SubmitPixivFanboxToQueue(arg1:Array<string>,arg2:appdata.Preferences):Promise<void>;
+
 export function UnsetGDriveServiceAccount():Promise<void>;
 
 export function UploadCookieFile(arg1:string):Promise<void>;
@@ -97,5 +101,9 @@ export function UploadCookieFile(arg1:string):Promise<void>;
 export function UploadProfilePic(arg1:string):Promise<void>;
 
 export function ValidateFantiaUrls(arg1:Array<string>):Promise<boolean>;
+
+export function ValidateKemonoUrls(arg1:Array<string>):Promise<boolean>;
+
+export function ValidatePixivFanboxUrls(arg1:Array<string>):Promise<boolean>;
 
 export function VerifyPixivOAuthCode(arg1:string):Promise<void>;

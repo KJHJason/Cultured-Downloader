@@ -45,6 +45,11 @@
         { value: 21, name: ".webm" },
         { value: 22, name: ".mp4" },
     ];
+    export let pixivAiSearchMode: number = 24;
+    const pixivAiSearchModes = [
+        { value: 23, name: "Display AI Works" },
+        { value: 24, name: "Filter AI Works" },
+    ];
 
     onMount(async() => {
         // Pixiv Specific
@@ -59,6 +64,7 @@
         pixivArtworkType           = preferences.ArtworkType;
         pixivRating                = preferences.RatingMode;
         pixivSearchMode            = preferences.SearchMode;
+        pixivAiSearchMode          = preferences.AiSearchMode;
         pixivSortOrder             = preferences.SortOrder;
         pixivUgoiraFormat          = preferences.UgoiraOutputFormat;
         UgoiraQualityInp.value     = preferences.UgoiraQuality;
@@ -71,6 +77,7 @@
                 ArtworkType:        pixivArtworkType,
                 RatingMode:         pixivRating,
                 SearchMode:         pixivSearchMode,
+                AiSearchMode:       pixivAiSearchMode,
                 SortOrder:          pixivSortOrder,
                 UgoiraOutputFormat: pixivUgoiraFormat,
                 UgoiraQuality:      parseInt(UgoiraQualityInp.value),
@@ -120,6 +127,16 @@
             id="SearchMode" 
             items={pixivSearchModes} 
             bind:value={pixivSearchMode} 
+        />
+    </div>
+    <div>
+        <Label for="AiSearchMode">AI Search Mode:</Label>
+        <Select 
+            class="mt-2" 
+            name="AiSearchMode" 
+            id="AiSearchMode" 
+            items={pixivAiSearchModes} 
+            bind:value={pixivAiSearchMode} 
         />
     </div>
     <div>

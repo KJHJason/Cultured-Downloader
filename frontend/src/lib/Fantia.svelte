@@ -1,7 +1,6 @@
 <script lang="ts">
     import { actions } from "../scripts/constants";
     import PlatformBase from "./PlatformBase.svelte";
-    import { Toggle } from "flowbite-svelte";
     import { ValidateFantiaUrls, SubmitFantiaToQueue } from "../scripts/wailsjs/go/app/App";
 
     const urlValidationFn = async (urls: string | string[]): Promise<boolean> => {
@@ -22,10 +21,7 @@
 
 <PlatformBase 
     platformName={actions.Fantia}
-    inputPlaceholder={`https://fantia.jp/posts/2239524
-https://fantia.jp/fanclubs/5744
-https://fantia.jp/fanclubs/5744
-https://fantia.jp/fanclubs/5744`} 
+    inputPlaceholder={"https://fantia.jp/posts/2239524\nhttps://fantia.jp/fanclubs/5744"} 
     urlValidationFn={urlValidationFn}
     addToQueueFn={addToQueueFn}
     checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}

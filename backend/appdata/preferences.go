@@ -18,6 +18,7 @@ type Preferences struct {
 	DeleteUgoiraZip    bool
 	RatingMode         int
 	SearchMode         int
+	AiSearchMode       int
 	SortOrder          int
 	UgoiraOutputFormat int
 	UgoiraQuality      uint8
@@ -51,6 +52,9 @@ const (
 	PixivUgoiraOutputFormatWebp
 	PixivUgoiraOutputFormatWebm
 	PixivUgoiraOutputFormatMp4
+
+	PixivAiSearchAllow
+	PixivAiSearchFilter
 
 	UnknownValue = "Unknown"
 )
@@ -129,6 +133,16 @@ func GetReadableUgoiraFileFormat(format int) string {
 	return UnknownValue
 }
 
+func GetReadableAiSearchMode(aiSearchMode int) string {
+	switch aiSearchMode {
+	case PixivAiSearchAllow:
+		return "Allow"
+	case PixivAiSearchFilter:
+		return "Filter"
+	}
+	return UnknownValue
+}
+
 func (a *AppData) GetPreferences() Preferences {
 	// 0-51 for mp4, 0-63 for webm
 	ugoiraQuality := a.GetInt(constants.PIXIV_UGOIRA_QUALITY_KEY)
@@ -149,6 +163,7 @@ func (a *AppData) GetPreferences() Preferences {
 		DeleteUgoiraZip:    a.GetBool(constants.PIXIV_DELETE_UGOIRA_ZIP_KEY),
 		RatingMode:         a.GetIntWithFallback(constants.PIXIV_RATING_MODE_KEY, 6),
 		SearchMode:         a.GetIntWithFallback(constants.PIXIV_SEARCH_MODE_KEY, 8),
+		AiSearchMode:       a.GetIntWithFallback(constants.PIXIV_AI_SEARCH_MODE_KEY, 24),
 		SortOrder:          a.GetIntWithFallback(constants.PIXIV_SORT_ORDER_KEY, 10),
 		UgoiraOutputFormat: a.GetIntWithFallback(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY, 18),
 		UgoiraQuality:      uint8(ugoiraQuality),
@@ -219,6 +234,13 @@ func (a *AppData) SetPixivPreferences(p Preferences) error {
 		p.UgoiraOutputFormat = PixivUgoiraOutputFormatGif
 	}
 	if err = a.SetInt(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY, p.UgoiraOutputFormat); err != nil {
+		return err
+	}
+
+	if GetReadableAiSearchMode(p.AiSearchMode) == UnknownValue {
+		p.AiSearchMode = PixivAiSearchAllow
+	}
+	if err = a.SetInt(constants.PIXIV_AI_SEARCH_MODE_KEY, p.AiSearchMode); err != nil {
 		return err
 	}
 

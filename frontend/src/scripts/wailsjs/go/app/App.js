@@ -174,6 +174,14 @@ export function SubmitFantiaToQueue(arg1, arg2) {
   return window['go']['app']['App']['SubmitFantiaToQueue'](arg1, arg2);
 }
 
+export function SubmitKemonoToQueue(arg1, arg2) {
+  return window['go']['app']['App']['SubmitKemonoToQueue'](arg1, arg2);
+}
+
+export function SubmitPixivFanboxToQueue(arg1, arg2) {
+  return window['go']['app']['App']['SubmitPixivFanboxToQueue'](arg1, arg2);
+}
+
 export function UnsetGDriveServiceAccount() {
   return window['go']['app']['App']['UnsetGDriveServiceAccount']();
 }
@@ -188,6 +196,14 @@ export function UploadProfilePic(arg1) {
 
 export function ValidateFantiaUrls(arg1) {
   return window['go']['app']['App']['ValidateFantiaUrls'](arg1);
+}
+
+export function ValidateKemonoUrls(arg1) {
+  return window['go']['app']['App']['ValidateKemonoUrls'](arg1);
+}
+
+export function ValidatePixivFanboxUrls(arg1) {
+  return window['go']['app']['App']['ValidatePixivFanboxUrls'](arg1);
 }
 
 export function VerifyPixivOAuthCode(arg1) {

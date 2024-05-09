@@ -11,14 +11,20 @@
     let pixivArtworkType: number;
     let pixivRating: number;
     let pixivSearchMode: number;
+    let pixivAiSearchMode: number;
     let pixivSortOrder: number;
     let pixivUgoiraFormat: number;
 
+    export let platformTitle: string = "";
     export let platformName: string;
     export let inputPlaceholder: string;
     export let urlValidationFn: (urls: string | string[]) => Promise<boolean>;
     export let checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
     export let addToQueueFn: (inputs: string[], downloadSettings: Record<string, any>) => Promise<void>;
+
+    if (platformTitle === "") {
+        platformTitle = platformName;
+    }
 
     const GetPageNoInputs = (url: string): HTMLInputElement => {
         const input = document.createElement("input");
@@ -227,7 +233,7 @@
 <div class="container mx-auto" id={divId}>
     <form id="add-to-queue-form">
         <Card class="max-w-full" size="xl">
-            <h4 class="capitalize">{platformName.replaceAll("_", "")} Inputs</h4>
+            <h4 class="capitalize">{platformTitle} Inputs</h4>
             <Hr />
             <Textarea 
                 name="inputs"
@@ -268,7 +274,7 @@
             <GeneralSettings promptSuccess={false} preferences={preferences}  />
             {#if platformName === actions.Pixiv}
             <Hr />
-                <PixivSettings promptSuccess={false} preferences={preferences} bind:pixivArtworkType bind:pixivRating bind:pixivSearchMode bind:pixivSortOrder bind:pixivUgoiraFormat />
+                <PixivSettings promptSuccess={false} preferences={preferences} bind:pixivArtworkType bind:pixivRating bind:pixivSearchMode bind:pixivAiSearchMode bind:pixivSortOrder bind:pixivUgoiraFormat />
             {/if}
             <Hr />
             <MergedSettings btnString="Save Settings Globally" />

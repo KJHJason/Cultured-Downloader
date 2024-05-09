@@ -47,12 +47,12 @@ func (a *App) VerifyPixivOAuthCode(code string) error {
 }
 
 func (a *App) SetPixivOAuthRefreshToken(refreshToken string) error {
-	if _, err := pixivmobile.RefreshAccessToken(15, refreshToken); err != nil {
+	if _, _, err := pixivmobile.RefreshAccessToken(a.ctx, 15, refreshToken); err != nil {
 		return err
 	}
 	return a.appData.SetSecureString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY, refreshToken)
-}
 
+}
 func (a *App) GetPixivRefreshToken() string {
 	return a.appData.GetSecuredString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY)
 }

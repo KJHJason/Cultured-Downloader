@@ -20,29 +20,24 @@ func validateFantiaUrls(inputs []string) (bool, []Input, *fantia.FantiaDl) {
 	fantiaDl := fantia.FantiaDl{}
 	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
-		creatorUrlMatch := cdlconsts.FANTIA_CREATOR_URL_REGEX.FindStringSubmatch(input)
-		postUrlMatch := cdlconsts.FANTIA_POST_URL_REGEX.FindStringSubmatch(input)
-		if len(creatorUrlMatch) == 0 && len(postUrlMatch) == 0 {
-			return false, nil, nil
-		}
-
 		var id string
 		var pageNum string
-		if len(creatorUrlMatch) > 0 {
+		if postUrlMatch := cdlconsts.FANTIA_POST_URL_REGEX.FindStringSubmatch(input); len(postUrlMatch) > 0 {
+			id = postUrlMatch[cdlconsts.FANTIA_POST_ID_IDX]
+			fantiaDl.PostIds = append(fantiaDl.PostIds, id)
+		} else if creatorUrlMatch := cdlconsts.FANTIA_CREATOR_URL_REGEX.FindStringSubmatch(input); len(creatorUrlMatch) > 0 {
 			id = creatorUrlMatch[cdlconsts.FANTIA_CREATOR_ID_IDX]
 			pageNum = creatorUrlMatch[cdlconsts.FANTIA_CREATOR_PAGE_NUM_IDX]
+
 			fantiaDl.FanclubIds = append(fantiaDl.FanclubIds, id)
 			fantiaDl.FanclubPageNums = append(fantiaDl.FanclubPageNums, pageNum)
 		} else {
-			id = postUrlMatch[cdlconsts.FANTIA_POST_ID_IDX]
-			fantiaDl.PostIds = append(fantiaDl.PostIds, id)
+			return false, nil, nil
 		}
 
 		inputsForRef[idx] = Input{
-			id:      id,
-			pageNum: pageNum,
-			Input:   input,
-			Url:     input,
+			Input: input,
+			Url:   input,
 		}
 	}
 	err := fantiaDl.ValidateArgs()
@@ -59,7 +54,7 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseSettingsMap(pref appdata.Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseFantiaSettingsMap(pref appdata.Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
 	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
 	var fantiaSessions []*http.Cookie
 	if fantiaSession == "" {
@@ -69,7 +64,7 @@ func (a *App) parseSettingsMap(pref appdata.Preferences) (fantiaDlOptions *fanti
 		}
 	}
 
-	downloadPath, err := a.GetDownloadDir()
+	downloadPath, err, _ := a.GetDownloadDir()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,7 +115,7 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) er
 		return errors.New("invalid Fantia URL(s)")
 	}
 
-	fantiaDlOptions, mainProgBar, err := a.parseSettingsMap(prefs)
+	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(prefs)
 	if err != nil {
 		return errors.New("error getting download directory")
 	}

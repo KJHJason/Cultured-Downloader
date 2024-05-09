@@ -1,1 +1,32 @@
-<p>Kemono</p>
+<script lang="ts">
+    import { actions } from "../scripts/constants";
+    import PlatformBase from "./PlatformBase.svelte";
+    import { ValidateKemonoUrls, SubmitKemonoToQueue } from "../scripts/wailsjs/go/app/App";
+
+    const urlValidationFn = async (urls: string | string[]): Promise<boolean> => {
+        if (typeof urls === "string") {
+            urls = urls.split("\n");
+        }
+        return await ValidateKemonoUrls(urls);
+    };
+
+    const addToQueueFn = async (inputs: string[], options: Record<string, any>): Promise<void> => {
+        await SubmitKemonoToQueue(inputs, options);
+    };
+
+    const creatorUrlRegex = /^https:\/\/kemono.su\/(?:patreon|fanbox|gumroad|subscribestar|dlsite|fantia|boosty)\/user\/\d+$/;
+    const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {
+        return creatorUrlRegex.test(inputUrl);
+    };
+</script>
+
+<PlatformBase 
+    platformName={actions.Kemono}
+    inputPlaceholder={`favorites
+favourites
+https://kemono.su/patreon/user/42628911
+https://kemono.su/patreon/user/42628911/post/98584740`}
+    urlValidationFn={urlValidationFn}
+    addToQueueFn={addToQueueFn}
+    checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
+/>

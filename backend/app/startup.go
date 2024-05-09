@@ -15,16 +15,16 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) GetDownloadDir() (dirPath string, err error) {
+func (a *App) GetDownloadDir() (dirPath string, err error, hadToFallback bool) {
 	savedDirPath := a.appData.GetString(constants.DOWNLOAD_KEY)
 	if savedDirPath != "" && iofuncs.PathExists(savedDirPath) {
-		return savedDirPath, nil
+		return savedDirPath, nil, false
 	}
 
 	desktopDir, err := os.UserHomeDir()
 	if err != nil {
 		logger.MainLogger.Errorf("Error getting user home directory: %v", err)
-		return "", fmt.Errorf("error getting user home directory: %w\nPlease manually set the download directory in the settings", err)
+		return "", fmt.Errorf("error getting user home directory: %w\nPlease manually set the download directory in the settings", err), false
 	}
 
 	desktopDir = filepath.Join(desktopDir, "Cultured Downloader")
@@ -32,7 +32,7 @@ func (a *App) GetDownloadDir() (dirPath string, err error) {
 		panic(err)
 	}
 	a.appData.SetString(constants.DOWNLOAD_KEY, desktopDir)
-	return desktopDir, nil
+	return desktopDir, nil, true
 }
 
 // startup is called when the app starts. The context is saved
@@ -53,6 +53,28 @@ func (a *App) Startup(ctx context.Context) {
 		panic("Error loading data from file!")
 	}
 	a.appData = appData
+
+	// retrieve user's download directory
+	_, err, hadToFallback := a.GetDownloadDir()
+	if err != nil {
+		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error getting download directory!",
+			Message: err.Error(),
+		})
+		if err != nil {
+			logger.MainLogger.Errorf(
+				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", err, initialLoadErr)
+		}
+	} else if hadToFallback {
+		// try retrieving the old download directory path from config.json (*Cultured-Downloader-CLI)
+		oldSavedDlDirPath := iofuncs.GetDefaultDownloadPath()
+		if oldSavedDlDirPath != "" { // if it's not empty, set it as the download directory path
+			if setErr := a.appData.SetString(constants.DOWNLOAD_KEY, oldSavedDlDirPath); setErr != nil {
+				logger.MainLogger.Errorf("Error setting old download directory path: %v", setErr)
+			}
+		}
+	}
 
 	lang := a.appData.GetString(constants.LANGUAGE_KEY)
 	if lang == "" {

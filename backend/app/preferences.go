@@ -18,16 +18,16 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (app *App) GetPreferences() appdata.Preferences {
-	return app.appData.GetPreferences()
+func (a *App) GetPreferences() appdata.Preferences {
+	return a.appData.GetPreferences()
 }
 
-func (app *App) SetGeneralPreferences(preferences appdata.Preferences) error {
-	return app.appData.SetGeneralPreferences(preferences)
+func (a *App) SetGeneralPreferences(preferences appdata.Preferences) error {
+	return a.appData.SetGeneralPreferences(preferences)
 }
 
-func (app *App) SetPixivPreferences(preferences appdata.Preferences) error {
-	return app.appData.SetPixivPreferences(preferences)
+func (a *App) SetPixivPreferences(preferences appdata.Preferences) error {
+	return a.appData.SetPixivPreferences(preferences)
 }
 
 func (a *App) SelectDlDirPath() error {

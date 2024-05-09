@@ -49,6 +49,7 @@ const (
 	PIXIV_DELETE_UGOIRA_ZIP_KEY    = "pixiv-delete-ugoira-zip"
 	PIXIV_RATING_MODE_KEY          = "pixiv-rating-mode"
 	PIXIV_SEARCH_MODE_KEY          = "pixiv-search-mode"
+	PIXIV_AI_SEARCH_MODE_KEY       = "pixiv-ai-search-mode"
 	PIXIV_SORT_ORDER_KEY           = "pixiv-sort-order"
 	PIXIV_UGOIRA_OUTPUT_FORMAT_KEY = "pixiv-ugoira-output-format"
 	PIXIV_UGOIRA_QUALITY_KEY       = "pixiv-ugoira-quality"

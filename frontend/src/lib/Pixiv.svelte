@@ -29,7 +29,11 @@
 
 <!-- <PlatformBase 
     platformName={actions.Pixiv}
-    inputPlaceholder={"Eyjafjalla\nhttps://www.pixiv.net/en/artworks/113096160\nhttps://www.pixiv.net/en/users/10600906\nhttps://www.pixiv.net/artworks/113096188"} 
+    inputPlaceholder={`Mika Misono
+らくがきちゃん
+https://www.pixiv.net/artworks/113096188
+https://www.pixiv.net/en/artworks/113096160
+https://www.pixiv.net/en/users/10600906`}
     urlValidationFn={urlValidationFn}
     checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
     addToQueueFn={() => {}}
