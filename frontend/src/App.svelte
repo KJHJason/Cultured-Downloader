@@ -5,6 +5,7 @@
     import { writable } from "svelte/store";
     import { swal, actions, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
+    import { LogError } from "./scripts/wailsjs/runtime/runtime";
     import { InitialiseLanguage } from "./scripts/language";
 
     import Navbar from "./lib/Navbar.svelte";
@@ -27,16 +28,19 @@
     window.onerror = (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error): void => {
         const errorMsg = event.toString();
         console.error(errorMsg, source, lineno, colno, error);
+        LogError(`${errorMsg} at ${source}:${lineno}:${colno}`);
         triggerSwalError(errorMsg);
     };
     window.addEventListener("error", (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error): void => {
         const errorMsg = event.toString();
         console.error(errorMsg, source, lineno, colno, error);
+        LogError(`${errorMsg} at ${source}:${lineno}:${colno}`);
         triggerSwalError(errorMsg);
     });
     window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent): void => {
         const errorMsg = event.reason ? event.reason.toString() : "Unknown error";
         console.error(errorMsg);
+        LogError(errorMsg);
         triggerSwalError(errorMsg);
     });
 

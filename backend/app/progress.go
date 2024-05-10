@@ -35,11 +35,11 @@ type ProgressBar struct {
 }
 
 type NestedProgressBar struct {
-	Msg 	   string
+	Msg        string
 	SuccessMsg string
-	ErrMsg 	   string
+	ErrMsg     string
 
-	IsSpinner  bool
+	IsSpinner bool
 
 	Count      int
 	HasError   bool
@@ -64,9 +64,9 @@ func NewProgressBar(ctx context.Context) *ProgressBar {
 		DateTime:       time.Now().UTC(),
 		nestedProgBars: []NestedProgressBar{},
 
-		count:    0,
-		active:   false,
-		mu:       &sync.RWMutex{},
+		count:  0,
+		active: false,
+		mu:     &sync.RWMutex{},
 	}
 }
 
@@ -208,14 +208,14 @@ func (p *ProgressBar) MakeLatestSnapshotMain() {
 	}
 
 	latest := p.nestedProgBars[len(p.nestedProgBars)-1]
-	p.msg        = latest.Msg
+	p.msg = latest.Msg
 	p.successMsg = latest.SuccessMsg
-	p.errMsg     = latest.ErrMsg
-	p.IsSpinner  = latest.IsSpinner
-	p.Count      = latest.Count
-	p.HasError   = latest.HasError
+	p.errMsg = latest.ErrMsg
+	p.IsSpinner = latest.IsSpinner
+	p.Count = latest.Count
+	p.HasError = latest.HasError
 	p.Percentage = latest.Percentage
-	p.DateTime   = latest.DateTime
+	p.DateTime = latest.DateTime
 }
 
 func (p *ProgressBar) UpdateFolderPath(folderPath string) {

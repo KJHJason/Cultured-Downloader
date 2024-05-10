@@ -20,10 +20,11 @@ func validateKemonoInputs(inputs []string) (bool, []Input, *kemono.KemonoDl) {
 	kemonoDl := kemono.KemonoDl{}
 	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
+		url := input
 		isFavAndNonUrl := (input == "favourites" || input == "favorites")
 		if input == "https://kemono.su/favorites" || isFavAndNonUrl {
 			if isFavAndNonUrl {
-				input = "https://kemono.su/favorites"
+				url = "https://kemono.su/favorites"
 			}
 			kemonoDl.DlFav = true
 		} else if postUrlMatch := cdlconsts.KEMONO_POST_URL_REGEX.FindStringSubmatch(input); len(postUrlMatch) > 0 {
@@ -44,7 +45,7 @@ func validateKemonoInputs(inputs []string) (bool, []Input, *kemono.KemonoDl) {
 
 		inputsForRef[idx] = Input{
 			Input: input,
-			Url:   input,
+			Url:   url,
 		}
 	}
 	err := kemonoDl.ValidateArgs()

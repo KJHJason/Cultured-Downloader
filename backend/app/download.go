@@ -72,6 +72,7 @@ type FrontendDownloadQueue struct {
 	SuccessMsg        string
 	ErrMsg            string
 	ErrSlice          []string
+	HasError          bool
 	Inputs            []Input
 	ProgressBar       *ProgressBar
 	NestedProgressBar []NestedProgressBar
@@ -122,12 +123,17 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 		}
 
 		// since the latest/main progress bar is at the end of the slice
+		hasError := len(val.GetErrSlice()) > 0
 		var nestedProgressBar []NestedProgressBar
 		nestedProgBarLen := len(val.mainProgressBar.nestedProgBars)
 		if nestedProgBarLen > 0 {
 			lastElIdx := nestedProgBarLen - 1
 			nestedProgressBar = make([]NestedProgressBar, lastElIdx)
 			for idx, val := range val.mainProgressBar.nestedProgBars {
+				if !hasError && val.HasError {
+					hasError = true
+				}
+
 				if idx == lastElIdx {
 					break
 				}
@@ -158,6 +164,7 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 			SuccessMsg:        val.mainProgressBar.GetSuccessMsg(),
 			ErrMsg:            val.mainProgressBar.GetErrorMsg(),
 			ErrSlice:          errStringSlice,
+			HasError:          hasError,
 			Inputs:            val.inputs,
 			ProgressBar:       val.mainProgressBar,
 			NestedProgressBar: nestedProgressBar,

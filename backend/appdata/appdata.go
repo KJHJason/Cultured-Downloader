@@ -54,7 +54,7 @@ func NewAppData() (*AppData, error) {
 	}
 	err := appData.loadFromFile()
 	if err != nil {
-		logger.MainLogger.Error("Error loading data from file:", err)
+		logger.MainLogger.Errorf("Error loading data from file: %s", err)
 		return nil, err
 	}
 	appData.masterPasswordSalt = appData.GetBytes(constants.MASTER_PASS_SALT_KEY)
@@ -140,7 +140,7 @@ func (a *AppData) saveToFile() error {
 		return err
 	}
 
-	logger.MainLogger.Info("Data saved to", a.dataPath)
+	logger.MainLogger.Infof("Data saved to %s", a.dataPath)
 	return nil
 }
 
@@ -169,7 +169,7 @@ func (a *AppData) loadFromFile() error {
 	}
 
 	convertDataMapInterface(data)
-	logger.MainLogger.Info("Data loaded from", filename)
+	logger.MainLogger.Infof("Data loaded from %s", filename)
 	a.data = data
 	return nil
 }

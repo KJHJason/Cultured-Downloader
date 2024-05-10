@@ -20,6 +20,7 @@
         UploadProfilePic,
         DeleteProfilePic
     } from "../../scripts/wailsjs/go/app/App";
+    import { LogError } from "../../scripts/wailsjs/runtime/runtime";
 
     let lang = "";
     let savedLang = "";
@@ -217,6 +218,9 @@
                 masterPasswordFormResetBtn.classList.remove("hidden");
             } catch (e) {
                 console.error(e);
+                if (e) {
+                    LogError(e.toString());
+                }
                 swal.fire({
                     title: "Error",
                     text: "An error occurred while setting the master password. Please try again later.",
@@ -290,6 +294,9 @@
                 });
             } catch (e) {
                 console.error(e);
+                if (e) {
+                    LogError(e.toString());
+                }
                 swal.fire({
                     title: "Error",
                     text: "An error occurred while setting the master password. Please try again later.",

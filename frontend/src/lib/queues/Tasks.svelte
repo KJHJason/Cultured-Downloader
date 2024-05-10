@@ -5,27 +5,24 @@
     export let dlQ: any;
     export let progHistoryModalsId: Record<number, boolean>;
     export let makeDateTimeReadable: (dateTime: string, addSeconds: boolean) => string;
-
-    const success = dlQ.Finished && !dlQ.HasError;
-    const hasError = dlQ.Finished && dlQ.HasError;
 </script>
 
 <div class="flex items-center mb-1">
-    {#if !success && !hasError && dlQ.ProgressBar.IsSpinner}
+    {#if !dlQ.Finished && dlQ.ProgressBar.IsSpinner}
         <Spinner color="blue" />
     {/if}
-    {#if success}
+    {#if dlQ.Finished && !dlQ.HasError}
         <span class="px-2 font-medium">{dlQ.SuccessMsg}</span>
-    {:else if hasError}
+    {:else if dlQ.Finished && dlQ.HasError}
         <span class="px-2 font-medium">{dlQ.ErrMsg}</span>
     {:else}
         <span class="px-2 font-medium">{dlQ.Msg}</span>
     {/if}
 </div>
 
-{#if success}
+{#if dlQ.Finished && !dlQ.HasError}
     <Progressbar progress="100" color="green" animate={true} />
-{:else if hasError}
+{:else if dlQ.Finished && dlQ.HasError}
     <Progressbar progress="100" color="red" animate={true} />
 {:else}
     <Progressbar progress="{dlQ.ProgressBar.Percentage}" color="blue" animate={true} />

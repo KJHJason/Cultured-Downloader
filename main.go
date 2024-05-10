@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 
+	"github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader/backend/app"
 
 	"github.com/wailsapp/wails/v2"
@@ -48,7 +49,7 @@ func main() {
 			Assets: assets,
 		},
 		Menu:				nil,
-		Logger:				nil,
+		Logger:				cdlogic.GetLogger(),
 		LogLevel:			logger.DEBUG,
 		OnStartup:			cdApp.Startup,
 		OnShutdown:			cdApp.Shutdown,

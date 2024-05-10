@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	pixivweb "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/web"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -21,6 +23,9 @@ import (
 )
 
 func validatePixivTag(tagInput string) (valid bool, tag string, pageNum string) {
+	if tagInput == "" {
+		return false, "", ""
+	}
 	if strings.HasPrefix(tagInput, "https://www.pixiv.net/en/artworks") || strings.HasPrefix(tagInput, "https://www.pixiv.net/artworks") {
 		return false, "", ""
 	}
@@ -82,21 +87,29 @@ func validatePixivInputs(inputs []string) (bool, []Input, *pixiv.PixivDl) {
 	pixivDl := pixiv.PixivDl{}
 	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
+		urlForRef := input
 		if valid, tag, pageNums := validatePixivTag(input); valid {
 			pixivDl.TagNames = append(pixivDl.TagNames, tag)
 			pixivDl.TagNamesPageNums = append(pixivDl.TagNamesPageNums, pageNums)
+			input = tag
+			urlForRef = "https://www.pixiv.net/tags/" + tag
 		} else if artworkUrlMatch := cdlconsts.PIXIV_ARTWORK_URL_REGEX.FindStringSubmatch(input); len(artworkUrlMatch) > 0 {
 			pixivDl.ArtworkIds = append(pixivDl.ArtworkIds, artworkUrlMatch[cdlconsts.PIXIV_ARTWORK_ID_IDX])
 		} else if artistUrlMatch := cdlconsts.PIXIV_ARTIST_URL_REGEX.FindStringSubmatch(input); len(artistUrlMatch) > 0 {
-			pixivDl.ArtworkIds = append(pixivDl.ArtworkIds, artistUrlMatch[cdlconsts.PIXIV_ARTIST_ID_IDX])
+			pixivDl.ArtistIds = append(pixivDl.ArtistIds, artistUrlMatch[cdlconsts.PIXIV_ARTIST_ID_IDX])
 			pixivDl.ArtistPageNums = append(pixivDl.ArtistPageNums, artistUrlMatch[cdlconsts.PIXIV_ARTIST_PAGE_NUM_IDX])
 		} else {
 			return false, nil, nil
 		}
 
+		encodedUrl, err := url.Parse(urlForRef)
+		if err != nil {
+			logger.MainLogger.Errorf("Error parsing URL: %s", urlForRef)
+			return false, nil, nil
+		}
 		inputsForRef[idx] = Input{
 			Input: input,
-			Url:   input,
+			Url:   encodedUrl.String(),
 		}
 	}
 	err := pixivDl.ValidateArgs()

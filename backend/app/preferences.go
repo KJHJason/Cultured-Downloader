@@ -312,14 +312,14 @@ func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
 		return cookies, err
 	}
 
-	if val := a.appData.GetSecuredBytes(dataJsonKey); val != nil {
+	if val := a.appData.GetSecuredBytes(dataJsonKey); len(val) != 0 {
 		cookies, err := parsers.ParseJsonCookie(val, cookieInfoArgs)
 		if err != nil {
 			a.appData.Unset(dataJsonKey)
 		}
 		return cookies, err
 	}
-	return nil, nil
+	return nil, fmt.Errorf("No cookies found for %s", api.GetReadableSiteStr(website))
 }
 
 func getSessionValFromCookies(website string, cookies []*http.Cookie) (string, error) {
@@ -357,7 +357,7 @@ func (a *App) GetSessionValue(website string) (string, error) {
 		return sessionVal, nil
 	}
 
-	if val := a.appData.GetSecuredBytes(dataJsonKey); val != nil {
+	if val := a.appData.GetSecuredBytes(dataJsonKey); len(val) != 0 {
 		cookies, parseErr := parsers.ParseJsonCookie(val, cookieInfoArgs)
 		sessionVal, notFoundErr := getSessionValFromCookies(website, cookies)
 		if parseErr != nil || notFoundErr != nil { // if session cookie is invalid, remove the stored session value

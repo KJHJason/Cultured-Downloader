@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { Textarea, Helper, Card, Hr, Spinner } from "flowbite-svelte";
     import { actions, swal } from "../scripts/constants";
-    import { ArrowLeftOutline, MinusOutline, PlusOutline } from "flowbite-svelte-icons";
+    import { ArrowLeftOutline } from "flowbite-svelte-icons";
     import PixivSettings from "./settings/PixivSettings.svelte";
     import GeneralSettings from "./settings/GeneralSettings.svelte";
     import MergedSettings from "./settings/MergedSettings.svelte";
@@ -219,13 +219,25 @@
                 return;
             }
 
-            await addToQueueFn(inputs, downloadPreferences);
-            swal.fire({
-                title: "Added to Queue!",
-                text: "The URL(s) have been added to the download queue!",
-                icon: "success",
-            });
-            resetForm();
+            try {
+                await addToQueueFn(inputs, downloadPreferences);
+                    swal.fire({
+                    title: "Added to Queue!",
+                    text: "The URL(s) have been added to the download queue!",
+                    icon: "success",
+                });
+                resetForm();
+            } catch (e) {
+                if (e && e.toString().startsWith("no cookies found for")) {
+                    swal.fire({
+                        title: "Input Error",
+                        text: `${e}. Please login first!`,
+                        icon: "error",
+                    });
+                    return;
+                }
+                throw e;
+            }
         });
     });
 </script>

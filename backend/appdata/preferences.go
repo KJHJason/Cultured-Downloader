@@ -227,7 +227,7 @@ func (a *AppData) GetPreferences() Preferences {
 	// 0-51 for mp4, 0-63 for webm
 	ugoiraQuality := a.GetInt(constants.PIXIV_UGOIRA_QUALITY_KEY)
 	if ugoiraQuality < 0 || ugoiraQuality > 63 {
-		ugoiraQuality = 0
+		ugoiraQuality = 10
 	}
 
 	pref := Preferences{
@@ -244,7 +244,7 @@ func (a *AppData) GetPreferences() Preferences {
 		RatingMode:         a.GetIntWithFallback(constants.PIXIV_RATING_MODE_KEY, 6),
 		SearchMode:         a.GetIntWithFallback(constants.PIXIV_SEARCH_MODE_KEY, 8),
 		AiSearchMode:       a.GetIntWithFallback(constants.PIXIV_AI_SEARCH_MODE_KEY, 24),
-		SortOrder:          a.GetIntWithFallback(constants.PIXIV_SORT_ORDER_KEY, 10),
+		SortOrder:          a.GetIntWithFallback(constants.PIXIV_SORT_ORDER_KEY, 11),
 		UgoiraOutputFormat: a.GetIntWithFallback(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY, 18),
 		UgoiraQuality:      uint8(ugoiraQuality),
 	}
