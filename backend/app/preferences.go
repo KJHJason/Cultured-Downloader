@@ -305,11 +305,19 @@ func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
 
 	cookieInfoArgs := parsers.NewCookieInfoArgsByWebsite(website)
 	if val := a.appData.GetSecuredString(dataTxtKey); val != "" {
-		return parsers.ParseTxtCookie(val, cookieInfoArgs)
+		cookies, err := parsers.ParseTxtCookie(val, cookieInfoArgs)
+		if err != nil {
+			a.appData.Unset(dataTxtKey)
+		}
+		return cookies, nil
 	}
 
 	if val := a.appData.GetSecuredBytes(dataJsonKey); val != nil {
-		return parsers.ParseJsonCookie(val, cookieInfoArgs)
+		cookies, err := parsers.ParseJsonCookie(val, cookieInfoArgs)
+		if err != nil {
+			a.appData.Unset(dataJsonKey)
+		}
+		return cookies, err
 	}
 	return nil, nil
 }
