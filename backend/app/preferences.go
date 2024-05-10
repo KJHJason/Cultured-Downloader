@@ -309,7 +309,7 @@ func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
 		if err != nil {
 			a.appData.Unset(dataTxtKey)
 		}
-		return cookies, nil
+		return cookies, err
 	}
 
 	if val := a.appData.GetSecuredBytes(dataJsonKey); val != nil {
