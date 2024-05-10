@@ -126,7 +126,7 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs appdata.Preference
 
 	pixivFanboxDlOptions, mainProgBar, err := a.parsePixivFanboxSettingsMap(prefs)
 	if err != nil {
-		return errors.New("error getting download directory")
+		return err
 	}
 
 	a.newDownloadQueue(cdlconsts.PIXIV_FANBOX, inputsForRef, mainProgBar, pixivFanboxDlOptions.DownloadProgressBars, func() []error {

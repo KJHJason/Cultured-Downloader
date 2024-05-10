@@ -2,12 +2,12 @@ package app
 
 import (
 	"errors"
-	"github.com/KJHJason/Cultured-Downloader-Logic/api/kemono"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
+	"github.com/KJHJason/Cultured-Downloader-Logic/api/kemono"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
@@ -16,11 +16,11 @@ import (
 	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 )
 
-func validateKemonoUrls(inputs []string) (bool, []Input, *kemono.KemonoDl) {
+func validateKemonoInputs(inputs []string) (bool, []Input, *kemono.KemonoDl) {
 	kemonoDl := kemono.KemonoDl{}
 	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
-		isFavAndNonUrl := (input == "favourite" || input == "favorites")
+		isFavAndNonUrl := (input == "favourites" || input == "favorites")
 		if input == "https://kemono.su/favorites" || isFavAndNonUrl {
 			if isFavAndNonUrl {
 				input = "https://kemono.su/favorites"
@@ -56,8 +56,8 @@ func validateKemonoUrls(inputs []string) (bool, []Input, *kemono.KemonoDl) {
 }
 
 // returns true if it's valid, false otherwise.
-func (a *App) ValidateKemonoUrls(inputs []string) bool {
-	valid, _, _ := validateKemonoUrls(inputs)
+func (a *App) ValidateKemonoInputs(inputs []string) bool {
+	valid, _, _ := validateKemonoInputs(inputs)
 	return valid
 }
 
@@ -115,14 +115,14 @@ func (a *App) parseKemonoSettingsMap(pref appdata.Preferences) (kemonoDlOptions 
 }
 
 func (a *App) SubmitKemonoToQueue(inputs []string, prefs appdata.Preferences) error {
-	valid, inputsForRef, kemonoDl := validateKemonoUrls(inputs)
+	valid, inputsForRef, kemonoDl := validateKemonoInputs(inputs)
 	if !valid {
 		return errors.New("invalid Kemono URL(s)")
 	}
 
 	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(prefs)
 	if err != nil {
-		return errors.New("error getting download directory")
+		return err
 	}
 
 	a.newDownloadQueue(cdlconsts.KEMONO, inputsForRef, mainProgBar, kemonoDlOptions.DownloadProgressBars, func() []error {

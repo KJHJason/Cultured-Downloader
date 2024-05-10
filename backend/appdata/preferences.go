@@ -71,6 +71,18 @@ func GetReadableArtworkType(artworkType int) string {
 	return UnknownValue
 }
 
+func ConvertArtworkTypeForBackend(artworkType int) string {
+	switch artworkType {
+	case PixivArtworkTypeIllustAndUgoira:
+		return "illust_and_ugoira"
+	case PixivArtworkTypeManga:
+		return "manga"
+	case PixivArtworkTypeAll:
+		return "all"
+	}
+	return UnknownValue
+}
+
 func GetReadableRatingMode(ratingMode int) string {
 	switch ratingMode {
 	case PixivRatingModeR18:
@@ -83,6 +95,18 @@ func GetReadableRatingMode(ratingMode int) string {
 	return UnknownValue
 }
 
+func ConvertRatingModeForBackend(ratingMode int) string {
+	switch ratingMode {
+	case PixivRatingModeR18:
+		return "r18"
+	case PixivRatingModeSafe:
+		return "safe"
+	case PixivRatingModeAll:
+		return "all"
+	}
+	return UnknownValue
+}
+
 func GetReadableSearchMode(searchMode int) string {
 	switch searchMode {
 	case PixivSearchModeTag:
@@ -91,6 +115,18 @@ func GetReadableSearchMode(searchMode int) string {
 		return "Tags"
 	case PixivSearchModeTC:
 		return "Title and Caption"
+	}
+	return UnknownValue
+}
+
+func ConvertSearchModeForBackend(searchMode int) string {
+	switch searchMode {
+	case PixivSearchModeTag:
+		return "s_tag"
+	case PixivSearchModeTagFull:
+		return "s_tag_full"
+	case PixivSearchModeTC:
+		return "s_tc"
 	}
 	return UnknownValue
 }
@@ -117,6 +153,30 @@ func GetReadableSortOrder(sortOrder int) string {
 	return UnknownValue
 }
 
+func ConvertSortOrderForBackend(sortOrder int) string {
+	switch sortOrder {
+	case PixivSortOrderDate:
+		return "date"
+	case PixivSortOrderDateDesc:
+		return "date_d"
+	case PixivSortOrderPopular:
+		return "popular"
+	case PixivSortOrderPopularDesc:
+		return "popular_d"
+	case PixivSortOrderPopularMale:
+		return "popular_male"
+	case PixivSortOrderPopularMaleDesc:
+		return "popular_male_d"
+	case PixivSortOrderPopularFemale:
+		return "popular_female"
+	case PixivSortOrderPopularFemaleDesc:
+		return "popular_female_d"
+	default:
+		return UnknownValue
+	}
+}
+
+// Note: can be used for backend as well
 func GetReadableUgoiraFileFormat(format int) string {
 	switch format {
 	case PixivUgoiraOutputFormatGif:
@@ -141,6 +201,26 @@ func GetReadableAiSearchMode(aiSearchMode int) string {
 		return "Filter"
 	}
 	return UnknownValue
+}
+
+func ConvertAiSearchModeForBackend(aiSearchMode int) int {
+	// For references...
+	//Mobile API:
+	//- 0: Filter AI works
+	//- 1: Display AI works
+	//Web API:
+	//- 0: Display AI works
+	//- 1: Filter AI works
+	//
+	// Since the backend logic for PixivMobile will invert the int
+	// based off the web API value, just return the web API value.
+	switch aiSearchMode {
+	case PixivAiSearchAllow:
+		return 0
+	case PixivAiSearchFilter:
+		return 1
+	}
+	return -1
 }
 
 func (a *AppData) GetPreferences() Preferences {

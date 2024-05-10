@@ -20,17 +20,11 @@ func validateFantiaUrls(inputs []string) (bool, []Input, *fantia.FantiaDl) {
 	fantiaDl := fantia.FantiaDl{}
 	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
-		var id string
-		var pageNum string
 		if postUrlMatch := cdlconsts.FANTIA_POST_URL_REGEX.FindStringSubmatch(input); len(postUrlMatch) > 0 {
-			id = postUrlMatch[cdlconsts.FANTIA_POST_ID_IDX]
-			fantiaDl.PostIds = append(fantiaDl.PostIds, id)
+			fantiaDl.PostIds = append(fantiaDl.PostIds, postUrlMatch[cdlconsts.FANTIA_POST_ID_IDX])
 		} else if creatorUrlMatch := cdlconsts.FANTIA_CREATOR_URL_REGEX.FindStringSubmatch(input); len(creatorUrlMatch) > 0 {
-			id = creatorUrlMatch[cdlconsts.FANTIA_CREATOR_ID_IDX]
-			pageNum = creatorUrlMatch[cdlconsts.FANTIA_CREATOR_PAGE_NUM_IDX]
-
-			fantiaDl.FanclubIds = append(fantiaDl.FanclubIds, id)
-			fantiaDl.FanclubPageNums = append(fantiaDl.FanclubPageNums, pageNum)
+			fantiaDl.FanclubIds = append(fantiaDl.FanclubIds, creatorUrlMatch[cdlconsts.FANTIA_CREATOR_ID_IDX])
+			fantiaDl.FanclubPageNums = append(fantiaDl.FanclubPageNums, creatorUrlMatch[cdlconsts.FANTIA_CREATOR_PAGE_NUM_IDX])
 		} else {
 			return false, nil, nil
 		}
@@ -117,7 +111,7 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) er
 
 	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(prefs)
 	if err != nil {
-		return errors.New("error getting download directory")
+		return err
 	}
 
 	a.newDownloadQueue(cdlconsts.FANTIA, inputsForRef, mainProgBar, fantiaDlOptions.DownloadProgressBars, func() []error {

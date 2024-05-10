@@ -1,13 +1,13 @@
 <script lang="ts">
     import { actions } from "../scripts/constants";
     import PlatformBase from "./PlatformBase.svelte";
-    import { ValidateKemonoUrls, SubmitKemonoToQueue } from "../scripts/wailsjs/go/app/App";
+    import { ValidateKemonoInputs, SubmitKemonoToQueue } from "../scripts/wailsjs/go/app/App";
 
     const urlValidationFn = async (urls: string | string[]): Promise<boolean> => {
         if (typeof urls === "string") {
             urls = urls.split("\n");
         }
-        return await ValidateKemonoUrls(urls);
+        return await ValidateKemonoInputs(urls);
     };
 
     const addToQueueFn = async (inputs: string[], options: Record<string, any>): Promise<void> => {
@@ -16,7 +16,7 @@
 
     const creatorUrlRegex = /^https:\/\/kemono.su\/(?:patreon|fanbox|gumroad|subscribestar|dlsite|fantia|boosty)\/user\/\d+$/;
     const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {
-        return creatorUrlRegex.test(inputUrl);
+        return inputUrl === "favourites" || inputUrl === "favorites" || creatorUrlRegex.test(inputUrl);
     };
 </script>
 

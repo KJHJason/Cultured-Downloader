@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { Input, Tooltip, ButtonGroup, Label } from "flowbite-svelte";
+    import { Input, Tooltip, ButtonGroup, Label, Helper } from "flowbite-svelte";
     import { UploadCookieFile, GetSessionValue, SetSessionValue, ResetSession } from "../../scripts/wailsjs/go/app/App";
     import { UploadSolid } from "flowbite-svelte-icons";
     import { swal } from "../../scripts/constants";
     import { onMount } from "svelte";
+    import { Translate } from "../../scripts/language";
     import PasswordToggle from "../common/PasswordToggle.svelte";
     import ButtonGroupBtn from "../common/ButtonGroupBtn.svelte";
 
@@ -84,7 +85,7 @@
 </script>
 
 <div>
-    <Label for={elId}>{title}</Label>
+    <Label for={elId}>{title}:</Label>
     <ButtonGroup class="w-full">
         <PasswordToggle elClass="w-full" hideByDefault={true}>
             <Input 
@@ -98,14 +99,19 @@
         <ButtonGroupBtn clickFn={UploadCookieFileWithAlert} elId="{website}-session-upload">
             <UploadSolid />
         </ButtonGroupBtn>
-        <Tooltip triggeredBy="#{website}-session-upload">Upload Netscape/Mozilla generated cookie .txt file</Tooltip>
+        <Tooltip triggeredBy="#{website}-session-upload">{Translate("Upload Netscape/Mozilla generated cookie .txt file")}</Tooltip>
     </ButtonGroup>
+    {#if website === "pixiv"}
+        <Helper class="mt-1">
+            *{Translate("If you have saved an OAuth Refresh Token for Pixiv in the Advanced tab, you can ignore this field as the program will use the token instead.")}
+        </Helper>
+    {/if}
     <div class="text-right mt-2">
         <button class="btn btn-danger hidden" id="{website}-delete-button">
-            Reset
+            {Translate("Delete")}
         </button>
         <button class="btn btn-success !me-0" id="{website}-save-button">
-            Save
+            {Translate("Save")}
         </button>
     </div>
 </div>

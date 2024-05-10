@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Label, Select, Input, Toggle } from "flowbite-svelte";
+    import { Label, Select, Input, Toggle, Helper } from "flowbite-svelte";
     import { onMount } from "svelte";
     import { GetPreferences, SetPixivPreferences } from "../../scripts/wailsjs/go/app/App";
     import { pixivFormId, swal } from "../../scripts/constants";
@@ -167,6 +167,9 @@
             id="UgoiraQuality" 
             type="number"
             placeholder="0-51 for mp4, 0-63 for webm"
+            min="0"
+            max="63"
         />
+        <Helper class="mt-1">Lower values mean better quality but longer conversion times!</Helper>
     </div>
 </form>

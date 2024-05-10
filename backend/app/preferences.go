@@ -1,9 +1,8 @@
 package app
 
 import (
-	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
-
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,7 +12,9 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
+	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/parsers"
+	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -93,6 +94,25 @@ func (a *App) SelectFfmpegPath() error {
 		return err
 	}
 	if ffmpegPath == "" {
+		return errors.New("no file selected")
+	}
+
+	// open dialog to confirm to avoid accidental execution of an incorrect file
+	options := []string{"Yes", "No"}
+	messageFmt := "Are you sure you want to set this file, %q, as the FFmpeg executable? Cultured Downloader will EXECUTE this file to verify the FFmpeg binary!"
+	confirm, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+		Type:          runtime.QuestionDialog,
+		Title:         "Confirm FFmpeg executable",
+		Message:       fmt.Sprintf(messageFmt, ffmpegPath),
+		Buttons:       options,
+		DefaultButton: options[0],
+		CancelButton:  options[1],
+	})
+	if err != nil {
+		logger.LogError(err, false, logger.ERROR)
+		return err
+	}
+	if confirm != options[0] {
 		return errors.New("no file selected")
 	}
 
