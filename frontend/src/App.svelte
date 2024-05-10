@@ -3,7 +3,6 @@
 
     import { onMount } from "svelte";
     import { writable } from "svelte/store";
-    import { Spinner } from "flowbite-svelte";
     import { swal, actions, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
     import { InitialiseLanguage } from "./scripts/language";
@@ -16,6 +15,7 @@
     import Kemono from "./lib/Kemono.svelte";
     import DownloadQueues from "./lib/DownloadQueues.svelte";
     import Settings from "./lib/Settings.svelte";
+    import Loading from "./lib/Loading.svelte";
 
     const triggerSwalError = (message: string): void => {
         swal.fire({
@@ -117,7 +117,7 @@
 <main class="p-4">
     <div class="mt-14">
         {#await InitialiseLanguage()}
-            <Spinner color="blue" />
+            <Loading />
         {:then}
             <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
             <!-- <Fantia /> -->

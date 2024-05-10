@@ -6,19 +6,21 @@ Cultured Downloader
 
 <div align="center">
     <a href="https://github.com/KJHJason/Cultured-Downloader/releases">
-    <img src="https://img.shields.io/github/v/release/KJHJason/Cultured-Downloader?include_prereleases&label=Latest%20Release" />
-  </a>
-  <a href="https://github.com/KJHJason/Cultured-Downloader/issues">
-    <img src="https://img.shields.io/github/issues/KJHJason/Cultured-Downloader" />
-  </a>
-  <a href="https://github.com/KJHJason/Cultured-Downloader/pulls">
-    <img src="https://img.shields.io/github/issues-pr/KJHJason/Cultured-Downloader" />
-  </a>
+        <img src="https://img.shields.io/github/v/release/KJHJason/Cultured-Downloader?include_prereleases&label=Latest%20Release" />
+    </a>
+    <a href="https://github.com/KJHJason/Cultured-Downloader/issues">
+        <img src="https://img.shields.io/github/issues/KJHJason/Cultured-Downloader" />
+    </a>
+    <a href="https://github.com/KJHJason/Cultured-Downloader/pulls">
+        <img src="https://img.shields.io/github/issues-pr/KJHJason/Cultured-Downloader" />
+    </a>
+    <img src="https://img.shields.io/github/downloads/KJHJason/Cultured-Downloader/latest/total" alt="latest release downloads">
+    <img src="https://img.shields.io/codeclimate/maintainability/KJHJason/Cultured-Downloader" alt="Code Climate maintainability">
 </div>
 
 <div align="center">
-  <a href="#introduction">English</a>
-  <a href="#お知らせ">日本語</a>
+    <a href="#introduction">English</a>
+    <a href="#お知らせ">日本語</a>
 </div>
 
 ---
@@ -53,14 +55,23 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date)](https://star-history.com/#KJHJason/Cultured-Downloader&Date)
+<a href="https://star-history.com/#KJHJason/Cultured-Downloader&Date">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date&theme=dark" />
+        <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date" />
+        <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date" />
+    </picture>
+</a>
 
 ## Running the Program
 
 1. Running the .go files
    - Clone this repository/Download all the files in this repository.
-   - Install the lastest version of [Golang](https://go.dev/dl/)
-   - Run `go run .` in the root directory of this repository to run the program.
+   - Install the latest version of [Golang](https://go.dev/dl/) and [Node.js](https://nodejs.org/en/download/)
+   - Install the Wails CLI by running `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+     - Refer to the [Wails documentation](https://wails.io/docs/next/gettingstarted/installation#installing-wails) if there is any issues faced when installing the Wails CLI. 
+   - Run `wails build` in the root directory of this repository to build the binary and run the program.
+     - Alternatively, you can run `wails dev` to run the program in development mode. 
 
 2. Running the executable file
    - Download the latest Cultured Downloader executable file (.exe) from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
