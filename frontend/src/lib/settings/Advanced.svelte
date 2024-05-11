@@ -158,7 +158,7 @@
         }
 
         const ffmpegLocationInp = document.getElementById("ffmpegLocation") as HTMLInputElement;
-        savedFfmpegPath = await GetFfmpegPath();
+        savedFfmpegPath = await GetFfmpegPath(false);
         ffmpegLocationInp.value = savedFfmpegPath;
 
         gdriveJsonText.addEventListener("click", async () => {

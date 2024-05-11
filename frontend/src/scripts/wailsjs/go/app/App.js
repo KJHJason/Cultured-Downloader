@@ -38,8 +38,8 @@ export function GetDownloadQueues() {
   return window['go']['app']['App']['GetDownloadQueues']();
 }
 
-export function GetFfmpegPath() {
-  return window['go']['app']['App']['GetFfmpegPath']();
+export function GetFfmpegPath(arg1) {
+  return window['go']['app']['App']['GetFfmpegPath'](arg1);
 }
 
 export function GetGDriveAPIKey() {

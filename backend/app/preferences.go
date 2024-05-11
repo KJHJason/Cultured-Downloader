@@ -123,9 +123,16 @@ func (a *App) SelectFfmpegPath() error {
 	return a.SetFfmpegPath(ffmpegPath)
 }
 
-func (a *App) GetFfmpegPath() string {
+func (a *App) GetFfmpegPath(validate bool) string {
 	path := a.appData.GetStringWithFallback(constants.FFMPEG_KEY, "ffmpeg")
+	if !validate {
+		return path
+	}
+
 	if err := configs.ValidateFfmpegPathLogic(a.ctx, path); err != nil {
+		if path != "ffmpeg" {
+			a.appData.Unset(constants.FFMPEG_KEY)
+		}
 		return ""
 	}
 	return path

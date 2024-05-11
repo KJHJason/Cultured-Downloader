@@ -22,7 +22,7 @@ export function GetDownloadDir():Promise<string>;
 
 export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 
-export function GetFfmpegPath():Promise<string>;
+export function GetFfmpegPath(arg1:boolean):Promise<string>;
 
 export function GetGDriveAPIKey():Promise<string>;
 

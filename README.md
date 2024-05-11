@@ -38,6 +38,7 @@ Cultured Downloader
 - [FAQ](#faq)
 - [Final Notes](#final-notes)
 - [Demo](#demo)
+- [The Original Cultured Downloader](#the-original-cultured-downloader)
 - [お知らせ](#お知らせ)
 ---
 
@@ -133,7 +134,19 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
 
 ## Demo
 
-*WIP
+<div align="center">
+  <p>Downloading files from a Fantia post and managing the Download Queues</p>
+  <p><img width="650px" alt="downloading Fantia demo and download queue demo" src="res/fantia-and-download-queue.gif"></p>
+  <p>General Settings</p>
+  <p><img width="650px" alt="general settings" src="res/general-settings.png"></p>
+  <p>Preferences</p>
+  <p><img width="650px" alt="preferences settings" src="res/preferences.png"></p>
+  <p>Advanced Settings/p>
+  <p><img width="650px" alt="advanced settings" src="res/advanced-settings.png"></p>
+</div>
+
+## The Original Cultured Downloader
+
 <div align="center">
   <p>Menu</p>
   <p><img width="500px" alt="menu demo" src="res/menu.jpg"></p>

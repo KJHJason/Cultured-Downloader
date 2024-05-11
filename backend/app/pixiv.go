@@ -154,7 +154,7 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
-			FfmpegPath:     a.GetFfmpegPath(),
+			FfmpegPath:     a.GetFfmpegPath(true),
 			OverwriteFiles: pref.OverwriteFiles,
 			LogUrls:        pref.DetectOtherLinks,
 			UserAgent:      userAgent,
@@ -209,7 +209,7 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref appdata.Preference
 
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
-			FfmpegPath:     a.GetFfmpegPath(),
+			FfmpegPath:     a.GetFfmpegPath(true),
 			OverwriteFiles: pref.OverwriteFiles,
 			LogUrls:        pref.DetectOtherLinks,
 			UserAgent:      userAgent,
