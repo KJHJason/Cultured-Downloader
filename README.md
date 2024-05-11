@@ -141,7 +141,7 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
   <p><img width="650px" alt="general settings" src="res/general-settings.png"></p>
   <p>Preferences</p>
   <p><img width="650px" alt="preferences settings" src="res/preferences.png"></p>
-  <p>Advanced Settings/p>
+  <p>Advanced Settings</p>
   <p><img width="650px" alt="advanced settings" src="res/advanced-settings.png"></p>
 </div>
 
