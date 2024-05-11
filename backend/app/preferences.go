@@ -11,6 +11,7 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/parsers"
@@ -136,8 +137,8 @@ type UserAgentResponse struct {
 }
 
 func (a *App) GetUserAgent() UserAgentResponse {
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
-	isDefault := userAgent == cdlconsts.USER_AGENT
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
+	isDefault := userAgent == httpfuncs.DEFAULT_USER_AGENT
 	return UserAgentResponse{
 		UserAgent: userAgent,
 		IsDefault: isDefault,
@@ -220,7 +221,7 @@ func (a *App) UploadCookieFile(website string) error {
 		return err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 	err = api.VerifyCookies(website, userAgent, cookies)
 	if err != nil {
 		return err
@@ -258,7 +259,7 @@ func (a *App) SetSessionValue(website, session string) error {
 		return err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 	if _, err := api.VerifyAndGetCookie(website, session, userAgent); err != nil {
 		return err
 	}

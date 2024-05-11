@@ -16,7 +16,7 @@
     import Kemono from "./lib/Kemono.svelte";
     import DownloadQueues from "./lib/DownloadQueues.svelte";
     import Settings from "./lib/Settings.svelte";
-    import Loading from "./lib/Loading.svelte";
+    import Loading from "./lib/common/Loading.svelte";
 
     const triggerSwalError = (message: string): void => {
         swal.fire({

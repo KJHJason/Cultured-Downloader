@@ -14,6 +14,7 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
+	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -24,6 +25,7 @@ type App struct {
 	lang           string
 	downloadQueues list.List // doubly linked list of DownloadQueue
 	gdriveClient   *gdrive.GDrive
+	notifier       notifier.Notifier
 }
 
 // NewApp creates a new App application struct

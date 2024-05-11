@@ -59,6 +59,7 @@
 
         intervalId = setInterval(async () => {
             const retrievedQueues = await GetDownloadQueues();
+            console.log(retrievedQueues);
             if (retrievedQueues === null) {
                 return;
             }
@@ -95,22 +96,22 @@
                     </TableBodyCell>
                 </TableBodyRow>
             {:else}
-            {#each downloadQueues as dlQ}
-                <TableBodyRow>
-                    <TableBodyCell>
-                        <span>{makeDateTimeReadable(dlQ.ProgressBar.DateTime)}</span>
-                    </TableBodyCell>
-                    <TableBodyCell class="whitespace-normal text-center">
-                        <Inputs {dlQ} {inputModalsId} />
-                    </TableBodyCell>
-                    <TableBodyCell>
-                        <Tasks {dlQ} {progHistoryModalsId} {makeDateTimeReadable} />
-                    </TableBodyCell>
-                    <TableBodyCell tdClass="text-center">
-                        <Actions {dlQ} {modalsId} {errModalsId} />
-                    </TableBodyCell>
-                </TableBodyRow>
-            {/each}
+                {#each downloadQueues as dlQ}
+                    <TableBodyRow>
+                        <TableBodyCell>
+                            <span>{makeDateTimeReadable(dlQ.ProgressBar.DateTime)}</span>
+                        </TableBodyCell>
+                        <TableBodyCell class="whitespace-normal text-center">
+                            <Inputs {dlQ} {inputModalsId} />
+                        </TableBodyCell>
+                        <TableBodyCell tdClass="px-6 py-4 font-medium">
+                            <Tasks {dlQ} {progHistoryModalsId} {makeDateTimeReadable} />
+                        </TableBodyCell>
+                        <TableBodyCell tdClass="text-center">
+                            <Actions {dlQ} {modalsId} {errModalsId} />
+                        </TableBodyCell>
+                    </TableBodyRow>
+                {/each}
             {/if}
         </TableBody>
     </Table>

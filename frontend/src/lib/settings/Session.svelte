@@ -103,7 +103,7 @@
     </ButtonGroup>
     {#if website === "pixiv"}
         <Helper class="mt-1">
-            *{Translate("If you have saved an OAuth Refresh Token for Pixiv in the Advanced tab, you can ignore this field as the program will use the token instead.")}
+            *{Translate("If you have saved an OAuth Refresh Token for Pixiv in the Advanced tab, you can ignore/delete this field as the program will use the token instead.")}
         </Helper>
     {/if}
     <div class="text-right mt-2">

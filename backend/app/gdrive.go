@@ -4,10 +4,9 @@ import (
 	"errors"
 	"os"
 
-
 	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
+	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
-	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -64,7 +63,7 @@ func (a *App) SetGDriveAPIKey(apiKey string) error {
 		return a.appData.Unset(constants.GDRIVE_API_KEY_KEY)
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 	_, err := gdrive.GetNewGDrive(a.ctx, apiKey, userAgent, nil, 1)
 	if err != nil {
 		return err
@@ -100,7 +99,7 @@ func (a *App) SelectGDriveServiceAccount() error {
 		return err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 	_, err = gdrive.GetNewGDrive(a.ctx, "", userAgent, jsonBytes, 1)
 	if err != nil {
 		return err

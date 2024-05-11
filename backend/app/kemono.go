@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -10,10 +11,10 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/kemono"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
-	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 )
 
 func validateKemonoInputs(inputs []string) (bool, []Input, *kemono.KemonoDl) {
@@ -62,7 +63,7 @@ func (a *App) ValidateKemonoInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseKemonoSettingsMap(pref appdata.Preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseKemonoSettingsMap(ctx context.Context, pref appdata.Preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
 	kemonoSession := a.appData.GetSecuredString(constants.KEMONO_COOKIE_VALUE_KEY)
 	var kemonoSessions []*http.Cookie
 	if kemonoSession == "" {
@@ -77,9 +78,9 @@ func (a *App) parseKemonoSettingsMap(pref appdata.Preferences) (kemonoDlOptions 
 		return nil, nil, err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 
-	mainProgBar = NewProgressBar(a.ctx)
+	mainProgBar = NewProgressBar(ctx)
 	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.PIXIV_FANBOX_TITLE)
 	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
@@ -102,12 +103,12 @@ func (a *App) parseKemonoSettingsMap(pref appdata.Preferences) (kemonoDlOptions 
 		SessionCookieId: kemonoSession,
 		SessionCookies:  kemonoSessions,
 
-		Notifier: notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME),
+		Notifier: a.notifier,
 
 		MainProgBar:          mainProgBar,
 		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
-	kemonoDlOptions.SetContext(a.ctx)
+	kemonoDlOptions.SetContext(ctx)
 	err = kemonoDlOptions.ValidateArgs(userAgent)
 	if err != nil {
 		return nil, nil, err
@@ -121,17 +122,24 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs appdata.Preferences) er
 		return errors.New("invalid Kemono URL(s)")
 	}
 
-	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(prefs)
+	ctx, cancel := context.WithCancel(context.Background())
+	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(ctx, prefs)
 	if err != nil {
 		return err
 	}
 
-	a.newDownloadQueue(cdlconsts.KEMONO, inputsForRef, mainProgBar, kemonoDlOptions.DownloadProgressBars, func() []error {
-		defer kemonoDlOptions.Notifier.Release()
-
-		errSlice := cdlogic.KemonoDownloadProcess(kemonoDl, kemonoDlOptions)
-		mainProgBar.MakeLatestSnapshotMain()
-		return errSlice
+	a.newDownloadQueue(ctx, cancel, &DlInfo{
+		website:        cdlconsts.KEMONO,
+		inputs:         inputsForRef,
+		mainProgBar:    mainProgBar,
+		dlProgressBars: kemonoDlOptions.DownloadProgressBars,
+		taskHandler:    func() []error {
+			defer cancel()
+			defer kemonoDlOptions.GdriveClient.Release()
+			errSlice := cdlogic.KemonoDownloadProcess(kemonoDl, kemonoDlOptions)
+			mainProgBar.MakeLatestSnapshotMain()
+			return errSlice
+		},
 	})
 	return nil
 }

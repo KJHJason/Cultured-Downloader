@@ -99,6 +99,7 @@
             const uniqueUrls = Array.from(new Set(urls));
             textareaEl.value = uniqueUrls.join("\n");
 
+            hasPageNoFilter = false;
             const existsInUrls = new Set<string>();
             for (const url of uniqueUrls) {
                 if (checkUrlHasPageNumFilter(url)) {
@@ -219,15 +220,29 @@
                 return;
             }
 
+            swal.fire({
+                title: "Adding to Queue...",
+                text: "Please wait while the URL(s) are being processed and added to the download queue!",
+                icon: "info",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    swal.showLoading();
+                },
+            })
+
             try {
                 await addToQueueFn(inputs, downloadPreferences);
-                    swal.fire({
+                swal.fire({
                     title: "Added to Queue!",
                     text: "The URL(s) have been added to the download queue!",
                     icon: "success",
                 });
                 resetForm();
             } catch (e) {
+                swal.close();
                 if (e && e.toString().startsWith("no cookies found for")) {
                     swal.fire({
                         title: "Input Error",

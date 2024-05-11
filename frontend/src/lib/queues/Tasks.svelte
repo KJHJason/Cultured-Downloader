@@ -53,7 +53,7 @@
                         <TableBodyCell>
                             {makeDateTimeReadable(nestedProgBar.DateTime, true)}
                         </TableBodyCell>
-                        <TableBodyCell>
+                        <TableBodyCell tdClass="px-6 py-4 font-medium">
                             <div class="flex justify-between mb-1">
                                 {#if nestedProgBar.HasError}
                                     <span class="font-medium pr-2">{nestedProgBar.ErrMsg}</span>

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -15,11 +16,11 @@ import (
 	pixivweb "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/web"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
-	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 )
 
 func validatePixivTag(tagInput string) (valid bool, tag string, pageNum string) {
@@ -126,7 +127,7 @@ func (a *App) ValidatePixivInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivMobileSettingsMap(pixivRefreshToken string, pref appdata.Preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken string, pref appdata.Preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
 	if pixivRefreshToken == "" {
 		return nil, nil, errors.New("Pixiv Refresh Token is empty")
 	}
@@ -136,9 +137,9 @@ func (a *App) parsePixivMobileSettingsMap(pixivRefreshToken string, pref appdata
 		return nil, nil, err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 
-	mainProgBar = NewProgressBar(a.ctx)
+	mainProgBar = NewProgressBar(ctx)
 	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.PIXIV_MOBILE_TITLE)
 	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
@@ -163,12 +164,12 @@ func (a *App) parsePixivMobileSettingsMap(pixivRefreshToken string, pref appdata
 
 		RefreshToken: pixivRefreshToken,
 
-		Notifier: notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME),
+		Notifier: a.notifier,
 
 		MainProgBar:          mainProgBar,
 		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
-	pixivMobileDlOptions.SetContext(a.ctx)
+	pixivMobileDlOptions.SetContext(ctx)
 	err = pixivMobileDlOptions.ValidateArgs()
 	if err != nil {
 		return nil, nil, err
@@ -176,7 +177,7 @@ func (a *App) parsePixivMobileSettingsMap(pixivRefreshToken string, pref appdata
 	return pixivMobileDlOptions, mainProgBar, nil
 }
 
-func (a *App) parsePixivSettingsMap(pref appdata.Preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivSettingsMap(ctx context.Context, pref appdata.Preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
 	pixivSession := a.appData.GetSecuredString(constants.PIXIV_COOKIE_VALUE_KEY)
 	var pixivSessions []*http.Cookie
 	if pixivSession == "" {
@@ -191,9 +192,9 @@ func (a *App) parsePixivSettingsMap(pref appdata.Preferences) (pixivWebDlOptions
 		return nil, nil, err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 
-	mainProgBar = NewProgressBar(a.ctx)
+	mainProgBar = NewProgressBar(ctx)
 	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.PIXIV_TITLE)
 	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
@@ -217,12 +218,12 @@ func (a *App) parsePixivSettingsMap(pref appdata.Preferences) (pixivWebDlOptions
 		SessionCookieId: pixivSession,
 		SessionCookies:  pixivSessions,
 
-		Notifier: notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME),
+		Notifier: a.notifier,
 
 		MainProgBar:          mainProgBar,
 		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
-	pixivWebDlOptions.SetContext(a.ctx)
+	pixivWebDlOptions.SetContext(ctx)
 	err = pixivWebDlOptions.ValidateArgs(userAgent)
 	if err != nil {
 		return nil, nil, err
@@ -245,12 +246,13 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) err
 	}
 
 	ugoiraOptions := parsePixivUgoiraSettings(prefs)
+	ctx, cancel := context.WithCancel(a.ctx)
 
 	var mainProgBar *ProgressBar
 	var dlProgBar *[]*progress.DownloadProgressBar
 	var fnToAddToQueue func() []error
 	if pixivMobileRefreshToken := a.appData.GetSecuredString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY); pixivMobileRefreshToken != "" {
-		pixivMobileDlOptions, mainProgBarVal, err := a.parsePixivMobileSettingsMap(pixivMobileRefreshToken, prefs)
+		pixivMobileDlOptions, mainProgBarVal, err := a.parsePixivMobileSettingsMap(ctx, pixivMobileRefreshToken, prefs)
 		if err != nil {
 			return err
 		}
@@ -259,14 +261,13 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) err
 		dlProgBar = pixivMobileDlOptions.DownloadProgressBars
 
 		fnToAddToQueue = func() []error {
-			defer pixivMobileDlOptions.Notifier.Release()
-
+			defer cancel()
 			errSlice := cdlogic.PixivMobileDownloadProcess(pixivDl, pixivMobileDlOptions, ugoiraOptions)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
 		}
 	} else {
-		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivSettingsMap(prefs)
+		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivSettingsMap(ctx, prefs)
 		if err != nil {
 			return err
 		}
@@ -275,14 +276,19 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) err
 		dlProgBar = pixivWebDlOptions.DownloadProgressBars
 
 		fnToAddToQueue = func() []error {
-			defer pixivWebDlOptions.Notifier.Release()
-
+			defer cancel()
 			errSlice := cdlogic.PixivWebDownloadProcess(pixivDl, pixivWebDlOptions, ugoiraOptions)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
 		}
 	}
 
-	a.newDownloadQueue(cdlconsts.PIXIV, inputsForRef, mainProgBar, dlProgBar, fnToAddToQueue)
+	a.newDownloadQueue(ctx, cancel, &DlInfo{
+		website:        cdlconsts.PIXIV,
+		inputs:         inputsForRef,
+		mainProgBar:    mainProgBar,
+		dlProgressBars: dlProgBar,
+		taskHandler:    fnToAddToQueue,
+	})
 	return nil
 }

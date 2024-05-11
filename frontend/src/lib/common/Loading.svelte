@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { swal } from "../scripts/constants";
+    import { swal } from "../../scripts/constants";
 
     swal.fire({
         title: "",
@@ -9,7 +9,6 @@
         allowEscapeKey: false,
         allowEnterKey: false,
         showConfirmButton: false,
-        scrollbarPadding: false,
         willOpen: () => {
             swal.showLoading();
         }

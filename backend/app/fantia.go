@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -10,10 +11,10 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/fantia"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
-	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 )
 
 func validateFantiaUrls(inputs []string) (bool, []Input, *fantia.FantiaDl) {
@@ -48,7 +49,7 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseFantiaSettingsMap(pref appdata.Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseFantiaSettingsMap(ctx context.Context, pref appdata.Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
 	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
 	var fantiaSessions []*http.Cookie
 	if fantiaSession == "" {
@@ -63,9 +64,9 @@ func (a *App) parseFantiaSettingsMap(pref appdata.Preferences) (fantiaDlOptions 
 		return nil, nil, err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, cdlconsts.USER_AGENT)
+	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 
-	mainProgBar = NewProgressBar(a.ctx)
+	mainProgBar = NewProgressBar(ctx)
 	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.FANTIA_TITLE)
 	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
@@ -90,12 +91,12 @@ func (a *App) parseFantiaSettingsMap(pref appdata.Preferences) (fantiaDlOptions 
 		SessionCookieId: fantiaSession,
 		SessionCookies:  fantiaSessions,
 
-		Notifier: notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME),
+		Notifier: a.notifier,
 
 		MainProgBar:          mainProgBar,
 		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
-	fantiaDlOptions.SetContext(a.ctx)
+	fantiaDlOptions.SetContext(ctx)
 	err = fantiaDlOptions.ValidateArgs(userAgent)
 	if err != nil {
 		return nil, nil, err
@@ -109,17 +110,24 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) er
 		return errors.New("invalid Fantia URL(s)")
 	}
 
-	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(prefs)
+	ctx, cancel := context.WithCancel(a.ctx)
+	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(ctx, prefs)
 	if err != nil {
 		return err
 	}
 
-	a.newDownloadQueue(cdlconsts.FANTIA, inputsForRef, mainProgBar, fantiaDlOptions.DownloadProgressBars, func() []error {
-		defer fantiaDlOptions.Notifier.Release()
-
-		errSlice := cdlogic.FantiaDownloadProcess(fantiaDl, fantiaDlOptions)
-		mainProgBar.MakeLatestSnapshotMain()
-		return errSlice
+	a.newDownloadQueue(ctx, cancel, &DlInfo{
+		website:        cdlconsts.FANTIA,
+		inputs:         inputsForRef,
+		mainProgBar:    mainProgBar,
+		dlProgressBars: fantiaDlOptions.DownloadProgressBars,
+		taskHandler:    func() []error {
+			defer cancel()
+			defer fantiaDlOptions.GdriveClient.Release()
+			errSlice := cdlogic.FantiaDownloadProcess(fantiaDl, fantiaDlOptions)
+			mainProgBar.MakeLatestSnapshotMain()
+			return errSlice
+		},
 	})
 	return nil
 }

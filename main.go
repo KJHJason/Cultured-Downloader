@@ -2,15 +2,17 @@ package main
 
 import (
 	"embed"
-	"log"
+	"path/filepath"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic"
+	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
+	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader/backend/app"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
@@ -62,17 +64,17 @@ func main() {
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{
-			WebviewIsTransparent:	false,
-			WindowIsTranslucent:	false,
-			DisableWindowIcon:		false,
-			// DisableFramelessWindowDecorations: false,
-			WebviewUserDataPath: "",
-			ZoomFactor: 1.0,
+			WebviewIsTransparent:	           false,
+			WindowIsTranslucent:	           false,
+			DisableWindowIcon:		           false,
+			DisableFramelessWindowDecorations: false,
+			WebviewUserDataPath:               filepath.Join(iofuncs.APP_PATH, "webview-data"),
+			ZoomFactor:                        1.0,
 		},
 		// Mac platform specific options
 		Mac: &mac.Options{
 			TitleBar: &mac.TitleBar{
-				TitlebarAppearsTransparent:	true,
+				TitlebarAppearsTransparent:	false,
 				HideTitle:					false,
 				HideTitleBar:				false,
 				FullSizeContent:			false,
@@ -80,17 +82,23 @@ func main() {
 				HideToolbarSeparator:		true,
 			},
 			Appearance:           mac.NSAppearanceNameDarkAqua,
-			WebviewIsTransparent: true,
-			WindowIsTranslucent:  true,
+			WebviewIsTransparent: false,
+			WindowIsTranslucent:  false,
 			About: &mac.AboutInfo{
 				Title:		"Cultured Downloader",
 				Message:	"",
 				Icon:		icon,
 			},
 		},
+		// Linux platform specific options
+		Linux: &linux.Options{
+			Icon:				 icon,
+			ProgramName:         "Cultured Downloader",
+			WindowIsTranslucent: false,
+		},
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		cdlogic.GetLogger().Fatal(err.Error())
 	}
 }

@@ -95,81 +95,83 @@
     });
 </script>
 
-<form id={formId} class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="md:col-span-2 mt-4">
+<form id={formId}>
+    <div class="grid grid-cols-1 md:grid-cols-2 my-4">
         <Toggle color="green" id="DeleteUgoiraZip" name="DeleteUgoiraZip">Delete Ugoira Zip After Conversion</Toggle>
     </div>
-    <div>
-        <Label for="ArtworkType">Artwork Type:</Label>
-        <Select 
-            class="mt-2" 
-            name="ArtworkType" 
-            id="ArtworkType" 
-            items={pixivArtworkTypes} 
-            bind:value={pixivArtworkType} 
-        />
-    </div>
-    <div>
-        <Label for="RatingMode">Rating Mode:</Label>
-        <Select 
-            class="mt-2" 
-            name="RatingMode" 
-            id="RatingMode" 
-            items={pixivRatings} 
-            bind:value={pixivRating} 
-        />
-    </div>
-    <div>
-        <Label for="SearchMode">Search Mode:</Label>
-        <Select 
-            class="mt-2" 
-            name="SearchMode" 
-            id="SearchMode" 
-            items={pixivSearchModes} 
-            bind:value={pixivSearchMode} 
-        />
-    </div>
-    <div>
-        <Label for="AiSearchMode">AI Search Mode:</Label>
-        <Select 
-            class="mt-2" 
-            name="AiSearchMode" 
-            id="AiSearchMode" 
-            items={pixivAiSearchModes} 
-            bind:value={pixivAiSearchMode} 
-        />
-    </div>
-    <div>
-        <Label for="SortOrder">Sort Order:</Label>
-        <Select 
-            class="mt-2" 
-            name="SortOrder" 
-            id="SortOrder" 
-            items={pixivSortOrders} 
-            bind:value={pixivSortOrder} 
-        />
-    </div>
-    <div>
-        <Label for="UgoiraOutputFormat">Ugoira Output File Format:</Label>
-        <Select 
-            class="mt-2" 
-            name="UgoiraOutputFormat" 
-            id="UgoiraOutputFormat" 
-            items={pixivUgoiraFormats} 
-            bind:value={pixivUgoiraFormat} 
-        />
-    </div>
-    <div>
-        <Label for="UgoiraQuality">Ugoira Quality:</Label>
-        <Input 
-            class="mt-2" 
-            name="UgoiraQuality" 
-            id="UgoiraQuality" 
-            type="number"
-            placeholder="0-51 for mp4, 0-63 for webm"
-            min="0"
-            max="63"
-        />
-        <Helper class="mt-1">Lower values mean better quality but longer conversion times!</Helper>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <Label for="ArtworkType">Artwork Type:</Label>
+            <Select 
+                class="mt-2" 
+                name="ArtworkType" 
+                id="ArtworkType" 
+                items={pixivArtworkTypes} 
+                bind:value={pixivArtworkType} 
+            />
+        </div>
+        <div>
+            <Label for="RatingMode">Rating Mode:</Label>
+            <Select 
+                class="mt-2" 
+                name="RatingMode" 
+                id="RatingMode" 
+                items={pixivRatings} 
+                bind:value={pixivRating} 
+            />
+        </div>
+        <div>
+            <Label for="SearchMode">Search Mode:</Label>
+            <Select 
+                class="mt-2" 
+                name="SearchMode" 
+                id="SearchMode" 
+                items={pixivSearchModes} 
+                bind:value={pixivSearchMode} 
+            />
+        </div>
+        <div>
+            <Label for="AiSearchMode">AI Search Mode:</Label>
+            <Select 
+                class="mt-2" 
+                name="AiSearchMode" 
+                id="AiSearchMode" 
+                items={pixivAiSearchModes} 
+                bind:value={pixivAiSearchMode} 
+            />
+        </div>
+        <div>
+            <Label for="SortOrder">Sort Order:</Label>
+            <Select 
+                class="mt-2" 
+                name="SortOrder" 
+                id="SortOrder" 
+                items={pixivSortOrders} 
+                bind:value={pixivSortOrder} 
+            />
+        </div>
+        <div>
+            <Label for="UgoiraOutputFormat">Ugoira Output File Format:</Label>
+            <Select 
+                class="mt-2" 
+                name="UgoiraOutputFormat" 
+                id="UgoiraOutputFormat" 
+                items={pixivUgoiraFormats} 
+                bind:value={pixivUgoiraFormat} 
+            />
+        </div>
+        <div>
+            <Label for="UgoiraQuality">Ugoira Quality:</Label>
+            <Input 
+                class="mt-2" 
+                name="UgoiraQuality" 
+                id="UgoiraQuality" 
+                type="number"
+                placeholder="0-51 for mp4, 0-63 for webm"
+                min="0"
+                max="63"
+            />
+            <Helper class="mt-1">Lower values mean better quality but longer conversion times!</Helper>
+        </div>
     </div>
 </form>

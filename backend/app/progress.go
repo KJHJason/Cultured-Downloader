@@ -28,10 +28,11 @@ type ProgressBar struct {
 	// download progress bars for more detailed information
 	DownloadProgressBars []*progress.DownloadProgressBar
 
-	count    int
-	maxCount int
-	active   bool
-	mu       *sync.RWMutex
+	count     int
+	maxCount  int
+	active    bool
+	isSpinner bool
+	mu        *sync.RWMutex
 }
 
 type NestedProgressBar struct {
@@ -55,7 +56,6 @@ type Messages struct {
 
 func NewProgressBar(ctx context.Context) *ProgressBar {
 	return &ProgressBar{
-		IsSpinner:      true,
 		Count:          0,
 		Active:         false,
 		Finished:       false,
@@ -64,16 +64,17 @@ func NewProgressBar(ctx context.Context) *ProgressBar {
 		DateTime:       time.Now().UTC(),
 		nestedProgBars: []NestedProgressBar{},
 
-		count:  0,
-		active: false,
-		mu:     &sync.RWMutex{},
+		count:     0,
+		active:    false,
+		isSpinner: false,
+		mu:        &sync.RWMutex{},
 	}
 }
 
 func (p *ProgressBar) Add(i int) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if !p.active {
+	if !p.active || p.isSpinner {
 		return
 	}
 
@@ -102,24 +103,26 @@ func (p *ProgressBar) SetToSpinner() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.IsSpinner = true
+	p.isSpinner = true
 }
 
 func (p *ProgressBar) SetToProgressBar() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.IsSpinner = false
+	p.isSpinner = false
 }
 
 func (p *ProgressBar) GetIsSpinner() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return p.IsSpinner
+	return p.isSpinner
 }
 
 func (p *ProgressBar) GetIsProgBar() bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	return !p.IsSpinner
+	return !p.isSpinner
 }
 
 func (p *ProgressBar) StopInterrupt(errMsg string) {
@@ -195,6 +198,7 @@ func (p *ProgressBar) SnapshotTask() {
 	p.maxCount = 0
 	p.active = false
 	p.Active = false
+	p.isSpinner = false
 	p.Finished = false
 	p.HasError = false
 	p.Percentage = 0

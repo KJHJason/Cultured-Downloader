@@ -12,6 +12,7 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
+	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -75,6 +76,8 @@ func (a *App) Startup(ctx context.Context) {
 			}
 		}
 	}
+
+	a.notifier = notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME)
 
 	lang := a.appData.GetString(constants.LANGUAGE_KEY)
 	if lang == "" {

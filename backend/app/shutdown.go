@@ -10,4 +10,5 @@ func (a *App) Shutdown(ctx context.Context) {
 			dlQueue.Value.(*DownloadQueue).CancelQueue()
 		}
 	}
+	a.notifier.Release()
 }

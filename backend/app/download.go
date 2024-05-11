@@ -126,24 +126,35 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 		hasError := len(val.GetErrSlice()) > 0
 		var nestedProgressBar []NestedProgressBar
 		nestedProgBarLen := len(val.mainProgressBar.nestedProgBars)
-		if nestedProgBarLen > 0 {
+		if !val.finished && nestedProgBarLen > 0 {
+			// since there will be a copy of the last finished task
 			lastElIdx := nestedProgBarLen - 1
 			nestedProgressBar = make([]NestedProgressBar, lastElIdx)
-			for idx, val := range val.mainProgressBar.nestedProgBars {
-				if !hasError && val.HasError {
-					hasError = true
-				}
-
+			for idx, nestedProgBar := range val.mainProgressBar.nestedProgBars {
 				if idx == lastElIdx {
 					break
 				}
 
-				nestedProgressBar[idx] = val
-				if val.IsSpinner || !strings.Contains(val.Msg, "%d") {
+				if !hasError && nestedProgBar.HasError {
+					if val.website != constants.FANTIA {
+						// for those that doesn't have a captcha solver
+						hasError = true
+					} else if nestedProgBar.ErrMsg == cdlConst.ERR_RECAPTCHA_STR {
+						// check the next element if it has an error as the captcha error can be ignored if the next element has no error
+						if idx+1 < lastElIdx && val.mainProgressBar.nestedProgBars[idx+1].HasError {
+							hasError = true
+						}
+					}
+				}
+
+				nestedProgressBar[idx] = nestedProgBar
+				if nestedProgBar.IsSpinner || !strings.Contains(nestedProgBar.Msg, "%d") {
 					continue
 				}
-				nestedProgressBar[idx].Msg = fmt.Sprintf(val.Msg, val.Count)
+				nestedProgressBar[idx].Msg = fmt.Sprintf(nestedProgBar.Msg, nestedProgBar.Count)
 			}
+		} else {
+			nestedProgressBar = val.mainProgressBar.nestedProgBars
 		}
 
 		msg := val.mainProgressBar.GetBaseMsg()
@@ -175,23 +186,30 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 	return queues
 }
 
-func (a *App) newDownloadQueue(website string, inputs []Input, mainProgBar *ProgressBar, dlProgressBars *[]*progress.DownloadProgressBar, taskHandler taskHandlerFunc) *DownloadQueue {
+type DlInfo struct {
+	website        string
+	inputs         []Input
+	mainProgBar    *ProgressBar
+	dlProgressBars *[]*progress.DownloadProgressBar
+	taskHandler    taskHandlerFunc
+}
+
+func (a *App) newDownloadQueue(ctx context.Context, cancelFunc context.CancelFunc, dlInfo *DlInfo) *DownloadQueue {
 	id := count
-	ctx, cancel := context.WithCancel(a.ctx)
 	count++
 
 	dlQueue := &DownloadQueue{
 		id:              id,
 		ctx:             ctx,
-		cancel:          cancel,
-		website:         website,
-		taskHandler:     taskHandler,
+		cancel:          cancelFunc,
+		website:         dlInfo.website,
+		taskHandler:     dlInfo.taskHandler,
 		active:          false,
 		finished:        false,
-		mainProgressBar: mainProgBar,
-		dlProgressBars:  dlProgressBars,
+		mainProgressBar: dlInfo.mainProgBar,
+		dlProgressBars:  dlInfo.dlProgressBars,
 		mu:              sync.Mutex{},
-		inputs:          inputs,
+		inputs:          dlInfo.inputs,
 	}
 	a.downloadQueues.PushBack(dlQueue)
 	return dlQueue

@@ -13,7 +13,7 @@
         <TableBodyRow>
             {#each errors as err}
                 <TableBodyCell>
-                    {err}
+                    <pre class="text-wrap text-sm">{err}</pre>
                 </TableBodyCell>
             {/each}
         </TableBodyRow>
