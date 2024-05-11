@@ -11,4 +11,7 @@ func (a *App) Shutdown(ctx context.Context) {
 		}
 	}
 	a.notifier.Release()
+	if a.gdriveClient != nil {
+		a.gdriveClient.Release()
+	}
 }

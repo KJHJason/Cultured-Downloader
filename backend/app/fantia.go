@@ -123,7 +123,6 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) er
 		dlProgressBars: fantiaDlOptions.DownloadProgressBars,
 		taskHandler:    func() []error {
 			defer cancel()
-			defer fantiaDlOptions.GdriveClient.Release()
 			errSlice := cdlogic.FantiaDownloadProcess(fantiaDl, fantiaDlOptions)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice

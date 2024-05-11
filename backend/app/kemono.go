@@ -135,7 +135,6 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs appdata.Preferences) er
 		dlProgressBars: kemonoDlOptions.DownloadProgressBars,
 		taskHandler:    func() []error {
 			defer cancel()
-			defer kemonoDlOptions.GdriveClient.Release()
 			errSlice := cdlogic.KemonoDownloadProcess(kemonoDl, kemonoDlOptions)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice

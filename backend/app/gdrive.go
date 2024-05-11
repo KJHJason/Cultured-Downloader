@@ -60,15 +60,17 @@ func (a *App) GetGdriveClient() *gdrive.GDrive {
 
 func (a *App) SetGDriveAPIKey(apiKey string) error {
 	if apiKey == "" {
+		a.gdriveClient = nil
 		return a.appData.Unset(constants.GDRIVE_API_KEY_KEY)
 	}
 
 	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	_, err := gdrive.GetNewGDrive(a.ctx, apiKey, userAgent, nil, 1)
+	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, apiKey, userAgent, nil, 1)
 	if err != nil {
 		return err
 	}
 
+	a.gdriveClient = gdriveClient
 	return a.appData.SetSecureString(constants.GDRIVE_API_KEY_KEY, apiKey)
 }
 
@@ -100,19 +102,24 @@ func (a *App) SelectGDriveServiceAccount() error {
 	}
 
 	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	_, err = gdrive.GetNewGDrive(a.ctx, "", userAgent, jsonBytes, 1)
+	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, "", userAgent, jsonBytes, 1)
 	if err != nil {
 		return err
 	}
+
+	a.gdriveClient = gdriveClient
 	return a.appData.SetSecureBytes(constants.GDRIVE_SERVICE_ACC_KEY, jsonBytes)
 }
 
 func (a *App) UnsetGDriveServiceAccount() error {
+	a.gdriveClient = nil
 	return a.appData.Unset(constants.GDRIVE_SERVICE_ACC_KEY)
 }
 
 func (a *App) GetGDriveServiceAccount() string {
 	jsonBytes := a.appData.GetSecuredBytes(constants.GDRIVE_SERVICE_ACC_KEY)
-
+	if len(jsonBytes) == 0 {
+		return ""
+	}
 	return string(jsonBytes)
 }

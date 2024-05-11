@@ -139,7 +139,6 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs appdata.Preference
 		dlProgressBars: pixivFanboxDlOptions.DownloadProgressBars,
 		taskHandler:    func() []error {
 			defer cancel()
-			defer pixivFanboxDlOptions.GdriveClient.Release()
 			errSlice := cdlogic.PixivFanboxDownloadProcess(pixivFanboxDl, pixivFanboxDlOptions)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
