@@ -86,6 +86,7 @@ type FrontendDownloadDetails struct {
 	ErrMsg        string
 	Finished      bool
 	HasError      bool
+	FileSize      string
 	Filename      string
 	DownloadSpeed float64
 	DownloadETA   float64
@@ -107,6 +108,22 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 			// so that the latest download progress bar is at the top
 			for i := dlDetailsLen - 1; i >= 0; i-- {
 				dlProg := derefDlDetails[i]
+
+				var fileSizeInfo string
+				if fileSize := dlProg.GetTotalBytes(); fileSize == -1 {
+					fileSizeInfo = "Unknown"
+				} else if fileSize > constants.FILESIZE_TB {
+					fileSizeInfo = fmt.Sprintf("~%d TB", fileSize>>40)
+				} else if fileSize > constants.FILESIZE_GB {
+					fileSizeInfo = fmt.Sprintf("~%d GB", fileSize>>30)
+				} else if fileSize > constants.FILESIZE_MB {
+					fileSizeInfo = fmt.Sprintf("~%d MB", fileSize>>20)
+				} else if fileSize > constants.FILESIZE_KB {
+					fileSizeInfo = fmt.Sprintf("~%d KB", fileSize>>10)
+				} else {
+					fileSizeInfo = fmt.Sprintf("~%d B", fileSize)
+				}
+
 				dlDetails[idx] = FrontendDownloadDetails{
 					Msg:           dlProg.GetMsg(),
 					SuccessMsg:    dlProg.GetSuccessMsg(),
@@ -114,6 +131,7 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 					Finished:      dlProg.IsFinished(),
 					HasError:      dlProg.HasError(),
 					Filename:      dlProg.GetFilename(),
+					FileSize:      fileSizeInfo,
 					DownloadSpeed: dlProg.GetDownloadSpeed(),
 					DownloadETA:   dlProg.GetDownloadETA(),
 					Percentage:    dlProg.GetPercentage(),
@@ -126,15 +144,10 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 		hasError := len(val.GetErrSlice()) > 0
 		var nestedProgressBar []NestedProgressBar
 		nestedProgBarLen := len(val.mainProgressBar.nestedProgBars)
-		if !val.finished && nestedProgBarLen > 0 {
-			// since there will be a copy of the last finished task
+		if !val.finished {
 			lastElIdx := nestedProgBarLen - 1
-			nestedProgressBar = make([]NestedProgressBar, lastElIdx)
+			nestedProgressBar = make([]NestedProgressBar, nestedProgBarLen)
 			for idx, nestedProgBar := range val.mainProgressBar.nestedProgBars {
-				if idx == lastElIdx {
-					break
-				}
-
 				if !hasError && nestedProgBar.HasError {
 					if val.website != constants.FANTIA {
 						// for those that doesn't have a captcha solver

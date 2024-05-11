@@ -38,6 +38,10 @@ const textMap: Record<string, Record<string, string>> = {
         [EN]: "Save",
         [JP]: "保存",
     },
+    "unknown": {
+        [EN]: "Unknown",
+        [JP]: "不明",
+    },
 }
 
 export const InitialiseLanguage = async (): Promise<void> => {

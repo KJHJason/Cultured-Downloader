@@ -17,6 +17,11 @@ const (
 	EN = "en"
 	JA = "ja"
 
+	FILESIZE_TB = 1 << 40
+	FILESIZE_GB = 1 << 30
+	FILESIZE_MB = 1 << 20
+	FILESIZE_KB = 1 << 10
+
 	// Platform names
 	FANTIA       = "fantia"
 	PIXIV        = "pixiv"

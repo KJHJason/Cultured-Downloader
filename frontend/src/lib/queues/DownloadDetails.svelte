@@ -22,6 +22,9 @@
         </span>
     </TableBodyCell>
     <TableBodyCell>
+        {Translate(dlDetails.FileSize)}
+    </TableBodyCell>
+    <TableBodyCell>
         <span>{parseFloat(dlDetails.DownloadSpeed).toFixed(2)} MB/s</span>
     </TableBodyCell>
     <TableBodyCell>

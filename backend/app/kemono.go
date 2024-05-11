@@ -81,7 +81,7 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref appdata.Preferenc
 	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
 
 	mainProgBar = NewProgressBar(ctx)
-	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.PIXIV_FANBOX_TITLE)
+	baseDlDirPath := filepath.Join(downloadPath, cdlconsts.KEMONO_TITLE)
 	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 

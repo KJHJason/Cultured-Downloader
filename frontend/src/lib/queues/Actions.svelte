@@ -21,13 +21,14 @@
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             <TableHeadCell>{Translate("Filename")}</TableHeadCell>
+            <TableHeadCell>{Translate("File Size")}</TableHeadCell>
             <TableHeadCell>{Translate("Download Speed")}</TableHeadCell>
             <TableHeadCell>{Translate("Progress/ETA")}</TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
             {#if dlQ.DlProgressBars.length === 0}
                 <TableBodyRow>
-                    <TableBodyCell tdClass="text-center p-3" colspan="3">
+                    <TableBodyCell tdClass="text-center p-3" colspan="4">
                         {Translate("Nothing here!")}
                     </TableBodyCell>
                 </TableBodyRow>
@@ -60,9 +61,10 @@
     <button type="button" class="btn-text-danger" id="stop-{dlQ.Id}" on:click={() => CancelQueue(dlQ.Id)}>
         <StopSolid />
     </button>
-    <button type="button" class="btn-text-danger" id="remove-{dlQ.Id}" on:click={() => DeleteQueue(dlQ.Id)}>
-        <TrashBinSolid />
-    </button>
     <Tooltip triggeredBy="#stop-{dlQ.Id}">{Translate("Stop Download")}</Tooltip>
-    <Tooltip triggeredBy="#remove-{dlQ.Id}">{Translate("Remove from Queue")}</Tooltip>
 {/if}
+
+<button type="button" class="btn-text-danger" id="remove-{dlQ.Id}" on:click={() => DeleteQueue(dlQ.Id)}>
+    <TrashBinSolid />
+</button>
+<Tooltip triggeredBy="#remove-{dlQ.Id}">{Translate("Remove from Queue")}</Tooltip>

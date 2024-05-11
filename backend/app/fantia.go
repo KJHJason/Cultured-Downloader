@@ -121,7 +121,7 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) er
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,
 		dlProgressBars: fantiaDlOptions.DownloadProgressBars,
-		taskHandler:    func() []error {
+		taskHandler: func() []error {
 			defer cancel()
 			errSlice := cdlogic.FantiaDownloadProcess(fantiaDl, fantiaDlOptions)
 			mainProgBar.MakeLatestSnapshotMain()

@@ -59,8 +59,8 @@
 
         intervalId = setInterval(async () => {
             const retrievedQueues = await GetDownloadQueues();
-            console.log(retrievedQueues);
             if (retrievedQueues === null) {
+                downloadQueues = [];
                 return;
             }
 

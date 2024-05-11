@@ -31,7 +31,7 @@
 {#if dlQ.NestedProgressBar?.length > 0}
     <div class="text-right mt-2">
         <button type="button" class="btn-text-info text-xs" id="view-prog-{dlQ.Id}" on:click={() => {progHistoryModalsId[dlQ.Id] = true}}>
-            {Translate("View previous tasks...")}
+            {Translate("View tasks history...")}
         </button>
     </div>
     <Modal bind:open={progHistoryModalsId[dlQ.Id]} title="Tasks History" id="view-prog-{dlQ.Id}" size="md" autoclose>
@@ -63,7 +63,7 @@
                             </div>
 
                             {#if nestedProgBar.HasError}
-                                <Progressbar progress="{nestedProgBar.Percentage}" color="red" animate={true} />
+                                <Progressbar progress="100" color="red" animate={true} />
                             {:else}
                                 <Progressbar progress="100" color="green" animate={true} />
                             {/if}
