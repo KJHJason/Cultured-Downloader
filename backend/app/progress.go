@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
+	"fmt"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 )
@@ -23,7 +25,7 @@ type ProgressBar struct {
 	Percentage     int
 	FolderPath     string
 	DateTime       time.Time
-	nestedProgBars []NestedProgressBar
+	nestedProgBars []*NestedProgressBar
 
 	// download progress bars for more detailed information
 	DownloadProgressBars []*progress.DownloadProgressBar
@@ -62,7 +64,7 @@ func NewProgressBar(ctx context.Context) *ProgressBar {
 		HasError:       false,
 		Percentage:     0,
 		DateTime:       time.Now().UTC(),
-		nestedProgBars: []NestedProgressBar{},
+		nestedProgBars: []*NestedProgressBar{},
 
 		count:     0,
 		active:    false,
@@ -181,8 +183,13 @@ func (p *ProgressBar) SnapshotTask() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.nestedProgBars = append(p.nestedProgBars, NestedProgressBar{
-		Msg:        p.msg,
+	msg := p.msg
+	if strings.Contains(msg, "%d") {
+		msg = fmt.Sprintf(msg, p.count)
+	}
+
+	p.nestedProgBars = append(p.nestedProgBars, &NestedProgressBar{
+		Msg:        msg,
 		SuccessMsg: p.successMsg,
 		ErrMsg:     p.errMsg,
 		IsSpinner:  p.IsSpinner,

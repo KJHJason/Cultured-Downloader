@@ -236,9 +236,6 @@
             try {
                 await addToQueueFn(inputs, downloadPreferences);
                 swal.fire({
-                    toast: true,
-                    timer: 1500,
-                    timerProgressBar: true,
                     title: "Added to Queue!",
                     text: "The URL(s) have been added to the download queue!",
                     icon: "success",

@@ -4,14 +4,13 @@ import (
 	"errors"
 	"os"
 
+	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
-
-const GDriveMaxDownloaders = 2
 
 func (a *App) GetGdriveClient() *gdrive.GDrive {
 	if a.gdriveClient != nil {
@@ -25,7 +24,7 @@ func (a *App) GetGdriveClient() *gdrive.GDrive {
 			gdriveKey,
 			a.appData.GetString(constants.USER_AGENT_KEY),
 			nil,
-			GDriveMaxDownloaders,
+			cdlconst.GDRIVE_MAX_CONCURRENCY,
 		)
 		if err != nil {
 			logger.MainLogger.Errorf("Error creating GDrive client: %v", err)
@@ -47,7 +46,7 @@ func (a *App) GetGdriveClient() *gdrive.GDrive {
 		"",
 		a.appData.GetString(constants.USER_AGENT_KEY),
 		credJson,
-		GDriveMaxDownloaders,
+		cdlconst.GDRIVE_MAX_CONCURRENCY,
 	)
 	if err != nil {
 		logger.MainLogger.Errorf("Error creating GDrive client: %v", err)
