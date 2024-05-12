@@ -139,7 +139,7 @@ Go/Golangを学んだ後、このプログラムをGolangで書き直し、wails
 <div align="center">
   <p>Fantia投稿からのファイルのダウンロードとダウンロードキューの管理</p>
   <p><img width="650px" alt="Fantia投稿のダウンロードとダウンロードキューの管理デモ" src="res/fantia-and-download-queue.gif"></p>
-  <p>一般的な設定s</p>
+  <p>一般的な設定</p>
   <p><img width="650px" alt="一般的な設定" src="res/general-settings.png"></p>
   <p>環境設定</p>
   <p><img width="650px" alt="環境設定" src="res/preferences.png"></p>
