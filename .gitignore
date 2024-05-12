@@ -12,3 +12,4 @@ cultureddownloader*.json
 Cultured Downloader-res.syso
 
 !*_test.go
+.env

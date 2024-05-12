@@ -19,7 +19,6 @@ import (
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
-	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -127,8 +126,9 @@ func (a *App) ValidatePixivInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken string, pref appdata.Preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken string, pref *preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
 	if pixivRefreshToken == "" {
+		//lint:ignore ST1005 Captialised for frontend use
 		return nil, nil, errors.New("Pixiv Refresh Token is empty")
 	}
 
@@ -146,15 +146,15 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 
 	pixivMobileDlOptions = &pixivmobile.PixivMobileDlOptions{
 		BaseDownloadDirPath: baseDlDirPath,
-		SortOrder:           appdata.ConvertSortOrderForBackend(pref.SortOrder),
-		SearchMode:          appdata.ConvertSearchModeForBackend(pref.SearchMode),
-		SearchAiMode:        appdata.ConvertAiSearchModeForBackend(pref.AiSearchMode),
-		RatingMode:          appdata.ConvertRatingModeForBackend(pref.RatingMode),
-		ArtworkType:         appdata.ConvertArtworkTypeForBackend(pref.ArtworkType),
+		SortOrder:           convertSortOrderForBackend(pref.SortOrder),
+		SearchMode:          convertSearchModeForBackend(pref.SearchMode),
+		SearchAiMode:        convertAiSearchModeForBackend(pref.AiSearchMode),
+		RatingMode:          convertRatingModeForBackend(pref.RatingMode),
+		ArtworkType:         convertArtworkTypeForBackend(pref.ArtworkType),
 
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
-			FfmpegPath:     a.GetFfmpegPath(true),
+			FfmpegPath:     a.GetFfmpegPath(),
 			OverwriteFiles: pref.OverwriteFiles,
 			LogUrls:        pref.DetectOtherLinks,
 			UserAgent:      userAgent,
@@ -177,7 +177,7 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 	return pixivMobileDlOptions, mainProgBar, nil
 }
 
-func (a *App) parsePixivSettingsMap(ctx context.Context, pref appdata.Preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivSettingsMap(ctx context.Context, pref *preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
 	pixivSession := a.appData.GetSecuredString(constants.PIXIV_COOKIE_VALUE_KEY)
 	var pixivSessions []*http.Cookie
 	if pixivSession == "" {
@@ -201,15 +201,15 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref appdata.Preference
 
 	pixivWebDlOptions = &pixivweb.PixivWebDlOptions{
 		BaseDownloadDirPath: baseDlDirPath,
-		SortOrder:           appdata.ConvertSortOrderForBackend(pref.SortOrder),
-		SearchMode:          appdata.ConvertSearchModeForBackend(pref.SearchMode),
-		SearchAiMode:        appdata.ConvertAiSearchModeForBackend(pref.AiSearchMode),
-		RatingMode:          appdata.ConvertRatingModeForBackend(pref.RatingMode),
-		ArtworkType:         appdata.ConvertArtworkTypeForBackend(pref.ArtworkType),
+		SortOrder:           convertSortOrderForBackend(pref.SortOrder),
+		SearchMode:          convertSearchModeForBackend(pref.SearchMode),
+		SearchAiMode:        convertAiSearchModeForBackend(pref.AiSearchMode),
+		RatingMode:          convertRatingModeForBackend(pref.RatingMode),
+		ArtworkType:         convertArtworkTypeForBackend(pref.ArtworkType),
 
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
-			FfmpegPath:     a.GetFfmpegPath(true),
+			FfmpegPath:     a.GetFfmpegPath(),
 			OverwriteFiles: pref.OverwriteFiles,
 			LogUrls:        pref.DetectOtherLinks,
 			UserAgent:      userAgent,
@@ -231,15 +231,19 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref appdata.Preference
 	return pixivWebDlOptions, mainProgBar, nil
 }
 
-func parsePixivUgoiraSettings(pref appdata.Preferences) *ugoira.UgoiraOptions {
+func parsePixivUgoiraSettings(pref *preferences) *ugoira.UgoiraOptions {
 	return &ugoira.UgoiraOptions{
 		DeleteZip:    pref.DeleteUgoiraZip,
 		Quality:      int(pref.UgoiraQuality),
-		OutputFormat: appdata.GetReadableUgoiraFileFormat(pref.UgoiraOutputFormat),
+		OutputFormat: getReadableUgoiraFileFormat(pref.UgoiraOutputFormat),
 	}
 }
 
-func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) error {
+func (a *App) SubmitPixivToQueue(inputs []string, prefs *preferences) error {
+	if prefs == nil {
+		return errors.New("preferences is nil in SubmitPixivToQueue()")
+	}
+
 	valid, inputsForRef, pixivDl := validatePixivInputs(inputs)
 	if !valid {
 		return errors.New("invalid Kemono URL(s)")
@@ -254,6 +258,7 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) err
 	if pixivMobileRefreshToken := a.appData.GetSecuredString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY); pixivMobileRefreshToken != "" {
 		pixivMobileDlOptions, mainProgBarVal, err := a.parsePixivMobileSettingsMap(ctx, pixivMobileRefreshToken, prefs)
 		if err != nil {
+			cancel()
 			return err
 		}
 
@@ -269,6 +274,7 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) err
 	} else {
 		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivSettingsMap(ctx, prefs)
 		if err != nil {
+			cancel()
 			return err
 		}
 
@@ -283,7 +289,7 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs appdata.Preferences) err
 		}
 	}
 
-	a.newDownloadQueue(ctx, cancel, &DlInfo{
+	a.addNewDownloadQueue(ctx, cancel, &dlInfo{
 		website:        cdlconsts.PIXIV,
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,

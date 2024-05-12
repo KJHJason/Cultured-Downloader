@@ -13,7 +13,6 @@ import (
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
-	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -65,7 +64,7 @@ func (a *App) ValidatePixivFanboxUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref appdata.Preferences) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *preferences) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
 	pixivFanboxSession := a.appData.GetSecuredString(constants.PIXIV_FANBOX_COOKIE_VALUE_KEY)
 	var pixivFanboxSessions []*http.Cookie
 	if pixivFanboxSession == "" {
@@ -120,7 +119,11 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref appdata.Pref
 	return pixivFanboxDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs appdata.Preferences) error {
+func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *preferences) error {
+	if prefs == nil {
+		return errors.New("preferences is nil in SubmitFantiaToQueue()")
+	}
+
 	valid, inputsForRef, pixivFanboxDl := validatePixivFanboxUrls(inputs)
 	if !valid {
 		return errors.New("invalid Pixiv Fanbox URL(s)")
@@ -129,10 +132,11 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs appdata.Preference
 	ctx, cancel := context.WithCancel(a.ctx)
 	pixivFanboxDlOptions, mainProgBar, err := a.parsePixivFanboxSettingsMap(ctx, prefs)
 	if err != nil {
+		cancel()
 		return err
 	}
 
-	a.newDownloadQueue(ctx, cancel, &DlInfo{
+	a.addNewDownloadQueue(ctx, cancel, &dlInfo{
 		website:        cdlconsts.PIXIV_FANBOX,
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,

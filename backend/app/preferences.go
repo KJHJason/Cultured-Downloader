@@ -1,378 +1,95 @@
 package app
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-	goruntime "runtime"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic/api"
-	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
-	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
-	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
-	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
-	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
-	"github.com/KJHJason/Cultured-Downloader-Logic/parsers"
-	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/KJHJason/Cultured-Downloader-Logic/errors"
 )
 
-func (a *App) GetPreferences() appdata.Preferences {
-	return a.appData.GetPreferences()
+func (a *App) GetDarkMode() bool {
+	return a.appData.GetBool(constants.DARK_MODE_KEY)
 }
 
-func (a *App) SetGeneralPreferences(preferences appdata.Preferences) error {
-	return a.appData.SetGeneralPreferences(preferences)
+func (a *App) SetDarkMode(darkMode bool) {
+	a.appData.SetBool(constants.DARK_MODE_KEY, darkMode)
 }
 
-func (a *App) SetPixivPreferences(preferences appdata.Preferences) error {
-	return a.appData.SetPixivPreferences(preferences)
+type preferences struct {
+	DlPostThumbnail   bool
+	DlPostImages      bool
+	DlPostAttachments bool
+	OverwriteFiles    bool
+
+	DlGDrive         bool
+	DetectOtherLinks bool
+
+	// Pixiv
+	ArtworkType        int
+	DeleteUgoiraZip    bool
+	RatingMode         int
+	SearchMode         int
+	AiSearchMode       int
+	SortOrder          int
+	UgoiraOutputFormat int
+	UgoiraQuality      uint8
 }
 
-func (a *App) SelectDlDirPath() error {
-	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select download directory",
-	})
-	if err != nil {
+func (a *App) GetPreferences() *preferences {
+	// 0-51 for mp4, 0-63 for webm
+	ugoiraQuality := a.appData.GetInt(constants.PIXIV_UGOIRA_QUALITY_KEY)
+	if ugoiraQuality < 0 || ugoiraQuality > 63 {
+		ugoiraQuality = 10
+	}
+
+	pref := &preferences{
+		DlPostThumbnail:   a.appData.GetBool(constants.DL_THUMBNAIL_KEY),
+		DlPostImages:      a.appData.GetBool(constants.DL_IMAGES_KEY),
+		DlPostAttachments: a.appData.GetBool(constants.DL_ATTACHMENT_KEY),
+		OverwriteFiles:    a.appData.GetBool(constants.OVERWRITE_FILES_KEY),
+
+		DlGDrive:         a.appData.GetBool(constants.DL_GDRIVE_KEY),
+		DetectOtherLinks: a.appData.GetBool(constants.DETECT_OTHER_URLS_KEY),
+
+		ArtworkType:        a.appData.GetIntWithFallback(constants.PIXIV_ARTWORK_TYPE_KEY, 3),
+		DeleteUgoiraZip:    a.appData.GetBool(constants.PIXIV_DELETE_UGOIRA_ZIP_KEY),
+		RatingMode:         a.appData.GetIntWithFallback(constants.PIXIV_RATING_MODE_KEY, 6),
+		SearchMode:         a.appData.GetIntWithFallback(constants.PIXIV_SEARCH_MODE_KEY, 8),
+		AiSearchMode:       a.appData.GetIntWithFallback(constants.PIXIV_AI_SEARCH_MODE_KEY, 24),
+		SortOrder:          a.appData.GetIntWithFallback(constants.PIXIV_SORT_ORDER_KEY, 11),
+		UgoiraOutputFormat: a.appData.GetIntWithFallback(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY, 18),
+		UgoiraQuality:      uint8(ugoiraQuality),
+	}
+	return pref
+}
+
+func (a *App) SetGeneralPreferences(p *preferences) error {
+	if p == nil {
+		return fmt.Errorf(
+			"error %d: preferences is nil in SetGeneralPreferences()",
+			cdlerrors.DEV_ERROR,
+		)
+	}
+
+	var err error
+	if err = a.appData.SetBool(constants.DL_THUMBNAIL_KEY, p.DlPostThumbnail); err != nil {
 		return err
 	}
-	if dirPath == "" {
-		return errors.New("no directory selected")
-	}
-	return a.appData.SetString(constants.DOWNLOAD_KEY, dirPath)
-}
-
-func (a *App) SetDlDirPath(dirPath string) error {
-	if dirPath == "" {
-		return errors.New("directory path cannot be empty")
-	}
-
-	if !iofuncs.DirPathExists(dirPath) {
-		return errors.New("directory does not exist")
-	}
-
-	return a.appData.SetString(constants.DOWNLOAD_KEY, dirPath)
-}
-
-func (a *App) SetFfmpegPath(ffmpegPath string) error {
-	if ffmpegPath == "" || ffmpegPath == "ffmpeg" {
-		return a.appData.Unset(constants.FFMPEG_KEY)
-	}
-
-	if err := configs.ValidateFfmpegPathLogic(a.ctx, ffmpegPath); err != nil {
+	if err = a.appData.SetBool(constants.DL_IMAGES_KEY, p.DlPostImages); err != nil {
 		return err
 	}
-
-	return a.appData.SetString(constants.FFMPEG_KEY, ffmpegPath)
-}
-
-func (a *App) SelectFfmpegPath() error {
-	var filters []runtime.FileFilter
-	if goruntime.GOOS == "windows" {
-		filters = []runtime.FileFilter{
-			{
-				DisplayName: "Executable Files (*.exe)",
-				Pattern:     "*.exe",
-			},
-		}
-	} else {
-		filters = []runtime.FileFilter{
-			{
-				DisplayName: "All Files",
-				Pattern:     "*",
-			},
-		}
-	}
-
-	ffmpegPath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:   "Select FFmpeg executable",
-		Filters: filters,
-	})
-	if err != nil {
+	if err = a.appData.SetBool(constants.DL_ATTACHMENT_KEY, p.DlPostAttachments); err != nil {
 		return err
 	}
-	if ffmpegPath == "" {
-		return errors.New("no file selected")
-	}
-
-	// open dialog to confirm to avoid accidental execution of an incorrect file
-	options := []string{"Yes", "No"}
-	messageFmt := "Are you sure you want to set this file, %q, as the FFmpeg executable? Cultured Downloader will EXECUTE this file to verify the FFmpeg binary!"
-	confirm, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Title:         "Confirm FFmpeg executable",
-		Message:       fmt.Sprintf(messageFmt, ffmpegPath),
-		Buttons:       options,
-		DefaultButton: options[0],
-		CancelButton:  options[1],
-	})
-	if err != nil {
-		logger.LogError(err, false, logger.ERROR)
-		return err
-	}
-	if confirm != options[0] {
-		return errors.New("no file selected")
-	}
-
-	if err := configs.ValidateFfmpegPathLogic(a.ctx, ffmpegPath); err != nil {
-		return err
-	}
-	return a.SetFfmpegPath(ffmpegPath)
-}
-
-func (a *App) GetFfmpegPath(validate bool) string {
-	path := a.appData.GetStringWithFallback(constants.FFMPEG_KEY, "ffmpeg")
-	if !validate {
-		return path
-	}
-
-	if err := configs.ValidateFfmpegPathLogic(a.ctx, path); err != nil {
-		if path != "ffmpeg" {
-			a.appData.Unset(constants.FFMPEG_KEY)
-		}
-		return ""
-	}
-	return path
-}
-
-type UserAgentResponse struct {
-	UserAgent string
-	IsDefault bool
-}
-
-func (a *App) GetUserAgent() UserAgentResponse {
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	isDefault := userAgent == httpfuncs.DEFAULT_USER_AGENT
-	return UserAgentResponse{
-		UserAgent: userAgent,
-		IsDefault: isDefault,
-	}
-}
-
-func (a *App) SetUserAgent(userAgent string) error {
-	if userAgent == "" {
-		return errors.New("user agent cannot be empty")
-	}
-
-	return a.appData.SetString(constants.USER_AGENT_KEY, userAgent)
-}
-
-func verifyWebsiteString(website string) error {
-	switch website {
-	case cdlconsts.FANTIA, cdlconsts.PIXIV_FANBOX, cdlconsts.PIXIV, cdlconsts.KEMONO:
-		return nil
-	default:
-		return errors.New("invalid website")
-	}
-}
-
-func getCookieDataKeys(website string) (valKey string, txtKey string, jsonKey string, err error) {
-	switch website {
-	case cdlconsts.FANTIA:
-		return constants.FANTIA_COOKIE_VALUE_KEY, constants.FANTIA_COOKIE_TXT_KEY, constants.FANTIA_COOKIE_JSON_KEY, nil
-	case cdlconsts.PIXIV_FANBOX:
-		return constants.PIXIV_FANBOX_COOKIE_VALUE_KEY, constants.PIXIV_FANBOX_COOKIE_TXT_KEY, constants.PIXIV_FANBOX_COOKIE_JSON_KEY, nil
-	case cdlconsts.PIXIV:
-		return constants.PIXIV_COOKIE_VALUE_KEY, constants.PIXIV_COOKIE_JSON_KEY, constants.PIXIV_COOKIE_JSON_KEY, nil
-	case cdlconsts.KEMONO:
-		return constants.KEMONO_COOKIE_VALUE_KEY, constants.KEMONO_COOKIE_TXT_KEY, constants.KEMONO_COOKIE_JSON_KEY, nil
-	default:
-		return "", "", "", errors.New("invalid website")
-	}
-}
-
-func (a *App) UploadCookieFile(website string) error {
-	if err := verifyWebsiteString(website); err != nil {
+	if err = a.appData.SetBool(constants.OVERWRITE_FILES_KEY, p.OverwriteFiles); err != nil {
 		return err
 	}
 
-	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select generated Netscape/Mozilla cookie file for " + api.GetReadableSiteStr(website),
-		Filters: []runtime.FileFilter{
-			{
-				DisplayName: "Text Files (*.txt,*.json)",
-				Pattern:     "*.txt;*.json",
-			},
-		},
-	})
-	if err != nil {
+	if err = a.appData.SetBool(constants.DL_GDRIVE_KEY, p.DlGDrive); err != nil {
 		return err
 	}
-	if filePath == "" {
-		return errors.New("no file selected")
-	}
-
-	data, err := os.ReadFile(filePath)
-	if err != nil {
+	if err = a.appData.SetBool(constants.DETECT_OTHER_URLS_KEY, p.DetectOtherLinks); err != nil {
 		return err
-	}
-
-	dataKey, dataTxtKey, dataJsonKey, err := getCookieDataKeys(website)
-	if err != nil {
-		return err
-	}
-
-	var cookies []*http.Cookie
-	isJson := filepath.Ext(filePath) == ".json"
-	cookieInfoArgs := parsers.NewCookieInfoArgsByWebsite(website)
-	if isJson {
-		cookies, err = parsers.ParseJsonCookie(data, cookieInfoArgs)
-	} else {
-		decodedData := string(data)
-		cookies, err = parsers.ParseTxtCookie(decodedData, cookieInfoArgs)
-	}
-	if err != nil {
-		return err
-	}
-
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	err = api.VerifyCookies(website, userAgent, cookies)
-	if err != nil {
-		return err
-	}
-
-	if isJson {
-		err = a.appData.SetSecureBytes(dataJsonKey, data)
-	} else {
-		err = a.appData.SetSecureString(dataTxtKey, string(data))
-	}
-	if err != nil {
-		return err
-	}
-
-	a.appData.Unset(dataKey)
-	if isJson {
-		a.appData.Unset(dataTxtKey)
-	} else {
-		a.appData.Unset(dataJsonKey)
 	}
 	return nil
-}
-
-func (a *App) SetSessionValue(website, session string) error {
-	dataKey, dataTxtKey, dataJsonKey, err := getCookieDataKeys(website)
-	if err != nil {
-		return err
-	}
-
-	if session == "" {
-		return a.appData.Unset(dataKey)
-	}
-
-	if err := verifyWebsiteString(website); err != nil {
-		return err
-	}
-
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	if _, err := api.VerifyAndGetCookie(website, session, userAgent); err != nil {
-		return err
-	}
-
-	if err := a.appData.SetSecureString(dataKey, session); err != nil {
-		return err
-	}
-
-	a.appData.Unset(dataTxtKey)
-	a.appData.Unset(dataJsonKey)
-	return nil
-}
-
-func (a *App) ResetSession(website string) error {
-	dataKey, dataTxtKey, dataJsonKey, err := getCookieDataKeys(website)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(dataKey)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(dataTxtKey)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(dataJsonKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// for backend use only
-func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
-	_, dataTxtKey, dataJsonKey, err := getCookieDataKeys(website)
-	if err != nil {
-		return nil, err
-	}
-
-	cookieInfoArgs := parsers.NewCookieInfoArgsByWebsite(website)
-	if val := a.appData.GetSecuredString(dataTxtKey); val != "" {
-		cookies, err := parsers.ParseTxtCookie(val, cookieInfoArgs)
-		if err != nil {
-			a.appData.Unset(dataTxtKey)
-		}
-		return cookies, err
-	}
-
-	if val := a.appData.GetSecuredBytes(dataJsonKey); len(val) != 0 {
-		cookies, err := parsers.ParseJsonCookie(val, cookieInfoArgs)
-		if err != nil {
-			a.appData.Unset(dataJsonKey)
-		}
-		return cookies, err
-	}
-	return nil, fmt.Errorf("No cookies found for %s", api.GetReadableSiteStr(website))
-}
-
-func getSessionValFromCookies(website string, cookies []*http.Cookie) (string, error) {
-	baseCookie := api.GetCookie("placeholder-value", website)
-	for _, cookie := range cookies {
-		if cookie.Name == baseCookie.Name {
-			return cookie.Value, nil
-		}
-	}
-	return "", errors.New("cookie not found")
-}
-
-func (a *App) GetSessionValue(website string) (string, error) {
-	if err := verifyWebsiteString(website); err != nil {
-		return "", err
-	}
-
-	dataKey, dataTxtKey, dataJsonKey, err := getCookieDataKeys(website)
-	if err != nil {
-		return "", err
-	}
-
-	if val := a.appData.GetSecuredString(dataKey); val != "" {
-		return val, nil
-	}
-
-	cookieInfoArgs := parsers.NewCookieInfoArgsByWebsite(website)
-	if val := a.appData.GetSecuredString(dataTxtKey); val != "" {
-		cookies, parseErr := parsers.ParseTxtCookie(val, cookieInfoArgs)
-		sessionVal, notFoundErr := getSessionValFromCookies(website, cookies)
-		if parseErr != nil || notFoundErr != nil { // if session cookie is invalid, remove the stored session value
-			a.appData.Unset(dataTxtKey)
-			return "", nil
-		}
-		return sessionVal, nil
-	}
-
-	if val := a.appData.GetSecuredBytes(dataJsonKey); len(val) != 0 {
-		cookies, parseErr := parsers.ParseJsonCookie(val, cookieInfoArgs)
-		sessionVal, notFoundErr := getSessionValFromCookies(website, cookies)
-		if parseErr != nil || notFoundErr != nil { // if session cookie is invalid, remove the stored session value
-			a.appData.Unset(dataJsonKey)
-			return "", nil
-		}
-		return sessionVal, nil
-	}
-	return "", nil
 }

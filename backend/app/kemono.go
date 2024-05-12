@@ -13,7 +13,6 @@ import (
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
-	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -63,7 +62,7 @@ func (a *App) ValidateKemonoInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseKemonoSettingsMap(ctx context.Context, pref appdata.Preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
 	kemonoSession := a.appData.GetSecuredString(constants.KEMONO_COOKIE_VALUE_KEY)
 	var kemonoSessions []*http.Cookie
 	if kemonoSession == "" {
@@ -116,7 +115,11 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref appdata.Preferenc
 	return kemonoDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitKemonoToQueue(inputs []string, prefs appdata.Preferences) error {
+func (a *App) SubmitKemonoToQueue(inputs []string, prefs *preferences) error {
+	if prefs == nil {
+		return errors.New("preferences is nil in SubmitKemonoToQueue()")
+	}
+
 	valid, inputsForRef, kemonoDl := validateKemonoInputs(inputs)
 	if !valid {
 		return errors.New("invalid Kemono URL(s)")
@@ -125,10 +128,11 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs appdata.Preferences) er
 	ctx, cancel := context.WithCancel(context.Background())
 	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(ctx, prefs)
 	if err != nil {
+		cancel()
 		return err
 	}
 
-	a.newDownloadQueue(ctx, cancel, &DlInfo{
+	a.addNewDownloadQueue(ctx, cancel, &dlInfo{
 		website:        cdlconsts.KEMONO,
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,

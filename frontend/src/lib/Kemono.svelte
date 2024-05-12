@@ -16,7 +16,7 @@
 
     const creatorUrlRegex = /^https:\/\/kemono.su\/(?:patreon|fanbox|gumroad|subscribestar|dlsite|fantia|boosty)\/user\/\d+$/;
     const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {
-        return inputUrl === "favourites" || inputUrl === "favorites" || creatorUrlRegex.test(inputUrl);
+        return creatorUrlRegex.test(inputUrl);
     };
 </script>
 

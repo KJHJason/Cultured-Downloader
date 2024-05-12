@@ -199,7 +199,7 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 	return queues
 }
 
-type DlInfo struct {
+type dlInfo struct {
 	website        string
 	inputs         []Input
 	mainProgBar    *ProgressBar
@@ -207,7 +207,7 @@ type DlInfo struct {
 	taskHandler    taskHandlerFunc
 }
 
-func (a *App) newDownloadQueue(ctx context.Context, cancelFunc context.CancelFunc, dlInfo *DlInfo) *DownloadQueue {
+func (a *App) addNewDownloadQueue(ctx context.Context, cancelFunc context.CancelFunc, dlInfo *dlInfo) *DownloadQueue {
 	id := count
 	count++
 

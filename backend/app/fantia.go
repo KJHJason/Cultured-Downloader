@@ -13,7 +13,6 @@ import (
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
-	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -49,7 +48,7 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseFantiaSettingsMap(ctx context.Context, pref appdata.Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
 	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
 	var fantiaSessions []*http.Cookie
 	if fantiaSession == "" {
@@ -104,7 +103,11 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref appdata.Preferenc
 	return fantiaDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) error {
+func (a *App) SubmitFantiaToQueue(inputs []string, prefs *preferences) error {
+	if prefs == nil {
+		return errors.New("preferences is nil in SubmitFantiaToQueue()")
+	}
+
 	valid, inputsForRef, fantiaDl := validateFantiaUrls(inputs)
 	if !valid {
 		return errors.New("invalid Fantia URL(s)")
@@ -113,10 +116,11 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs appdata.Preferences) er
 	ctx, cancel := context.WithCancel(a.ctx)
 	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(ctx, prefs)
 	if err != nil {
+		cancel()
 		return err
 	}
 
-	a.newDownloadQueue(ctx, cancel, &DlInfo{
+	a.addNewDownloadQueue(ctx, cancel, &dlInfo{
 		website:        cdlconsts.FANTIA,
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,

@@ -8,7 +8,6 @@ func TestEncryption(t *testing.T) {
 	key         := GenerateNonce(32)
 	dummyData   := []byte("dummy data")
 
-	// Test encryption
 	encryptedData, err := Encrypt(dummyData, key)
 	if err != nil {
 		t.Errorf("Error in encryption: %v", err)
