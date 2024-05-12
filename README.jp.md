@@ -19,8 +19,8 @@ Cultured Downloader
 </div>
 
 <div align="center">
-    <a href="./README.md">English</a>
-    <a href="./README.jp.md">日本語</a>
+    <a href="README.md">English</a>
+    <a href="README.jp.md">日本語</a>
 </div>
 
 ---
@@ -102,7 +102,7 @@ Go/Golangを学んだ後、このプログラムをGolangで書き直し、wails
   - Pixiv Fanbox
   - Kemono
   - 注：GDriveのダウンロードにはGoogle Cloud PlatformからのAPIキーが必要です。
-    - 不明な場合は、[ガイド](doc/google_api_key_guide.md)を参照してください。
+    - 不明な場合は、[ガイド](doc/google_api_setup_guide.md)を参照してください。
 - MEGA、Dropboxなどの他のURLを検出し、参照用にログに記録します。
 - .zipファイルなどの添付ファイルのパスワードを検出し、参照用にログに記録します。
 - Pixivのウゴイラを.gif、.apng、.webp、.webm、.mp4などの使いやすい形式に変換するために[FFmpeg](https://ffmpeg.org/)を使用します。

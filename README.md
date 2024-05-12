@@ -19,8 +19,8 @@ Cultured Downloader
 </div>
 
 <div align="center">
-    <a href="./README.md">English</a>
-    <a href="./README.jp.md">日本語</a>
+    <a href="README.md">English</a>
+    <a href="README.jp.md">日本語</a>
 </div>
 
 ---
@@ -101,7 +101,7 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
   - Pixiv Fanbox
   - Kemono
   - Note: Requires an API key from Google Cloud Platform for GDrive downloads to work.
-    - Refer to my [guide](doc/google_api_key_guide.md) if unsure.
+    - Refer to my [guide](doc/google_api_setup_guide.md) if unsure.
 - Detect other URL(s) like MEGA, Dropbox, etc. and logs them for your reference
 - Detect passwords for attachments like .zip files and logs them for your reference
 - using [FFmpeg](https://ffmpeg.org/) to convert Pixiv Ugoira to user-friendly formats like .gif, .apng, .webp, .webm, and .mp4
