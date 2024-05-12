@@ -55,9 +55,6 @@ func main() {
 		LogLevel:			logger.DEBUG,
 		OnStartup:			cdApp.Startup,
 		OnShutdown:			cdApp.Shutdown,
-		// OnDomReady:        app.domReady,
-		// OnBeforeClose:     app.beforeClose,
-		// OnShutdown:        app.shutdown,
 		WindowStartState:	options.Normal,
 		Bind: []interface{}{
 			cdApp,

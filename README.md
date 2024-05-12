@@ -19,16 +19,15 @@ Cultured Downloader
 </div>
 
 <div align="center">
-    <a href="#introduction">English</a>
-    <a href="#お知らせ">日本語</a>
+    <a href="./README.md">English</a>
+    <a href="./README.jp.md">日本語</a>
 </div>
 
 ---
 
-## Table of Contents/目次
+## Table of Contents
 
-[English](#introduction)
-- [Table of Contents/目次](#table-of-contents目次)
+- [Table of Contents](#table-of-contents)
 - [Introduction](#introduction)
 - [Star History](#star-history)
 - [Running the Program](#running-the-program)
@@ -38,9 +37,7 @@ Cultured Downloader
 - [FAQ](#faq)
 - [Final Notes](#final-notes)
 - [Demo](#demo)
-- [The Original Cultured Downloader](#the-original-cultured-downloader)
-- [お知らせ](#お知らせ)
----
+- [The OG Python CLI](#the-og-python-cli)
 
 ## Introduction
 
@@ -57,18 +54,18 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
 ## Star History
 
 <a href="https://star-history.com/#KJHJason/Cultured-Downloader&Date">
-    <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date&theme=dark" />
-        <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date" />
-        <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date" />
-    </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KJHJason/Cultured-Downloader&type=Date" />
+  </picture>
 </a>
 
 ## Running the Program
 
 1. Running the .go files
    - Clone this repository/Download all the files in this repository.
-   - Install the latest version of [Golang](https://go.dev/dl/) and [Node.js](https://nodejs.org/en/download/)
+   - Install the latest version of [Go/Golang](https://go.dev/dl/) and [Node.js](https://nodejs.org/en/download/)
    - Install the Wails CLI by running `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
      - Refer to the [Wails documentation](https://wails.io/docs/next/gettingstarted/installation#installing-wails) if there is any issues faced when installing the Wails CLI. 
    - Run `wails build` in the root directory of this repository to build the binary and run the program.
@@ -91,46 +88,50 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
 
 ## Features
 
-*WIP
-* **Allow multiple URLs input by separating URLs with a comma**
-
-* **Allow downloads of attachments such as videos, psd, etc.**
-
-* **Allow downloads of gdrive links (for Pixiv Fanbox only)**
-  * Note: Requires an API key from Google Cloud Platform for GDrive downloads to work. 
-    * Refer to my [guide](doc/google_api_key_guide.md) if unsure.
-
-* **2 Types of download options on both Fantia and Pixiv Fanbox!**
-  * Downloading from post URL(s)
-    - Fantia URL example: "https://fantia.jp/posts/1234567"
-    - Pixiv Fanbox URL example: "https://www.fanbox.cc/@creator_name/posts/1234567"
-  * Downloading from multiple posts from creator's page(s)
-    - Fantia URL example: "https://fantia.jp/fanclubs/1234/posts"
-    - Pixiv Fanbox example: "https://www.fanbox.cc/@creator_name/posts"
+- Allow saving of the necessary data like session cookies for future downloads
+- Download images and attachments from the following:
+  - Fantia
+  - Pixiv Fanbox
+  - Pixiv
+  - Kemono
+- Concurrent downloads for faster downloads
+  - Note: This is more prominent on Fantia as the other platforms have rate limits or throttles the download speed.
+- Download GDrive links from posts on:
+  - Fantia
+  - Pixiv Fanbox
+  - Kemono
+  - Note: Requires an API key from Google Cloud Platform for GDrive downloads to work.
+    - Refer to my [guide](doc/google_api_key_guide.md) if unsure.
+- Detect other URL(s) like MEGA, Dropbox, etc. and logs them for your reference
+- Detect passwords for attachments like .zip files and logs them for your reference
+- using [FFmpeg](https://ffmpeg.org/) to convert Pixiv Ugoira to user-friendly formats like .gif, .apng, .webp, .webm, and .mp4
 
 ## Usage Notes
 
-1. **This program is meant for personal use and to save time downloading images from the various platforms manually. Please do not use this program and break any of the platform's Terms of Service/Terms of Use.**
+1. This program is meant for personal use and to save time downloading images from the various platforms manually. Please do not use this program and break any of the platform's Terms of Service/Terms of Use.
 
-2. If you feel unsafe entering your session cookie information to the program, you can proceed as a guest. However, you may be rate-limited or may not be able to download posts that requires a membership.
+2. If you feel unsafe entering your session cookie information into the program, you will not be able to proceed and download. However, please rest assured as the program will never send anything sensitive out of your system!
 
-3. Sensitive data like your session cookie can be encrypted at rest by providing a master password. However, please do not share any data with anyone as they may still be able to decrypt the encrypted sensitive files if you have shared your master password.
-    - Note: The program uses [XChaCha20-Poly1305](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha-03) encryption to encrypt the sensitive data.
+3. Sensitive data, such as your session cookie, can be encrypted at rest by providing a master password. However, please refrain from sharing the encrypted data with anyone to be extra safe!
+   - Note: The program uses [XChaCha20-Poly1305](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha-03) encryption to encrypt the sensitive data.
 
-4. If the platform's frontend design or API has been changed, you can expect this program to break if it is not maintained/updated. In this case, please raise an issue and I will take it a look at it and hopefully fix it as soon as possible.
+4. If the platform's frontend design or API has been changed, you can expect this program to break if it is not maintained/updated. In this case, please raise an [issue](https://github.com/KJHJason/Cultured-Downloader/issues) and I will take it a look at it and hopefully fix it as soon as possible.
 
 ## FAQ
 
-*WIP
 1. Does this work on other OS platforms such as macOS and Linux?
-    * This program has only been tested on Windows and Linux (Ubuntu). However, it should work on other Linux distros and macOS as well.
+   - This program has only been tested on Windows and Linux (Ubuntu). However, it should work on other Linux distros and macOS as well.
+2. The program suddenly closes/crashes! What should I do?
+   - This is due to how error handling in Golang works, when a fatal error occurs, the program will `panic` and closes itself.
+   - However, please raise an [issue](https://github.com/KJHJason/Cultured-Downloader/issues) with the steps to reproduce the error and I will do my best to fix it.
 
 ## Final Notes
 
-1. Please remember that this was meant to be a mini-project which is meant to be used for personal use.
-2. I am still an amateur in programming so if there is a bug, you can raise an issue and I will do my best to fix it. Otherwise, you can fork this repository and make a pull request to fix the bug if you would like to do so.
-3. If you would like to improve on this program, you can fork this repository and do the necessary changes and make a pull request. I will then review it and merge it I feel that it is a good contribution.
-4. Though, I may or may not maintain this program depending on the workload I have as a student.
+1. Please remember that is meant to be used for personal use.
+2. If there is a bug, you can raise an [issue](https://github.com/KJHJason/Cultured-Downloader/issues) and I will do my best to fix it. Otherwise, you can fork this repository and make a [pull request](https://github.com/KJHJason/Cultured-Downloader/pulls) to fix the bug if you would like to do so.
+3. If you would like to improve on this program, you can fork this repository and do the necessary changes and make a [pull request](https://github.com/KJHJason/Cultured-Downloader/pulls). I will then review it and merge it I feel that it is a good contribution.
+4. Please consider supporting this project by [buying me a coffee](https://ko-fi.com/dratornic) or [sponsoring me](https://github.com/sponsors/KJHJason)!
+   - Your contribution would help ensure the sustainability of this project. Thank you for reading &lt;3
 
 ## Demo
 
@@ -145,22 +146,13 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
   <p><img width="650px" alt="advanced settings" src="res/advanced-settings.png"></p>
 </div>
 
-## The Original Cultured Downloader
+## The OG Python CLI
 
 <div align="center">
   <p>Menu</p>
-  <p><img width="500px" alt="menu demo" src="res/menu.jpg"></p>
+  <p><img width="500px" alt="menu demo" src="res/old/menu.jpg"></p>
   <p>Downloading files from a post page URL</p>
-  <p><img width="650px" alt="downloading posts demo" src="res/post-download.gif"></p>
+  <p><img width="650px" alt="downloading posts demo" src="res/old/post-download.gif"></p>
   <p>Downloading files from multiple posts from multiple creators</p>
-  <p><img width="650px" alt="downloading multiple posts demo" src="res/creator-page-downloads.gif"></p>
+  <p><img width="650px" alt="downloading multiple posts demo" src="res/old/creator-page-downloads.gif"></p>
 </div>
-
----
-
-## お知らせ
-
-*WIP
-残念ながら、翻訳するとしたら、ほとんどDeepLを使うことになるので、日本語のサポートは外しました。
-
-ただし、このプログラムを翻訳したい方は、リポジトリへのコントリビューションを歓迎します。

@@ -84,24 +84,25 @@ func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*
 }
 
 func checkNestedProgBarForErrors(dlQueue *DownloadQueue) (bool) {
-	// since the latest/main progress bar is at the end of the slice
-	hasError := len(dlQueue.GetErrSlice()) > 0
+	hasError := false
 	nestedProgBars := dlQueue.mainProgressBar.nestedProgBars
-	if dlQueue.finished {
-		return hasError
-	}
 
 	lastElIdx := len(nestedProgBars) - 1
 	for idx, nestedProgBar := range nestedProgBars {
 		if !hasError && nestedProgBar.HasError {
+			hasError = true
 			if dlQueue.website != constants.FANTIA {
 				// for those that doesn't have a captcha solver
+				continue
+			} 
+
+			if nestedProgBar.ErrMsg != cdlConst.ERR_RECAPTCHA_STR {
+				continue
+			}
+
+			// check the next element if it has an error as the captcha error can be ignored if the next element has no error
+			if idx+1 <= lastElIdx && nestedProgBars[idx+1].HasError {
 				hasError = true
-			} else if nestedProgBar.ErrMsg == cdlConst.ERR_RECAPTCHA_STR {
-				// check the next element if it has an error as the captcha error can be ignored if the next element has no error
-				if idx+1 < lastElIdx && nestedProgBars[idx+1].HasError {
-					hasError = true
-				}
 			}
 		}
 	}
