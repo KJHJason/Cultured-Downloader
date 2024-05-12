@@ -1,12 +1,11 @@
 <script lang="ts">
     import Swal from "sweetalert2";
-
     import { onMount } from "svelte";
     import { writable } from "svelte/store";
     import { swal, actions, invertedSwal } from "./scripts/constants";
-    import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername } from "./scripts/wailsjs/go/app/App";
+    import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername, GetLanguage } from "./scripts/wailsjs/go/app/App";
     import { LogError } from "./scripts/wailsjs/runtime/runtime";
-    import { InitialiseLanguage } from "./scripts/language";
+    import { EN, Translate, ChangeCachedLanguage } from "./scripts/language";
 
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
@@ -16,7 +15,6 @@
     import Kemono from "./lib/Kemono.svelte";
     import DownloadQueues from "./lib/DownloadQueues.svelte";
     import Settings from "./lib/Settings.svelte";
-    import Loading from "./lib/common/Loading.svelte";
 
     const triggerSwalError = (message: string): void => {
         swal.fire({
@@ -47,6 +45,8 @@
     $: username = "";
     $: lastSavedUpdateStr = "";
     const action = writable(actions.Home);
+    const language = writable(EN);
+    ChangeCachedLanguage(EN);
 
     const checkMasterPassword = async (): Promise<void> => {
         if (!await PromptMasterPassword()) {
@@ -110,42 +110,39 @@
             }
         });
     };
+
     onMount(async () => {
+        const lang = await GetLanguage();
+        language.set(lang);
+        ChangeCachedLanguage(lang);
+
         username = await GetUsername();
         await checkMasterPassword();
     });
 </script>
 
-<Navbar bind:username {action} />
+<Navbar bind:username {action} {language} />
 
-<main class="p-4">
-    <div class="mt-14">
-        {#await InitialiseLanguage()}
-            <Loading />
-        {:then}
-            <!-- <Settings username={username} handleActionChange={handleActionChange} /> -->
-            <!-- <Fantia /> -->
-            <!-- <Pixiv /> -->
-            <!-- <DownloadQueues bind:action /> -->
-            {#if $action === actions.Home}
-                <Home/>
-            {:else if $action === actions.Fantia}
-                <Fantia/>
+{#if $action === actions.Home}
+    <Home {language} />
+{:else}
+    <main class="p-4">
+        <div class="mt-14">
+            {#if $action === actions.Fantia}
+                <Fantia />
             {:else if $action === actions.Pixiv}
-                <Pixiv/>
+                <Pixiv />
             {:else if $action === actions.PixivFanbox}
-                <PixivFanbox/>
+                <PixivFanbox />
             {:else if $action === actions.Kemono}
-                <Kemono/>
+                <Kemono />
             {:else if $action === actions.Downloads}
                 <DownloadQueues {action} />
             {:else if $action === actions.Settings}
-                <Settings bind:username bind:lastSavedUpdateStr />
-            {:else}
-                <p>Not implemented yet</p>
+                <Settings bind:username bind:lastSavedUpdateStr {language} />
+            {:else if $action !== actions.Home}
+                <p>{Translate("Not implemented yet", $language)}</p>
             {/if}
-        {:catch error}
-            <p>Unexpected error!: {error.message}</p>
-        {/await}
-    </div>
-</main>
+        </div>
+    </main>
+{/if}

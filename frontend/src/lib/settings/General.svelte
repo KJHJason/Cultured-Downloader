@@ -4,7 +4,7 @@
     import Swal from "sweetalert2";
     import { swal, invertedSwal } from "../../scripts/constants";
     import { GetFallbackUserProfileDataUrl, GetProfilePicURL, ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
-    import { LANGUAGES } from "../../scripts/language";
+    import { ChangeCachedLanguage, LANGUAGES } from "../../scripts/language";
     import { onMount } from "svelte";
     import { GetLanguage, HasProfilePic, SetLanguage } from "../../scripts/wailsjs/go/app/App";
     import PasswordToggle from "../common/PasswordToggle.svelte";
@@ -21,14 +21,14 @@
         DeleteProfilePic
     } from "../../scripts/wailsjs/go/app/App";
     import { LogError } from "../../scripts/wailsjs/runtime/runtime";
+    import type { Writable } from "svelte/store";
 
     let lang = "";
-    let savedLang = "";
     export let username: string;
+    export let language: Writable<string>;
 
     onMount(async () => {
         lang = await GetLanguage();
-        savedLang = lang;
         const navbarUserProfile = document.getElementById("navbar-user-profile") as HTMLImageElement;
 
         const generalForm = document.getElementById("general-form") as HTMLFormElement;
@@ -79,10 +79,10 @@
         const usernameInput = document.getElementById("username") as HTMLInputElement;
         usernameInput.value = username;
 
-        const resetGeneralForm = (): void => {
-            generalForm.reset();
-            usernameInput.value = username;
-            lang = savedLang;
+        const resetImageInputs = (): void => {
+            // not using generalForm.reset() as it will reset the select element to the first option
+            profileImageInput.value = "";
+            profileImagePathInput.value = "";
         };
 
         const handleGeneralFormSubmit = async (e: Event): Promise<void> => {
@@ -91,7 +91,6 @@
             const formData = new FormData(form);
             const file = formData.get("profile-image") as File;
             if (file.size > 0 && file.name !== "") {
-                console.log("File:", file);
                 await ChangeImgElSrcToFileData(profileImageEl, file);
 
                 const base64URL = await ImgFileToDataURL(file);
@@ -112,12 +111,13 @@
                 username = newUsername;
             }
 
-            if (lang !== savedLang) {
+            if (lang !== $language) {
                 await SetLanguage(lang);
-                savedLang = lang;
+                ChangeCachedLanguage(lang);
+                language.set(lang);
             }
 
-            resetGeneralForm();
+            resetImageInputs();
             profilePicResetBtn.classList.add("hidden");
             swal.fire({
                 title: "Success",
@@ -138,7 +138,7 @@
             await DeleteProfilePic();
             hasProfilePic = false;
             uploadedProfilePicURL = "";
-            resetGeneralForm();
+            resetImageInputs();
             navbarUserProfile.src = await GetFallbackUserProfileDataUrl();
             profileImageEl.src = await GetFallbackUserProfileDataUrl();
             profilePicResetBtn.classList.add("hidden");
@@ -154,7 +154,7 @@
         }
 
         const resetProfilePic = async (): Promise<void> => {
-            resetGeneralForm();
+            resetImageInputs();
             profileImageEl.src = hasProfilePic ? uploadedProfilePicURL : await GetFallbackUserProfileDataUrl();
             profilePicResetBtn.classList.add("hidden");
         };

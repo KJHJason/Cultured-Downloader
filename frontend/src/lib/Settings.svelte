@@ -7,9 +7,11 @@
     import Sessions from "./settings/Sessions.svelte";
     import Advanced from "./settings/Advanced.svelte";
     import ProgramInfo from "./settings/ProgramInfo.svelte";
+    import type { Writable } from "svelte/store";
 
     export let username: string;
     export let lastSavedUpdateStr: string;
+    export let language: Writable<string>;
 
     const changeDefaultDividerColour = () => {
         const settingsContent = document.getElementById("settingsContent");
@@ -34,7 +36,7 @@
                 <UserCircleSolid size="sm" />
                 General
             </div>
-            <General bind:username />
+            <General bind:username {language} />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">

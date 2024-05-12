@@ -4,15 +4,67 @@
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
     import bufferGif from "../assets/images/buffer.gif";
     import NavbarBtn from "./navbar/NavbarBtn.svelte";
-    import { InitialiseDarkModeConfig } from "../scripts/dark-mode";
+    import { ToggleCSSThemes } from "../scripts/dark-mode";
     import { GetProfilePicURL } from "../scripts/image";
+    import { Translate } from "../scripts/language";
+    import { GetDarkMode, SetDarkMode } from "../scripts/wailsjs/go/app/App";
     import type { Writable } from "svelte/store";
 
     export let action: Writable<string>;
+    export let language: Writable<string>;
     export let username: string;
 
+    let themeToggleBtnText: HTMLElement;
+
+    const isCurrentlyDarkMode = (): boolean => document.documentElement.classList.contains("dark");
+    const toggleToggleBtnText = (): void => {
+        if (!themeToggleBtnText) {
+            return;
+        }
+        themeToggleBtnText.textContent = isCurrentlyDarkMode() ? Translate("Light Mode", $language) : Translate("Dark Mode", $language);
+    };
+
     onMount(async () => {
-        await InitialiseDarkModeConfig();
+        // from https://flowbite.com/docs/customize/dark-mode/#content
+        const themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon") as HTMLElement;
+        const themeToggleLightIcon = document.getElementById("theme-toggle-light-icon") as HTMLElement;
+        themeToggleBtnText = document.getElementById("theme-toggle-text") as HTMLElement;
+        if (!themeToggleDarkIcon || !themeToggleLightIcon || !themeToggleBtnText) {
+            throw new Error("Could not find theme toggle button elements");
+        }
+
+        // Change the icons inside the button based on previous settings
+        const isDarkMode = await GetDarkMode();
+        if (isDarkMode) {
+            themeToggleLightIcon.classList.remove("hidden");
+            document.documentElement.classList.add("dark");
+        } else {
+            themeToggleDarkIcon.classList.remove("hidden");
+            document.documentElement.classList.remove("dark");
+        }
+        ToggleCSSThemes(isDarkMode)
+
+        const themeToggleBtn = document.getElementById("theme-toggle") as HTMLElement;
+        if (!themeToggleBtn) {
+            throw new Error("Could not find theme toggle button");
+        }
+
+        themeToggleBtn.addEventListener("click", async () => {
+            // toggle icons inside button
+            themeToggleDarkIcon.classList.toggle("hidden");
+            themeToggleLightIcon.classList.toggle("hidden");
+
+            const isDarkMode = isCurrentlyDarkMode();
+            if (isDarkMode) {
+                document.documentElement.classList.remove("dark");
+                themeToggleBtnText.textContent = Translate("Dark Mode", $language); // text for the user to change back to dark mode
+            } else {
+                document.documentElement.classList.add("dark");
+                themeToggleBtnText.textContent = Translate("Light Mode", $language); // text for the user to change back to light mode
+            }
+            ToggleCSSThemes(!isDarkMode);
+            await SetDarkMode(!isDarkMode);
+        });
     });
 
     onMount(async () => {
@@ -26,7 +78,7 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
                 <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-zinc-500 rounded-lg hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:focus:ring-zinc-600">
-                    <span class="sr-only">Open sidebar</span>
+                    <span class="sr-only">{Translate("Open sidebar", $language)}</span>
                     <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
                     </svg>
@@ -39,8 +91,8 @@
             <div class="flex items-center">
                 <div class="flex items-center ms-3">
                     <div>
-                        <button type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
-                            <span class="sr-only">Open user menu</span>
+                        <button on:click={toggleToggleBtnText} type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                            <span class="sr-only">{Translate("Open user menu", $language)}</span>
                             <img class="w-8 h-8 rounded-full border-2 border-gray-200" src="{bufferGif}" alt="user profile" id="navbar-user-profile" />
                         </button>
                     </div>
@@ -53,7 +105,7 @@
                             <li>
                                 <button on:click={() => {action.set(actions.Settings)}} class="flex justify-center items-center px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-600 dark:hover:text-white group w-full" role="menuitem">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                                    <span class="flex-1 ms-2 text-left whitespace-nowrap">Settings</span>
+                                    <span class="flex-1 ms-2 text-left whitespace-nowrap">{Translate("Settings", $language)}</span>
                                 </button>
                             </li>
                             <li>
@@ -76,22 +128,22 @@
     <div class="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-zinc-800">
         <ul class="space-y-2 font-medium">
             <li>
-                <NavbarBtn btnRole={actions.Home} {action} />
+                <NavbarBtn btnRole={actions.Home} {action} {language} />
             </li>
             <li>
-                <NavbarBtn btnRole={actions.Fantia} {action} />
+                <NavbarBtn btnRole={actions.Fantia} {action} {language} />
             </li>
             <li>
-                <NavbarBtn btnRole={actions.Pixiv} {action} />
+                <NavbarBtn btnRole={actions.Pixiv} {action} {language} />
             </li>
             <li>
-                <NavbarBtn btnRole={actions.PixivFanbox} {action} />
+                <NavbarBtn btnRole={actions.PixivFanbox} {action} {language} />
             </li>
             <li>
-                <NavbarBtn btnRole={actions.Kemono} {action} />
+                <NavbarBtn btnRole={actions.Kemono} {action} {language} />
             </li>
             <li>
-                <NavbarBtn btnRole={actions.Downloads} {action} />
+                <NavbarBtn btnRole={actions.Downloads} {action} {language} />
             </li>
         </ul>
     </div>

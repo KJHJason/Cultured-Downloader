@@ -26,7 +26,7 @@
 favourites
 https://kemono.su/patreon/user/42628911
 https://kemono.su/patreon/user/42628911/post/98584740`}
-    urlValidationFn={urlValidationFn}
-    addToQueueFn={addToQueueFn}
-    checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
+    {urlValidationFn}
+    {addToQueueFn}
+    {checkUrlHasPageNumFilter}
 />

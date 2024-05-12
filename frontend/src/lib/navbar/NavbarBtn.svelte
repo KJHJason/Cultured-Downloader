@@ -1,10 +1,11 @@
 <script lang="ts">
     import { actions, logoImgSrc, navbarLogoSize } from "../../scripts/constants";
     import { actionTitleCase } from "../../scripts/utils/string";
+    import { Translate } from "../../scripts/language";
     import type { Writable } from "svelte/store";
 
     export let action: Writable<string>;
-
+    export let language: Writable<string>;
     export let btnRole: string;
 
     const actionTitle = actionTitleCase(btnRole);
@@ -32,8 +33,5 @@
         <img class="flex-shrink-0 {navbarLogoSize}" src="{logoImgSrc[btnRole]}" alt="{actionTitle} Logo">
     {/if}
 
-    <span class="ms-3">{actionTitle}</span>
-
-    <!-- For notifications -->
-    <!-- <span class="inline-flex items-center justify-center ml-auto w-3 h-3 p-3 ms-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">3</span> -->
+    <span class="ms-3">{Translate(actionTitle, $language)}</span>
 </button>

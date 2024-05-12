@@ -28,7 +28,7 @@
 https://karutamo.fanbox.cc/posts/3542241
 https://www.fanbox.cc/@mmafu
 https://www.fanbox.cc/@mmafu/posts/7117892`} 
-    urlValidationFn={urlValidationFn}
-    addToQueueFn={addToQueueFn}
-    checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
+    {urlValidationFn}
+    {addToQueueFn}
+    {checkUrlHasPageNumFilter}
 />

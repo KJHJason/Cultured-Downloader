@@ -26,7 +26,7 @@
 https://www.pixiv.net/artworks/113096188
 https://www.pixiv.net/en/artworks/113096160
 https://www.pixiv.net/en/users/10600906`}
-    urlValidationFn={urlValidationFn}
-    checkUrlHasPageNumFilter={checkUrlHasPageNumFilter}
-    addToQueueFn={addToQueueFn}
+    {urlValidationFn}
+    {checkUrlHasPageNumFilter}
+    {addToQueueFn}
 />

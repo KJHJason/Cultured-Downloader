@@ -1,9 +1,7 @@
-import { GetLanguage } from "./wailsjs/go/app/App";
-
 let cachedLang: string = "";
 
-const EN = "en";
-const JP = "ja";
+export const EN = "en";
+export const JP = "ja";
 export const LANGUAGES = [
     { value: EN, name: "English" },
     { value: JP, name: "日本語" },
@@ -22,6 +20,10 @@ const textMap: Record<string, Record<string, string>> = {
 		[EN]: "Your Inputs",
 		[JP]: "あなたの入力",
 	},
+    "inputs": {
+        [EN]: "Inputs",
+        [JP]: "入力",
+    },
 	"progress": {
 		[EN]: "Progress",
 		[JP]: "進捗",
@@ -42,16 +44,34 @@ const textMap: Record<string, Record<string, string>> = {
         [EN]: "Unknown",
         [JP]: "不明",
     },
+    "welcome to cultured downloader!": {
+        [EN]: "Welcome to Cultured Downloader!",
+        [JP]: "Cultured Downloaderへようこそ！",
+    },
+    "home": {
+        [EN]: "Home",
+        [JP]: "ホーム",
+    },
+    "downloads": {
+        [EN]: "Downloads",
+        [JP]: "ダウンロード",
+    },
+    "settings": {
+        [EN]: "Settings",
+        [JP]: "設定",
+    },
+    "light mode": {
+        [EN]: "Light Mode",
+        [JP]: "ライトモード",
+    },
+    "dark mode": {
+        [EN]: "Dark Mode",
+        [JP]: "ダークモード",
+    },
 }
-
-export const InitialiseLanguage = async (): Promise<void> => {
-    cachedLang = await GetLanguage();
-    console.log("Language initialised to", cachedLang);
-}
-
-export const Translate = (text: string): string => {
-    if (cachedLang === "") {
-        throw new Error("Language not initialised");
+export const Translate = (text: string, language: string = cachedLang): string => {
+    if (language === "") {
+        throw new Error("language is empty or has not been initialised!")
     }
 
     const textKey = text.toLowerCase().trim();
@@ -68,4 +88,12 @@ export const GetLocale = (): string => {
         default:
             return "en-US";
     }
+}
+
+export const GetCachedLanguage = (): string => {
+    return cachedLang;
+}
+
+export const ChangeCachedLanguage = (lang: string): void => {
+    cachedLang = lang;
 }
