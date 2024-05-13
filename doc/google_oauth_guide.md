@@ -3,9 +3,13 @@
 ## Introduction
 
 This guide will help you to get your Google OAuth2 credentials for GDrive. 
+
 Unlike service accounts which are authorised bot accounts, the obtained OAuth2 credentials are tied to your Google account and can be used to access Google APIs.
+
 This means that the requests made using these credentials are made on behalf of your Google account which is less likely to be flagged for abuse by Google.
+
 However, this would mean that if your OAuth2 credentials are leaked, the person who has access to them can use them to **view and download all your uploaded files on GDrive**.
+
 Hence, it is important to keep your OAuth2 credentials safe and not share them with anyone.
 
 <- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)

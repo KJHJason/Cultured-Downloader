@@ -3,6 +3,7 @@
 ## Introduction
 
 This guide will help you get your API Key required for downloading files from Google Drive.
+
 The reason why using an API key is likely to be flagged for abuse by Google is because it is unauthenticated and can be easily leaked or shared with others.
 
 <- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)

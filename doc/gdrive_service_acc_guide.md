@@ -3,6 +3,7 @@
 ## Introduction
 
 This guide will help you get your Service Account JSON file required for downloading files from Google Drive.
+
 Unlike using your [OAuth2](gdrive_oauth_guide.md) credentials, a service account is an authorised bot account by Google Cloud that can be used to access Google APIs.
 
 <- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)
