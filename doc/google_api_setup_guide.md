@@ -27,5 +27,5 @@ This guide will help you get your API Key or Service Account JSON file required 
    - Much easier to setup but more likely to be get flagged for abuse by Google (will be unable to download any Google Drive links with the API key for a while)
 2. [Using a Service Account](gdrive_service_acc_guide.md)
    - Slighly more complicated to setup but less likely to get flagged for abuse by Google.
-3. [Using OAuth 2.0](gdrive_oauth_guide.md)
+3. [Using OAuth 2.0](google_oauth_guide.md)
    - Most complicated to setup but least likely to get flagged for abuse by Google.
