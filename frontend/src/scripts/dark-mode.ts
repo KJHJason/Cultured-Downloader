@@ -1,5 +1,7 @@
+import { GetDarkMode, SetDarkMode } from "./wailsjs/go/app/App";
+
 const linkId = "swal-theme-link";
-export const ToggleCSSThemes = (isDarkMode: boolean): void => {
+const ToggleCSSThemes = (isDarkMode: boolean): void => {
     const existingLink = document.getElementById(linkId);
     if (existingLink) {
         existingLink.remove();
@@ -17,3 +19,59 @@ export const ToggleCSSThemes = (isDarkMode: boolean): void => {
     }
     document.head.appendChild(link);
 }
+
+// when domcontentloaded, check if dark mode is enabled
+export const InitialiseDarkModeConfig = async (): Promise<void> => {
+    // from https://flowbite.com/docs/customize/dark-mode/#content
+    const themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon") as HTMLElement;
+    const themeToggleLightIcon = document.getElementById("theme-toggle-light-icon") as HTMLElement;
+    const darkModeToggleTxt = document.getElementById("dark-mode-toggle-text") as HTMLElement;
+    const lightModeToggleTxt = document.getElementById("light-mode-toggle-text") as HTMLElement;
+    if (!themeToggleDarkIcon || !themeToggleLightIcon || !darkModeToggleTxt || !lightModeToggleTxt) {
+        throw new Error("Could not find theme toggle button elements");
+    }
+
+    const toggleToggleText = (isDarkMode: boolean): void => {
+        if (isDarkMode) {
+            themeToggleLightIcon.classList.remove("hidden");
+            document.documentElement.classList.add("dark");
+
+            darkModeToggleTxt.classList.add("hidden");
+            darkModeToggleTxt.ariaHidden = "true";
+
+            lightModeToggleTxt.classList.remove("hidden");
+            lightModeToggleTxt.ariaHidden = "false";
+            return;
+        } 
+
+        themeToggleDarkIcon.classList.remove("hidden");
+        document.documentElement.classList.remove("dark");
+
+        darkModeToggleTxt.classList.remove("hidden");
+        darkModeToggleTxt.ariaHidden = "false";
+
+        lightModeToggleTxt.classList.add("hidden");
+        lightModeToggleTxt.ariaHidden = "true";
+    };
+
+    // Change the icons inside the button based on previous settings
+    const isDarkMode = await GetDarkMode();
+    toggleToggleText(isDarkMode);
+    ToggleCSSThemes(isDarkMode)
+
+    const themeToggleBtn = document.getElementById("theme-toggle") as HTMLElement;
+    if (!themeToggleBtn) {
+        throw new Error("Could not find theme toggle button");
+    }
+
+    themeToggleBtn.addEventListener("click", async () => {
+        // toggle icons inside button
+        themeToggleDarkIcon.classList.toggle("hidden");
+        themeToggleLightIcon.classList.toggle("hidden");
+
+        const isCurrentlyDarkMode = document.documentElement.classList.contains("dark");
+        toggleToggleText(!isCurrentlyDarkMode);
+        ToggleCSSThemes(!isCurrentlyDarkMode);
+        await SetDarkMode(!isCurrentlyDarkMode);
+    });
+};

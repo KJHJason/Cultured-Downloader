@@ -4,67 +4,17 @@
     import cdLogo from "../assets/images/logos/cultured-downloader-logo.png";
     import bufferGif from "../assets/images/buffer.gif";
     import NavbarBtn from "./navbar/NavbarBtn.svelte";
-    import { ToggleCSSThemes } from "../scripts/dark-mode";
+    import { InitialiseDarkModeConfig } from "../scripts/dark-mode";
     import { GetProfilePicURL } from "../scripts/image";
     import { Translate } from "../scripts/language";
-    import { GetDarkMode, SetDarkMode } from "../scripts/wailsjs/go/app/App";
     import type { Writable } from "svelte/store";
 
     export let action: Writable<string>;
     export let language: Writable<string>;
     export let username: string;
 
-    let themeToggleBtnText: HTMLElement;
-
-    const isCurrentlyDarkMode = (): boolean => document.documentElement.classList.contains("dark");
-    const toggleToggleBtnText = (): void => {
-        if (!themeToggleBtnText) {
-            return;
-        }
-        themeToggleBtnText.textContent = isCurrentlyDarkMode() ? Translate("Light Mode", $language) : Translate("Dark Mode", $language);
-    };
-
     onMount(async () => {
-        // from https://flowbite.com/docs/customize/dark-mode/#content
-        const themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon") as HTMLElement;
-        const themeToggleLightIcon = document.getElementById("theme-toggle-light-icon") as HTMLElement;
-        themeToggleBtnText = document.getElementById("theme-toggle-text") as HTMLElement;
-        if (!themeToggleDarkIcon || !themeToggleLightIcon || !themeToggleBtnText) {
-            throw new Error("Could not find theme toggle button elements");
-        }
-
-        // Change the icons inside the button based on previous settings
-        const isDarkMode = await GetDarkMode();
-        if (isDarkMode) {
-            themeToggleLightIcon.classList.remove("hidden");
-            document.documentElement.classList.add("dark");
-        } else {
-            themeToggleDarkIcon.classList.remove("hidden");
-            document.documentElement.classList.remove("dark");
-        }
-        ToggleCSSThemes(isDarkMode)
-
-        const themeToggleBtn = document.getElementById("theme-toggle") as HTMLElement;
-        if (!themeToggleBtn) {
-            throw new Error("Could not find theme toggle button");
-        }
-
-        themeToggleBtn.addEventListener("click", async () => {
-            // toggle icons inside button
-            themeToggleDarkIcon.classList.toggle("hidden");
-            themeToggleLightIcon.classList.toggle("hidden");
-
-            const isDarkMode = isCurrentlyDarkMode();
-            if (isDarkMode) {
-                document.documentElement.classList.remove("dark");
-                themeToggleBtnText.textContent = Translate("Dark Mode", $language); // text for the user to change back to dark mode
-            } else {
-                document.documentElement.classList.add("dark");
-                themeToggleBtnText.textContent = Translate("Light Mode", $language); // text for the user to change back to light mode
-            }
-            ToggleCSSThemes(!isDarkMode);
-            await SetDarkMode(!isDarkMode);
-        });
+        await InitialiseDarkModeConfig();
     });
 
     onMount(async () => {
@@ -91,7 +41,7 @@
             <div class="flex items-center">
                 <div class="flex items-center ms-3">
                     <div>
-                        <button on:click={toggleToggleBtnText} type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                        <button type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
                             <span class="sr-only">{Translate("Open user menu", $language)}</span>
                             <img class="w-8 h-8 rounded-full border-2 border-gray-200" src="{bufferGif}" alt="user profile" id="navbar-user-profile" />
                         </button>
@@ -114,7 +64,14 @@
                                         <svg id="theme-toggle-dark-icon" class="hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                                         <svg id="theme-toggle-light-icon" class="hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                                     </div>
-                                    <span class="flex-1 ms-2 text-left whitespace-nowrap" id="theme-toggle-text"></span>
+                                    <div class="flex-1 ms-2 text-left whitespace-nowrap">
+                                        <span id="dark-mode-toggle-text" class="hidden" aria-hidden="false">
+                                            {Translate("Dark Mode", $language)}
+                                        </span>
+                                        <span id="light-mode-toggle-text" class="hidden" aria-hidden="false">
+                                            {Translate("Light Mode", $language)}
+                                        </span>
+                                    </div>
                                 </button>
                             </li>
                         </ul>
