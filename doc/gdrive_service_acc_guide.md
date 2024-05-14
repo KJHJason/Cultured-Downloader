@@ -6,7 +6,7 @@ This guide will help you get your Service Account JSON file required for downloa
 
 Unlike using your [OAuth2](google_oauth_guide.md) credentials, a service account is an authorised bot account by Google Cloud that can be used to access Google APIs.
 
-<- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)
+<- Go back to [GCP Setup Guide](/doc/gcp_setup_guide.md)
 
 ### 1. Go to the `Credentials` page of your project under the `APIs & Services` tab.
 

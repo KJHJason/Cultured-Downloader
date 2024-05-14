@@ -254,7 +254,7 @@
             }
 
             const deleteResult = await invertedSwal.fire({
-                title: "Delete GDrive API JSON file?",
+                title: "Delete Google Cloud Platform credentials JSON file?",
                 text: "Are you sure you want to delete the Google Cloud Platform credentials JSON file?",
                 icon: "info",
                 showCancelButton: true,
@@ -325,7 +325,7 @@
         </div>
         <div>
             <div class="flex">
-                <Label for="gdriveApiKey">{Translate("GCP Credentials:")}</Label>
+                <Label for="gdriveApiKey">{Translate("GDrive Credentials:")}</Label>
                 <button type="button" class="hidden btn-text-link text-xs font-normal ml-1" id="gdrive-json-text">
                     {Translate("View Uploaded JSON")}
                 </button>
@@ -338,6 +338,14 @@
                     <UploadSolid />
                 </ButtonGroupBtn>
             </ButtonGroup>
+            <Helper class="mt-2">
+                *{Translate("If you're unsure how to obtain the relevant API key or credentials, please refer to the guide below.")} 
+            </Helper>
+            <Helper>
+                <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md")}>
+                    https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md
+                </button>
+            </Helper>
             <Tooltip triggeredBy="#browseApiJson">{Translate("Upload Google Cloud Platform JSON file")}</Tooltip>
         </div>
         <div>

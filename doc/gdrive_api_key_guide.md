@@ -6,7 +6,7 @@ This guide will help you get your API Key required for downloading files from Go
 
 The reason why using an API key is likely to be flagged for abuse by Google is because it is unauthenticated and can be easily leaked or shared with others.
 
-<- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)
+<- Go back to [GCP Setup Guide](/doc/gcp_setup_guide.md)
 
 ### 1. Go to the `Credentials` page of your project under the `APIs & Services` tab.
 

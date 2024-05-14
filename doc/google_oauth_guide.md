@@ -14,24 +14,7 @@ Hence, it is important to keep your OAuth2 credentials safe and not share them w
 
 <- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)
 
-** WIP **
-
-### Step 1: Create a Google Cloud Platform Project and enable the Google Drive API
-
-1. Go to the [Google Cloud Platform Console](https://console.cloud.google.com/).
-
-<img src="/res/guide/gdrive_api_setup/oauth2/step-1.1.jpg" alt="step 1.1" style="width: 70%;">
-
-2. Create a new project.
-3. Give the project a name (any will do) and click **Create**.
-
-<img src="/res/guide/gdrive_api_setup/oauth2/step-1.2-1.3.gif" alt="step 1.2 to 1.3" style="width: 70%;">
-
-4. **IMPORTANT**: Please make sure to enable [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com) for the project. Otherwise, you will get a 403 Forbidden error when calling the Google Drive API.
-
-<img src="/res/guide/gdrive_api_setup/oauth2/step-1.4.jpg" alt="step 1.4" style="width: 70%;">
-
-### Step 2: Configure OAuth2 Consent Screen
+### Step 1: Configure OAuth2 Consent Screen
 
 1. Go to the [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent) page under the **APIs & Services** section of the side navigation bar.
 
@@ -53,7 +36,7 @@ Hence, it is important to keep your OAuth2 credentials safe and not share them w
 
 <img src="/res/guide/gdrive_api_setup/oauth2/step-2.7.gif" alt="step 2.7" style="width: 70%;">
 
-### Step 3: Create OAuth2 Credentials
+### Step 2: Create OAuth2 Credentials
 
 1. Go to the **Credentials** page of your project under the **APIs & Services** tab.
 
@@ -84,22 +67,30 @@ Alternative:
 
 <img src="/res/guide/gdrive_api_setup/oauth2/step-3.7-alternative.jpg" alt="step 3.7 alternative" style="width: 70%;">
 
-### Step 4: Setup Google OAuth2 on Cultured Downloader
+### Step 3: Setup Google OAuth2 on Cultured Downloader
 
 *You are almost there!*
 
-1. Run [launcher.py](/src/launcher.py) or the executable and enter the command option for **Configure Google OAuth2 for Google Drive API**.
-   - For Linux users who do not have gnome-terminal and macOS users, please refer to the documentation [here](/doc/google_oauth_helper_script.md) for running [google_oauth.py](/src/helper/google_oauth.py) manually to set up Google OAuth2.
-2. Copy the contents of the downloaded JSON file and paste it when asked for the **client secret JSON**.
+1. Upload the downloaded JSON file to Cultured Downloader in the Advanced Settings.
 
-<img src="/res/guide/gdrive_api_setup/oauth2/step-4.1-4.2.jpg" alt="step 4.1 to 4.2" style="width: 70%;">
+<img src="/res/guide/gdrive_api_setup/oauth2/step-4.1.png" alt="step 4.1" style="width: 70%;">
 
-3. A new terminal and a new tab on your web browser should have opened.
-   1. If the new tab on your web browser did not open, copy the URL from the terminal and paste it on your web browser.
-   2. You can also close the newly opened terminal if you wish to abort the process.
+2. If you receive a prompt indicating that Windows Defender Firewall has blocked some features of the program, you can click either "Allow" or "Cancel" (on Windows 11). It doesn't matter, as it's just the OAuth2 localhost server that I developed, attaching itself to port localhost:8080 to capture your OAuth2 code during the OAuth callback for a better user experience!
 
-<img src="/res/guide/gdrive_api_setup/oauth2/step-4.3.jpg" alt="step 4.3" style="width: 70%;">
+3. A new tab should have opened on your default web browser, sign in with the account that you have previously added into the list of Test User on GCP.
+   - Note: If you have accidentally closed the OAuth2 tab, you can click on the **Verify** button on Cultured Downloader to open the OAuth2 tab again. 
 
-4. Sign in as usual and click **Continue** when prompted.
-5. Once you signed in, you should see a message saying **The authentication flow has completed. You may close this window.** on your web browser.
-6. Cultured Downloader will handle the rest and you are done!
+<img src="/res/guide/gdrive_api_setup/oauth2/step-4.2.png" alt="step 4.2" style="width: 70%;">
+
+4. Once you have signed in, make sure to allow the permissions requested.
+
+<img src="/res/guide/gdrive_api_setup/oauth2/step-4.3.png" alt="step 4.3" style="width: 70%;">
+
+5. You should see a message saying "**The authentication flow has completed. You may close this window.**" on your web browser.
+
+<img src="/res/guide/gdrive_api_setup/oauth2/step-4.4.png" alt="step 4.4" style="width: 70%;">
+
+6. Go back to the program and click **Verify** to check if the OAuth2 credentials have been successfully set up. If it's successful, you're done!
+   - If there are any difficulties or problems along the way, you can create a new [issue](https://github.com/KJHJason/Cultured-Downloader/issues) on the GitHub repository. I will do my best to assist you! 
+
+<img src="/res/guide/gdrive_api_setup/oauth2/step-4.5.png" alt="step 4.5" style="width: 70%;">

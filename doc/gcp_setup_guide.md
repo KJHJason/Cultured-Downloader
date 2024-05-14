@@ -1,8 +1,8 @@
-# Google Drive API Setup Guide
+# Google Cloud Platform Setup Guide
 
 ## Introduction
 
-This guide will help you get your API Key or Service Account JSON file required for downloading files from Google Drive.
+This guide will help you to create a Google Cloud Platform (GCP) project in order to get your API Key or Service Account JSON file required for downloading files from Google Drive.
 
 *You can `disregard` this guide if you prefer not to download any Google Drive links or if you're only interested in downloading posts from Pixiv*
 
