@@ -99,12 +99,15 @@ func (a *App) SetPixivPreferences(p *preferences) error {
 	}
 
 	// 0-51 for mp4, 0-63 for webm
-	if p.UgoiraOutputFormat == PixivUgoiraOutputFormatMp4 && p.UgoiraQuality <= 51 {
-		err = a.appData.SetInt(constants.PIXIV_UGOIRA_QUALITY_KEY, int(p.UgoiraQuality))
-	} else if p.UgoiraOutputFormat == PixivUgoiraOutputFormatWebm && p.UgoiraQuality <= 63 {
-		err = a.appData.SetInt(constants.PIXIV_UGOIRA_QUALITY_KEY, int(p.UgoiraQuality))
+	var maxQuality int
+	if p.UgoiraOutputFormat == PixivUgoiraOutputFormatMp4 {
+		maxQuality = 51
+	} else if p.UgoiraOutputFormat == PixivUgoiraOutputFormatWebm {
+		maxQuality = 63
+	} else {
+		maxQuality = 63 // (set ugoira quality regardless for future use)
 	}
-	return err
+	return a.appData.SetInt(constants.PIXIV_UGOIRA_QUALITY_KEY, min(int(p.UgoiraQuality), maxQuality))
 }
 
 

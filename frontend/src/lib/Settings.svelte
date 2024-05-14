@@ -9,7 +9,7 @@
     import ProgramInfo from "./settings/ProgramInfo.svelte";
     import type { Writable } from "svelte/store";
 
-    export let username: string;
+    export let username: Writable<string>;
     export let lastSavedUpdateStr: string;
     export let language: Writable<string>;
 
@@ -36,7 +36,7 @@
                 <UserCircleSolid size="sm" />
                 General
             </div>
-            <General bind:username {language} />
+            <General {username} {language} />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">

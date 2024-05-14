@@ -51,15 +51,9 @@
         { value: 24, name: "Filter AI Works" },
     ];
 
-    onMount(async() => {
-        // Pixiv Specific
-        const DeleteUgoiraZipInp = document.getElementById("DeleteUgoiraZip") as HTMLInputElement;
-        const UgoiraQualityInp = document.getElementById("UgoiraQuality") as HTMLInputElement;
-
-        if (preferences === undefined) {
-            preferences = await GetPreferences();
-        }
-
+    let DeleteUgoiraZipInp: HTMLInputElement;
+    let UgoiraQualityInp: HTMLInputElement;
+    const processPrefs = (preferences: any) => {
         DeleteUgoiraZipInp.checked = preferences.DeleteUgoiraZip;
         pixivArtworkType           = preferences.ArtworkType;
         pixivRating                = preferences.RatingMode;
@@ -68,6 +62,17 @@
         pixivSortOrder             = preferences.SortOrder;
         pixivUgoiraFormat          = preferences.UgoiraOutputFormat;
         UgoiraQualityInp.value     = preferences.UgoiraQuality;
+    };
+
+    onMount(async() => {
+        // Pixiv Specific
+        DeleteUgoiraZipInp = document.getElementById("DeleteUgoiraZip") as HTMLInputElement;
+        UgoiraQualityInp = document.getElementById("UgoiraQuality") as HTMLInputElement;
+
+        if (preferences === undefined) {
+            preferences = await GetPreferences();
+        }
+        processPrefs(preferences);
 
         const prefForm = document.getElementById(formId) as HTMLFormElement;
         prefForm.addEventListener("submit", async (e) => {
@@ -83,6 +88,7 @@
                 UgoiraQuality:      parseInt(UgoiraQualityInp.value),
             };
             await SetPixivPreferences(prefs);
+            processPrefs(await GetPreferences());
 
             if (promptSuccess) {
                 swal.fire({

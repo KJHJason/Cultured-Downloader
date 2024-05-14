@@ -208,6 +208,8 @@
     };
 
     onMount(async () => {
+        const form = document.getElementById("advanced-form") as HTMLFormElement;
+
         dlLocationInp = document.getElementById("downloadLocation") as HTMLInputElement;
         savedDownloadLoc = await GetDownloadDir();
         dlLocationInp.value = savedDownloadLoc;
@@ -270,7 +272,6 @@
             }
         });
 
-        const form = document.getElementById("advanced-form") as HTMLFormElement;
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const downloadLocation = dlLocationInp.value;

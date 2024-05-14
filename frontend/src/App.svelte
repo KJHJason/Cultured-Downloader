@@ -42,8 +42,8 @@
         triggerSwalError(errorMsg);
     });
 
-    $: username = "";
     $: lastSavedUpdateStr = "";
+    const username = writable("");
     const action = writable(actions.Home);
     const language = writable(EN);
     ChangeCachedLanguage(EN);
@@ -116,15 +116,15 @@
         language.set(lang);
         ChangeCachedLanguage(lang);
 
-        username = await GetUsername();
+        username.set(await GetUsername() || "User");
         await checkMasterPassword();
     });
 </script>
 
-<Navbar bind:username {action} {language} />
+<Navbar {username} {action} {language} />
 
 {#if $action === actions.Home}
-    <Home {language} />
+    <Home {action} {language} {username} />
 {:else}
     <main class="p-4">
         <div class="mt-14">
@@ -139,7 +139,7 @@
             {:else if $action === actions.Downloads}
                 <DownloadQueues {action} />
             {:else if $action === actions.Settings}
-                <Settings bind:username bind:lastSavedUpdateStr {language} />
+                <Settings {username} bind:lastSavedUpdateStr {language} />
             {:else if $action !== actions.Home}
                 <p>{Translate("Not implemented yet", $language)}</p>
             {/if}

@@ -11,7 +11,7 @@
 
     export let action: Writable<string>;
     export let language: Writable<string>;
-    export let username: string;
+    export let username: Writable<string>;
 
     onMount(async () => {
         await InitialiseDarkModeConfig();
@@ -48,8 +48,8 @@
                     </div>
                     <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-zinc-200 rounded shadow dark:bg-zinc-800 dark:divide-zinc-600 outline-zinc-200 outline-1 dark:outline-zinc-600 outline" id="dropdown-user">
                         <div class="px-4 py-3" role="none">
-                            <p class="text-sm text-zinc-900 dark:text-white" role="none"> {username} </p>
-                            <p class="text-sm font-medium text-zinc-900 truncate dark:text-zinc-300" role="none"> {username}@cd.kjhjason.com </p>
+                            <p class="text-sm text-zinc-900 dark:text-white" role="none"> {$username} </p>
+                            <p class="text-sm font-medium text-zinc-900 truncate dark:text-zinc-300" role="none"> {$username}@cd.kjhjason.com </p>
                         </div>
                         <ul class="p-1" role="none">
                             <li>

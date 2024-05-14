@@ -13,7 +13,6 @@
         CheckMasterPassword,
         ChangeMasterPassword,
         RemoveMasterPassword,
-        GetUsername,
         SetMasterPassword,
         SetUsername,
         SelectProfilePic,
@@ -24,7 +23,7 @@
     import type { Writable } from "svelte/store";
 
     let lang = "";
-    export let username: string;
+    export let username: Writable<string>;
     export let language: Writable<string>;
 
     onMount(async () => {
@@ -75,9 +74,8 @@
         let uploadedProfilePicURL: string;
         let hasProfilePic = await HasProfilePic();
 
-        username = await GetUsername() || "User";
         const usernameInput = document.getElementById("username") as HTMLInputElement;
-        usernameInput.value = username;
+        usernameInput.value = $username;
 
         const resetImageInputs = (): void => {
             // not using generalForm.reset() as it will reset the select element to the first option
@@ -108,7 +106,7 @@
             const newUsername = formData.get("username") as string;
             if (newUsername !== "") {
                 await SetUsername(newUsername);
-                username = newUsername;
+                username.set(newUsername);
             }
 
             if (lang !== $language) {

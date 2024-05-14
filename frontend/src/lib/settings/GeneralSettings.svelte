@@ -8,23 +8,34 @@
     export let promptSuccess: boolean;
     export let preferences: any = undefined;
 
-    onMount(async() => {
-        const DlPostThumbnailInp = document.getElementById("DlPostThumbnail") as HTMLInputElement;
-        const DlPostImagesInp = document.getElementById("DlPostImages") as HTMLInputElement;
-        const DlPostAttachmentsInp = document.getElementById("DlPostAttachments") as HTMLInputElement;
-        const DlGDriveInp = document.getElementById("DlGDrive") as HTMLInputElement;
-        const OverwriteFilesInp = document.getElementById("OverwriteFiles") as HTMLInputElement;
-        const DetectOtherLinksInp = document.getElementById("DetectOtherLinks") as HTMLInputElement;
+    let DlPostThumbnailInp: HTMLInputElement;
+    let DlPostImagesInp: HTMLInputElement;
+    let DlPostAttachmentsInp: HTMLInputElement;
+    let DlGDriveInp: HTMLInputElement;
+    let OverwriteFilesInp: HTMLInputElement;
+    let DetectOtherLinksInp: HTMLInputElement;
 
-        if (preferences === undefined) {
-            preferences = await GetPreferences();
-        }
+    const processPrefs = (preferences: any) => {
         DlPostThumbnailInp.checked   = preferences.DlPostThumbnail;
         DlPostImagesInp.checked      = preferences.DlPostImages;
         DlPostAttachmentsInp.checked = preferences.DlPostAttachments;
         DlGDriveInp.checked          = preferences.DlGDrive;
         OverwriteFilesInp.checked    = preferences.OverwriteFiles;
         DetectOtherLinksInp.checked  = preferences.DetectOtherLinks;
+    };
+
+    onMount(async() => {
+        DlPostThumbnailInp = document.getElementById("DlPostThumbnail") as HTMLInputElement;
+        DlPostImagesInp = document.getElementById("DlPostImages") as HTMLInputElement;
+        DlPostAttachmentsInp = document.getElementById("DlPostAttachments") as HTMLInputElement;
+        DlGDriveInp = document.getElementById("DlGDrive") as HTMLInputElement;
+        OverwriteFilesInp = document.getElementById("OverwriteFiles") as HTMLInputElement;
+        DetectOtherLinksInp = document.getElementById("DetectOtherLinks") as HTMLInputElement;
+
+        if (preferences === undefined) {
+            preferences = await GetPreferences();
+        }
+        processPrefs(preferences);
 
         const prefForm = document.getElementById(formId) as HTMLFormElement;
         prefForm.addEventListener("submit", async (e) => {
@@ -38,6 +49,7 @@
                 DetectOtherLinks:   DetectOtherLinksInp.checked,
             };
             await SetGeneralPreferences(prefs);
+            processPrefs(await GetPreferences());
 
             if (promptSuccess) {
                 swal.fire({
@@ -55,6 +67,6 @@
     <Toggle color="green" id="DlPostImages" name="DlPostImages">Download Post Images</Toggle>
     <Toggle color="green" id="DlPostAttachments" name="DlPostAttachments">Download Post Attachments</Toggle>
     <Toggle color="green" id="DlGDrive" name="DlGDrive">Download GDrive Links</Toggle>
-    <Toggle color="green" id="OverwriteFiles" name="OverwriteFiles">Overwrite Files</Toggle>
+    <Toggle color="green" id="OverwriteFiles" name="OverwriteFiles">Overwrite Files (not recommended)</Toggle>
     <Toggle color="green" id="DetectOtherLinks" name="DetectOtherLinks">Detect Other URL(s) like MEGA</Toggle>
 </form>

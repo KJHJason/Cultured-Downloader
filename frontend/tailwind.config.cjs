@@ -14,6 +14,9 @@ module.exports = {
         gray: colors.zinc,
         gray2: colors.gray,
       },
+      fontSize: {
+        tiny: "0.5rem",
+      },
     },
   },
   plugins: [

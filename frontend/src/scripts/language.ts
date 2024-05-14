@@ -8,10 +8,7 @@ export const LANGUAGES = [
 ]
 
 const textMap: Record<string, Record<string, string>> = {
-    "hello": {
-		[EN]: "Hello",
-		[JP]: "こんにちは",
-	},
+    // Download queue
 	"date/time": {
 		[EN]: "Date/Time",
 		[JP]: "日時",
@@ -36,6 +33,11 @@ const textMap: Record<string, Record<string, string>> = {
         [EN]: "Current Task",
         [JP]: "現在のタスク",
     },
+    "downloads": {
+        [EN]: "Downloads",
+        [JP]: "ダウンロード",
+    },
+    // General
     "save": {
         [EN]: "Save",
         [JP]: "保存",
@@ -43,18 +45,6 @@ const textMap: Record<string, Record<string, string>> = {
     "unknown": {
         [EN]: "Unknown",
         [JP]: "不明",
-    },
-    "welcome to cultured downloader!": {
-        [EN]: "Welcome to Cultured Downloader!",
-        [JP]: "Cultured Downloaderへようこそ！",
-    },
-    "home": {
-        [EN]: "Home",
-        [JP]: "ホーム",
-    },
-    "downloads": {
-        [EN]: "Downloads",
-        [JP]: "ダウンロード",
     },
     "settings": {
         [EN]: "Settings",
@@ -67,6 +57,52 @@ const textMap: Record<string, Record<string, string>> = {
     "dark mode": {
         [EN]: "Dark Mode",
         [JP]: "ダークモード",
+    },
+    // Home Page
+    "to get started, click on one of the options below or use the navigation bar in the top-left corner.": {
+        [EN]: "To get started, click on one of the options below or use the navigation bar in the top-left corner.",
+        [JP]: "始めるには、以下のオプションのいずれかをクリックするか、左上隅のナビゲーションバーを使用してください。",
+    },
+    "welcome back,": {
+        [EN]: "Welcome back,",
+        [JP]: "おかえりなさい、",
+    },
+    "!": {
+        [EN]: "!",
+        [JP]: "！",
+    },
+    "home": {
+        [EN]: "Home",
+        [JP]: "ホーム",
+    },
+    "image:": {
+        [EN]: "Image:",
+        [JP]: "イラスト：",
+    },
+    "karutamo": {
+        [EN]: "Karutamo",
+        [JP]: "かるたも",
+    },
+    "found an issue? click me!": {
+        [EN]: "Found an issue? Click me!",
+        [JP]: "問題を発見しましたか？私をクリックしてください！",
+    },
+    // Program info
+    "check for updates": {
+        [EN]: "Check for Updates",
+        [JP]: "更新を確認",
+    },
+    "checking for updates...": {
+        [EN]: "Checking for updates...",
+        [JP]: "更新を確認中...",
+    },
+    "outdated, last checked at": {
+        [EN]: "Outdated, last checked at ",
+        [JP]: "古い、最後に確認した日時",
+    },
+    "up-to-date, last checked at" : {
+        [EN]: "Up-to-date, last checked at ",
+        [JP]: "最新、最後に確認した日時",
     },
 }
 export const Translate = (text: string, language: string = cachedLang): string => {
