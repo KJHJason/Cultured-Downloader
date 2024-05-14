@@ -98,11 +98,10 @@ func (a *App) UploadCookieFile(website string) error {
 		return err
 	}
 
-	a.appData.Unset(dataKey)
 	if isJson {
-		a.appData.Unset(dataTxtKey)
+		a.appData.Unset(dataKey, dataTxtKey)
 	} else {
-		a.appData.Unset(dataJsonKey)
+		a.appData.Unset(dataKey, dataJsonKey)
 	}
 	return nil
 }
@@ -130,8 +129,7 @@ func (a *App) SetSessionValue(website, session string) error {
 		return err
 	}
 
-	a.appData.Unset(dataTxtKey)
-	a.appData.Unset(dataJsonKey)
+	a.appData.Unset(dataTxtKey, dataJsonKey)
 	return nil
 }
 
@@ -140,23 +138,7 @@ func (a *App) ResetSession(website string) error {
 	if err != nil {
 		return err
 	}
-
-	err = a.appData.Unset(dataKey)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(dataTxtKey)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(dataJsonKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.appData.Unset(dataKey, dataTxtKey, dataJsonKey)
 }
 
 // for backend use only

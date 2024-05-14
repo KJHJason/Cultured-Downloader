@@ -59,8 +59,14 @@ func (a *App) gdriveOauthFlow(ctx context.Context) {
 		updateGdriveOauthErr(err)
 		return
 	}
-	
+
 	err = a.appData.SetSecureBytes(constants.GDRIVE_CLIENT_SECRET_KEY, clientSecretJson)
+	if err != nil {
+		updateGdriveOauthErr(err)
+		return
+	}
+
+	err = a.appData.Unset(constants.GDRIVE_SERVICE_ACC_KEY, constants.GDRIVE_API_KEY_KEY)
 	if err != nil {
 		updateGdriveOauthErr(err)
 		return
@@ -74,6 +80,7 @@ func (a *App) StartGDriveOauth() error {
 
 	var ctx context.Context
 	gdriveOauthMu.Lock()
+	finishedGDriveOauth = false
 	ctx, gdriveOauthCancelFunc = context.WithCancel(a.ctx)
 	gdriveOauthMu.Unlock()
 
@@ -88,8 +95,10 @@ func (a *App) CancelGDriveOauth() {
 	gdriveOauthCancelFunc()
 	gdriveOauthConfig = nil
 
-	a.appData.Unset(constants.GDRIVE_OAUTH_TOKEN_KEY)
-	a.appData.Unset(constants.GDRIVE_CLIENT_SECRET_KEY)
+	a.appData.Unset(
+		constants.GDRIVE_OAUTH_TOKEN_KEY, 
+		constants.GDRIVE_CLIENT_SECRET_KEY,
+	)
 }
 
 func (a *App) ValidateGDriveOauth() error {

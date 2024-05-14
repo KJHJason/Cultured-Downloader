@@ -9,7 +9,7 @@ import (
 )
 
 // IMPORTANT: Update this when adding new encrypted fields
-var encryptedFields = [...]string{
+var encryptedFields = []string{
 	constants.GDRIVE_API_KEY_KEY,
 	constants.GDRIVE_SERVICE_ACC_KEY,
 
@@ -32,14 +32,7 @@ var encryptedFields = [...]string{
 }
 
 func (a *AppData) ResetEncryptedFields() error {
-	var err error
-	for _, key := range encryptedFields {
-		err = a.Unset(key)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return a.Unset(encryptedFields...)
 }
 
 func (a *AppData) EncryptWithPassword(plaintext, salt []byte, password string) ([]byte, error) {

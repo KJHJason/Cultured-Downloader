@@ -1,7 +1,7 @@
 package appdata
 
-func (a *AppData) Unset(key string) error {
-	return a.unset(key)
+func (a *AppData) Unset(key ...string) error {
+	return a.unset(key...)
 }
 
 func (a *AppData) SetBool(key string, value bool) error {

@@ -94,7 +94,7 @@
         BrowserOpenURL(oauthUrl);
         const result = await swal.fire({
             title: "Authentication Required for OAuth",
-            text: `Please visit the recently opened tab in your default browser and authenticate yourself.`,
+            text: "Please visit the recently opened tab in your default browser and authenticate yourself.",
             icon: "info",
             showConfirmButton: true,
             showCancelButton: true,
@@ -114,6 +114,7 @@
 
                     const error = e.toString();
                     if (error === "oauth not finished") {
+                        BrowserOpenURL(oauthUrl);
                         return swal.showValidationMessage("Authentication not finished yet. Please try again.");
                     }
                     swal.showValidationMessage(error);

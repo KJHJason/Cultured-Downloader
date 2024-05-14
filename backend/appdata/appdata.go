@@ -102,16 +102,13 @@ func (a *AppData) ResetMasterPassword() error {
 	a.hashOfMasterPasswordHash = nil
 	a.mu.Unlock()
 
-	err := a.Unset(constants.MASTER_PASS_SALT_KEY)
+	err := a.Unset(
+		constants.MASTER_PASS_SALT_KEY, 
+		constants.HASH_OF_MASTER_PASS_HASH_KEY,
+	)
 	if err != nil {
 		return err
 	}
-
-	err = a.Unset(constants.HASH_OF_MASTER_PASS_HASH_KEY)
-	if err != nil {
-		return err
-	}
-
 	return a.ResetEncryptedFields()
 }
 
@@ -182,15 +179,21 @@ func (a *AppData) get(key string) (interface{}, bool) {
 	return v, exist
 }
 
-func (a *AppData) unset(key string) error {
+func (a *AppData) unset(keys ...string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if _, exist := a.data[key]; !exist {
-		return nil
-	}
+	hasChanged := false
+	for _, key := range keys {
+		if _, exist := a.data[key]; !exist {
+			continue
+		}
 
-	delete(a.data, key)
+		if !hasChanged {
+			hasChanged = true
+		}
+		delete(a.data, key)
+	}
 	return a.saveToFile()
 }
 

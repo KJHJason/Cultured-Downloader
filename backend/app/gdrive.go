@@ -59,7 +59,17 @@ func (a *App) SetGDriveAPIKey(apiKey string) error {
 	}
 
 	a.gdriveClient = gdriveClient
-	return a.appData.SetSecureString(constants.GDRIVE_API_KEY_KEY, apiKey)
+	err = a.appData.SetSecureString(constants.GDRIVE_API_KEY_KEY, apiKey)
+	if err != nil {
+		return err
+	}
+
+	a.appData.Unset(
+		constants.GDRIVE_SERVICE_ACC_KEY, 
+		constants.GDRIVE_CLIENT_SECRET_KEY, 
+		constants.GDRIVE_OAUTH_TOKEN_KEY,
+	)
+	return nil
 }
 
 func (a *App) GetGDriveAPIKey() string {
@@ -104,27 +114,26 @@ func (a *App) SelectGDriveServiceAccount() error {
 	}
 
 	a.gdriveClient = gdriveClient
-	return a.appData.SetSecureBytes(constants.GDRIVE_SERVICE_ACC_KEY, jsonBytes)
+	err = a.appData.SetSecureBytes(constants.GDRIVE_SERVICE_ACC_KEY, jsonBytes)
+	if err != nil {
+		return err
+	}
+
+	a.appData.Unset(
+		constants.GDRIVE_API_KEY_KEY, 
+		constants.GDRIVE_CLIENT_SECRET_KEY, 
+		constants.GDRIVE_OAUTH_TOKEN_KEY,
+	)
+	return nil
 }
 
 func (a *App) UnsetGDriveJson() error {
 	a.gdriveClient = nil
-
-	err := a.appData.Unset(constants.GDRIVE_CLIENT_SECRET_KEY)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(constants.GDRIVE_OAUTH_TOKEN_KEY)
-	if err != nil {
-		return err
-	}
-
-	err = a.appData.Unset(constants.GDRIVE_API_KEY_KEY)
-	if err != nil {
-		return err
-	}
-	return nil
+	return a.appData.Unset(
+		constants.GDRIVE_CLIENT_SECRET_KEY, 
+		constants.GDRIVE_OAUTH_TOKEN_KEY, 
+		constants.GDRIVE_API_KEY_KEY,
+	)
 }
 
 func (a *App) GetGDriveServiceAccount() string {
