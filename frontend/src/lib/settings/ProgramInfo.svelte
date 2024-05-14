@@ -3,11 +3,14 @@
     import { GetProgramInfo, CheckForUpdates } from "../../scripts/wailsjs/go/app/App";
     import { onMount } from "svelte";
     import { BrowserOpenURL } from "../../scripts/wailsjs/runtime/runtime";
-    import { EN, GetCachedLanguage, Translate } from "../../scripts/language";
+    import { EN, GetCachedLanguage, JP, Translate } from "../../scripts/language";
 
     let programVer: string;
     let programLogicVer: string;
-    export let lastSavedUpdateStr: string;
+
+    // {"en": "Up-to-date, last checked at 12:00:00", "jp": "最新の情報はありません"}
+    export let lastSavedUpdateStr: Record<string, string>;
+    const language = GetCachedLanguage();
 
     onMount(async() => {
         const programInfo = await GetProgramInfo();
@@ -15,10 +18,14 @@
         programLogicVer = programInfo.BackendVer;
 
         const latestVer = document.getElementById("latest-ver") as HTMLElement;
-        if (lastSavedUpdateStr === "") {
-            lastSavedUpdateStr = "Unknown";
+        if (lastSavedUpdateStr[language] === undefined) {
+            lastSavedUpdateStr = {
+                [EN]: "Unknown", 
+                [JP]: "最新の情報はありません",
+            };
         }
-        latestVer.innerText = lastSavedUpdateStr;
+        console.log(lastSavedUpdateStr,language);
+        latestVer.innerText = lastSavedUpdateStr[language];
 
         const updateBtn = document.getElementById("update-btn") as HTMLButtonElement;
         const updateBtnText = updateBtn.querySelector("span") as HTMLElement;
@@ -29,13 +36,19 @@
             updateBtnText.innerText = Translate("Checking for updates...");
 
             const outdated = await CheckForUpdates();
-            const currentTime = new Date();
+            const currentTime = new Date().toLocaleTimeString();
             if (outdated) {
-                lastSavedUpdateStr = `${Translate("Outdated, last checked at")}${currentTime.toLocaleTimeString()}`;
+                lastSavedUpdateStr = {
+                    [EN]: `${Translate("Outdated, last checked at", EN)}${currentTime}`,
+                    [JP]: `${Translate("Outdated, last checked at", JP)}${currentTime}`
+                }
             } else {
-                lastSavedUpdateStr = `${Translate("Up-to-date, last checked at")}${currentTime.toLocaleTimeString()}`
+                lastSavedUpdateStr = {
+                    [EN]: `${Translate("Up-to-date, last checked at", EN)}${currentTime}`,
+                    [JP]: `${Translate("Up-to-date, last checked at", JP)}${currentTime}`
+                }
             }
-            latestVer.innerText = lastSavedUpdateStr;
+            latestVer.innerText = lastSavedUpdateStr[language];
 
             updateBtn.disabled = false;
             updateBtnIcon.classList.remove("animate-spin");
@@ -43,7 +56,6 @@
         });
     });
 
-    const lang = GetCachedLanguage();
     let devNote1Part1: string;
     let devNote1Part3: string;
 
@@ -52,7 +64,7 @@
     let devNote2Part3: string;
     let devNote2Part4: string;
     let devNote2Part5: string;
-    if (lang === EN) {
+    if (language === EN) {
         devNote1Part1 = "If you like using Cultured Downloader, please consider giving it a star on";
         devNote1Part3 = "if you haven't already!";
 

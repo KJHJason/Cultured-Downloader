@@ -5,7 +5,7 @@
     import { swal, actions, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername, GetLanguage } from "./scripts/wailsjs/go/app/App";
     import { LogError } from "./scripts/wailsjs/runtime/runtime";
-    import { EN, Translate, ChangeCachedLanguage } from "./scripts/language";
+    import { EN, JP, Translate, ChangeCachedLanguage } from "./scripts/language";
 
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
@@ -42,7 +42,7 @@
         triggerSwalError(errorMsg);
     });
 
-    $: lastSavedUpdateStr = "";
+    let lastSavedUpdateStr: Record<string, string> = {};
     const username = writable("");
     const action = writable(actions.Home);
     const language = writable(EN);

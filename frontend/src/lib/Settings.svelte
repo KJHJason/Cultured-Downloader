@@ -10,8 +10,8 @@
     import type { Writable } from "svelte/store";
 
     export let username: Writable<string>;
-    export let lastSavedUpdateStr: string;
     export let language: Writable<string>;
+    export let lastSavedUpdateStr: Record<string, string>;
 
     const changeDefaultDividerColour = () => {
         const settingsContent = document.getElementById("settingsContent");

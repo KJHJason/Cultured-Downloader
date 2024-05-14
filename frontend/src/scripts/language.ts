@@ -114,7 +114,7 @@ export const Translate = (text: string, language: string = cachedLang): string =
     if (textMap[textKey] === undefined) {
         return text;
     }
-    return textMap[textKey][cachedLang] ?? text;
+    return textMap[textKey][language] ?? text;
 }
 
 export const GetLocale = (): string => {
