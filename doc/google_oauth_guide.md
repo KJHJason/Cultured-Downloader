@@ -75,7 +75,7 @@ Alternative:
 
 <img src="/res/guide/gdrive_api_setup/oauth2/step-4.1.png" alt="step 4.1" style="width: 70%;">
 
-2. If you receive a prompt indicating that Windows Defender Firewall has blocked some features of the program, you can click either "Allow" or "Cancel" (on Windows 11). It doesn't matter, as it's just the OAuth2 localhost server that I developed, attaching itself to port localhost:8080 to capture your OAuth2 code during the OAuth callback for a better user experience!
+2. If you receive a prompt indicating that Windows Defender Firewall has blocked some features of the program, you can click either "Allow" or "Cancel" (on Windows 11). It shouldn't matter, as it's just the OAuth2 localhost server that I developed, attaching itself to port localhost:8080 to capture your OAuth2 code during the OAuth callback for a better user experience!
 
 3. A new tab should have opened on your default web browser, sign in with the account that you have previously added into the list of Test User on GCP.
    - Note: If you have accidentally closed the OAuth2 tab, you can click on the **Verify** button on Cultured Downloader to open the OAuth2 tab again. 
