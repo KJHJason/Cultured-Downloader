@@ -54,13 +54,13 @@
                 <img src="{fantiaLogo}" class="w-8 h-8 me-2" alt="fantia logo "/>
                 Fantia
             </Button>
-            <Button class="dark:!bg-zinc-800 dark:hover:!bg-zinc-500" on:click={() => {action.set(actions.PixivFanbox)}}>
-                <img src="{pixivFanboxLogo}" class="w-8 h-8 me-2" alt="pixiv fanbox logo "/>
-                Pixiv Fanbox
-            </Button>
             <Button class="dark:!bg-zinc-800 dark:hover:!bg-zinc-500" on:click={() => {action.set(actions.Pixiv)}}>
                 <img src="{pixivLogo}" class="w-8 h-8 me-2" alt="pixiv logo "/>
                 Pixiv
+            </Button>
+            <Button class="dark:!bg-zinc-800 dark:hover:!bg-zinc-500" on:click={() => {action.set(actions.PixivFanbox)}}>
+                <img src="{pixivFanboxLogo}" class="w-8 h-8 me-2" alt="pixiv fanbox logo "/>
+                Pixiv Fanbox
             </Button>
             <Button class="dark:!bg-zinc-800 dark:hover:!bg-zinc-500" on:click={() => {action.set(actions.Kemono)}}>
                 <img src="{kemonoLogo}" class="w-8 h-8 me-2" alt="kemono logo "/>
