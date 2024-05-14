@@ -12,7 +12,7 @@ However, this would mean that if your OAuth2 credentials are leaked, the person 
 
 Hence, it is important to keep your OAuth2 credentials safe and not share them with anyone.
 
-<- Go back to [Google Drive API Setup Guide](/doc/google_api_setup_guide.md)
+<- Go back to [GCP Setup Guide](/doc/gcp_setup_guide.md)
 
 ### Step 1: Configure OAuth2 Consent Screen
 
