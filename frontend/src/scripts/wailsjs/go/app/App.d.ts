@@ -3,6 +3,8 @@
 import {app} from '../models';
 import {gdrive} from '../models';
 
+export function CancelGDriveOauth():Promise<void>;
+
 export function CancelQueue(arg1:number):Promise<void>;
 
 export function ChangeMasterPassword(arg1:string,arg2:string):Promise<void>;
@@ -24,6 +26,8 @@ export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 export function GetFfmpegPath():Promise<string>;
 
 export function GetGDriveAPIKey():Promise<string>;
+
+export function GetGDriveClientAndOauthToken():Promise<app.GetGDriveOauthResponse>;
 
 export function GetGDriveServiceAccount():Promise<string>;
 
@@ -85,6 +89,8 @@ export function SetUserAgent(arg1:string):Promise<void>;
 
 export function SetUsername(arg1:string):Promise<void>;
 
+export function StartGDriveOauth():Promise<void>;
+
 export function StartPixivOAuth():Promise<string>;
 
 export function SubmitFantiaToQueue(arg1:Array<string>,arg2:app.preferences):Promise<void>;
@@ -95,13 +101,15 @@ export function SubmitPixivFanboxToQueue(arg1:Array<string>,arg2:app.preferences
 
 export function SubmitPixivToQueue(arg1:Array<string>,arg2:app.preferences):Promise<void>;
 
-export function UnsetGDriveServiceAccount():Promise<void>;
+export function UnsetGDriveJson():Promise<void>;
 
 export function UploadCookieFile(arg1:string):Promise<void>;
 
 export function UploadProfilePic(arg1:string):Promise<void>;
 
 export function ValidateFantiaUrls(arg1:Array<string>):Promise<boolean>;
+
+export function ValidateGDriveOauth():Promise<void>;
 
 export function ValidateKemonoInputs(arg1:Array<string>):Promise<boolean>;
 

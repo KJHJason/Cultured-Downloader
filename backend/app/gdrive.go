@@ -2,11 +2,10 @@ package app
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
-	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
-	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -17,39 +16,27 @@ func (a *App) GetGdriveClient() *gdrive.GDrive {
 		return a.gdriveClient
 	}
 
-	gdriveKey := a.appData.GetSecuredString(constants.GDRIVE_API_KEY_KEY)
-	if gdriveKey != "" {
-		gdriveClient, err := gdrive.GetNewGDrive(
-			a.ctx,
-			gdriveKey,
-			a.appData.GetString(constants.USER_AGENT_KEY),
-			nil,
-			cdlconst.GDRIVE_MAX_CONCURRENCY,
-		)
-		if err != nil {
-			logger.MainLogger.Errorf("Error creating GDrive client: %v", err)
-			return nil
-		} else {
-			a.gdriveClient = gdriveClient
-			return a.gdriveClient
-		}
-	}
-
-	credJson := a.appData.GetSecuredBytes(constants.GDRIVE_SERVICE_ACC_KEY)
-	if len(credJson) == 0 {
-		logger.MainLogger.Infof("No GDrive API key or service account credentials found.")
+	gdriveApiKey := a.appData.GetSecuredString(constants.GDRIVE_API_KEY_KEY)
+	srvCredJson := a.appData.GetSecuredBytes(constants.GDRIVE_SERVICE_ACC_KEY)
+	clientSecretJson := a.appData.GetSecuredBytes(constants.GDRIVE_CLIENT_SECRET_KEY)
+	userOauthTokenJson := a.appData.GetSecuredBytes(constants.GDRIVE_OAUTH_TOKEN_KEY)
+	if gdriveApiKey == "" && len(srvCredJson) == 0 && len(clientSecretJson) == 0 && len(userOauthTokenJson) == 0 {
+		logger.MainLogger.Error("No GDrive API key, service account credentials, or user oauth credentials found")
 		return nil
 	}
 
 	gdriveClient, err := gdrive.GetNewGDrive(
 		a.ctx,
-		"",
-		a.appData.GetString(constants.USER_AGENT_KEY),
-		credJson,
-		cdlconst.GDRIVE_MAX_CONCURRENCY,
+		&gdrive.CredsInputs{
+			ApiKey:             gdriveApiKey,
+			SrvAccJson:         srvCredJson,
+			ClientSecretJson:   clientSecretJson,
+			UserOauthTokenJson: userOauthTokenJson,
+		},
+		gdrive.USE_DEFAULT_MAX_CONCURRENCY,
 	)
 	if err != nil {
-		logger.MainLogger.Errorf("Error creating GDrive client: %v", err)
+		logger.MainLogger.Errorf("error creating GDrive client: %v", err)
 		return nil
 	}
 
@@ -63,8 +50,10 @@ func (a *App) SetGDriveAPIKey(apiKey string) error {
 		return a.appData.Unset(constants.GDRIVE_API_KEY_KEY)
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, apiKey, userAgent, nil, 1)
+	credsInput := &gdrive.CredsInputs{
+		ApiKey: apiKey,
+	}
+	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, credsInput, 1)
 	if err != nil {
 		return err
 	}
@@ -79,7 +68,7 @@ func (a *App) GetGDriveAPIKey() string {
 
 func (a *App) SelectGDriveServiceAccount() error {
 	file, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Google Drive service account credentials file",
+		Title: "Select Service Account/Client Secret Credentials File",
 		Filters: []runtime.FileFilter{
 			{
 				DisplayName: "JSON Files (*.json)",
@@ -100,8 +89,16 @@ func (a *App) SelectGDriveServiceAccount() error {
 		return err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, "", userAgent, jsonBytes, 1)
+	if gdriveOauthConfig, err = gdrive.ParseConfigFromClientJson(jsonBytes); err == nil {
+		gdriveOauthErr = nil
+		oauthUrl := gdrive.GetOAuthUrl(gdriveOauthConfig)
+		return fmt.Errorf("authentication needed, %s", oauthUrl)
+	} 
+
+	credsInput := &gdrive.CredsInputs{
+		SrvAccJson: jsonBytes,
+	}
+	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, credsInput, 1)
 	if err != nil {
 		return err
 	}
@@ -110,9 +107,24 @@ func (a *App) SelectGDriveServiceAccount() error {
 	return a.appData.SetSecureBytes(constants.GDRIVE_SERVICE_ACC_KEY, jsonBytes)
 }
 
-func (a *App) UnsetGDriveServiceAccount() error {
+func (a *App) UnsetGDriveJson() error {
 	a.gdriveClient = nil
-	return a.appData.Unset(constants.GDRIVE_SERVICE_ACC_KEY)
+
+	err := a.appData.Unset(constants.GDRIVE_CLIENT_SECRET_KEY)
+	if err != nil {
+		return err
+	}
+
+	err = a.appData.Unset(constants.GDRIVE_OAUTH_TOKEN_KEY)
+	if err != nil {
+		return err
+	}
+
+	err = a.appData.Unset(constants.GDRIVE_API_KEY_KEY)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *App) GetGDriveServiceAccount() string {
@@ -121,4 +133,27 @@ func (a *App) GetGDriveServiceAccount() string {
 		return ""
 	}
 	return string(jsonBytes)
+}
+
+type GetGDriveOauthResponse struct {
+	ClientJson string
+	TokenJson  string
+}
+
+func (a *App) GetGDriveClientAndOauthToken() GetGDriveOauthResponse {
+	clientJsonBytes := a.appData.GetSecuredBytes(constants.GDRIVE_CLIENT_SECRET_KEY)
+	if len(clientJsonBytes) == 0 {
+		a.appData.Unset(constants.GDRIVE_OAUTH_TOKEN_KEY)
+		return GetGDriveOauthResponse{}
+	}
+
+	tokenJsonBytes := a.appData.GetSecuredBytes(constants.GDRIVE_OAUTH_TOKEN_KEY)
+	if len(tokenJsonBytes) == 0 {
+		a.appData.Unset(constants.GDRIVE_CLIENT_SECRET_KEY)
+		return GetGDriveOauthResponse{}
+	}
+	return GetGDriveOauthResponse{
+		ClientJson: string(clientJsonBytes),
+		TokenJson:  string(tokenJsonBytes),
+	}
 }

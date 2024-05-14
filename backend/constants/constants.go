@@ -28,8 +28,10 @@ const (
 	PIXIV_FANBOX = "pixiv_fanbox"
 	KEMONO       = "kemono"
 
-	GDRIVE_API_KEY_KEY     = "gdrive-api-key"
-	GDRIVE_SERVICE_ACC_KEY = "gdrive-service-acc"
+	GDRIVE_API_KEY_KEY       = "gdrive-api-key"
+	GDRIVE_SERVICE_ACC_KEY   = "gdrive-service-acc"
+	GDRIVE_CLIENT_SECRET_KEY = "gdrive-client-secret"
+	GDRIVE_OAUTH_TOKEN_KEY   = "gdrive-oauth-token"
 
 	DL_THUMBNAIL_KEY      = "dl-thumbnail"
 	DL_IMAGES_KEY         = "dl-images"

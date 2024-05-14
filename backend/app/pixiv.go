@@ -69,6 +69,7 @@ func (a *App) VerifyPixivOAuthCode(code string) error {
 		return err
 	}
 
+	codeVerifier = ""
 	return a.appData.SetSecureString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY, refreshToken)
 }
 

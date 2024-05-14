@@ -10,7 +10,7 @@
         SetUserAgent,
         GetGDriveServiceAccount, 
         SelectGDriveServiceAccount, 
-        UnsetGDriveServiceAccount,
+        UnsetGDriveJson,
         StartPixivOAuth,
         VerifyPixivOAuthCode,
         SetPixivOAuthRefreshToken,
@@ -18,6 +18,10 @@
         SelectFfmpegPath,
         SetFfmpegPath,
         GetFfmpegPath,
+        ValidateGDriveOauth,
+        StartGDriveOauth,
+        CancelGDriveOauth,
+        GetGDriveClientAndOauthToken,
     } from "../../scripts/wailsjs/go/app/App";
     import { onMount } from "svelte";
     import { invertedSwal, swal } from "../../scripts/constants";
@@ -75,11 +79,82 @@
         savedGdriveJson = val;
     };
 
+    const getGDriveClientAndOauthToken = async (): Promise<void> => {
+        const oauthResponse = await GetGDriveClientAndOauthToken();
+        const client = oauthResponse.ClientJson;
+        const token = oauthResponse.TokenJson;
+        if (client && token) {
+            const gdriveContent = `Client Secret JSON: ${client}\n\nOAuth Token JSON: ${token}`;
+            handleGdriveResponse(gdriveContent);
+        }
+    };
+
+    const StartGDriveOauthProcess = async (oauthUrl: string): Promise<void> => {
+        await StartGDriveOauth();
+        BrowserOpenURL(oauthUrl);
+        const result = await swal.fire({
+            title: "Authentication Required for OAuth",
+            text: `Please visit the recently opened tab in your default browser and authenticate yourself.`,
+            icon: "info",
+            showConfirmButton: true,
+            showCancelButton: true,
+            allowEscapeKey: false,
+            allowOutsideClick: false,
+            showLoaderOnConfirm: true,
+            cancelButtonText: "Cancel",
+            confirmButtonText: "Verify",
+            preConfirm: async (): Promise<void> => {
+                try {
+                    await ValidateGDriveOauth();
+                } catch (e) {
+                    if (!e) {
+                        CancelGDriveOauth();
+                        throw new Error("An error occurred while trying to verify OAuth2 flow for Google Cloud Platform.");
+                    }
+
+                    const error = e.toString();
+                    if (error === "oauth not finished") {
+                        return swal.showValidationMessage("Authentication not finished yet. Please try again.");
+                    }
+                    swal.showValidationMessage(error);
+                }
+                return;
+            },
+        });
+
+        if (result.isConfirmed) {
+            swal.fire({
+                icon: "success",
+                title: "Authentication Success",
+                text: "You have successfully authenticated yourself.",
+            });
+            await getGDriveClientAndOauthToken();
+            return;
+        }
+
+        await CancelGDriveOauth();
+        swal.fire({
+            icon: "info",
+            title: "Authentication Cancelled",
+            text: "You have cancelled the authentication process.",
+        });
+    }
+
     const SelectGDriveServiceAcc = async (): Promise<void> => {
         try {
             await SelectGDriveServiceAccount();
         } catch (e) {
-            if (e === "no file selected") {
+            if (!e) {
+                throw new Error("An error occurred while trying to upload the JSON file for GDrive API.");
+            }
+
+            const error = e.toString();
+            if (error === "no file selected") {
+                return;
+            }
+            if (error.startsWith("authentication needed, ")) {
+                const oauthUrl = error.split(", ")[1];
+                StartGDriveOauthProcess(oauthUrl);
                 return;
             }
             throw e;
@@ -91,7 +166,7 @@
         }
         swal.fire({
             title: "Success",
-            text: "Google Drive API JSON file uploaded successfully",
+            text: "Google Cloud Platform credentials JSON file uploaded successfully",
             icon: "success",
         });
     };
@@ -155,6 +230,8 @@
         const savedGdriveJsonBytes = await GetGDriveServiceAccount();
         if (savedGdriveJsonBytes) {
             handleGdriveResponse(savedGdriveJsonBytes);
+        } else {
+            getGDriveClientAndOauthToken();
         }
 
         const ffmpegLocationInp = document.getElementById("ffmpegLocation") as HTMLInputElement;
@@ -163,7 +240,7 @@
 
         gdriveJsonText.addEventListener("click", async () => {
             const result = await swal.fire({
-                title: "Google Drive API JSON",
+                title: "Google Cloud Platform Credentials JSON",
                 html: `<pre class="overflow-x-auto text-left"><code class="block text-sm font-mono">${savedGdriveJson}</code></pre>`,
                 icon: "info",
                 showDenyButton: true,
@@ -175,18 +252,18 @@
 
             const deleteResult = await invertedSwal.fire({
                 title: "Delete GDrive API JSON file?",
-                text: "Are you sure you want to delete the Google Drive API JSON file?",
+                text: "Are you sure you want to delete the Google Cloud Platform credentials JSON file?",
                 icon: "info",
                 showCancelButton: true,
                 confirmButtonText: "Yes",
             });
             if (deleteResult.isConfirmed) {
-                await UnsetGDriveServiceAccount()
+                await UnsetGDriveJson()
                 savedGdriveJson = "";
                 gdriveJsonText.classList.add("hidden");
                 swal.fire({
                     title: "Success",
-                    text: "Google Drive API JSON file deleted successfully",
+                    text: "Google Cloud Platform credentials JSON file deleted successfully",
                     icon: "success",
                 });
             }
@@ -246,20 +323,20 @@
         </div>
         <div>
             <div class="flex">
-                <Label for="gdriveApiKey">{Translate("GDrive Credentials:")}</Label>
-                <button type="button" class="btn-link hidden" id="gdrive-json-text">
-                    <Helper class="ml-1">{Translate("View Uploaded JSON")}</Helper>
+                <Label for="gdriveApiKey">{Translate("GCP Credentials:")}</Label>
+                <button type="button" class="hidden btn-text-link text-xs font-normal ml-1" id="gdrive-json-text">
+                    {Translate("View Uploaded JSON")}
                 </button>
             </div>
             <ButtonGroup class="w-full">
                 <PasswordToggle elClass="w-full" hideByDefault={true}>
-                    <Input class="mt-2" name="gdriveApiKey" id="gdriveApiKey" placeholder="AIzaSyDanMyMjsRgQEeCynXiXZK_LdaZA40N0YM" />
+                    <Input class="mt-2" name="gdriveApiKey" id="gdriveApiKey" placeholder="API Key: AIzaSyDanMyMjsRgQEeCynXiXZK_LdaZA40N0YM" />
                 </PasswordToggle>
                 <ButtonGroupBtn elId="browseApiJson" clickFn={SelectGDriveServiceAcc}>
                     <UploadSolid />
                 </ButtonGroupBtn>
             </ButtonGroup>
-            <Tooltip triggeredBy="#browseApiJson">{Translate("Upload Google Drive API JSON file")}</Tooltip>
+            <Tooltip triggeredBy="#browseApiJson">{Translate("Upload Google Cloud Platform JSON file")}</Tooltip>
         </div>
         <div>
             <Label for="pixivOauth">{Translate("Pixiv Mobile OAuth Refresh Token:")}</Label>
