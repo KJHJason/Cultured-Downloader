@@ -8,7 +8,6 @@
     let programVer: string;
     let programLogicVer: string;
 
-    // {"en": "Up-to-date, last checked at 12:00:00", "jp": "最新の情報はありません"}
     export let lastSavedUpdateStr: Record<string, string>;
     const language = GetCachedLanguage();
 
