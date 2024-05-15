@@ -10,15 +10,15 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report! 
-      
+
   - type: dropdown
     id: program_name
     attributes:
       label: Which program are you seeing this problem on?
       multiple: true
       options:
-        - Cultured Downloader (exe)
-        - Cultured Downloader (py)
+        - Cultured Downloader (Go)
+        - Cultured Downloader (Python)
     validations:
       required: true
 
@@ -26,10 +26,39 @@ body:
     id: program_version
     attributes:
       label: Program Version
-      description: What version of the program are you using? (Can be found when running the program or from the exe file name)
+      description: What version of the program are you using? (Can be found when running the program or in the program info tab)
     validations:
       required: true
-      
+
+  - type: input
+    id: operating_system
+    attributes:
+      label: Operating System
+      description: What operating system are you using? (e.g. Windows 10, Ubuntu 20.04, etc.)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: error_code
+    attributes:
+      label: If you're using the Go version, what error code did you receive? (If any)
+      multiple: false
+      options:
+        - "N/A"
+        - "1000 (Developer Error)"
+        - "1001 (Unexpected Error)"
+        - "1002 (OS Error)"
+        - "1003 (Input Error)"
+        - "1004 (CMD Error)"
+        - "1005 (Connection Error)"
+        - "1006 (Response Error)"
+        - "1007 (Download Error)"
+        - "1008 (JSON Error)"
+        - "1009 (HTML Error)"
+        - "1010 (Captcha Error)"
+    validations:
+      required: true
+
   - type: textarea
     id: steps_to_reproduce
     attributes:

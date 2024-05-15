@@ -11,15 +11,15 @@ body:
       value: |
         バグレポートにご協力いただき、ありがとうございました！
         注意：　日本語を勉強中なので、簡単な日本語で書いてください。そうでないと、私が問題を理解し解決することができません。
-      
+
   - type: dropdown
     id: program_name
     attributes:
       label: どのプログラムでこの問題が発生したのでしょうか？
       multiple: true
       options:
-        - Cultured Downloader (exe)
-        - Cultured Downloader (py)
+        - Cultured Downloader (Go)
+        - Cultured Downloader (Python)
     validations:
       required: true
 
@@ -27,10 +27,39 @@ body:
     id: program_version
     attributes:
       label: プログラムバージョン
-      description: ご使用のプログラムのバージョンを教えてください (プログラムを実行したとき、またはexeファイル名から確認できます）。
+      description: ご使用のプログラムのバージョンを教えてください (プログラムを実行したとき、またはプログラム情報タブに記載されています)。
     validations:
       required: true
-      
+
+  - type: input
+    id: operating_system
+    attributes:
+      label: 使用しているオペレーティングシステム
+      description: どのオペレーティングシステムを使用していますか？（例：Windows 10、Ubuntu 20.04など）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: error_code
+    attributes:
+      label: Goバージョンを使用している場合、受け取ったエラーコードは何ですか？（あれば）
+      multiple: false
+      options:
+        - "N/A"
+        - "1000 (Developer Error)"
+        - "1001 (Unexpected Error)"
+        - "1002 (OS Error)"
+        - "1003 (Input Error)"
+        - "1004 (CMD Error)"
+        - "1005 (Connection Error)"
+        - "1006 (Response Error)"
+        - "1007 (Download Error)"
+        - "1008 (JSON Error)"
+        - "1009 (HTML Error)"
+        - "1010 (Captcha Error)"
+    validations:
+      required: true
+
   - type: textarea
     id: steps_to_reproduce
     attributes:

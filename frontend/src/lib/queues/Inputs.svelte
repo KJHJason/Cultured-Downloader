@@ -11,7 +11,7 @@
 <button class="btn btn-info" on:click={() => {inputModalsId[dlQ.Id] = true}}>
     <ClipboardListSolid />
 </button>
-<Modal bind:open={inputModalsId[dlQ.Id]} title="Your Inputs" id="view-inputs-{dlQ.Id}" size="md" autoclose>
+<Modal bind:open={inputModalsId[dlQ.Id]} title="Your Inputs" id="view-inputs-{dlQ.Id}" size="lg" autoclose>
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             <TableHeadCell>{Translate("Input")}</TableHeadCell>

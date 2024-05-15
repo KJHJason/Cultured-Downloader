@@ -105,7 +105,7 @@
 
 {#if $elements.length === 0 && showInfoIfNoEntry}
     <p class="text-center text-gray-500 dark:text-gray-400">{Translate("No entries to show.")}</p>
-{:else if $elements.length > 1}
+{:else if $elements.length >= 1}
     <nav aria-label="Paginated Element Page Number" class="flex flex-col items-center">
         <span class="text-sm text-gray-700 dark:text-gray-400">
             {Translate("Showing")}
