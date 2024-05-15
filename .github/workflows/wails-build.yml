@@ -1,0 +1,122 @@
+name: Wails build
+
+on:
+  push:
+    tags:
+      - '*' # Match any new tag
+
+env:
+  BUILD_DIR: "executables"
+  MAC_PROGRAM_NAME: "Cultured Downloader" # https://github.com/wailsapp/wails/issues/2290, -o flag doesn't work for macOS, uses the wails.json name instead
+  WINDOWS_PROGRAM_NAME: "Cultured Downloader"
+  LINUX_PROGRAM_NAME: "cultured-downloader"
+  # Necessary for most environments as build failure can occur due to OOM issues
+  NODE_OPTIONS: "--max-old-space-size=4096"
+
+jobs:
+  build:
+    permissions: write-all
+    strategy:
+      # Failure in one platform build won't impact the others
+      fail-fast: false
+      matrix:
+        build:
+          - name: "App"
+            platform:  "linux/amd64"
+            os: "ubuntu-latest"
+          - name: "App"
+            platform:  "windows/amd64"
+            os: "windows-latest"
+          - name: "App"
+            platform:  "darwin/universal"
+            os: "macos-latest"
+
+    runs-on: ${{ matrix.build.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          check-latest: true
+          go-version: "1.22"
+      - run: go version
+        shell: bash
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+
+      - name: node.js version
+        run: node --version
+        shell: bash
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        shell: bash
+      - name: Install Linux Wails deps
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
+        shell: bash
+      - name: Install macOS Wails deps
+        if: runner.os == 'macOS'
+        run: brew install mitchellh/gon/gon
+        shell: bash
+
+      - name: Install UPX
+        if: runner.os != 'macOS'
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
+
+      - name: Build Linux App
+        if: runner.os == 'Linux'
+        working-directory: "."
+        run: |
+          echo "building on ${{ matrix.os }}"
+          wails build --platform ${{ matrix.build.platform }} -o "${{ env.LINUX_PROGRAM_NAME }}" -upx
+          echo "generating hash for ${{ env.LINUX_PROGRAM_NAME }}"
+          sha256sum "./build/bin/${{ env.LINUX_PROGRAM_NAME }}" | awk '{print $1}' > "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt"
+          echo "hash generated:" && cat "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt"
+        shell: bash
+      - name: Build Windows App
+        if: runner.os == 'Windows'
+        working-directory: "."
+        run: |
+          echo "building on ${{ matrix.os }}"
+          wails build --platform ${{ matrix.build.platform }} -o "${{ env.WINDOWS_PROGRAM_NAME }}.exe" -upx
+          echo "generating hash for ${{ env.WINDOWS_PROGRAM_NAME }}"
+          sha256sum "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe" | awk '{print $1}' > "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt"
+          echo "hash generated:" && cat "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt"
+        shell: bash
+      - name: Build macOS App
+        working-directory: "."
+        if: runner.os == 'macOS'
+        run: |
+          echo "building on ${{ matrix.os }}"
+          wails build --platform ${{ matrix.build.platform }}
+          echo "compressing macOS app"
+          cd "./build/bin/"
+          zip -r "./${{ env.MAC_PROGRAM_NAME }}.app.zip" "./${{ env.MAC_PROGRAM_NAME }}.app"
+          rm -rf "./${{ env.MAC_PROGRAM_NAME }}.app"
+          echo "generating hash for ${{ env.MAC_PROGRAM_NAME }}"
+          shasum -a 256 "./${{ env.MAC_PROGRAM_NAME }}.app.zip" | cut -d ' ' -f 1 > "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt"
+          echo "hash generated:" && cat "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt"
+        shell: bash
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Wails Build ${{runner.os}}
+          path: |
+            */bin/
+            *\bin\*
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            */bin/*
