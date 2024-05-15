@@ -12,12 +12,37 @@ import (
 )
 
 var (
-	gdriveOauthMu         sync.Mutex
+	gdriveOauthMu         sync.RWMutex
 	finishedGDriveOauth   bool
 	gdriveOauthCancelFunc context.CancelFunc
 	gdriveOauthErr        error
 	gdriveOauthConfig     *oauth2.Config
+	gdriveOauthJsonBytes  []byte
 )
+
+func updateGdriveOauthConfig(config *oauth2.Config) {
+	gdriveOauthMu.Lock()
+	defer gdriveOauthMu.Unlock()
+	gdriveOauthConfig = config
+}
+
+func getGdriveOauthConfig() *oauth2.Config {
+	gdriveOauthMu.RLock()
+	defer gdriveOauthMu.RUnlock()
+	return gdriveOauthConfig
+}
+
+func updateGdriveOauthJsonBytes(jsonBytes []byte) {
+	gdriveOauthMu.Lock()
+	defer gdriveOauthMu.Unlock()
+	gdriveOauthJsonBytes = jsonBytes
+}
+
+func getGdriveOauthJsonBytes() []byte {
+	gdriveOauthMu.RLock()
+	defer gdriveOauthMu.RUnlock()
+	return gdriveOauthJsonBytes
+}
 
 func updateGdriveOauthErr(err error) {
 	gdriveOauthMu.Lock()
@@ -36,7 +61,7 @@ func (a *App) gdriveOauthFlow(ctx context.Context) {
 
 	var err error
 	var gdriveOauthToken *oauth2.Token
-	gdriveOauthToken, err = gdrive.StartOAuthListener(ctx, gdriveOauthConfig)
+	gdriveOauthToken, err = gdrive.StartOAuthListener(ctx, getGdriveOauthConfig())
 	if err != nil {
 		updateGdriveOauthErr(err)
 		return
@@ -48,19 +73,13 @@ func (a *App) gdriveOauthFlow(ctx context.Context) {
 		return
 	}
 
-	clientSecretJson, err := json.MarshalIndent(gdriveOauthConfig, "", "    ")
-	if err != nil {
-		updateGdriveOauthErr(err)
-		return
-	}
-
 	err = a.appData.SetSecureBytes(constants.GDRIVE_OAUTH_TOKEN_KEY, oauthTokenJson)
 	if err != nil {
 		updateGdriveOauthErr(err)
 		return
 	}
 
-	err = a.appData.SetSecureBytes(constants.GDRIVE_CLIENT_SECRET_KEY, clientSecretJson)
+	err = a.appData.SetSecureBytes(constants.GDRIVE_CLIENT_SECRET_KEY, getGdriveOauthJsonBytes())
 	if err != nil {
 		updateGdriveOauthErr(err)
 		return
@@ -74,7 +93,7 @@ func (a *App) gdriveOauthFlow(ctx context.Context) {
 }
 
 func (a *App) StartGDriveOauth() error {
-	if gdriveOauthConfig == nil {
+	if getGdriveOauthConfig() == nil {
 		return errors.New("no oauth config found")
 	}
 

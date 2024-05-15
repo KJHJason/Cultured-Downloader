@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -99,9 +101,11 @@ func (a *App) SelectGDriveServiceAccount() error {
 		return err
 	}
 
-	if gdriveOauthConfig, err = gdrive.ParseConfigFromClientJson(jsonBytes); err == nil {
-		gdriveOauthErr = nil
-		oauthUrl := gdrive.GetOAuthUrl(gdriveOauthConfig)
+	if oauthConfig, err := gdrive.ParseConfigFromClientJson(jsonBytes); err == nil {
+		updateGdriveOauthErr(nil)
+		updateGdriveOauthConfig(oauthConfig)
+		updateGdriveOauthJsonBytes(jsonBytes)
+		oauthUrl := gdrive.GetOAuthUrl(oauthConfig)
 		return fmt.Errorf("authentication needed, %s", oauthUrl)
 	}
 
@@ -156,13 +160,22 @@ func (a *App) GetGDriveClientAndOauthToken() GetGDriveOauthResponse {
 		return GetGDriveOauthResponse{}
 	}
 
+	var indentedClientJson bytes.Buffer
+	err := json.Indent(&indentedClientJson, clientJsonBytes, "", "    ")
+	if err != nil {
+		a.appData.Unset(constants.GDRIVE_OAUTH_TOKEN_KEY)
+		return GetGDriveOauthResponse{}
+	}
+
+	// token should be alrd indented
 	tokenJsonBytes := a.appData.GetSecuredBytes(constants.GDRIVE_OAUTH_TOKEN_KEY)
 	if len(tokenJsonBytes) == 0 {
 		a.appData.Unset(constants.GDRIVE_CLIENT_SECRET_KEY)
 		return GetGDriveOauthResponse{}
 	}
+
 	return GetGDriveOauthResponse{
-		ClientJson: string(clientJsonBytes),
+		ClientJson: indentedClientJson.String(),
 		TokenJson:  string(tokenJsonBytes),
 	}
 }

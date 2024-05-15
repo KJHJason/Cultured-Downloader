@@ -42,7 +42,8 @@ body:
   - type: dropdown
     id: error_code
     attributes:
-      label: Goバージョンを使用している場合、受け取ったエラーコードは何ですか？（あれば）
+      label: 受け取ったエラーコードは何ですか？（あれば）
+      description: Cultured Downloader (Go)を使用していない場合は、「N/A」を選択してください。
       multiple: false
       options:
         - "N/A"

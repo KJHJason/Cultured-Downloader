@@ -41,7 +41,8 @@ body:
   - type: dropdown
     id: error_code
     attributes:
-      label: If you're using the Go version, what error code did you receive? (If any)
+      label: What error code did you receive? (If any)
+      description: If you are not using the Cultured Downloader (Go), please select "N/A".
       multiple: false
       options:
         - "N/A"

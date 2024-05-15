@@ -25,12 +25,20 @@
     };
     window.onerror = (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error): void => {
         const errorMsg = event.toString();
+        if (errorMsg.includes("ResizeObserver loop completed with undelivered notifications.")) {
+            return;
+        }
+
         console.error(errorMsg, source, lineno, colno, error);
         LogError(`${errorMsg} at ${source}:${lineno}:${colno}`);
         triggerSwalError(errorMsg);
     };
     window.addEventListener("error", (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error): void => {
         const errorMsg = event.toString();
+        if (errorMsg === "[object ErrorEvent]") {
+            return;
+        }
+
         console.error(errorMsg, source, lineno, colno, error);
         LogError(`${errorMsg} at ${source}:${lineno}:${colno}`);
         triggerSwalError(errorMsg);
