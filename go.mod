@@ -3,7 +3,7 @@ module github.com/KJHJason/Cultured-Downloader
 go 1.22
 
 require (
-	github.com/KJHJason/Cultured-Downloader-Logic v1.1.0
+	github.com/KJHJason/Cultured-Downloader-Logic v1.1.1
 	github.com/gen2brain/beeep v0.0.0-20240112042604-c7bb2cd88fea
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.24.4
@@ -102,6 +102,6 @@ require (
 	google.golang.org/api v0.180.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240429193739-8cf5692501f6 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240513163218-0867130af1f8 // indirect
-	google.golang.org/grpc v1.63.2 // indirect
+	google.golang.org/grpc v1.64.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 )
