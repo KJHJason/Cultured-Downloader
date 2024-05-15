@@ -46,6 +46,10 @@ export function GetFfmpegPath() {
   return window['go']['app']['App']['GetFfmpegPath']();
 }
 
+export function GetFrontendDownloadDetails(arg1) {
+  return window['go']['app']['App']['GetFrontendDownloadDetails'](arg1);
+}
+
 export function GetGDriveAPIKey() {
   return window['go']['app']['App']['GetGDriveAPIKey']();
 }

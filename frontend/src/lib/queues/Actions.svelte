@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Modal, Tooltip, Table, TableBody, TableHead, TableHeadCell, TableBodyRow, TableBodyCell } from "flowbite-svelte";
     import { BrowserOpenURL } from "../../scripts/wailsjs/runtime/runtime";
+    import {  GetFrontendDownloadDetails } from "../../scripts/wailsjs/go/app/App";
     import { ClipboardListSolid, FolderSolid, NewspaperSolid, StopSolid, TrashBinSolid } from "flowbite-svelte-icons";
     import { Translate } from "../../scripts/language";
     import DownloadDetails from "./DownloadDetails.svelte";
@@ -9,17 +10,33 @@
     import Pagination from "../common/Pagination.svelte";
     import { writable, type Writable } from "svelte/store";
     import { type dlModals } from "../../scripts/download";
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     export let dlQ: any;
     export let modalsId: Record<number, dlModals>;
     export let errModalsId: Record<number, boolean>;
 
+    let getDlDetailsInterval: number;
+    const elements: Writable<any> = writable([]);
     let pageNum = writable(modalsId[dlQ.Id].pageNum);
-    const unsubscribe = pageNum.subscribe((val) => modalsId[dlQ.Id].pageNum = val);
-    onDestroy(() => unsubscribe());
+    const pageNumEditUnsubscribe = pageNum.subscribe((val) => modalsId[dlQ.Id].pageNum = val);
+    onMount(async () => {
+        getDlDetailsInterval = setInterval(async () => {
+            if (!modalsId[dlQ.Id].open) {
+                return;
+            }
 
-    const rowsPerPage = 5;
+            const dlDetails = await GetFrontendDownloadDetails(dlQ.Id);
+            elements.set(dlDetails);
+        }, 1000);
+    });
+
+    onDestroy(() => {
+        clearInterval(getDlDetailsInterval);
+        pageNumEditUnsubscribe()
+    });
+
+    const rowsPerPage = 2;
     const paginatedDownloads: Writable<any[]> = writable([]);
 </script>
 
@@ -50,7 +67,7 @@
             {/if}
         </TableBody>
     </Table>
-    <Pagination {rowsPerPage} {pageNum} elements={dlQ.DlProgressBars} paginatedEl={paginatedDownloads} />
+    <Pagination {rowsPerPage} {pageNum} {elements} paginatedEl={paginatedDownloads} />
 </Modal>
 
 {#if dlQ.Finished}

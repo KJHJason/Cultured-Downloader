@@ -25,6 +25,8 @@ export function GetDownloadQueues():Promise<Array<app.FrontendDownloadQueue>>;
 
 export function GetFfmpegPath():Promise<string>;
 
+export function GetFrontendDownloadDetails(arg1:number):Promise<Array<app.FrontendDownloadDetails>>;
+
 export function GetGDriveAPIKey():Promise<string>;
 
 export function GetGDriveClientAndOauthToken():Promise<app.GetGDriveOauthResponse>;

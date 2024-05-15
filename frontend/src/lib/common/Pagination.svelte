@@ -1,16 +1,17 @@
 <script lang="ts">
     import { type Writable, writable } from "svelte/store";
     import { Translate } from "../../scripts/language";
+    import { onDestroy } from "svelte";
 
     export let pageNum: Writable<number> = writable(1);
     export let rowsPerPage: number;
-    export let elements: any[];
+    export let elements: Writable<any[]>;
     export let paginatedEl: Writable<any[]>;
     export let showInfoIfNoEntry: boolean = true;
 
-    paginatedEl.set(elements.slice(0, rowsPerPage));
+    paginatedEl.set($elements.slice(0, rowsPerPage));
 
-    const maxPages = Math.ceil(elements.length / rowsPerPage);
+    let maxPages = Math.ceil($elements.length / rowsPerPage);
 
     const onNext = () => setToPageNum($pageNum + 1);
     const onPrev = () => setToPageNum($pageNum - 1);
@@ -21,7 +22,7 @@
         $pageNum = num;
         const startIndex = ($pageNum - 1) * rowsPerPage;
         const endIndex = $pageNum * rowsPerPage;
-        paginatedEl.set(elements.slice(startIndex, endIndex));
+        paginatedEl.set($elements.slice(startIndex, endIndex));
     };
 
     const getHoverBtnClass = (disabled: boolean): string => {
@@ -36,16 +37,17 @@
     $: nextBtnDisabled = $pageNum === maxPages;
 
     $: minElIdx = ($pageNum - 1) * rowsPerPage + 1;
-    $: maxElIdx = Math.min($pageNum * rowsPerPage, elements.length);
+    $: maxElIdx = Math.min($pageNum * rowsPerPage, $elements.length);
 
     interface btnsToAdd {
         i:        number;
         isBuffer: boolean;
     }
+
     const getBtnsToAdd = (pageNum: number): btnsToAdd[] => {
         const btnsToAddSlice: btnsToAdd[] = [];
         if (maxPages <= 7) {
-            for (let i = 0; i < maxPages; i++) {
+            for (let i = 1; i <= maxPages; i++) {
                 btnsToAddSlice.push({ i, isBuffer: false });
             }
             return btnsToAddSlice;
@@ -91,11 +93,19 @@
         }
         return btnsToAddSlice;
     };
+
+    let btnsToAdd: btnsToAdd[] = [];
+    const unsubscribeElChange = elements.subscribe((newElements) => {
+        maxPages = Math.ceil(newElements.length / rowsPerPage);
+        btnsToAdd = getBtnsToAdd($pageNum);
+        setToPageNum($pageNum);
+    });
+    onDestroy(() => unsubscribeElChange());
 </script>
 
-{#if elements.length === 0 && showInfoIfNoEntry}
+{#if $elements.length === 0 && showInfoIfNoEntry}
     <p class="text-center text-gray-500 dark:text-gray-400">{Translate("No entries to show.")}</p>
-{:else if elements.length > 1}
+{:else if $elements.length > 1}
     <nav aria-label="Paginated Element Page Number" class="flex flex-col items-center">
         <span class="text-sm text-gray-700 dark:text-gray-400">
             {Translate("Showing")}
@@ -103,7 +113,7 @@
             {Translate("to")}
             <span class="font-semibold text-gray-900 dark:text-white">{maxElIdx}</span>
             {Translate("of")}
-            <span class="font-semibold text-gray-900 dark:text-white">{elements.length}</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{$elements.length}</span>
             {Translate("Entries")}
         </span>
         <ul class="inline-flex mt-2 xs:mt-0 -space-x-px h-10 text-base">
@@ -115,7 +125,7 @@
                     </svg>
                 </button>
             </li>
-            {#each getBtnsToAdd($pageNum) as { i, isBuffer }}
+            {#each btnsToAdd as { i, isBuffer }}
                 {#if isBuffer}
                     <button type="button" class="flex items-center justify-center px-4 h-10 leading-tight bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 {getBtnTextClass(true)}" disabled={true}>
                         ...

@@ -20,7 +20,6 @@ type FrontendDownloadQueue struct {
 	Inputs            []Input
 	ProgressBar       *ProgressBar
 	NestedProgressBar []*NestedProgressBar
-	DlProgressBars    []*FrontendDownloadDetails
 	Finished          bool
 }
 
@@ -109,6 +108,15 @@ func checkNestedProgBarForErrors(dlQueue *DownloadQueue) bool {
 	return hasError
 }
 
+func (a *App) GetFrontendDownloadDetails(id int) []*FrontendDownloadDetails {
+	_, dlQueue := a.getQueueEl(id)
+	if dlQueue == nil {
+		return make([]*FrontendDownloadDetails, 0)
+	}
+
+	return formatFrontendDlDetails(*dlQueue.dlProgressBars)
+}
+
 func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 	var queues []FrontendDownloadQueue
 	for e := a.downloadQueues.Back(); e != nil; e = e.Prev() {
@@ -136,7 +144,6 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 			Inputs:            val.inputs,
 			ProgressBar:       val.mainProgressBar,
 			NestedProgressBar: val.mainProgressBar.nestedProgBars,
-			DlProgressBars:    formatFrontendDlDetails(*val.dlProgressBars),
 			Finished:          val.finished,
 		})
 	}
