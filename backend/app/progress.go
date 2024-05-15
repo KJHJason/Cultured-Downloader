@@ -2,10 +2,10 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
-	"fmt"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 )

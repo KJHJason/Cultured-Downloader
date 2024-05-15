@@ -5,8 +5,8 @@ import (
 )
 
 func TestEncryption(t *testing.T) {
-	key         := GenerateNonce(32)
-	dummyData   := []byte("dummy data")
+	key := GenerateNonce(32)
+	dummyData := []byte("dummy data")
 
 	encryptedData, err := Encrypt(dummyData, key)
 	if err != nil {

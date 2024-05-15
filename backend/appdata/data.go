@@ -26,7 +26,7 @@ func checkIfValueIsSame(oldValue, newValue interface{}) bool {
 			}
 		}
 		return true
-	} 
+	}
 	return oldValue == newValue
 }
 
@@ -50,7 +50,7 @@ func convertDataMapInterface(values map[string]interface{}) {
 				delete(values, k) // Remove invalid data
 			}
 			continue
-		} 
+		}
 
 		if len(items) == 0 {
 			continue

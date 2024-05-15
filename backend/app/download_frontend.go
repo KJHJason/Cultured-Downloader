@@ -83,7 +83,7 @@ func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*
 	return dlDetails
 }
 
-func checkNestedProgBarForErrors(dlQueue *DownloadQueue) (bool) {
+func checkNestedProgBarForErrors(dlQueue *DownloadQueue) bool {
 	hasError := false
 	nestedProgBars := dlQueue.mainProgressBar.nestedProgBars
 
@@ -94,7 +94,7 @@ func checkNestedProgBarForErrors(dlQueue *DownloadQueue) (bool) {
 			if dlQueue.website != constants.FANTIA {
 				// for those that doesn't have a captcha solver
 				continue
-			} 
+			}
 
 			if nestedProgBar.ErrMsg != cdlConst.ERR_RECAPTCHA_STR {
 				continue

@@ -16,6 +16,9 @@ Cultured Downloader
     </a>
     <img src="https://img.shields.io/github/downloads/KJHJason/Cultured-Downloader/latest/total" alt="latest release downloads">
     <img src="https://img.shields.io/codeclimate/maintainability/KJHJason/Cultured-Downloader" alt="Code Climate maintainability">
+    <a href="https://goreportcard.com/report/github.com/KJHJason/Cultured-Downloader">
+        <img src="https://goreportcard.com/badge/github.com/KJHJason/Cultured-Downloader" alt="Go Report Card">
+    </a>
 </div>
 
 <div align="center">

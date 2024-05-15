@@ -110,7 +110,6 @@ func (a *App) SetPixivPreferences(p *preferences) error {
 	return a.appData.SetInt(constants.PIXIV_UGOIRA_QUALITY_KEY, min(int(p.UgoiraQuality), maxQuality))
 }
 
-
 func getReadableArtworkType(artworkType int) string {
 	switch artworkType {
 	case PixivArtworkTypeIllustAndUgoira:

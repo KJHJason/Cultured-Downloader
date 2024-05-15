@@ -137,7 +137,7 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs *preferences) error {
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,
 		dlProgressBars: kemonoDlOptions.DownloadProgressBars,
-		taskHandler:    func() []error {
+		taskHandler: func() []error {
 			defer cancel()
 			errSlice := cdlogic.KemonoDownloadProcess(kemonoDl, kemonoDlOptions)
 			mainProgBar.MakeLatestSnapshotMain()

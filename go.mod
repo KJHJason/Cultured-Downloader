@@ -3,7 +3,7 @@ module github.com/KJHJason/Cultured-Downloader
 go 1.22
 
 require (
-	github.com/KJHJason/Cultured-Downloader-Logic v1.0.2
+	github.com/KJHJason/Cultured-Downloader-Logic v1.1.0
 	github.com/gen2brain/beeep v0.0.0-20240112042604-c7bb2cd88fea
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.24.4
@@ -50,7 +50,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect

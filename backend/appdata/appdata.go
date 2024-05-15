@@ -103,7 +103,7 @@ func (a *AppData) ResetMasterPassword() error {
 	a.mu.Unlock()
 
 	err := a.Unset(
-		constants.MASTER_PASS_SALT_KEY, 
+		constants.MASTER_PASS_SALT_KEY,
 		constants.HASH_OF_MASTER_PASS_HASH_KEY,
 	)
 	if err != nil {

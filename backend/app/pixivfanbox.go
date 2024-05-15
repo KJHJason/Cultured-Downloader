@@ -141,7 +141,7 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *preferences) erro
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,
 		dlProgressBars: pixivFanboxDlOptions.DownloadProgressBars,
-		taskHandler:    func() []error {
+		taskHandler: func() []error {
 			defer cancel()
 			errSlice := cdlogic.PixivFanboxDownloadProcess(pixivFanboxDl, pixivFanboxDlOptions)
 			mainProgBar.MakeLatestSnapshotMain()

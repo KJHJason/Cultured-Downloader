@@ -3,8 +3,8 @@ package app
 import (
 	"fmt"
 
-	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/errors"
+	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
 func (a *App) GetDarkMode() bool {

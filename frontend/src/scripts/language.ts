@@ -104,6 +104,31 @@ const textMap: Record<string, Record<string, string>> = {
         [EN]: "Up-to-date, last checked at ",
         [JP]: "最新、最後に確認した日時",
     },
+    // pagination
+    "previous": {
+        [EN]: "Previous",
+        [JP]: "前",
+    },
+    "next": {
+        [EN]: "Next",
+        [JP]: "次",
+    },
+    "showing": {
+        [EN]: "Showing",
+        [JP]: "エントリーの表示:",
+    },
+    "to": {
+        [EN]: "to",
+        [JP]: "から",
+    },
+    "of": {
+        [EN]: "of",
+        [JP]: "までの",
+    },
+    "entries": {
+        [EN]: "Entries",
+        [JP]: "エントリー",
+    },
 }
 export const Translate = (text: string, language: string = cachedLang): string => {
     if (language === "") {

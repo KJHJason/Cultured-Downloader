@@ -8,33 +8,35 @@
     import Actions from "./queues/Actions.svelte";
     import { actions } from "../scripts/constants";
     import type { Writable } from "svelte/store";
+    import { type dlModals } from "../scripts/download";
 
     export let action: Writable<string>;
 
     let inputModalsId: Record<number, boolean> = {};
     let progHistoryModalsId: Record<number, boolean> = {}; 
-    let modalsId: Record<number, boolean> = {};
+    let modalsId: Record<number, dlModals> = {};
     let errModalsId: Record<number, boolean> = {};
     let downloadQueues: any[] = [];
 
-    const modalLogic = (oldRecord: Record<number, boolean>, queues: Record<any, any>): void => {
-        let activeId: number = -1;
-        let newModalsId: Record<number, boolean> = {};
-        for (const key in oldRecord) {
-            if (oldRecord[key]) {
-                newModalsId[key] = true;
-                activeId = parseInt(key);
-                break;
-            }
-        }
+    type DefaultValueFunction<T> = () => T;
+    type RecordType = Record<number, dlModals> | Record<number, boolean>;
+    const modalLogic = <T extends RecordType>(oldRecord: T, queues: Record<any, any>, defaultValue: DefaultValueFunction<dlModals> | DefaultValueFunction<boolean>): void => {
+        let seen: Set<number> = new Set();
         for (const key in queues) {
             const id = queues[key].Id;
-            if (activeId !== -1 && id === activeId) {
-                continue;
+            seen.add(id);
+
+            if (oldRecord[id] === undefined) {
+                oldRecord[id] = defaultValue();
             }
-            newModalsId[id] = false;
         }
-        oldRecord = newModalsId;
+
+        for (const key in oldRecord) {
+            const id = parseInt(key);
+            if (!seen.has(id)) {
+                delete oldRecord[id];
+            }
+        }
     };
 
     const makeDateTimeReadable = (dateTime: string, addSeconds: boolean = false): string => {
@@ -64,10 +66,10 @@
                 return;
             }
 
-            modalLogic(modalsId, retrievedQueues);
-            modalLogic(progHistoryModalsId, retrievedQueues);
-            modalLogic(inputModalsId, retrievedQueues);
-            modalLogic(errModalsId, retrievedQueues);
+            modalLogic(modalsId, retrievedQueues, () => ({ open: false, pageNum: 1 }));
+            modalLogic(progHistoryModalsId, retrievedQueues, () => false);
+            modalLogic(inputModalsId, retrievedQueues, () => false);
+            modalLogic(errModalsId, retrievedQueues, () => false);
 
             downloadQueues = [...retrievedQueues];
         }, 500);

@@ -6,18 +6,29 @@
     import DownloadDetails from "./DownloadDetails.svelte";
     import Errors from "./Errors.svelte";
     import { CancelQueue, DeleteQueue } from "../../scripts/wailsjs/go/app/App";
+    import Pagination from "../common/Pagination.svelte";
+    import { writable, type Writable } from "svelte/store";
+    import { type dlModals } from "../../scripts/download";
+    import { onDestroy } from "svelte";
 
     export let dlQ: any;
-    export let modalsId: Record<number, boolean>;
+    export let modalsId: Record<number, dlModals>;
     export let errModalsId: Record<number, boolean>;
+
+    let pageNum = writable(modalsId[dlQ.Id].pageNum);
+    const unsubscribe = pageNum.subscribe((val) => modalsId[dlQ.Id].pageNum = val);
+    onDestroy(() => unsubscribe());
+
+    const rowsPerPage = 5;
+    const paginatedDownloads: Writable<any[]> = writable([]);
 </script>
 
-<button type="button" class="btn-text-info" id="details-{dlQ.Id}" on:click={() => {modalsId[dlQ.Id] = true}}>
+<button type="button" class="btn-text-info" id="details-{dlQ.Id}" on:click={() => {modalsId[dlQ.Id].open = true}}>
     <NewspaperSolid />
 </button>
 <Tooltip triggeredBy="#details-{dlQ.Id}">{Translate("View Download Details")}</Tooltip>
 
-<Modal bind:open={modalsId[dlQ.Id]} title="Download Details" id="view-details-{dlQ.Id}" size="lg" autoclose>
+<Modal bind:open={modalsId[dlQ.Id].open} title="Download Details" id="view-details-{dlQ.Id}" size="lg" autoclose={false}>
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             <TableHeadCell>{Translate("Filename")}</TableHeadCell>
@@ -26,19 +37,20 @@
             <TableHeadCell>{Translate("Progress/ETA")}</TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
-            {#if dlQ.DlProgressBars.length === 0}
+            {#if $paginatedDownloads.length === 0}
                 <TableBodyRow>
                     <TableBodyCell tdClass="text-center p-3" colspan="4">
                         {Translate("Nothing here!")}
                     </TableBodyCell>
                 </TableBodyRow>
             {:else}
-                {#each dlQ.DlProgressBars as dlDetails}
+                {#each $paginatedDownloads as dlDetails}
                     <DownloadDetails {dlDetails} />
                 {/each}
             {/if}
         </TableBody>
     </Table>
+    <Pagination {rowsPerPage} {pageNum} elements={dlQ.DlProgressBars} paginatedEl={paginatedDownloads} />
 </Modal>
 
 {#if dlQ.Finished}

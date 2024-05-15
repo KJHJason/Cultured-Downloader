@@ -65,8 +65,8 @@ func (a *App) SetGDriveAPIKey(apiKey string) error {
 	}
 
 	a.appData.Unset(
-		constants.GDRIVE_SERVICE_ACC_KEY, 
-		constants.GDRIVE_CLIENT_SECRET_KEY, 
+		constants.GDRIVE_SERVICE_ACC_KEY,
+		constants.GDRIVE_CLIENT_SECRET_KEY,
 		constants.GDRIVE_OAUTH_TOKEN_KEY,
 	)
 	return nil
@@ -103,7 +103,7 @@ func (a *App) SelectGDriveServiceAccount() error {
 		gdriveOauthErr = nil
 		oauthUrl := gdrive.GetOAuthUrl(gdriveOauthConfig)
 		return fmt.Errorf("authentication needed, %s", oauthUrl)
-	} 
+	}
 
 	credsInput := &gdrive.CredsInputs{
 		SrvAccJson: jsonBytes,
@@ -120,8 +120,8 @@ func (a *App) SelectGDriveServiceAccount() error {
 	}
 
 	a.appData.Unset(
-		constants.GDRIVE_API_KEY_KEY, 
-		constants.GDRIVE_CLIENT_SECRET_KEY, 
+		constants.GDRIVE_API_KEY_KEY,
+		constants.GDRIVE_CLIENT_SECRET_KEY,
 		constants.GDRIVE_OAUTH_TOKEN_KEY,
 	)
 	return nil
@@ -130,8 +130,8 @@ func (a *App) SelectGDriveServiceAccount() error {
 func (a *App) UnsetGDriveJson() error {
 	a.gdriveClient = nil
 	return a.appData.Unset(
-		constants.GDRIVE_CLIENT_SECRET_KEY, 
-		constants.GDRIVE_OAUTH_TOKEN_KEY, 
+		constants.GDRIVE_CLIENT_SECRET_KEY,
+		constants.GDRIVE_OAUTH_TOKEN_KEY,
 		constants.GDRIVE_API_KEY_KEY,
 	)
 }

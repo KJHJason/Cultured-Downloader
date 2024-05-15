@@ -114,6 +114,7 @@ func (a *App) GetFfmpegPath() string {
 	}
 	return path
 }
+
 type UserAgentResponse struct {
 	UserAgent string
 	IsDefault bool

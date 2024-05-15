@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	timeCost	= 4
-	memoryCost	= 64 * 1024
-	parallelism	= 4
+	timeCost    = 4
+	memoryCost  = 64 * 1024
+	parallelism = 4
 	HashSaltLen = 64
 	HashKeyLen  = 64 // 128-bit salt according to NIST SP 800-132
 	kdfKeyLen   = 32

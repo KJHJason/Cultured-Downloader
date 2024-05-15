@@ -166,7 +166,7 @@ func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
 	}
 
 	//lint:ignore ST1005 Captialised for frontend use
-	return nil, fmt.Errorf("No cookies found for %s", api.GetReadableSiteStr(website)) 
+	return nil, fmt.Errorf("No cookies found for %s", api.GetReadableSiteStr(website))
 }
 
 func getSessionValFromCookies(website string, cookies []*http.Cookie) (string, error) {
