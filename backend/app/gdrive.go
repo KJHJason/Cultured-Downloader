@@ -54,10 +54,10 @@ func (a *App) SetGDriveAPIKey(apiKey string) error {
 	}
 
 	gdriveClient, err := gdrive.GetNewGDrive(
-		a.ctx, 
+		a.ctx,
 		&gdrive.CredsInputs{
 			ApiKey: apiKey,
-		}, 
+		},
 		gdrive.USE_DEFAULT_MAX_CONCURRENCY,
 		a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true),
 	)
@@ -115,10 +115,10 @@ func (a *App) SelectGDriveServiceAccount() error {
 	}
 
 	gdriveClient, err := gdrive.GetNewGDrive(
-		a.ctx, 
+		a.ctx,
 		&gdrive.CredsInputs{
 			SrvAccJson: jsonBytes,
-		}, 
+		},
 		gdrive.USE_DEFAULT_MAX_CONCURRENCY,
 		a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true),
 	)

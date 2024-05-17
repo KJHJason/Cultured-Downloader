@@ -103,7 +103,7 @@ func (a *App) SetGeneralPreferences(p *preferences) error {
 	if err = a.appData.SetBool(constants.USE_CACHE_DB_KEY, p.UseCacheDb); err != nil {
 		return err
 	} else if p.UseCacheDb {
-		if err = cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)) ; err != nil {
+		if err = cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)); err != nil {
 			return err
 		}
 	}
