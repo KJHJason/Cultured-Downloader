@@ -325,7 +325,7 @@
         const resetMasterPasswordForm = async (): Promise<void> => {
             const result = await invertedSwal.fire({
                 title: await translateText("Remove Master Password?"),
-                text: await translateText("All your saved encrypted config data will be lost."),
+                text: await translateText("All your sensitive data like your session cookies will be exposed! This is not recommended unless you are using your own device."),
                 icon: "info",
                 showCancelButton: true,
                 cancelButtonText: await translateText("Cancel"),
@@ -339,7 +339,7 @@
             masterPasswordFormResetBtn.classList.add("hidden");
             swal.fire({
                 title: await translateText("Master password removed"),
-                text: await translateText("You have removed your master password and all your saved encrypted config data have been removed."),
+                text: await translateText("You have removed your master password and all your saved encrypted data has been decrypted."),
                 icon: "success",
             });
         };

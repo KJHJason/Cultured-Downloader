@@ -97,6 +97,11 @@ func (a *AppData) changeMasterPassword(password string) error {
 
 func (a *AppData) ResetMasterPassword() error {
 	a.mu.Lock()
+
+	// saved temporarily to decrypt the encrypted fields
+	savedMasterPassword := a.masterPassword
+	savedSalt := a.masterPasswordSalt
+
 	a.masterPassword = ""
 	a.masterPasswordSalt = nil
 	a.hashOfMasterPasswordHash = nil
@@ -109,7 +114,7 @@ func (a *AppData) ResetMasterPassword() error {
 	if err != nil {
 		return err
 	}
-	return a.ResetEncryptedFields()
+	return a.ResetEncryptedFields(savedMasterPassword, savedSalt)
 }
 
 func (a *AppData) GetMasterPassword() string {
@@ -270,9 +275,7 @@ func (a *AppData) ChangeToSecure(key string) error {
 	}
 }
 
-// Decrypt the stored encrypted value with the master password
-// and save the decrypted plaintext STRING to the appData
-func (a *AppData) ChangeToPlaintext(key string) error {
+func (a *AppData) changeToPlaintextLogic(key, masterPassword string, salt []byte) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -281,26 +284,33 @@ func (a *AppData) ChangeToPlaintext(key string) error {
 		return nil
 	}
 
-	if encodedEncryptedField, isString := oldValue.(string); !isString {
+	encodedEncryptedField, isString := oldValue.(string)
+	if !isString {
 		return fmt.Errorf("value for key %q is not a string", key)
-	} else {
-		decodedBytes, err := base64.StdEncoding.DecodeString(encodedEncryptedField)
-		if err != nil {
-			return errors.Wrap(err, "error decoding base64 string for data key "+key)
-		}
+	}
 
-		plaintext, err := a.DecryptWithPassword(decodedBytes, a.masterPasswordSalt, a.masterPassword)
-		if err != nil {
-			return err
-		}
+	decodedBytes, err := base64.StdEncoding.DecodeString(encodedEncryptedField)
+	if err != nil {
+		return errors.Wrap(err, "error decoding base64 string for data key "+key)
+	}
 
-		a.data[key] = string(plaintext)
-		err = a.saveToFile()
-		if err != nil {
-			logger.MainLogger.Errorf("Error saving data to file for key %q: %v", key, err)
-		}
+	plaintext, err := a.DecryptWithPassword(decodedBytes, salt, masterPassword)
+	if err != nil {
 		return err
 	}
+
+	a.data[key] = string(plaintext)
+	err = a.saveToFile()
+	if err != nil {
+		logger.MainLogger.Errorf("Error saving data to file for key %q: %v", key, err)
+	}
+	return err
+}
+
+// Decrypt the stored encrypted value with the master password
+// and save the decrypted plaintext STRING to the appData
+func (a *AppData) ChangeToPlaintext(key string) error {
+	return a.changeToPlaintextLogic(key, a.masterPassword, a.masterPasswordSalt)
 }
 
 // Main logic for securely retrieving the value from the appData

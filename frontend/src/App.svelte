@@ -43,8 +43,8 @@
         LogError(`${errorMsg} at ${source}:${lineno}:${colno}`);
         triggerSwalError(errorMsg);
     });
-    window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent): void => {
-        const errorMsg = event.reason ? event.reason.toString() : "Unknown error";
+    window.addEventListener("unhandledrejection", async (event: PromiseRejectionEvent): Promise<void> => {
+        const errorMsg = event.reason ? event.reason.toString() : await translateText("Unknown error");
         console.error(errorMsg);
         LogError(errorMsg);
         triggerSwalError(errorMsg);
@@ -106,7 +106,7 @@
             allowOutsideClick: false,
             icon: "info",
             title: await translateText("Remove master password?"),
-            text: await translateText("All your saved encrypted config data will be lost."),
+            text: await translateText("All your sensitive data like your session cookies will be exposed! This is not recommended unless you are using your own device."),
             confirmButtonText: await translateText("Remove"),
             cancelButtonText: await translateText("Back"),
         }).then(async (result): Promise<void> => {
@@ -115,7 +115,7 @@
                 swal.fire({
                     icon: "success",
                     title: await translateText("Master password removed"),
-                    text: await translateText("You have removed your master password and all your saved encrypted config data have been removed."),
+                    text: await translateText("You have removed your master password and all your saved encrypted data has been decrypted."),
                 });
             } else {
                 checkMasterPassword();

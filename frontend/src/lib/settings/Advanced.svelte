@@ -38,6 +38,8 @@
     let gdriveJsonText: HTMLButtonElement;
     let dlLocationInp: HTMLInputElement;
 
+    let pixivOauthInp: HTMLInputElement;
+
     let successText: string;
     let submitText: string;
     let downloadLocSuccessText: string;
@@ -251,6 +253,8 @@
                 }
                 try {
                     await VerifyPixivOAuthCode(code);
+                    pixivRefreshToken = await GetPixivRefreshToken();
+                    pixivOauthInp.value = pixivRefreshToken;
                     swal.fire({
                         title: successText,
                         text: pixivOauthVerifiedText,
@@ -272,7 +276,7 @@
         savedDownloadLoc = await GetDownloadDir();
         dlLocationInp.value = savedDownloadLoc;
 
-        const pixivOauthInp = document.getElementById("pixivOauth") as HTMLInputElement;
+        pixivOauthInp = document.getElementById("pixivOauth") as HTMLInputElement;
         pixivRefreshToken = await GetPixivRefreshToken();
         if (pixivRefreshToken) {
             pixivOauthInp.value = pixivRefreshToken;

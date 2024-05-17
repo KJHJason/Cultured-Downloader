@@ -12,6 +12,8 @@ import (
 var encryptedFields = []string{
 	constants.GDRIVE_API_KEY_KEY,
 	constants.GDRIVE_SERVICE_ACC_KEY,
+	constants.GDRIVE_CLIENT_SECRET_KEY,
+	constants.GDRIVE_OAUTH_TOKEN_KEY,
 
 	constants.FANTIA_COOKIE_JSON_KEY,
 	constants.FANTIA_COOKIE_TXT_KEY,
@@ -31,8 +33,13 @@ var encryptedFields = []string{
 	constants.KEMONO_COOKIE_VALUE_KEY,
 }
 
-func (a *AppData) ResetEncryptedFields() error {
-	return a.Unset(encryptedFields...)
+func (a *AppData) ResetEncryptedFields(masterPassword string, salt []byte) error {
+	for _, key := range encryptedFields {
+		if err := a.changeToPlaintextLogic(key, masterPassword, salt); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *AppData) EncryptWithPassword(plaintext, salt []byte, password string) ([]byte, error) {
