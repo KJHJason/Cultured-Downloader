@@ -74,7 +74,7 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *preferences
 		}
 	}
 
-	downloadPath, err, _ := a.GetDownloadDir()
+	downloadPath, err, _ := a.getDownloadDir()
 	if err != nil {
 		return nil, nil, err
 	}

@@ -38,9 +38,7 @@ func convertDataMapInterface(values map[string]interface{}) {
 			switch t := v.(type) {
 			case bool:
 				values[k] = t
-			case float64:
-				values[k] = t
-			case int:
+			case float64: // Note: int is considered as float64 in JSON
 				values[k] = t
 			case string:
 				values[k] = t

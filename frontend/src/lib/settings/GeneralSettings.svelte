@@ -125,6 +125,6 @@
         <Translate text="Detect Other URL(s) like MEGA" />
     </Toggle>
     <Toggle color="green" id="UseCacheDb" name="UseCacheDb">
-        <Translate text="Use Cache DB" />
+        <Translate text="Use Cache Database" />
     </Toggle>
 </form>

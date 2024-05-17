@@ -8,17 +8,17 @@ export const LANGUAGES = [
     { value: JP, name: "日本語" },
 ]
 
-export const translate = (text: string, elId: string, lang: string = ""): void => {
-    Translate(text, lang).then((translatedText: string) => {
+export const translateText = (text: string, lang: string = "", fallback: string = ""): Promise<string> => {
+    return Translate(text, fallback, lang);
+}
+
+export const translate = (text: string, elId: string, lang: string = "", fallback: string = ""): void => {
+    translateText(text, lang, fallback).then((translatedText: string) => {
         const element = document.getElementById(elId);
         if (element) {
             element.textContent = translatedText;
         }
     });
-}
-
-export const translateText = (text: string, lang: string = ""): Promise<string> => {
-    return Translate(text, lang);
 }
 
 export const GetLocale = (): string => {

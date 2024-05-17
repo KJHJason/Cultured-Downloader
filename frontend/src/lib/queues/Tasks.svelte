@@ -1,11 +1,17 @@
 <script lang="ts">
     import { Progressbar, Modal, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Spinner } from "flowbite-svelte";
-    import { translate } from "../../scripts/language";
+    import { translate, translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
+    import { onMount } from "svelte";
 
     export let dlQ: any;
     export let progHistoryModalsId: Record<number, boolean>;
     export let makeDateTimeReadable: (dateTime: string, addSeconds: boolean) => string;
+
+    $: taskModalTitle = "";
+    onMount(async () => {
+        taskModalTitle = await translateText("Tasks History");
+    });
 </script>
 
 <div class="flex items-center mb-1">
@@ -35,7 +41,7 @@
             {translate("View tasks history...", "view-prog-" + dlQ.Id)}
         </button>
     </div>
-    <Modal bind:open={progHistoryModalsId[dlQ.Id]} title="Tasks History" id="view-prog-{dlQ.Id}" size="md" autoclose>
+    <Modal bind:open={progHistoryModalsId[dlQ.Id]} title={taskModalTitle} id="view-prog-{dlQ.Id}" size="md" autoclose>
         <Table hoverable={false} shadow={true}>
             <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
                 <TableHeadCell>

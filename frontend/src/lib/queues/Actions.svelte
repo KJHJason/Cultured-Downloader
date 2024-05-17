@@ -27,6 +27,7 @@
     $: viewErrors = "";
     $: stopDownload = "";
     $: removeFromQueue = "";
+    $: downloadDetailsModalTitle = "";
 
     onMount(async () => {
         getDlDetailsInterval = setInterval(async () => {
@@ -43,6 +44,7 @@
         viewErrors = await translateText("View Errors");
         stopDownload = await translateText("Stop Download");
         removeFromQueue = await translateText("Remove from Queue");
+        downloadDetailsModalTitle = await translateText("Download Details");
     });
 
     onDestroy(() => {
@@ -59,7 +61,7 @@
 </button>
 <Tooltip triggeredBy="#details-{dlQ.Id}">{viewDownloadDetails}</Tooltip>
 
-<Modal bind:open={modalsId[dlQ.Id].open} title="Download Details" id="view-details-{dlQ.Id}" size="lg" autoclose={false}>
+<Modal bind:open={modalsId[dlQ.Id].open} title={downloadDetailsModalTitle} id="view-details-{dlQ.Id}" size="lg" autoclose={false}>
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             <TableHeadCell>

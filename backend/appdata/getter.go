@@ -98,10 +98,16 @@ func (a *AppData) GetIntWithFallback(key string, fallback int) int {
 	}
 
 	i, isInt := v.(int)
-	if !isInt {
+	if isInt {
+		return i
+	}
+
+	// Usually, int is deserialised as float64
+	f, isFloat := v.(float64)
+	if !isFloat {
 		return fallback
 	}
-	return i
+	return int(f)
 }
 
 func (a *AppData) GetIntSliceWithFallback(key string, fallback []int) []int {

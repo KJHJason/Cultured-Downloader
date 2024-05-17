@@ -18,7 +18,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) GetDownloadDir() (dirPath string, err error, hadToFallback bool) {
+func (a *App) getDownloadDir() (dirPath string, err error, hadToFallback bool) {
 	savedDirPath := a.appData.GetString(constants.DOWNLOAD_KEY)
 	if savedDirPath != "" && iofuncs.PathExists(savedDirPath) {
 		return savedDirPath, nil, false
@@ -30,7 +30,7 @@ func (a *App) GetDownloadDir() (dirPath string, err error, hadToFallback bool) {
 		return "", fmt.Errorf("error getting user home directory: %w\nPlease manually set the download directory in the settings", err), false
 	}
 
-	desktopDir = filepath.Join(desktopDir, "Cultured Downloader")
+	desktopDir = filepath.Join(desktopDir, "Desktop", "Cultured Downloader")
 	if err := os.MkdirAll(desktopDir, cdlconst.DEFAULT_PERMS); err != nil {
 		panic(err)
 	}
@@ -58,7 +58,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.appData = appData
 
 	// retrieve user's download directory
-	_, err, hadToFallback := a.GetDownloadDir()
+	_, err, hadToFallback := a.getDownloadDir()
 	if err != nil {
 		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 			Type:    runtime.ErrorDialog,

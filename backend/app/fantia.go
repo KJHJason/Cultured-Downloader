@@ -58,7 +58,7 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *preferences) (fa
 		}
 	}
 
-	downloadPath, err, _ := a.GetDownloadDir()
+	downloadPath, err, _ := a.getDownloadDir()
 	if err != nil {
 		return nil, nil, err
 	}

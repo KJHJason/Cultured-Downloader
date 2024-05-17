@@ -9,7 +9,7 @@
 
 {#await GetPreferences()}
     <div class="flex">
-        <Spinner color="blue" /> <p class="ms-3">Loading form...</p>
+        <Spinner color="blue" /> <p class="ms-3"><Translate text="Loading form..."/></p>
     </div>
 {:then preferences}
     <h4>

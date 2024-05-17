@@ -133,7 +133,7 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 		return nil, nil, errors.New("Pixiv Refresh Token is empty")
 	}
 
-	downloadPath, err, _ := a.GetDownloadDir()
+	downloadPath, err, _ := a.getDownloadDir()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -188,7 +188,7 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref *preferences) (pix
 		}
 	}
 
-	downloadPath, err, _ := a.GetDownloadDir()
+	downloadPath, err, _ := a.getDownloadDir()
 	if err != nil {
 		return nil, nil, err
 	}

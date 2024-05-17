@@ -191,7 +191,7 @@
                     allowOutsideClick: false,
                     showLoaderOnConfirm: true,
                     cancelButtonText: await translateText("Cancel"),
-                    confirmButtonText: await translateText("Submit"),
+                    confirmButtonText: await translateText("master_password_submit", $language, "Submit"),
                     preConfirm: async (password: string): Promise<void> => {
                         if (password === "") {
                             return Swal.showValidationMessage(
@@ -270,7 +270,7 @@
                 allowOutsideClick: false,
                 showLoaderOnConfirm: true,
                 cancelButtonText: await translateText("Cancel"),
-                confirmButtonText: await translateText("Submit"),
+                confirmButtonText: await translateText("master_password_submit", $language, "Submit"),
                 preConfirm: async (password: string): Promise<void> => {
                     if (password === "") {
                         return Swal.showValidationMessage(
@@ -328,6 +328,7 @@
                 text: await translateText("All your saved encrypted config data will be lost."),
                 icon: "info",
                 showCancelButton: true,
+                cancelButtonText: await translateText("Cancel"),
             })
             if (!result.isConfirmed) {
                 return;

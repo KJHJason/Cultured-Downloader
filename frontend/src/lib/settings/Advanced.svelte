@@ -37,6 +37,62 @@
     let savedFfmpegPath: string;
     let gdriveJsonText: HTMLButtonElement;
     let dlLocationInp: HTMLInputElement;
+
+    let successText: string;
+    let submitText: string;
+    let downloadLocSuccessText: string;
+    let ffmpegLocSuccessText: string;
+    let googleClientJsonText: string;
+    let googleOauthJsonText: string;
+    let googleOauthAuthTitle: string;
+    let googleOauthAuthMsg: string;
+    let cancelText: string;
+    let verifyText: string;
+    let oauthVerifyErrText: string;
+    let oauthNotFinishedText: string;
+    let authenticatedText: string;
+    let authenticatedMsg: string;
+    let authenticationCancelledText: string;
+    let authenticationCancelledMsg: string;
+    let uploadFailedText: string;
+    let uploadedFileText: string;
+    let pixivOauthStartTitle: string;
+    let pixivOauthCodeEmptyText: string;
+    let pixivOauthVerifiedText: string;
+
+    onMount(async() => {
+        successText = await translateText("Success");
+        submitText = await translateText("advanced_submit", "", "Submit");
+
+        downloadLocSuccessText = await translateText("Download location set successfully");
+
+        ffmpegLocSuccessText = await translateText("FFmpeg location set successfully");
+
+        googleClientJsonText = await translateText("Client Secret JSON:")
+        googleOauthJsonText = await translateText("OAuth Token JSON:")
+
+        googleOauthAuthTitle = await translateText("Authentication Required for OAuth");
+        googleOauthAuthMsg = await translateText("Please visit the recently opened tab in your default browser and authenticate yourself.");
+
+        cancelText = await translateText("Cancel");
+        verifyText = await translateText("Verify");
+        oauthVerifyErrText = await translateText("An error occurred while trying to verify OAuth2 flow for Google Cloud Platform.");
+        oauthNotFinishedText = await translateText("Authentication not finished yet. Please try again.");
+
+        authenticatedText = await translateText("Authentication Success");
+        authenticatedMsg = await translateText("You have successfully authenticated yourself.");
+
+        authenticationCancelledText = await translateText("Authentication Cancelled");
+        authenticationCancelledMsg = await translateText("You have cancelled the authentication process.");
+
+        uploadFailedText = await translateText("An error occurred while trying to upload the JSON file for GDrive API.");
+        uploadedFileText = await translateText("Google Cloud Platform credentials JSON file uploaded successfully");
+
+        pixivOauthStartTitle = await translateText("Enter Pixiv OAuth Code");
+        pixivOauthCodeEmptyText = await translateText("Pixiv code cannot be empty");
+        pixivOauthVerifiedText = await translateText("Pixiv OAuth code verified successfully and your Pixiv OAuth refresh token has been saved successfully.");
+    });
+
     const SelectDownloadDir = async () => {
         try {
             await SelectDlDirPath();
@@ -48,8 +104,8 @@
         }
 
         swal.fire({
-            title: "Success",
-            text: "Download location set successfully",
+            title: successText,
+            text: downloadLocSuccessText,
             icon: "success",
         });
         if (dlLocationInp) {
@@ -69,8 +125,8 @@
         }
 
         swal.fire({
-            title: "Success",
-            text: "FFmpeg location set successfully",
+            title: successText,
+            text: ffmpegLocSuccessText,
             icon: "success",
         });
     };
@@ -85,7 +141,7 @@
         const client = oauthResponse.ClientJson;
         const token = oauthResponse.TokenJson;
         if (client && token) {
-            const gdriveContent = `Client Secret JSON: ${client}\n\nOAuth Token JSON: ${token}`;
+            const gdriveContent = `${googleClientJsonText} ${client}\n\n${googleOauthJsonText} ${token}`;
             handleGdriveResponse(gdriveContent);
         }
     };
@@ -94,29 +150,29 @@
         await StartGDriveOauth();
         BrowserOpenURL(oauthUrl);
         const result = await swal.fire({
-            title: "Authentication Required for OAuth",
-            text: "Please visit the recently opened tab in your default browser and authenticate yourself.",
+            title: googleOauthAuthTitle,
+            text: googleOauthAuthMsg,
             icon: "info",
             showConfirmButton: true,
             showCancelButton: true,
             allowEscapeKey: false,
             allowOutsideClick: false,
             showLoaderOnConfirm: true,
-            cancelButtonText: "Cancel",
-            confirmButtonText: "Verify",
+            cancelButtonText: cancelText,
+            confirmButtonText: verifyText,
             preConfirm: async (): Promise<void> => {
                 try {
                     await ValidateGDriveOauth();
                 } catch (e) {
                     if (!e) {
                         CancelGDriveOauth();
-                        throw new Error("An error occurred while trying to verify OAuth2 flow for Google Cloud Platform.");
+                        throw new Error(oauthVerifyErrText);
                     }
 
                     const error = e.toString();
                     if (error === "oauth not finished") {
                         BrowserOpenURL(oauthUrl);
-                        return swal.showValidationMessage("Authentication not finished yet. Please try again.");
+                        return swal.showValidationMessage(oauthNotFinishedText);
                     }
                     swal.showValidationMessage(error);
                 }
@@ -127,8 +183,8 @@
         if (result.isConfirmed) {
             swal.fire({
                 icon: "success",
-                title: "Authentication Success",
-                text: "You have successfully authenticated yourself.",
+                title: authenticatedText,
+                text: authenticatedMsg,
             });
             await getGDriveClientAndOauthToken();
             return;
@@ -137,8 +193,8 @@
         await CancelGDriveOauth();
         swal.fire({
             icon: "info",
-            title: "Authentication Cancelled",
-            text: "You have cancelled the authentication process.",
+            title: authenticationCancelledText,
+            text: authenticationCancelledMsg,
         });
     }
 
@@ -147,7 +203,7 @@
             await SelectGDriveServiceAccount();
         } catch (e) {
             if (!e) {
-                throw new Error("An error occurred while trying to upload the JSON file for GDrive API.");
+                throw new Error(uploadFailedText);
             }
 
             const error = e.toString();
@@ -167,8 +223,8 @@
             handleGdriveResponse(savedGdriveJsonBytes);
         }
         swal.fire({
-            title: "Success",
-            text: "Google Cloud Platform credentials JSON file uploaded successfully",
+            title: successText,
+            text: uploadedFileText,
             icon: "success",
         });
     };
@@ -178,25 +234,26 @@
         BrowserOpenURL(url);
 
         swal.fire({
-            title: "Enter OAuth Code",
+            title: pixivOauthStartTitle,
             input: "password",
             inputAttributes: {
                 autocapitalize: "off",
                 autocorrect: "off",
             },
             showCancelButton: true,
-            confirmButtonText: "Submit",
+            cancelButtonText: cancelText,
+            confirmButtonText: submitText,
             allowEscapeKey: false,
             allowOutsideClick: false,
             preConfirm: async (code: string): Promise<void> => {
                 if (code === "") {
-                    return swal.showValidationMessage("Code cannot be empty");
+                    return swal.showValidationMessage(pixivOauthCodeEmptyText);
                 }
                 try {
                     await VerifyPixivOAuthCode(code);
                     swal.fire({
-                        title: "Success",
-                        text: "Pixiv OAuth code verified successfully and your Pixiv OAuth refresh token has been saved successfully.",
+                        title: successText,
+                        text: pixivOauthVerifiedText,
                         icon: "success",
                     });
                 } catch (e) {
@@ -242,24 +299,32 @@
         savedFfmpegPath = await GetFfmpegPath();
         ffmpegLocationInp.value = savedFfmpegPath;
 
+        const gdriveJsonTextTitle = await translateText("Google Cloud Platform Credentials JSON");
+        const deleteText = await translateText("Delete");
+        const gdriveDeleteJsonTitle = await translateText("Delete Google Cloud Platform credentials JSON file?");
+        const gdriveDeleteJsonMsg = await translateText("Are you sure you want to delete the Google Cloud Platform credentials JSON file?");
+        const yesText = await translateText("Yes");
+        const deletedGdriveMsg = await translateText("Google Cloud Platform credentials JSON file deleted successfully");
+
         gdriveJsonText.addEventListener("click", async () => {
             const result = await swal.fire({
-                title: "Google Cloud Platform Credentials JSON",
+                title: gdriveJsonTextTitle,
                 html: `<pre class="overflow-x-auto text-left"><code class="block text-sm font-mono">${savedGdriveJson}</code></pre>`,
                 icon: "info",
                 showDenyButton: true,
-                denyButtonText: "Delete",
+                denyButtonText: deleteText,
             });
             if (!result.isDenied) {
                 return;
             }
 
             const deleteResult = await invertedSwal.fire({
-                title: "Delete Google Cloud Platform credentials JSON file?",
-                text: "Are you sure you want to delete the Google Cloud Platform credentials JSON file?",
+                title: gdriveDeleteJsonTitle,
+                text: gdriveDeleteJsonMsg,
                 icon: "info",
                 showCancelButton: true,
-                confirmButtonText: "Yes",
+                confirmButtonText: yesText,
+                cancelButtonText: cancelText,
             });
             if (deleteResult.isConfirmed) {
                 await UnsetGDriveJson()
@@ -267,12 +332,13 @@
                 gdriveJsonText.classList.add("hidden");
                 swal.fire({
                     title: "Success",
-                    text: "Google Cloud Platform credentials JSON file deleted successfully",
+                    text: deletedGdriveMsg,
                     icon: "success",
                 });
             }
         });
 
+        const settingSavedText = await translateText("Settings saved successfully");
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const downloadLocation = dlLocationInp.value;
@@ -302,8 +368,8 @@
             }
 
             swal.fire({
-                title: "Success",
-                text: "Settings saved successfully",
+                title: successText,
+                text: settingSavedText,
                 icon: "success",
             });
         });

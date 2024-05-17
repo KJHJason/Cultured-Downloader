@@ -37,14 +37,15 @@ type preferences struct {
 	AiSearchMode       int
 	SortOrder          int
 	UgoiraOutputFormat int
-	UgoiraQuality      uint8
+	UgoiraQuality      int
 }
 
 func (a *App) GetPreferences() *preferences {
 	// 0-51 for mp4, 0-63 for webm
-	ugoiraQuality := a.appData.GetInt(constants.PIXIV_UGOIRA_QUALITY_KEY)
+	ugoiraQuality := a.appData.GetIntWithFallback(constants.PIXIV_UGOIRA_QUALITY_KEY, 10)
 	if ugoiraQuality < 0 || ugoiraQuality > 63 {
 		ugoiraQuality = 10
+		a.appData.SetInt(constants.PIXIV_UGOIRA_QUALITY_KEY, ugoiraQuality)
 	}
 
 	pref := &preferences{
@@ -66,9 +67,14 @@ func (a *App) GetPreferences() *preferences {
 		AiSearchMode:       a.appData.GetIntWithFallback(constants.PIXIV_AI_SEARCH_MODE_KEY, 24),
 		SortOrder:          a.appData.GetIntWithFallback(constants.PIXIV_SORT_ORDER_KEY, 11),
 		UgoiraOutputFormat: a.appData.GetIntWithFallback(constants.PIXIV_UGOIRA_OUTPUT_FORMAT_KEY, 18),
-		UgoiraQuality:      uint8(ugoiraQuality),
+		UgoiraQuality:      ugoiraQuality,
 	}
 	return pref
+}
+
+func (a *App) GetDownloadDir() (string, error) {
+	dlDirPath, err, _ := a.getDownloadDir()
+	return dlDirPath, err
 }
 
 func (a *App) SetGeneralPreferences(p *preferences) error {

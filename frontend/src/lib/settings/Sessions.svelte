@@ -13,7 +13,7 @@
     onMount(async () => {
         translatedDeleteBtnText = await translateText("Delete");
         translatedSaveBtnText = await translateText("Save");
-        translatedUploadBtnText = await translateText("Upload Netscape/Mozilla generated cookie .txt file");
+        translatedUploadBtnText = await translateText("Upload Netscape/Mozilla generated cookie file");
         translatedPixivOauthText = await translateText("If you have saved an OAuth Refresh Token for Pixiv in the Advanced tab, you can ignore/delete this field as the program will use the token instead.");
         translatedSavedSessionCookieText = await translateText("Session cookie saved successfully");
         translatedDeletedSessionCookieText = await translateText("Saved session cookie deleted successfully");

@@ -105,7 +105,7 @@ export function SubmitPixivFanboxToQueue(arg1:Array<string>,arg2:app.preferences
 
 export function SubmitPixivToQueue(arg1:Array<string>,arg2:app.preferences):Promise<void>;
 
-export function Translate(arg1:string,arg2:string):Promise<string>;
+export function Translate(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function UnsetGDriveJson():Promise<void>;
 

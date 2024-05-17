@@ -25,9 +25,9 @@ func (a *App) GetLanguage() string {
 	return getLangKey(a.lang)
 }
 
-func (a *App) Translate(textKey string, lang string) string {
+func (a *App) Translate(textKey, fallback, lang string) string {
 	if lang == "" {
 		lang = a.lang
 	}
-	return language.Translate(textKey, getLangKey(lang))
+	return language.Translate(textKey, fallback, getLangKey(lang))
 }

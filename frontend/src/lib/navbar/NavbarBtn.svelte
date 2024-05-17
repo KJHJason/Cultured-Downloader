@@ -8,6 +8,7 @@
     export let language: Writable<string>;
     export let btnRole: string;
 
+    const sideNavBarId = `${btnRole}-side-navbar`;
     const actionTitle = actionTitleCase(btnRole);
     $: actionMatches = $action === btnRole;
 </script>
@@ -33,5 +34,5 @@
         <img class="flex-shrink-0 {navbarLogoSize}" src="{logoImgSrc[btnRole]}" alt="{actionTitle} Logo">
     {/if}
 
-    <span class="ms-3" id="{btnRole}-side-navbar">{translate(actionTitle, btnRole + "-side-navbar", $language)}</span>
+    <span class="ms-3" id="{sideNavBarId}">{translate(actionTitle, sideNavBarId, $language)}</span>
 </button>
