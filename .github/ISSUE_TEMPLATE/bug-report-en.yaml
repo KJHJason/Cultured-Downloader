@@ -15,6 +15,7 @@ body:
     id: program_name
     attributes:
       label: Which program are you seeing this problem on?
+      description: If you're reporting a bug for the Python program, please note that it is of lowest priority and may not be fixed.
       multiple: true
       options:
         - Cultured Downloader (Go)
@@ -26,7 +27,7 @@ body:
     id: program_version
     attributes:
       label: Program Version
-      description: What version of the program are you using? (Can be found when running the program or in the program info tab)
+      description: What version of the program are you using? (Can be found when running the program or in the program info tab under settings)
     validations:
       required: true
 

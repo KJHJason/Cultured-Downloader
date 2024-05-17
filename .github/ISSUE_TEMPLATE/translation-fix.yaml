@@ -11,6 +11,14 @@ body:
       value: |
         Thanks for taking the time to fill out this translation error report! If you found a translation error in Cultured Downloader, feel free to share it here.
 
+  - type: input
+    id: program_version
+    attributes:
+      label: Program Version
+      description: What version of the program are you using? (Can be found in the program info tab under settings)
+    validations:
+      required: true
+
   - type: textarea
     id: translation_error
     attributes:

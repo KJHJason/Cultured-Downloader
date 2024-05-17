@@ -16,6 +16,7 @@ body:
     id: program_name
     attributes:
       label: どのプログラムでこの問題が発生したのでしょうか？
+      description: Cultured Downloader (Python)のバグを報告している場合、最も優先順位が低く、修正されない可能性があることに注意してください。
       multiple: true
       options:
         - Cultured Downloader (Go)
@@ -27,7 +28,7 @@ body:
     id: program_version
     attributes:
       label: プログラムバージョン
-      description: ご使用のプログラムのバージョンを教えてください (プログラムを実行したとき、またはプログラム情報タブに記載されています)。
+      description: どのバージョンのプログラムを使用していますか？（プログラムを実行するか、設定のプログラム情報タブで確認できます）
     validations:
       required: true
 
