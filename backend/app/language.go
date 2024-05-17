@@ -1,15 +1,17 @@
 package app
 
 import (
+	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/language"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
 func getLangKey(lang string) string {
 	switch lang {
-	case constants.JA:
-		return constants.JA
+	case cdlconst.JP:
+		return cdlconst.JP
 	default:
-		return constants.EN
+		return cdlconst.EN
 	}
 }
 
@@ -21,4 +23,11 @@ func (a *App) SetLanguage(lang string) string {
 
 func (a *App) GetLanguage() string {
 	return getLangKey(a.lang)
+}
+
+func (a *App) Translate(textKey string, lang string) string {
+	if lang == "" {
+		lang = a.lang
+	}
+	return language.Translate(textKey, getLangKey(lang))
 }

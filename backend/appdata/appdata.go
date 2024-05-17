@@ -28,7 +28,7 @@ func initialiseSettingsMap() map[string]interface{} {
 		constants.USERNAME_KEY:         "Ojisan",
 		constants.PROFILE_PIC_PATH_KEY: "",
 		constants.DOWNLOAD_KEY:         iofuncs.APP_PATH,
-		constants.LANGUAGE_KEY:         constants.EN,
+		constants.LANGUAGE_KEY:         cdlconst.EN,
 
 		// Download preferences
 		constants.DL_THUMBNAIL_KEY:  true,

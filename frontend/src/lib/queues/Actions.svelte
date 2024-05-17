@@ -3,7 +3,7 @@
     import { BrowserOpenURL } from "../../scripts/wailsjs/runtime/runtime";
     import {  GetFrontendDownloadDetails } from "../../scripts/wailsjs/go/app/App";
     import { ClipboardListSolid, FolderSolid, NewspaperSolid, StopSolid, TrashBinSolid } from "flowbite-svelte-icons";
-    import { Translate } from "../../scripts/language";
+    import { translateText } from "../../scripts/language";
     import DownloadDetails from "./DownloadDetails.svelte";
     import Errors from "./Errors.svelte";
     import { CancelQueue, DeleteQueue } from "../../scripts/wailsjs/go/app/App";
@@ -11,6 +11,7 @@
     import { writable, type Writable } from "svelte/store";
     import { type dlModals } from "../../scripts/download";
     import { onDestroy, onMount } from "svelte";
+    import Translate from "../common/Translate.svelte";
 
     export let dlQ: any;
     export let modalsId: Record<number, dlModals>;
@@ -20,6 +21,13 @@
     const elements: Writable<any> = writable([]);
     let pageNum = writable(modalsId[dlQ.Id].pageNum);
     const pageNumEditUnsubscribe = pageNum.subscribe((val) => modalsId[dlQ.Id].pageNum = val);
+
+    $: viewDownloadDetails = "";
+    $: viewDownloadFiles = "";
+    $: viewErrors = "";
+    $: stopDownload = "";
+    $: removeFromQueue = "";
+
     onMount(async () => {
         getDlDetailsInterval = setInterval(async () => {
             if (!modalsId[dlQ.Id].open) {
@@ -29,6 +37,12 @@
             const dlDetails = await GetFrontendDownloadDetails(dlQ.Id);
             elements.set(dlDetails);
         }, 1000);
+
+        viewDownloadDetails = await translateText("View Download Details");
+        viewDownloadFiles = await translateText("View Downloaded Files");
+        viewErrors = await translateText("View Errors");
+        stopDownload = await translateText("Stop Download");
+        removeFromQueue = await translateText("Remove from Queue");
     });
 
     onDestroy(() => {
@@ -43,21 +57,29 @@
 <button type="button" class="btn-text-info" id="details-{dlQ.Id}" on:click={() => {modalsId[dlQ.Id].open = true}}>
     <NewspaperSolid />
 </button>
-<Tooltip triggeredBy="#details-{dlQ.Id}">{Translate("View Download Details")}</Tooltip>
+<Tooltip triggeredBy="#details-{dlQ.Id}">{viewDownloadDetails}</Tooltip>
 
 <Modal bind:open={modalsId[dlQ.Id].open} title="Download Details" id="view-details-{dlQ.Id}" size="lg" autoclose={false}>
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
-            <TableHeadCell>{Translate("Filename")}</TableHeadCell>
-            <TableHeadCell>{Translate("File Size")}</TableHeadCell>
-            <TableHeadCell>{Translate("Download Speed")}</TableHeadCell>
-            <TableHeadCell>{Translate("Progress/ETA")}</TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Filename" />
+            </TableHeadCell>
+            <TableHeadCell>
+                <Translate text="File Size" />
+            </TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Download Speed" />
+            </TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Progress/ETA" />
+            </TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
             {#if $paginatedDownloads.length === 0}
                 <TableBodyRow>
                     <TableBodyCell tdClass="text-center p-3" colspan="4">
-                        {Translate("Nothing here!")}
+                        <Translate text="Nothing here!" />
                     </TableBodyCell>
                 </TableBodyRow>
             {:else}
@@ -75,12 +97,12 @@
         <button type="button" id="view-{dlQ.Id}" on:click={() => BrowserOpenURL(dlQ.ProgressBar.FolderPath)} class="view btn-text-success">
             <FolderSolid />
         </button>
-        <Tooltip triggeredBy="#view-{dlQ.Id}">{Translate("View Downloaded Files")}</Tooltip>
+        <Tooltip triggeredBy="#view-{dlQ.Id}">{viewDownloadFiles}</Tooltip>
     {:else}
         <button type="button" class="btn-text-danger" id="errors-{dlQ.Id}" on:click={() => {errModalsId[dlQ.Id] = true}}>
             <ClipboardListSolid />
         </button>
-        <Tooltip triggeredBy="#errors-{dlQ.Id}">{Translate("View Errors")}</Tooltip>
+        <Tooltip triggeredBy="#errors-{dlQ.Id}">{viewErrors}</Tooltip>
 
         <Modal bind:open={errModalsId[dlQ.Id]} title="Errors Logs" id="view-errors-{dlQ.Id}" size="lg" autoclose>
             <Errors errors={dlQ.ErrSlice} />
@@ -90,10 +112,10 @@
     <button type="button" class="btn-text-danger" id="stop-{dlQ.Id}" on:click={() => CancelQueue(dlQ.Id)}>
         <StopSolid />
     </button>
-    <Tooltip triggeredBy="#stop-{dlQ.Id}">{Translate("Stop Download")}</Tooltip>
+    <Tooltip triggeredBy="#stop-{dlQ.Id}">{stopDownload}</Tooltip>
 {/if}
 
 <button type="button" class="btn-text-danger" id="remove-{dlQ.Id}" on:click={() => DeleteQueue(dlQ.Id)}>
     <TrashBinSolid />
 </button>
-<Tooltip triggeredBy="#remove-{dlQ.Id}">{Translate("Remove from Queue")}</Tooltip>
+<Tooltip triggeredBy="#remove-{dlQ.Id}">{removeFromQueue}</Tooltip>

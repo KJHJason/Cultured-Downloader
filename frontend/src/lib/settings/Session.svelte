@@ -4,7 +4,6 @@
     import { UploadSolid } from "flowbite-svelte-icons";
     import { swal } from "../../scripts/constants";
     import { onMount } from "svelte";
-    import { Translate } from "../../scripts/language";
     import PasswordToggle from "../common/PasswordToggle.svelte";
     import ButtonGroupBtn from "../common/ButtonGroupBtn.svelte";
 
@@ -13,10 +12,18 @@
     export let website: string;
     export let placeholder: string;
 
+    export let translatedDeleteBtnText: string;
+    export let translatedSaveBtnText: string;
+    export let translatedUploadBtnText: string;
+    export let translatedPixivOauthText: string;
+    export let translatedSavedSessionCookieText: string;
+    export let translatedDeletedSessionCookieText: string;
+    export let translatedErrText: string;
+
     let inpEl: HTMLInputElement;
     const saveSwalAlert = () => swal.fire({
-        title: "Success",
-        text: title + " session cookie saved successfully",
+        title: title,
+        text: translatedSavedSessionCookieText,
         icon: "success",
     })
 
@@ -46,8 +53,8 @@
                     inpEl.value = "";
                     deleteBtn.classList.add("hidden");
                     swal.fire({
-                        title: "Success",
-                        text: title + " saved session cookie deleted successfully",
+                        title: title,
+                        text: translatedDeletedSessionCookieText,
                         icon: "success",
                     });
                 })
@@ -76,7 +83,7 @@
                 }
 
                 swal.fire({
-                    title: "Error",
+                    title: translatedErrText,
                     text: err,
                     icon: "error",
                 });
@@ -99,19 +106,19 @@
         <ButtonGroupBtn clickFn={UploadCookieFileWithAlert} elId="{website}-session-upload">
             <UploadSolid />
         </ButtonGroupBtn>
-        <Tooltip triggeredBy="#{website}-session-upload">{Translate("Upload Netscape/Mozilla generated cookie .txt file")}</Tooltip>
+        <Tooltip triggeredBy="#{website}-session-upload">{translatedUploadBtnText}</Tooltip>
     </ButtonGroup>
     {#if website === "pixiv"}
         <Helper class="mt-1">
-            *{Translate("If you have saved an OAuth Refresh Token for Pixiv in the Advanced tab, you can ignore/delete this field as the program will use the token instead.")}
+            *{translatedPixivOauthText}
         </Helper>
     {/if}
     <div class="text-right mt-2">
         <button class="btn btn-danger hidden" id="{website}-delete-button">
-            {Translate("Delete")}
+            {translatedDeleteBtnText}
         </button>
         <button class="btn btn-success !me-0" id="{website}-save-button">
-            {Translate("Save")}
+            {translatedSaveBtnText}
         </button>
     </div>
 </div>

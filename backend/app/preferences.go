@@ -3,7 +3,8 @@ package app
 import (
 	"fmt"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic/errors"
+	"github.com/KJHJason/Cultured-Downloader-Logic/cache"
+	cdlerrors "github.com/KJHJason/Cultured-Downloader-Logic/errors"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -23,6 +24,10 @@ type preferences struct {
 
 	DlGDrive         bool
 	DetectOtherLinks bool
+	UseCacheDb       bool
+
+	// Fantia
+	OrganisePostImages bool
 
 	// Pixiv
 	ArtworkType        int
@@ -50,6 +55,9 @@ func (a *App) GetPreferences() *preferences {
 
 		DlGDrive:         a.appData.GetBool(constants.DL_GDRIVE_KEY),
 		DetectOtherLinks: a.appData.GetBool(constants.DETECT_OTHER_URLS_KEY),
+		UseCacheDb:       a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true),
+
+		OrganisePostImages: a.appData.GetBoolWithFallback(constants.FANTIA_ORGANISE_IMAGES_KEY, true),
 
 		ArtworkType:        a.appData.GetIntWithFallback(constants.PIXIV_ARTWORK_TYPE_KEY, 3),
 		DeleteUgoiraZip:    a.appData.GetBool(constants.PIXIV_DELETE_UGOIRA_ZIP_KEY),
@@ -90,6 +98,14 @@ func (a *App) SetGeneralPreferences(p *preferences) error {
 	}
 	if err = a.appData.SetBool(constants.DETECT_OTHER_URLS_KEY, p.DetectOtherLinks); err != nil {
 		return err
+	}
+
+	if err = a.appData.SetBool(constants.USE_CACHE_DB_KEY, p.UseCacheDb); err != nil {
+		return err
+	} else if p.UseCacheDb {
+		if err = cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)) ; err != nil {
+			return err
+		}
 	}
 	return nil
 }

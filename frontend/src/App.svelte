@@ -1,11 +1,11 @@
 <script lang="ts">
     import Swal from "sweetalert2";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { writable } from "svelte/store";
     import { swal, actions, invertedSwal } from "./scripts/constants";
     import { PromptMasterPassword, CheckMasterPassword, RemoveMasterPassword, GetUsername, GetLanguage } from "./scripts/wailsjs/go/app/App";
     import { LogError } from "./scripts/wailsjs/runtime/runtime";
-    import { EN, JP, Translate, ChangeCachedLanguage } from "./scripts/language";
+    import { EN, translate, ChangeCachedLanguage, translateText } from "./scripts/language";
 
     import Navbar from "./lib/Navbar.svelte";
     import Home from "./lib/Home.svelte";
@@ -16,9 +16,9 @@
     import DownloadQueues from "./lib/DownloadQueues.svelte";
     import Settings from "./lib/Settings.svelte";
 
-    const triggerSwalError = (message: string): void => {
+    const triggerSwalError = async (message: string): Promise<void> => {
         swal.fire({
-            title: "Unexpected error",
+            title: await translateText("Unexpected error"),
             text: message,
             icon: "error",
         });
@@ -54,7 +54,9 @@
     const username = writable("");
     const action = writable(actions.Home);
     const language = writable(EN);
-    ChangeCachedLanguage(EN);
+    const unsubscribeLanguage = language.subscribe((value: string): void => {
+        ChangeCachedLanguage(value);
+    });
 
     const checkMasterPassword = async (): Promise<void> => {
         if (!await PromptMasterPassword()) {
@@ -62,7 +64,7 @@
         }
 
         const result = await swal.fire({
-            title: "Enter your master password",
+            title: await translateText("Enter your master password"),
             input: "password",
             inputAttributes: {
                 autocapitalize: "off",
@@ -72,16 +74,18 @@
             allowEscapeKey: false,
             allowOutsideClick: false,
             showLoaderOnConfirm: true,
-            cancelButtonText: "Remove",
-            confirmButtonText: "Submit",
+            cancelButtonText: await translateText("Remove"),
+            confirmButtonText: await translateText("Submit"),
             preConfirm: async (password: string): Promise<void> => {
                 if (password === "") {
-                    return Swal.showValidationMessage("Password cannot be empty");
+                    return Swal.showValidationMessage(
+                        await translateText("Password cannot be empty"));
                 }
 
                 const result = await CheckMasterPassword(password);
                 if (!result) {
-                    return Swal.showValidationMessage("Incorrect password");
+                    return Swal.showValidationMessage(
+                        await translateText("Incorrect password"));
                 }
                 return;
             },
@@ -90,8 +94,8 @@
         if (result.isConfirmed) {
             swal.fire({
                 icon: "success",
-                title: "Correct password",
-                text: "You have entered the correct password.",
+                title: await translateText("Correct password"),
+                text: await translateText("You have entered the correct password."),
             });
             return;
         } 
@@ -101,17 +105,17 @@
             allowEscapeKey: false,
             allowOutsideClick: false,
             icon: "info",
-            title: "Remove master password?",
-            text: "All your saved encrypted config data will be lost.",
-            confirmButtonText: "Remove",
-            cancelButtonText: "Back",
+            title: await translateText("Remove master password?"),
+            text: await translateText("All your saved encrypted config data will be lost."),
+            confirmButtonText: await translateText("Remove"),
+            cancelButtonText: await translateText("Back"),
         }).then(async (result): Promise<void> => {
             if (result.isConfirmed) {
                 await RemoveMasterPassword();
                 swal.fire({
                     icon: "success",
-                    title: "Master password removed",
-                    text: "You have removed your master password and all your saved encrypted config data have been removed.",
+                    title: await translateText("Master password removed"),
+                    text: await translateText("You have removed your master password and all your saved encrypted config data have been removed."),
                 });
             } else {
                 checkMasterPassword();
@@ -122,17 +126,20 @@
     onMount(async () => {
         const lang = await GetLanguage();
         language.set(lang);
-        ChangeCachedLanguage(lang);
 
         username.set(await GetUsername() || "User");
         await checkMasterPassword();
+    });
+
+    onDestroy(() => {
+        unsubscribeLanguage();
     });
 </script>
 
 <Navbar {username} {action} {language} />
 
 {#if $action === actions.Home}
-    <Home {action} {language} {username} />
+    <Home {action} {username} />
 {:else}
     <main class="p-4">
         <div class="mt-14">
@@ -149,7 +156,7 @@
             {:else if $action === actions.Settings}
                 <Settings {username} bind:lastSavedUpdateStr {language} />
             {:else if $action !== actions.Home}
-                <p>{Translate("Not implemented yet", $language)}</p>
+                <p id="not-implemented-yet">{translate("Not implemented yet", "not-implemented-yet")}</p>
             {/if}
         </div>
     </main>

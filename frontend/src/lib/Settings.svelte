@@ -8,6 +8,7 @@
     import Advanced from "./settings/Advanced.svelte";
     import ProgramInfo from "./settings/ProgramInfo.svelte";
     import type { Writable } from "svelte/store";
+    import Translate from "./common/Translate.svelte";
 
     export let username: Writable<string>;
     export let language: Writable<string>;
@@ -34,35 +35,35 @@
         <TabItem class="text-main" open>
             <div slot="title" class="flex items-center gap-2">
                 <UserCircleSolid size="sm" />
-                General
+                <Translate text="General" {language} />
             </div>
             <General {username} {language} />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
                 <DownloadSolid size="sm" />
-                Preferences
+                <Translate text="Preferences" {language} />
             </div>
             <Preferences />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
                 <UserSettingsSolid size="sm" />
-                Sessions
+                <Translate text="Sessions" {language} />
             </div>
             <Sessions />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
                 <AdjustmentsVerticalSolid size="sm" />
-                Advanced
+                <Translate text="Advanced" {language} />
             </div>
             <Advanced />
         </TabItem>
         <TabItem class="text-main">
             <div slot="title" class="flex items-center gap-2">
                 <InfoCircleSolid size="sm" />
-                Program Info
+                <Translate text="Program Info" {language} />
             </div>
             <ProgramInfo bind:lastSavedUpdateStr />
         </TabItem>

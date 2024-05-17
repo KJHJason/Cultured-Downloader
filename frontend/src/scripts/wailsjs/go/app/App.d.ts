@@ -71,6 +71,8 @@ export function SetDarkMode(arg1:boolean):Promise<void>;
 
 export function SetDlDirPath(arg1:string):Promise<void>;
 
+export function SetFantiaPreferences(arg1:app.preferences):Promise<void>;
+
 export function SetFfmpegPath(arg1:string):Promise<void>;
 
 export function SetGDriveAPIKey(arg1:string):Promise<void>;
@@ -102,6 +104,8 @@ export function SubmitKemonoToQueue(arg1:Array<string>,arg2:app.preferences):Pro
 export function SubmitPixivFanboxToQueue(arg1:Array<string>,arg2:app.preferences):Promise<void>;
 
 export function SubmitPixivToQueue(arg1:Array<string>,arg2:app.preferences):Promise<void>;
+
+export function Translate(arg1:string,arg2:string):Promise<string>;
 
 export function UnsetGDriveJson():Promise<void>;
 

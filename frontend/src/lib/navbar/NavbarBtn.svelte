@@ -1,7 +1,7 @@
 <script lang="ts">
     import { actions, logoImgSrc, navbarLogoSize } from "../../scripts/constants";
     import { actionTitleCase } from "../../scripts/utils/string";
-    import { Translate } from "../../scripts/language";
+    import { translate } from "../../scripts/language";
     import type { Writable } from "svelte/store";
 
     export let action: Writable<string>;
@@ -33,5 +33,5 @@
         <img class="flex-shrink-0 {navbarLogoSize}" src="{logoImgSrc[btnRole]}" alt="{actionTitle} Logo">
     {/if}
 
-    <span class="ms-3">{Translate(actionTitle, $language)}</span>
+    <span class="ms-3" id="{btnRole}-side-navbar">{translate(actionTitle, btnRole + "-side-navbar", $language)}</span>
 </button>

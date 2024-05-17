@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Progressbar, Modal, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Spinner } from "flowbite-svelte";
-    import { Translate } from "../../scripts/language";
+    import { translate } from "../../scripts/language";
+    import Translate from "../common/Translate.svelte";
 
     export let dlQ: any;
     export let progHistoryModalsId: Record<number, boolean>;
@@ -31,20 +32,24 @@
 {#if dlQ.NestedProgressBar?.length > 0}
     <div class="text-right mt-2">
         <button type="button" class="btn-text-info text-xs" id="view-prog-{dlQ.Id}" on:click={() => {progHistoryModalsId[dlQ.Id] = true}}>
-            {Translate("View tasks history...")}
+            {translate("View tasks history...", "view-prog-" + dlQ.Id)}
         </button>
     </div>
     <Modal bind:open={progHistoryModalsId[dlQ.Id]} title="Tasks History" id="view-prog-{dlQ.Id}" size="md" autoclose>
         <Table hoverable={false} shadow={true}>
             <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
-                <TableHeadCell>{Translate("Date/Time")}</TableHeadCell>
-                <TableHeadCell>{Translate("Progress")}</TableHeadCell>
+                <TableHeadCell>
+                    <Translate text="Date/Time" />
+                </TableHeadCell>
+                <TableHeadCell>
+                    <Translate text="Progress" />
+                </TableHeadCell>
             </TableHead>
             <TableBody tableBodyClass="divide-y">
                 {#if dlQ.NestedProgressBar.length === 0}
                     <TableBodyRow>
                         <TableBodyCell tdClass="text-center p-3" colspan="3">
-                            {Translate("Nothing here!")}
+                            <Translate text="Nothing here!" />
                         </TableBodyCell>
                     </TableBodyRow>
                 {:else}

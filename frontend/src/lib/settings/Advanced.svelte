@@ -26,8 +26,9 @@
     import { onMount } from "svelte";
     import { invertedSwal, swal } from "../../scripts/constants";
     import { UploadSolid } from "flowbite-svelte-icons";
-    import { Translate } from "../../scripts/language";
+    import { translate, translateText } from "../../scripts/language";
     import PasswordToggle from "../common/PasswordToggle.svelte";
+    import Translate from "../common/Translate.svelte";
 
     let pixivRefreshToken: string;
     let savedUserAgent: string;
@@ -307,27 +308,40 @@
             });
         });
     });
+
+    $: browseApiJsonText = "";
+    onMount(async () => {
+        browseApiJsonText = await translateText("Upload Google Cloud Platform JSON file");
+    });
 </script>
 
 <form id="advanced-form">
     <div class="grid grid-cols-1 md:grid-cols-1 gap-y-6">
         <div>
-            <Label for="userAgent">{Translate("User Agent:")}</Label>
+            <Label for="userAgent">
+                <Translate text="User Agent:" />
+            </Label>
             <Input class="my-2" name="userAgent" id="userAgent" placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64)..." />
-            <Helper>*{Translate("Only edit this when you know what you're doing as you can be flagged as a bot with the wrong user agent!")}</Helper>
+            <Helper>*<Translate text="Only edit this when you know what you're doing as you can be flagged as a bot with the wrong user agent!" /></Helper>
         </div>
         <div>
-            <Label for="downloadLocation">{Translate("Download Location:")}</Label>
+            <Label for="downloadLocation">
+                <Translate text="Download Location:" />
+            </Label>
             <ButtonGroup class="w-full">
                 <Input class="mt-2" name="downloadLocation" id="downloadLocation" placeholder="C:\Users\Username\Downloads" required />
-                <ButtonGroupBtn elId="browseDownloadLocation" clickFn={SelectDownloadDir}>{Translate("Browse")}</ButtonGroupBtn>
+                <ButtonGroupBtn elId="browseDownloadLocation" clickFn={SelectDownloadDir}>
+                    <Translate text="Browse" />
+                </ButtonGroupBtn>
             </ButtonGroup>
         </div>
         <div>
             <div class="flex">
-                <Label for="gdriveApiKey">{Translate("GDrive Credentials:")}</Label>
+                <Label for="gdriveApiKey">
+                    <Translate text="GDrive Credentials:" />
+                </Label>
                 <button type="button" class="hidden btn-text-link text-xs font-normal ml-1" id="gdrive-json-text">
-                    {Translate("View Uploaded JSON")}
+                    {translate("View Uploaded JSON", "gdrive-json-text")}
                 </button>
             </div>
             <ButtonGroup class="w-full">
@@ -339,27 +353,29 @@
                 </ButtonGroupBtn>
             </ButtonGroup>
             <Helper class="mt-2">
-                *{Translate("If you're unsure how to obtain the relevant API key or credentials, please refer to the guide below.")} 
+                *<Translate text="If you're unsure how to obtain the relevant API key or credentials, please refer to the guide below." />
             </Helper>
             <Helper>
                 <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md")}>
                     https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md
                 </button>
             </Helper>
-            <Tooltip triggeredBy="#browseApiJson">{Translate("Upload Google Cloud Platform JSON file")}</Tooltip>
+            <Tooltip triggeredBy="#browseApiJson">{browseApiJsonText}</Tooltip>
         </div>
         <div>
-            <Label for="pixivOauth">{Translate("Pixiv Mobile OAuth Refresh Token:")}</Label>
+            <Label for="pixivOauth">
+                <Translate text="Pixiv Mobile OAuth Refresh Token:" />
+            </Label>
             <ButtonGroup class="w-full">
                 <PasswordToggle elClass="w-full" hideByDefault={true}>
                     <Input class="mt-2" name="pixivOauth" id="pixivOauth" placeholder="zKyAG1RaKUgAK1AB-DEFaIodef12345aBcDeF3zQLcX" required />
                 </PasswordToggle>
                 <ButtonGroupBtn btnClass="w-[140px]" elId="startPixivOauthBtn" clickFn={startPixivOauthProcess}>
-                    {Translate("Start OAuth")}
+                    {translate("Start OAuth", "startPixivOauthBtn")}
                 </ButtonGroupBtn>
             </ButtonGroup>
             <Helper class="mt-2">
-                *{Translate("If you're unsure what to do after clicking \"Start OAuth\", please refer to the guide below.")} 
+                *<Translate text={`If you're unsure what to do after clicking "Start OAuth", please refer to the guide below.`} />
             </Helper>
             <Helper>
                 <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md")}>
@@ -368,13 +384,17 @@
             </Helper>
         </div>
         <div>
-            <Label for="ffmpegLocation">{Translate("FFmpeg Location:")}</Label>
+            <Label for="ffmpegLocation">
+                <Translate text="FFmpeg Location:" />
+            </Label>
             <ButtonGroup class="w-full">
                 <Input class="mt-2" name="ffmpegLocation" id="ffmpegLocation" placeholder="C:\ffmpeg\bin\ffmpeg.exe" required />
-                <ButtonGroupBtn elId="browseFfmpegLocation" clickFn={SelectFfmpegPathFn}>{Translate("Browse")}</ButtonGroupBtn>
+                <ButtonGroupBtn elId="browseFfmpegLocation" clickFn={SelectFfmpegPathFn}>
+                    {translate("Browse", "browseFfmpegLocation")}
+                </ButtonGroupBtn>
             </ButtonGroup>
             <Helper class="mt-2">
-                *{Translate("This is used for Pixiv Ugoira downloads. If you're not downloading from Pixiv, you can ignore this. Otherwise you can install it from the link below.")}
+                *<Translate text="This is used for Pixiv Ugoira downloads. If you're not downloading from Pixiv, you can ignore this. Otherwise you can install it from the link below." />
             </Helper>
             <Helper>
                 <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://ffmpeg.org/download.html")}>
@@ -385,7 +405,7 @@
     </div>
     <div class="text-right">
         <button type="submit" class="mt-2 btn btn-success !me-0">
-            {Translate("Save All")}
+            <Translate text="Save All" />
         </button>
     </div>
 </form>

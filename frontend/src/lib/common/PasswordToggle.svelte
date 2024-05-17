@@ -1,14 +1,16 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { generateRandomId } from "../../scripts/random";
 
     export let hideByDefault = false;
     export let elClass = "";
 
-    const randomId = Math.random().toString(36).substring(2);
+    const randomId = generateRandomId();
     const showId = `show-${randomId}`;
     const hideId = `hide-${randomId}`;
     const btnId = `btn-${randomId}`;
     onMount(() => {
+        // errors below are not translated as they're mainly due to developer error
         const btn = document.getElementById(btnId) as HTMLButtonElement;
         if (!btn) {
             throw new Error(`Element with id ${btnId} not found`);

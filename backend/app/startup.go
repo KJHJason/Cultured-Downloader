@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/KJHJason/Cultured-Downloader-Logic/cache"
 	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
+	"github.com/KJHJason/Cultured-Downloader-Logic/language"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -69,7 +71,7 @@ func (a *App) Startup(ctx context.Context) {
 		}
 	} else if hadToFallback {
 		// try retrieving the old download directory path from config.json (*Cultured-Downloader-CLI)
-		oldSavedDlDirPath := iofuncs.GetDefaultDownloadPath()
+		oldSavedDlDirPath := iofuncs.DOWNLOAD_PATH
 		if oldSavedDlDirPath != "" { // if it's not empty, set it as the download directory path
 			if setErr := a.appData.SetString(constants.DOWNLOAD_KEY, oldSavedDlDirPath); setErr != nil {
 				logger.MainLogger.Errorf("Error setting old download directory path: %v", setErr)
@@ -79,12 +81,14 @@ func (a *App) Startup(ctx context.Context) {
 
 	a.gdriveClient = a.GetGdriveClient()
 	a.notifier = notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME)
+	a.lang = a.appData.GetStringWithFallback(constants.LANGUAGE_KEY, cdlconst.EN)
 
-	lang := a.appData.GetString(constants.LANGUAGE_KEY)
-	if lang == "" {
-		lang = "en"
+	if a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true) {
+		if err := cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)); err != nil {
+			logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
+		}
 	}
-	a.lang = lang
+	language.InitLangDb()
 
 	ticker := time.NewTicker(1 * time.Second) // check for new queues every few second
 	go func() {

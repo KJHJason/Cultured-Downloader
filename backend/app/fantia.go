@@ -73,6 +73,7 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *preferences) (fa
 	fantiaDlOptions = &fantia.FantiaDlOptions{
 		DlThumbnails:        pref.DlPostThumbnail,
 		DlImages:            pref.DlPostImages,
+		OrganiseImages:      pref.OrganisePostImages,
 		DlAttachments:       pref.DlPostAttachments,
 		DlGdrive:            pref.DlGDrive,
 		BaseDownloadDirPath: baseDlDirPath,

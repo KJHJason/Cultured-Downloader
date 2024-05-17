@@ -7,6 +7,8 @@
     import GeneralSettings from "./settings/GeneralSettings.svelte";
     import MergedSettings from "./settings/MergedSettings.svelte";
     import { GetPreferences } from "../scripts/wailsjs/go/app/App";
+    import Translate from "./common/Translate.svelte";
+    import { translateText } from "../scripts/language";
 
     let pixivArtworkType: number;
     let pixivRating: number;
@@ -14,6 +16,8 @@
     let pixivAiSearchMode: number;
     let pixivSortOrder: number;
     let pixivUgoiraFormat: number;
+
+    let translatedPageNoPlaceholder: string;
 
     export let platformTitle: string = "";
     export let platformName: string;
@@ -33,7 +37,7 @@
         const inputClass = "bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500";
         input.classList.add(...inputClass.split(" "));
         input.name = url;
-        input.placeholder = "e.g. \"1\" for page 1 or \"1-2\" for pages 1 to 2";
+        input.placeholder = translatedPageNoPlaceholder;
         return input;
     };
 
@@ -45,9 +49,12 @@
         return label;
     };
 
+    let inputExampleText = "";
     $: hasPageNoFilter = false;
     const divId = `${platformName}-base`;
     onMount(async () => {
+        translatedPageNoPlaceholder = await translateText("e.g. \"1\" for page 1 or \"1-2\" for pages 1 to 2");
+
         const divEl = document.getElementById(divId) as HTMLDivElement;
         const textareaEl = divEl.querySelector("textarea") as HTMLTextAreaElement;
         const helperEl = document.getElementById("url-helper") as HTMLParagraphElement;
@@ -55,6 +62,19 @@
         const pageNoInputsDivEl = document.getElementById("page-no-inputs") as HTMLDivElement;
         const pageNoFilterHelper = document.getElementById("page-no-filter-helper") as HTMLParagraphElement;
         pageNoFilterHelper.classList.add("hidden");
+
+        inputExampleText = await translateText("Input example:");
+        const inputErrInvalidUrls = await translateText("Input Error: Invalid URL(s)!");
+        const invalidUrls = await translateText("Invalid URL(s)!");
+        const unknownInputError = await translateText("Unknown input error!");
+        const inputErrNoUrl = await translateText("Input Error: No URL(s)!");
+        const inputErr = await translateText("Input Error");
+        const invalidPageNumFilterFmt = await translateText("Invalid Page Number Filter Format!");
+        const addingToQueue = await translateText("Adding to Queue...");
+        const addedToQueue = await translateText("Added to Queue!");
+        const queuePleaseWait = await translateText("Please wait while the URL(s) are being processed and added to the download queue!");
+        const urlAddedToQueue = await translateText("The URL(s) have been added to the download queue!");
+        const loginFirst = await translateText(". Please login first!");
 
         const initialisePageNoValidations = (): void => {
             pageNoInputsDivEl.querySelectorAll("input").forEach((inputEl) => {
@@ -140,7 +160,7 @@
                 helperEl.textContent = "";
                 textareaEl.classList.remove("!border-red-500");
             } else {
-                helperEl.textContent = "Input Error: Invalid URL(s)!";
+                helperEl.textContent = inputErrInvalidUrls;
                 textareaEl.classList.add("!border-red-500");
             }
         });
@@ -168,7 +188,7 @@
                 if (input.type === "number") {
                     downloadPreferences[input.name] = parseInt(input.value);
                 } else {
-                    throw new Error("Unknown input type!");
+                    throw new Error(unknownInputError);
                 }
             }
             return downloadPreferences;
@@ -180,10 +200,10 @@
 
             const textareaInput = textareaEl.value;
             if (textareaInput === "") {
-                helperEl.textContent = "Input Error: No URL(s)!";
+                helperEl.textContent = inputErrNoUrl;
                 swal.fire({
-                    title: "Input Error",
-                    text: `No ${platformName} URL(s)!`,
+                    title: inputErr,
+                    text: inputErrNoUrl,
                     icon: "error",
                 });
                 return;
@@ -192,8 +212,8 @@
             const pageNoFilterIsValid = pageNoFilterHelper.classList.contains("hidden");
             if (!pageNoFilterIsValid) {
                 swal.fire({
-                    title: "Input Error",
-                    text: "Invalid Page Number Filter Format!",
+                    title: inputErr,
+                    text: invalidPageNumFilterFmt,
                     icon: "error",
                 });
                 return;
@@ -211,18 +231,18 @@
 
             const isValid = await urlValidationFn(inputs);
             if (!isValid) {
-                helperEl.textContent = "Input Error: Invalid URL(s)!";
+                helperEl.textContent = inputErrInvalidUrls;
                 swal.fire({
-                    title: "Input Error",
-                    text: `Invalid ${platformName} URL(s)!`,
+                    title: inputErr,
+                    text: invalidUrls,
                     icon: "error",
                 });
                 return;
             }
 
             swal.fire({
-                title: "Adding to Queue...",
-                text: "Please wait while the URL(s) are being processed and added to the download queue!",
+                title: addingToQueue,
+                text: queuePleaseWait,
                 icon: "info",
                 allowOutsideClick: false,
                 allowEscapeKey: false,
@@ -237,8 +257,8 @@
                 await addToQueueFn(inputs, downloadPreferences);
                 swal.fire({
                     timer: 2000,
-                    title: "Added to Queue!",
-                    text: "The URL(s) have been added to the download queue!",
+                    title: addedToQueue,
+                    text: urlAddedToQueue,
                     icon: "success",
                 });
                 resetForm();
@@ -246,8 +266,8 @@
                 swal.close();
                 if (e && e.toString().startsWith("no cookies found for")) {
                     swal.fire({
-                        title: "Input Error",
-                        text: `${e}. Please login first!`,
+                        title: inputErr,
+                        text: e + loginFirst,
                         icon: "error",
                     });
                     return;
@@ -261,48 +281,62 @@
 <div class="container mx-auto" id={divId}>
     <form id="add-to-queue-form">
         <Card class="max-w-full" size="xl">
-            <h4 class="capitalize">{platformTitle} Inputs</h4>
+            <h4 class="capitalize">{platformTitle} <Translate text="Inputs" /></h4>
             <Hr />
             <Textarea 
                 name="inputs"
                 rows="6" 
-                placeholder={`Input example:\n` + inputPlaceholder}
+                placeholder={inputExampleText + "\n" + inputPlaceholder}
             />
             <div class="mt-2 text-right">
                 <Helper id="url-helper" color="red" />
                 <button type="submit" class="mt-2 btn btn-success" id="add-to-queue-btn">
                     <div class="flex">
                         <ArrowLeftOutline />
-                        Add to queue!
+                        <Translate text="Add to queue!" />
                     </div>
                 </button>
             </div>
         </Card>
 
         <Card class="mt-2 max-w-full max-h-[600px] overflow-y-auto {hasPageNoFilter ? "" : "hidden"}" id="page-no" size="xl">
-            <h4>Page Numbers Filter</h4>
+            <h4><Translate text="Page Numbers Filter" /></h4>
             <Hr />
-            <Helper>Note that this is <strong>OPTIONAL</strong> as you can leave this <strong>EMPTY</strong> to download all pages!</Helper>
+            <Helper>
+                <Translate text="Note that this is OPTIONAL as you can leave this EMPTY to download all pages!" />
+            </Helper>
             <div class="mt-4 space-y-4" id="page-no-inputs"></div>
             <div class="mt-2 text-right">
-                <Helper color="red" id="page-no-filter-helper">Invalid Filter Format!</Helper>
+                <Helper color="red" id="page-no-filter-helper"><Translate text="Invalid Filter Format!" /></Helper>
             </div>
         </Card>
     </form>
 
     <Card class="mt-2 max-w-full" size="xl" id="settings-card">
-        <h4>Download Settings</h4>
+        <h4><Translate text="Download Settings" /></h4>
         <Hr />
         {#await GetPreferences()}
             <div class="flex">
-                <Spinner color="blue" /> <p class="ms-3">Loading form...</p>
+                <Spinner color="blue" /> <p class="ms-3"><Translate text="Loading form.." /></p>
             </div>
         {:then preferences}
-            <Helper>This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!</Helper>
-            <GeneralSettings promptSuccess={false} preferences={preferences}  />
-            {#if platformName === actions.Pixiv}
+            {@const isPixiv = platformName === actions.Pixiv}
+            <Helper>
+                <Translate text={`This settings is for the current download inputs. However, you can save it globally by clicking "Save Settings" Button below!`} />
+            </Helper>
+            <GeneralSettings promptSuccess={false} preferences={preferences} showDlGDriveInp={!isPixiv} showOrganisePostImagesInp={platformName === actions.Fantia} />
+            {#if isPixiv}
             <Hr />
-                <PixivSettings promptSuccess={false} preferences={preferences} bind:pixivArtworkType bind:pixivRating bind:pixivSearchMode bind:pixivAiSearchMode bind:pixivSortOrder bind:pixivUgoiraFormat />
+                <PixivSettings
+                    promptSuccess={false}
+                    preferences={preferences}
+                    bind:pixivArtworkType
+                    bind:pixivRating
+                    bind:pixivSearchMode
+                    bind:pixivAiSearchMode
+                    bind:pixivSortOrder
+                    bind:pixivUgoiraFormat
+                />
             {/if}
             <Hr />
             <MergedSettings btnString="Save Settings Globally" />

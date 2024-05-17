@@ -4,7 +4,8 @@
     import Swal from "sweetalert2";
     import { swal, invertedSwal } from "../../scripts/constants";
     import { GetFallbackUserProfileDataUrl, GetProfilePicURL, ChangeImgElSrcToFileData, Base64ImgStringToFile, ImgFileToDataURL } from "../../scripts/image";
-    import { ChangeCachedLanguage, LANGUAGES } from "../../scripts/language";
+    import { LANGUAGES, translate, translateText } from "../../scripts/language";
+    import Translate from "../common/Translate.svelte";
     import { onMount } from "svelte";
     import { GetLanguage, HasProfilePic, SetLanguage } from "../../scripts/wailsjs/go/app/App";
     import PasswordToggle from "../common/PasswordToggle.svelte";
@@ -97,7 +98,7 @@
 
                 const filePath = formData.get("profile-image-path") as string;
                 if (filePath === "") {
-                    throw new Error("Profile image path is empty");
+                    throw new Error(await translateText("Profile image path is empty"));
                 }
                 await UploadProfilePic(filePath);
                 hasProfilePic = true;
@@ -111,15 +112,14 @@
 
             if (lang !== $language) {
                 await SetLanguage(lang);
-                ChangeCachedLanguage(lang);
                 language.set(lang);
             }
 
             resetImageInputs();
             profilePicResetBtn.classList.add("hidden");
             swal.fire({
-                title: "Success",
-                text: "Your profile has been updated.",
+                title: await translateText("Success"),
+                text: await translateText("Your profile has been updated."),
                 icon: "success",
             });
         };
@@ -179,8 +179,8 @@
 
             try {
                 const result = await swal.fire({
-                    title: "Confirm Master Password",
-                    text: "Please enter your master password again as confirmation.",
+                    title: await translateText("Confirm Master Password"),
+                    text: await translateText("Please enter your master password again as confirmation."),
                     input: "password",
                     inputAttributes: {
                         autocapitalize: "off",
@@ -190,14 +190,16 @@
                     allowEscapeKey: false,
                     allowOutsideClick: false,
                     showLoaderOnConfirm: true,
-                    cancelButtonText: "Cancel",
-                    confirmButtonText: "Submit",
-                    preConfirm: (password: string): void => {
+                    cancelButtonText: await translateText("Cancel"),
+                    confirmButtonText: await translateText("Submit"),
+                    preConfirm: async (password: string): Promise<void> => {
                         if (password === "") {
-                            return Swal.showValidationMessage("Password cannot be empty");
+                            return Swal.showValidationMessage(
+                                await translateText("Password cannot be empty"));
                         }
                         if (password !== masterPassword) {
-                            return Swal.showValidationMessage("Entered password does not match your master password!");
+                            return Swal.showValidationMessage(
+                                await translateText("Entered password does not match your master password!"));
                         }
                         return;
                     },
@@ -208,8 +210,8 @@
 
                 await SetMasterPassword(masterPassword);
                 swal.fire({
-                    title: "Success",
-                    text: "Master password has been updated.",
+                    title: await translateText("Success"),
+                    text: await translateText("Master password has been updated."),
                     icon: "success",
                 });
                 hasMasterPassword = true;
@@ -220,8 +222,8 @@
                     LogError(e.toString());
                 }
                 swal.fire({
-                    title: "Error",
-                    text: "An error occurred while setting the master password. Please try again later.",
+                    title: await translateText("Error"),
+                    text: await translateText("An error occurred while setting the master password. Please try again later."),
                     icon: "error",
                 });
             }
@@ -230,8 +232,8 @@
         const changeMasterPassword = async (currentMasterPassword: string, newMasterPassword: string) => {
             if (currentMasterPassword === "" || newMasterPassword === "") {
                 swal.fire({
-                    title: "Error",
-                    text: "Please fill in the current and new master password fields.",
+                    title: await translateText("Error"),
+                    text: await translateText("Please fill in the current and new master password fields."),
                     icon: "error",
                 });
                 return;
@@ -239,8 +241,8 @@
 
             if (currentMasterPassword === newMasterPassword) {
                 swal.fire({
-                    title: "Error",
-                    text: "The new master password is the same as the current one.",
+                    title: await translateText("Error"),
+                    text: await translateText("The new master password is the same as the current one."),
                     icon: "error",
                 });
                 return;
@@ -248,16 +250,16 @@
 
             if (!await CheckMasterPassword(currentMasterPassword)) {
                 swal.fire({
-                    title: "Error",
-                    text: "The current master password is incorrect.",
+                    title: await translateText("Error"),
+                    text: await translateText("The current master password is incorrect."),
                     icon: "error",
                 });
                 return;
             }
 
             const result = await swal.fire({
-                title: "Confirm Master Password Change",
-                text: "Please enter your new master password again to confirm the change.",
+                title: await translateText("Confirm Master Password Change"),
+                text: await translateText("Please enter your new master password again to confirm the change."),
                 input: "password",
                 inputAttributes: {
                     autocapitalize: "off",
@@ -267,14 +269,16 @@
                 allowEscapeKey: false,
                 allowOutsideClick: false,
                 showLoaderOnConfirm: true,
-                cancelButtonText: "Cancel",
-                confirmButtonText: "Submit",
-                preConfirm: (password: string): void => {
+                cancelButtonText: await translateText("Cancel"),
+                confirmButtonText: await translateText("Submit"),
+                preConfirm: async (password: string): Promise<void> => {
                     if (password === "") {
-                        return Swal.showValidationMessage("Password cannot be empty");
+                        return Swal.showValidationMessage(
+                            await translateText("Password cannot be empty"));
                     }
                     if (password !== newMasterPassword) {
-                        return Swal.showValidationMessage("Entered password does not match your new master password!");
+                        return Swal.showValidationMessage(
+                            await translateText("Entered password does not match your new master password!"));
                     }
                     return;
                 },
@@ -286,8 +290,8 @@
             try {
                 await ChangeMasterPassword(currentMasterPassword, newMasterPassword);
                 swal.fire({
-                    title: "Success",
-                    text: "Master password has been updated.",
+                    title: await translateText("Success"),
+                    text: await translateText("Master password has been updated."),
                     icon: "success",
                 });
             } catch (e) {
@@ -296,8 +300,8 @@
                     LogError(e.toString());
                 }
                 swal.fire({
-                    title: "Error",
-                    text: "An error occurred while setting the master password. Please try again later.",
+                    title: await translateText("Error"),
+                    text: await translateText("An error occurred while setting the master password. Please try again later."),
                     icon: "error",
                 });
             }
@@ -320,8 +324,8 @@
 
         const resetMasterPasswordForm = async (): Promise<void> => {
             const result = await invertedSwal.fire({
-                title: "Remove Master Password?",
-                text: "All your saved encrypted config data will be lost.",
+                title: await translateText("Remove Master Password?"),
+                text: await translateText("All your saved encrypted config data will be lost."),
                 icon: "info",
                 showCancelButton: true,
             })
@@ -333,8 +337,8 @@
             hasMasterPassword = false;
             masterPasswordFormResetBtn.classList.add("hidden");
             swal.fire({
-                title: "Master password removed",
-                text: "You have removed your master password and all your saved encrypted config data have been removed.",
+                title: await translateText("Master password removed"),
+                text: await translateText("You have removed your master password and all your saved encrypted config data have been removed."),
                 icon: "success",
             });
         };
@@ -347,18 +351,24 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="mx-auto text-center">
         <img class="rounded-full w-32 h-32 border-4 mt-2 border-gray-200" id="profile-img-el" alt="user profile" src="{bufferGif}" />
-        <button id="profile-pic-reset-btn" class="text-small hidden text-red-500 hover:text-red-600">Reset Image</button>
+        <button id="profile-pic-reset-btn" class="text-small hidden text-red-500 hover:text-red-600">
+            {translate("Reset Image", "profile-pic-reset-btn", $language)}
+        </button>
     </div>
     <form class="md:col-span-3" id="general-form">
         <div class="flex">
             <div class="w-full">
-                <Label for="username" class="pb-2">Username:</Label>
+                <Label for="username" class="pb-2">
+                    <Translate text="Username:" {language} />
+                </Label>
                 <Input name="username" id="username" />
             </div>
         </div>
         <div class="flex mt-4">
             <div class="w-full">
-                <Label for="language">Language:</Label>
+                <Label for="language">
+                    <Translate text="Language:" {language} />
+                </Label>
                 <Select 
                     class="my-2" 
                     name="language" 
@@ -370,12 +380,20 @@
         </div>
         <div class="flex mt-4">
             <div class="w-full">
-                <Label for="profile-image" class="pb-2">Upload Profile Image:</Label>
+                <Label for="profile-image" class="pb-2">
+                    <Translate text="Upload Profile Image:" {language} />
+                </Label>
                 <Fileupload name="profile-image" id="profile-image" class="mb-2" />
-                <Helper>PNG, JPG, GIF or WEBP.</Helper>
+                <Helper>
+                    <Translate text="PNG, JPG, GIF or WEBP." {language} />
+                </Helper>
                 <Input name="profile-image-path" id="profile-image-path" type="hidden" />
-                <button id="delete-profile-image-btn" type="button" class="btn btn-danger mt-4 ms-3 float-end">Reset</button>
-                <button type="submit" class="btn btn-success mt-4 float-end !me-0">Save All</button>
+                <button id="delete-profile-image-btn" type="button" class="btn btn-danger mt-4 ms-3 float-end">
+                    {translate("Reset", "delete-profile-image-btn", $language)}
+                </button>
+                <button type="submit" class="btn btn-success mt-4 float-end !me-0">
+                    <Translate text="Save All" {language} />
+                </button>
             </div>
         </div>
     </form>
@@ -384,7 +402,9 @@
         {#if hasMasterPassword}
             <div class="flex">
                 <div class="w-full" id="current-master-password-div">
-                    <Label for="current-master-password" class="pb-2">Current Master Password:</Label>
+                    <Label for="current-master-password" class="pb-2">
+                        <Translate text="Current Master Password:" {language} />
+                    </Label>
                     <PasswordToggle>
                         <Input name="current-master-password" id="current-master-password" type="password" />
                     </PasswordToggle>
@@ -392,7 +412,9 @@
             </div>
             <div class="flex">
                 <div class="mt-4 w-full" id="new-master-password-div">
-                    <Label for="new-master-password" class="pb-2">New Master Password:</Label>
+                    <Label for="new-master-password" class="pb-2">
+                        <Translate text="New Master Password:" {language} />
+                    </Label>
                     <PasswordToggle>
                         <Input name="new-master-password" id="new-master-password" type="password" />
                     </PasswordToggle>
@@ -401,7 +423,9 @@
         {:else}
             <div class="flex">
                 <div class="w-full">
-                    <Label for="master-password" class="pb-2">Master Password:</Label>
+                    <Label for="master-password" class="pb-2">
+                        <Translate text="Master Password:" {language} />
+                    </Label>
                     <PasswordToggle>
                         <Input name="master-password" id="master-password" type="password" />
                     </PasswordToggle>
@@ -409,8 +433,12 @@
             </div>
         {/if}
         <div class="text-right mt-4">
-            <button id="master-password-form-reset-btn" type="button" class="btn btn-danger hidden">Reset</button>
-            <button type="submit" class="btn btn-success !me-0">Save</button>
+            <button id="master-password-form-reset-btn" type="button" class="btn btn-danger hidden">
+                {translate("Reset", "master-password-form-reset-btn", $language)}
+            </button>
+            <button type="submit" class="btn btn-success !me-0">
+                <Translate text="Save" {language} />
+            </button>
         </div>
     </form>
 </div>

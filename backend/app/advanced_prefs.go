@@ -91,7 +91,7 @@ func (a *App) SelectFfmpegPath() error {
 		CancelButton:  options[1],
 	})
 	if err != nil {
-		logger.LogError(err, false, logger.ERROR)
+		logger.LogError(err, logger.ERROR)
 		return err
 	}
 	if confirm != options[0] {

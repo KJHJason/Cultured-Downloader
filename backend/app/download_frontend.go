@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	cdlConst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
@@ -36,21 +37,6 @@ type FrontendDownloadDetails struct {
 	Percentage    int
 }
 
-func formatFileSize(fileSize int64) string {
-	if fileSize == -1 {
-		return "Unknown"
-	} else if fileSize > constants.FILESIZE_TB {
-		return fmt.Sprintf("~%d TB", fileSize>>40)
-	} else if fileSize > constants.FILESIZE_GB {
-		return fmt.Sprintf("~%d GB", fileSize>>30)
-	} else if fileSize > constants.FILESIZE_MB {
-		return fmt.Sprintf("~%d MB", fileSize>>20)
-	} else if fileSize > constants.FILESIZE_KB {
-		return fmt.Sprintf("~%d KB", fileSize>>10)
-	}
-	return fmt.Sprintf("~%d B", fileSize)
-}
-
 func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*FrontendDownloadDetails {
 	dlDetailsLen := len(dlProgressBars)
 	if dlDetailsLen == 0 {
@@ -72,7 +58,7 @@ func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*
 			Finished:      dlProg.IsFinished(),
 			HasError:      dlProg.HasError(),
 			Filename:      dlProg.GetFilename(),
-			FileSize:      formatFileSize(dlProg.GetTotalBytes()),
+			FileSize:      iofuncs.FormatFileSize(dlProg.GetTotalBytes()),
 			DownloadSpeed: dlProg.GetDownloadSpeed(),
 			DownloadETA:   dlProg.GetDownloadETA(),
 			Percentage:    dlProg.GetPercentage(),

@@ -2,13 +2,14 @@
     import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
     import { onDestroy } from "svelte";
     import { GetDownloadQueues } from "../scripts/wailsjs/go/app/App";
-    import { Translate, GetLocale } from "../scripts/language";
+    import { GetLocale, translate } from "../scripts/language";
     import Inputs from "./queues/Inputs.svelte";
     import Tasks from "./queues/Tasks.svelte";
     import Actions from "./queues/Actions.svelte";
     import { actions } from "../scripts/constants";
     import type { Writable } from "svelte/store";
     import { type dlModals } from "../scripts/download";
+    import Translate from "./common/Translate.svelte";
 
     export let action: Writable<string>;
 
@@ -82,19 +83,27 @@
 </script>
 
 <div class="container mx-auto">
-    <h2 class="mb-3">{Translate("Download Queues")}</h2>
+    <h2 class="mb-3" id="download-queue-h2">{translate("Download Queues", "download-queue-h2")}</h2>
     <Table hoverable={true} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
-            <TableHeadCell>{Translate("Date/Time")}</TableHeadCell>
-            <TableHeadCell>{Translate("Your Inputs")}</TableHeadCell>
-            <TableHeadCell>{Translate("Current Task")}</TableHeadCell>
-            <TableHeadCell>{Translate("Actions")}</TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Date/Time" />
+            </TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Your Inputs" />
+            </TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Current Task" />
+            </TableHeadCell>
+            <TableHeadCell>
+                <Translate text="Actions" />
+            </TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
             {#if downloadQueues.length === 0}
                 <TableBodyRow>
                     <TableBodyCell tdClass="text-center p-3" colspan="4">
-                        {Translate("There are no download queues at the moment.")}
+                        <Translate text="There are no download queues at the moment." />
                     </TableBodyCell>
                 </TableBodyRow>
             {:else}

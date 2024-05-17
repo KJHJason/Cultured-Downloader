@@ -6,7 +6,7 @@
     import NavbarBtn from "./navbar/NavbarBtn.svelte";
     import { InitialiseDarkModeConfig } from "../scripts/dark-mode";
     import { GetProfilePicURL } from "../scripts/image";
-    import { Translate } from "../scripts/language";
+    import { translate } from "../scripts/language";
     import type { Writable } from "svelte/store";
 
     export let action: Writable<string>;
@@ -28,7 +28,7 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
                 <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-zinc-500 rounded-lg hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:focus:ring-zinc-600">
-                    <span class="sr-only">{Translate("Open sidebar", $language)}</span>
+                    <span class="sr-only" id="sidebar-sr">{translate("Open sidebar", "sidebar-sr", $language)}</span>
                     <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
                     </svg>
@@ -42,7 +42,7 @@
                 <div class="flex items-center ms-3">
                     <div>
                         <button type="button" class="flex text-sm bg-zinc-800 rounded-full focus:ring-4 focus:ring-zinc-300 dark:focus:ring-zinc-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
-                            <span class="sr-only">{Translate("Open user menu", $language)}</span>
+                            <span class="sr-only" id="user-menu-sr">{translate("Open user menu", "user-menu-sr", $language)}</span>
                             <img class="w-8 h-8 rounded-full border-2 border-gray-200" src="{bufferGif}" alt="user profile" id="navbar-user-profile" />
                         </button>
                     </div>
@@ -55,7 +55,7 @@
                             <li>
                                 <button on:click={() => {action.set(actions.Settings)}} class="flex justify-center items-center px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-600 dark:hover:text-white group w-full" role="menuitem">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                                    <span class="flex-1 ms-2 text-left whitespace-nowrap">{Translate("Settings", $language)}</span>
+                                    <span class="flex-1 ms-2 text-left whitespace-nowrap" id="setting-btn-text">{translate("Settings", "setting-btn-text", $language)}</span>
                                 </button>
                             </li>
                             <li>
@@ -66,10 +66,10 @@
                                     </div>
                                     <div class="flex-1 ms-2 text-left whitespace-nowrap">
                                         <span id="dark-mode-toggle-text" class="hidden" aria-hidden="false">
-                                            {Translate("Dark Mode", $language)}
+                                            {translate("Dark Mode", "dark-mode-toggle-text", $language)}
                                         </span>
                                         <span id="light-mode-toggle-text" class="hidden" aria-hidden="false">
-                                            {Translate("Light Mode", $language)}
+                                            {translate("Light Mode", "light-mode-toggle-text", $language)}
                                         </span>
                                     </div>
                                 </button>

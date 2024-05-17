@@ -1,6 +1,7 @@
 <script lang="ts">
     import { type Writable, writable } from "svelte/store";
-    import { Translate } from "../../scripts/language";
+    import { translate } from "../../scripts/language";
+    import Translate from "./Translate.svelte";
     import { onDestroy } from "svelte";
 
     export let pageNum: Writable<number> = writable(1);
@@ -104,22 +105,22 @@
 </script>
 
 {#if $elements.length === 0 && showInfoIfNoEntry}
-    <p class="text-center text-gray-500 dark:text-gray-400">{Translate("No entries to show.")}</p>
+    <p class="text-center text-gray-500 dark:text-gray-400" id="no-entries-msg">{translate("No entries to show.", "no-entries-msg")}</p>
 {:else if $elements.length >= 1}
     <nav aria-label="Paginated Element Page Number" class="flex flex-col items-center">
         <span class="text-sm text-gray-700 dark:text-gray-400">
-            {Translate("Showing")}
+            <Translate text="Showing" />
             <span class="font-semibold text-gray-900 dark:text-white">{minElIdx}</span>
-            {Translate("to")}
+            <Translate text="to" />
             <span class="font-semibold text-gray-900 dark:text-white">{maxElIdx}</span>
-            {Translate("of")}
+            <Translate text="of" />
             <span class="font-semibold text-gray-900 dark:text-white">{$elements.length}</span>
-            {Translate("Entries")}
+            <Translate text="Entries" />
         </span>
         <ul class="inline-flex mt-2 xs:mt-0 -space-x-px h-10 text-base">
             <li>
                 <button type="button" on:click={onPrev} class="flex items-center justify-center px-4 h-10 ms-0 leading-tight bg-white border border-e-0 border-gray-300 rounded-s-lg dark:bg-gray-800 dark:border-gray-700 {getHoverBtnClass(prevBtnDisabled)} {getBtnTextClass(prevBtnDisabled)}" disabled={prevBtnDisabled}>
-                    <span class="sr-only">{Translate("Previous")}</span>
+                    <Translate spanClass="sr-only" text="Previous" />
                     <svg class="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
                     </svg>
@@ -141,7 +142,7 @@
             {/each}
             <li>
                 <button type="button" on:click={onNext} class="flex items-center justify-center px-4 h-10 leading-tight bg-white border border-gray-300 rounded-e-lg dark:bg-gray-800 dark:border-gray-700 {getHoverBtnClass(nextBtnDisabled)} {getBtnTextClass(nextBtnDisabled)}" disabled={nextBtnDisabled}>
-                    <span class="sr-only">{Translate("Next")}</span>
+                    <Translate spanClass="sr-only" text="Next" />
                     <svg class="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
                     </svg>

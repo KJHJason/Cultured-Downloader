@@ -138,6 +138,10 @@ export function SetDlDirPath(arg1) {
   return window['go']['app']['App']['SetDlDirPath'](arg1);
 }
 
+export function SetFantiaPreferences(arg1) {
+  return window['go']['app']['App']['SetFantiaPreferences'](arg1);
+}
+
 export function SetFfmpegPath(arg1) {
   return window['go']['app']['App']['SetFfmpegPath'](arg1);
 }
@@ -200,6 +204,10 @@ export function SubmitPixivFanboxToQueue(arg1, arg2) {
 
 export function SubmitPixivToQueue(arg1, arg2) {
   return window['go']['app']['App']['SubmitPixivToQueue'](arg1, arg2);
+}
+
+export function Translate(arg1, arg2) {
+  return window['go']['app']['App']['Translate'](arg1, arg2);
 }
 
 export function UnsetGDriveJson() {

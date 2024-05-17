@@ -36,6 +36,7 @@ func (a *App) GetGdriveClient() *gdrive.GDrive {
 			UserOauthTokenJson: userOauthTokenJson,
 		},
 		gdrive.USE_DEFAULT_MAX_CONCURRENCY,
+		a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true),
 	)
 	if err != nil {
 		logger.MainLogger.Errorf("error creating GDrive client: %v", err)
@@ -52,10 +53,14 @@ func (a *App) SetGDriveAPIKey(apiKey string) error {
 		return a.appData.Unset(constants.GDRIVE_API_KEY_KEY)
 	}
 
-	credsInput := &gdrive.CredsInputs{
-		ApiKey: apiKey,
-	}
-	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, credsInput, 1)
+	gdriveClient, err := gdrive.GetNewGDrive(
+		a.ctx, 
+		&gdrive.CredsInputs{
+			ApiKey: apiKey,
+		}, 
+		gdrive.USE_DEFAULT_MAX_CONCURRENCY,
+		a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true),
+	)
 	if err != nil {
 		return err
 	}
@@ -109,10 +114,14 @@ func (a *App) SelectGDriveServiceAccount() error {
 		return fmt.Errorf("authentication needed, %s", oauthUrl)
 	}
 
-	credsInput := &gdrive.CredsInputs{
-		SrvAccJson: jsonBytes,
-	}
-	gdriveClient, err := gdrive.GetNewGDrive(a.ctx, credsInput, 1)
+	gdriveClient, err := gdrive.GetNewGDrive(
+		a.ctx, 
+		&gdrive.CredsInputs{
+			SrvAccJson: jsonBytes,
+		}, 
+		gdrive.USE_DEFAULT_MAX_CONCURRENCY,
+		a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true),
+	)
 	if err != nil {
 		return err
 	}

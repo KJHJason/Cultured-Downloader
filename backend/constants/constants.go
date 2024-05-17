@@ -1,6 +1,7 @@
 package constants
 
 const (
+	DEV_MODE                     = true
 	PROGRAM_NAME                 = "Cultured Downloader"
 	PROGRAM_VER                  = "5.0.0"
 	LOCAL_USER_ASSET_DIR_NAME    = "assets"
@@ -13,14 +14,8 @@ const (
 	PROFILE_PIC_PATH_KEY         = "profile-pic-path"
 	DOWNLOAD_KEY                 = "download"
 	FFMPEG_KEY                   = "ffmpeg"
-
-	EN = "en"
-	JA = "ja"
-
-	FILESIZE_TB = 1 << 40
-	FILESIZE_GB = 1 << 30
-	FILESIZE_MB = 1 << 20
-	FILESIZE_KB = 1 << 10
+	USE_CACHE_DB_KEY             = "use-cache-db"
+	CACHE_DB_PATH_KEY            = "cache-db-path"
 
 	// Platform names
 	FANTIA       = "fantia"
@@ -40,9 +35,10 @@ const (
 	DL_GDRIVE_KEY         = "dl-gdrive"
 	DETECT_OTHER_URLS_KEY = "detect-other-urls"
 
-	FANTIA_COOKIE_VALUE_KEY = "fantia-cookie-value"
-	FANTIA_COOKIE_JSON_KEY  = "fantia-cookie-json"
-	FANTIA_COOKIE_TXT_KEY   = "fantia-cookie-txt"
+	FANTIA_ORGANISE_IMAGES_KEY = "fantia-organise-images"
+	FANTIA_COOKIE_VALUE_KEY    = "fantia-cookie-value"
+	FANTIA_COOKIE_JSON_KEY     = "fantia-cookie-json"
+	FANTIA_COOKIE_TXT_KEY      = "fantia-cookie-txt"
 
 	PIXIV_FANBOX_COOKIE_VALUE_KEY = "fanbox-cookie-value"
 	PIXIV_FANBOX_COOKIE_JSON_KEY  = "fanbox-cookie-json"

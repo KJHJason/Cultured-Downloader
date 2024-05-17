@@ -3,6 +3,8 @@
     import { onMount } from "svelte";
     import { GetPreferences, SetPixivPreferences } from "../../scripts/wailsjs/go/app/App";
     import { pixivFormId, swal } from "../../scripts/constants";
+    import { translateText } from "../../scripts/language";
+    import Translate from "../common/Translate.svelte";
 
     export let formId = pixivFormId;
     export let promptSuccess: boolean;
@@ -74,6 +76,9 @@
         }
         processPrefs(preferences);
 
+        const success = await translateText("Success");
+        const prefsSaved = await translateText("Preferences saved successfully");
+
         const prefForm = document.getElementById(formId) as HTMLFormElement;
         prefForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -92,8 +97,8 @@
 
             if (promptSuccess) {
                 swal.fire({
-                    title: "Success",
-                    text: "Preferences saved successfully",
+                    title: success,
+                    text: prefsSaved,
                     icon: "success",
                 });
             }
@@ -103,11 +108,15 @@
 
 <form id={formId}>
     <div class="grid grid-cols-1 md:grid-cols-2 my-4">
-        <Toggle color="green" id="DeleteUgoiraZip" name="DeleteUgoiraZip">Delete Ugoira Zip After Conversion</Toggle>
+        <Toggle color="green" id="DeleteUgoiraZip" name="DeleteUgoiraZip">
+            <Translate text="Delete Ugoira Zip After Conversion" />
+        </Toggle>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <Label for="ArtworkType">Artwork Type:</Label>
+            <Label for="ArtworkType">
+                <Translate text="Artwork Type:" />
+            </Label>
             <Select 
                 class="mt-2" 
                 name="ArtworkType" 
@@ -117,7 +126,9 @@
             />
         </div>
         <div>
-            <Label for="RatingMode">Rating Mode:</Label>
+            <Label for="RatingMode">
+                <Translate text="Rating Mode:" />
+            </Label>
             <Select 
                 class="mt-2" 
                 name="RatingMode" 
@@ -127,7 +138,9 @@
             />
         </div>
         <div>
-            <Label for="SearchMode">Search Mode:</Label>
+            <Label for="SearchMode">
+                <Translate text="Search Mode:" />
+            </Label>
             <Select 
                 class="mt-2" 
                 name="SearchMode" 
@@ -137,7 +150,9 @@
             />
         </div>
         <div>
-            <Label for="AiSearchMode">AI Search Mode:</Label>
+            <Label for="AiSearchMode">
+                <Translate text="AI Search Mode:" />
+            </Label>
             <Select 
                 class="mt-2" 
                 name="AiSearchMode" 
@@ -147,7 +162,9 @@
             />
         </div>
         <div>
-            <Label for="SortOrder">Sort Order:</Label>
+            <Label for="SortOrder">
+                <Translate text="Sort Order:" />
+            </Label>
             <Select 
                 class="mt-2" 
                 name="SortOrder" 
@@ -157,7 +174,9 @@
             />
         </div>
         <div>
-            <Label for="UgoiraOutputFormat">Ugoira Output File Format:</Label>
+            <Label for="UgoiraOutputFormat">
+                <Translate text="Ugoira Output File Format:" />
+            </Label>
             <Select 
                 class="mt-2" 
                 name="UgoiraOutputFormat" 
@@ -167,7 +186,9 @@
             />
         </div>
         <div>
-            <Label for="UgoiraQuality">Ugoira Quality:</Label>
+            <Label for="UgoiraQuality">
+                <Translate text="Ugoira Quality:" />
+            </Label>
             <Input 
                 class="mt-2" 
                 name="UgoiraQuality" 
@@ -177,7 +198,9 @@
                 min="0"
                 max="63"
             />
-            <Helper class="mt-1">Lower values mean better quality but longer conversion times!</Helper>
+            <Helper class="mt-1">
+                <Translate text="Lower values mean better quality but longer conversion times!" />
+            </Helper>
         </div>
     </div>
 </form>

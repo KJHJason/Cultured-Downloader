@@ -17,6 +17,7 @@ type App struct {
 	downloadQueues list.List // doubly linked list of DownloadQueue
 	gdriveClient   *gdrive.GDrive
 	notifier       notifier.Notifier
+	mvCacheDbTask  func() error // to be executed on shutdown
 }
 
 // NewApp creates a new App application struct
