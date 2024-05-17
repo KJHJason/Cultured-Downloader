@@ -88,7 +88,7 @@ func (a *App) Startup(ctx context.Context) {
 			logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
 		}
 	}
-	language.InitLangDb()
+	language.InitLangDb(a.ctx)
 
 	ticker := time.NewTicker(1 * time.Second) // check for new queues every few second
 	go func() {
