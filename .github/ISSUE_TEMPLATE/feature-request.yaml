@@ -1,0 +1,38 @@
+name: Feature Request
+description: "Want to suggest a new feature or improvement? File a feature request here."
+title: "Feature Request: "
+labels: ["enhancement"]
+assignees: 
+  - KJHJason
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request! If you have any ideas on how to improve Cultured Downloader, feel free to share them here.
+
+  - type: dropdown
+    id: program_name
+    attributes:
+      label: Which program are you suggesting this feature for?
+      description: If you are suggesting a feature for the Python program, do take note that it is likely that it will get rejected as it is no longer getting new features.
+      multiple: true
+      options:
+        - Cultured Downloader (Go)
+        - Cultured Downloader (Python)
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature_description
+    attributes:
+      label: Feature Description
+      description: Describe the feature you are suggesting in detail.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (Optional)
+      description: If you have any screenshots or images that can help illustrate the feature you are suggesting, feel free to attach them here. (You can drag and drop the image here)

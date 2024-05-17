@@ -1,0 +1,38 @@
+name: Translation Error
+description: Found a translation error? Report it here!
+title: "Translation Error: "
+labels: ["translation error"]
+assignees: 
+  - KJHJason
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this translation error report! If you found a translation error in Cultured Downloader, feel free to share it here.
+
+  - type: dropdown
+    id: program_name
+    attributes:
+      label: Which program are you suggesting this feature for?
+      description: If you are suggesting a feature for the Python program, do take note that it is likely that it will get rejected as it is no longer getting new features.
+      multiple: true
+      options:
+        - Cultured Downloader (Go)
+        - Cultured Downloader (Python)
+    validations:
+      required: true
+
+  - type: textarea
+    id: translation_error
+    attributes:
+      label: Translation Error
+      description: Describe the translation error you found and suggest the translation that should be used instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Paste a screenshot of the translation error here so that I can locate the source of the translation error.

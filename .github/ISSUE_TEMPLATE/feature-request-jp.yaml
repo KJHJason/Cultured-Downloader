@@ -1,0 +1,38 @@
+name: フィーチャーリクエスト
+description: "新機能や改善を提案したいですか？こちらにフィーチャーリクエストを提出してください。"
+title: "フィーチャーリクエスト: "
+labels: ["enhancement"]
+assignees: 
+  - KJHJason
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        フィーチャーリクエストを提出していただき、ありがとうございました！Cultured Downloaderを改善するアイデアがあれば、お気軽に共有してください。
+
+  - type: dropdown
+    id: program_name
+    attributes:
+      label: どのプログラムでこの機能を提案していますか？
+      description: Pythonプログラムの機能を提案している場合、新しい機能が追加されない可能性が高いことに注意してください。
+      multiple: true
+      options:
+        - Cultured Downloader (Go)
+        - Cultured Downloader (Python)
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature_description
+    attributes:
+      label: 機能の説明
+      description: 提案している機能を詳しく簡単な日本語で説明してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: スクリーンショット（任意）
+      description: 提案している機能を説明するのに役立つスクリーンショットや画像があれば、こちらに添付してください。（ここに画像をドラッグアンドドロップできます）
