@@ -42,6 +42,7 @@ func (a *App) getDownloadDir() (dirPath string, err error, hadToFallback bool) {
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+	language.InitLangDb(a.ctx)
 	appData, initialLoadErr := appdata.NewAppData()
 	if initialLoadErr != nil {
 		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
@@ -88,7 +89,6 @@ func (a *App) Startup(ctx context.Context) {
 			logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
 		}
 	}
-	language.InitLangDb(a.ctx)
 
 	ticker := time.NewTicker(1 * time.Second) // check for new queues every few second
 	go func() {
