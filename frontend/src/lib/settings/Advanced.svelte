@@ -24,7 +24,7 @@
         GetGDriveClientAndOauthToken,
     } from "../../scripts/wailsjs/go/app/App";
     import { onMount } from "svelte";
-    import { invertedSwal, swal } from "../../scripts/constants";
+    import { invertedSwal, swal, pleaseWaitSwal } from "../../scripts/constants";
     import { UploadSolid } from "flowbite-svelte-icons";
     import { translate, translateText } from "../../scripts/language";
     import PasswordToggle from "../common/PasswordToggle.svelte";
@@ -342,9 +342,16 @@
             }
         });
 
+        const savingText = await translateText("Saving...");
+        const pleaseWaitText = await translateText("Please wait a moment.");
         const settingSavedText = await translateText("Settings saved successfully");
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
+            pleaseWaitSwal.fire({
+                title: savingText,
+                text: pleaseWaitText,
+            })
+
             const downloadLocation = dlLocationInp.value;
             const userAgent = userAgentInp.value;
             const pixivOauthCode = pixivOauthInp.value;

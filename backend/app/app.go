@@ -3,6 +3,7 @@ package app
 import (
 	"container/list"
 	"context"
+	"time"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
@@ -15,12 +16,12 @@ type App struct {
 	appData        *appdata.AppData
 	lang           string
 	downloadQueues list.List // doubly linked list of DownloadQueue
+	queueTicker    *time.Ticker
 	gdriveClient   *gdrive.GDrive
 	notifier       notifier.Notifier
 	mvCacheDbTask  func() error // to be executed on shutdown
 }
 
-// NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{}
 }

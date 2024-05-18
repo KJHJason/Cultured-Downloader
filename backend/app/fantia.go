@@ -76,6 +76,7 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *preferences) (fa
 		OrganiseImages:      pref.OrganisePostImages,
 		DlAttachments:       pref.DlPostAttachments,
 		DlGdrive:            pref.DlGDrive,
+		UseCacheDb:          pref.UseCacheDb,
 		BaseDownloadDirPath: baseDlDirPath,
 
 		GdriveClient: a.GetGdriveClient(),

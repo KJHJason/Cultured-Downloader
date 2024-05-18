@@ -146,6 +146,7 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	pixivMobileDlOptions = &pixivmobile.PixivMobileDlOptions{
+		UseCacheDb:          pref.UseCacheDb,
 		BaseDownloadDirPath: baseDlDirPath,
 		SortOrder:           convertSortOrderForBackend(pref.SortOrder),
 		SearchMode:          convertSearchModeForBackend(pref.SearchMode),
@@ -201,6 +202,7 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref *preferences) (pix
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	pixivWebDlOptions = &pixivweb.PixivWebDlOptions{
+		UseCacheDb:          pref.UseCacheDb,
 		BaseDownloadDirPath: baseDlDirPath,
 		SortOrder:           convertSortOrderForBackend(pref.SortOrder),
 		SearchMode:          convertSearchModeForBackend(pref.SearchMode),

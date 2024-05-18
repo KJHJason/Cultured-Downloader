@@ -10,6 +10,10 @@ export function CancelQueue(arg1) {
   return window['go']['app']['App']['CancelQueue'](arg1);
 }
 
+export function ChangeCacheDbLocation(arg1) {
+  return window['go']['app']['App']['ChangeCacheDbLocation'](arg1);
+}
+
 export function ChangeMasterPassword(arg1, arg2) {
   return window['go']['app']['App']['ChangeMasterPassword'](arg1, arg2);
 }
@@ -22,12 +26,48 @@ export function CheckMasterPassword(arg1) {
   return window['go']['app']['App']['CheckMasterPassword'](arg1);
 }
 
+export function DeleteAllGdriveCache() {
+  return window['go']['app']['App']['DeleteAllGdriveCache']();
+}
+
+export function DeleteAllKemonoCreatorCache() {
+  return window['go']['app']['App']['DeleteAllKemonoCreatorCache']();
+}
+
+export function DeleteAllPostCache() {
+  return window['go']['app']['App']['DeleteAllPostCache']();
+}
+
+export function DeleteAllUgoiraCache() {
+  return window['go']['app']['App']['DeleteAllUgoiraCache']();
+}
+
+export function DeleteCacheKey(arg1) {
+  return window['go']['app']['App']['DeleteCacheKey'](arg1);
+}
+
 export function DeleteProfilePic() {
   return window['go']['app']['App']['DeleteProfilePic']();
 }
 
 export function DeleteQueue(arg1) {
   return window['go']['app']['App']['DeleteQueue'](arg1);
+}
+
+export function GetAllGdriveCache() {
+  return window['go']['app']['App']['GetAllGdriveCache']();
+}
+
+export function GetAllKemonoCreatorCache() {
+  return window['go']['app']['App']['GetAllKemonoCreatorCache']();
+}
+
+export function GetAllUgoiraCache() {
+  return window['go']['app']['App']['GetAllUgoiraCache']();
+}
+
+export function GetCacheDbLocation() {
+  return window['go']['app']['App']['GetCacheDbLocation']();
 }
 
 export function GetDarkMode() {
@@ -72,6 +112,10 @@ export function GetLanguage() {
 
 export function GetPixivRefreshToken() {
   return window['go']['app']['App']['GetPixivRefreshToken']();
+}
+
+export function GetPostCache(arg1) {
+  return window['go']['app']['App']['GetPostCache'](arg1);
 }
 
 export function GetPreferences() {
@@ -124,6 +168,10 @@ export function SelectFfmpegPath() {
 
 export function SelectGDriveServiceAccount() {
   return window['go']['app']['App']['SelectGDriveServiceAccount']();
+}
+
+export function SelectNewCacheDbLocation() {
+  return window['go']['app']['App']['SelectNewCacheDbLocation']();
 }
 
 export function SelectProfilePic() {

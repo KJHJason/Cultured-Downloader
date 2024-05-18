@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
+	"github.com/KJHJason/Cultured-Downloader-Logic/cache"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/parsers"
@@ -45,10 +46,10 @@ func (a *App) UploadCookieFile(website string) error {
 	}
 
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select generated Netscape/Mozilla cookie file for " + api.GetReadableSiteStr(website),
+		Title: "Select generated Netscape/Mozilla cookie file for " + cache.GetReadableSiteStr(website),
 		Filters: []runtime.FileFilter{
 			{
-				DisplayName: "Text Files (*.txt,*.json)",
+				DisplayName: "Text/JSON Files (*.txt,*.json)",
 				Pattern:     "*.txt;*.json",
 			},
 		},
@@ -166,7 +167,7 @@ func (a *App) getSessionCookies(website string) ([]*http.Cookie, error) {
 	}
 
 	//lint:ignore ST1005 Captialised for frontend use
-	return nil, fmt.Errorf("No cookies found for %s", api.GetReadableSiteStr(website))
+	return nil, fmt.Errorf("No cookies found for %s", cache.GetReadableSiteStr(website))
 }
 
 func getSessionValFromCookies(website string, cookies []*http.Cookie) (string, error) {

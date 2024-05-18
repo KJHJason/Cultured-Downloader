@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Textarea, Helper, Card, Hr, Spinner } from "flowbite-svelte";
-    import { actions, swal } from "../scripts/constants";
+    import { actions, swal, pleaseWaitSwal } from "../scripts/constants";
     import { ArrowLeftOutline } from "flowbite-svelte-icons";
     import PixivSettings from "./settings/PixivSettings.svelte";
     import GeneralSettings from "./settings/GeneralSettings.svelte";
@@ -240,19 +240,10 @@
                 return;
             }
 
-            swal.fire({
+            pleaseWaitSwal.fire({
                 title: addingToQueue,
                 text: queuePleaseWait,
-                icon: "info",
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                allowEnterKey: false,
-                showConfirmButton: false,
-                willOpen: () => {
-                    swal.showLoading();
-                },
             })
-
             try {
                 await addToQueueFn(inputs, downloadPreferences);
                 swal.fire({
@@ -263,7 +254,6 @@
                 });
                 resetForm();
             } catch (e) {
-                swal.close();
                 if (e && e.toString().startsWith("no cookies found for")) {
                     swal.fire({
                         title: inputErr,

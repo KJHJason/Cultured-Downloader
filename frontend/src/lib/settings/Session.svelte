@@ -2,10 +2,11 @@
     import { Input, Tooltip, ButtonGroup, Label, Helper } from "flowbite-svelte";
     import { UploadCookieFile, GetSessionValue, SetSessionValue, ResetSession } from "../../scripts/wailsjs/go/app/App";
     import { UploadSolid } from "flowbite-svelte-icons";
-    import { swal } from "../../scripts/constants";
+    import { swal, pleaseWaitSwal } from "../../scripts/constants";
     import { onMount } from "svelte";
     import PasswordToggle from "../common/PasswordToggle.svelte";
     import ButtonGroupBtn from "../common/ButtonGroupBtn.svelte";
+    import { translateText } from "../../scripts/language";
 
     export let elId: string;
     export let title: string;
@@ -42,7 +43,12 @@
         toggleDeleteBtn(sessionVal)
     }
 
+    let savingText: string;
+    let pleaseWaitText: string;
     onMount(async () => {
+        savingText = await translateText("Saving...");
+        pleaseWaitText = await translateText("Please wait a moment.");
+
         inpEl = document.getElementById(elId) as HTMLInputElement;
         deleteBtn = document.getElementById(`${website}-delete-button`) as HTMLButtonElement;
         await updateInputValue();
@@ -73,6 +79,10 @@
     });
 
     const UploadCookieFileWithAlert = () => {
+        pleaseWaitSwal.fire({
+            title: savingText,
+            text: pleaseWaitText,
+        })
         UploadCookieFile(website)
             .then(() => {
                 updateInputValue();

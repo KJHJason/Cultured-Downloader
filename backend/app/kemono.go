@@ -88,6 +88,7 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *preferences) (ke
 		DlAttachments:       pref.DlPostAttachments,
 		DlGdrive:            pref.DlGDrive,
 		BaseDownloadDirPath: baseDlDirPath,
+		UseCacheDb:          pref.UseCacheDb,
 
 		GdriveClient: a.GetGdriveClient(),
 

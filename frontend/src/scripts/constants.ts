@@ -7,29 +7,45 @@ import kemonoLogo from "../assets/images/logos/kemono-logo.png";
 export const generalFormId = "generalForm";
 export const pixivFormId = "pixivForm";
 
+const defaultBtnClasses = {
+    confirmButton: "btn btn-success",
+    denyButton:    "btn btn-danger",
+    cancelButton:  "btn btn-danger",
+};
+const invertedBtnClasses = {
+    confirmButton: "btn btn-danger",
+    denyButton:    "btn btn-success",
+    cancelButton:  "btn btn-success",
+};
+
 export const swal = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-success",
-        denyButton:    "btn btn-danger",
-        cancelButton:  "btn btn-danger",
-    },
+    customClass: defaultBtnClasses,
     buttonsStyling: false,
 });
 
-export const invertedSwal = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-danger",
-        denyButton:    "btn btn-success",
-        cancelButton:  "btn btn-success",
+export const pleaseWaitSwal = Swal.mixin({
+    customClass: defaultBtnClasses,
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    allowEnterKey: false,
+    showConfirmButton: false,
+    buttonsStyling: false,
+    willOpen: () => {
+        swal.showLoading();
     },
+});
+
+export const invertedSwal = Swal.mixin({
+    customClass: invertedBtnClasses,
     buttonsStyling: false,
 });
 
 export const infoSwal = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-info",
-        denyButton:    "btn btn-danger",
-        cancelButton:  "btn btn-danger",
+        denyButton:    defaultBtnClasses.denyButton,
+        cancelButton:  defaultBtnClasses.cancelButton,
     },
     buttonsStyling: false,
 });

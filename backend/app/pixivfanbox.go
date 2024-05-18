@@ -91,6 +91,7 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *preferences
 		DlImages:            pref.DlPostImages,
 		DlAttachments:       pref.DlPostAttachments,
 		DlGdrive:            pref.DlGDrive,
+		UseCacheDb:          pref.UseCacheDb,
 		BaseDownloadDirPath: baseDlDirPath,
 
 		GdriveClient: a.GetGdriveClient(),

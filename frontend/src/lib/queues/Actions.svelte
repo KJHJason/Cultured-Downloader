@@ -52,7 +52,7 @@
         pageNumEditUnsubscribe()
     });
 
-    const rowsPerPage = 2;
+    const rowsPerPage = 8;
     const paginatedDownloads: Writable<any[]> = writable([]);
 </script>
 

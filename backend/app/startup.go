@@ -38,11 +38,34 @@ func (a *App) getDownloadDir() (dirPath string, err error, hadToFallback bool) {
 	return desktopDir, nil, true
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
-func (a *App) Startup(ctx context.Context) {
-	a.ctx = ctx
-	language.InitLangDb(a.ctx)
+func (a *App) changeCacheDbErrHandler() {
+	cache.HandleErr = func(err error, logMsg string) {
+		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error encountered!",
+			Message: logMsg + ": " + err.Error(),
+		})
+		if dialogErr != nil {
+			logger.MainLogger.Errorf("Error encountered while trying to show error dialog: %v", dialogErr)
+		}
+		logger.MainLogger.Fatalf("%s: %s", logMsg, err)
+	}
+}
+
+func (a *App) initLangDb() {
+	language.InitLangDb(a.ctx, func(msg string) {
+		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error loading language database!",
+			Message: msg,
+		})
+		if err != nil {
+			logger.MainLogger.Errorf("Error encountered while trying to show error dialog: %v", err)
+		}
+	})
+}
+
+func (a *App) loadAppData() {
 	appData, initialLoadErr := appdata.NewAppData()
 	if initialLoadErr != nil {
 		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
@@ -57,18 +80,20 @@ func (a *App) Startup(ctx context.Context) {
 		panic("Error loading data from file!")
 	}
 	a.appData = appData
+}
 
-	// retrieve user's download directory
+// retrieve user's download directory
+func (a *App) getUserSavedDlDirPath() {
 	_, err, hadToFallback := a.getDownloadDir()
 	if err != nil {
-		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 			Type:    runtime.ErrorDialog,
 			Title:   "Error getting download directory!",
 			Message: err.Error(),
 		})
-		if err != nil {
+		if dialogErr != nil {
 			logger.MainLogger.Errorf(
-				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", err, initialLoadErr)
+				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", dialogErr, err)
 		}
 	} else if hadToFallback {
 		// try retrieving the old download directory path from config.json (*Cultured-Downloader-CLI)
@@ -79,27 +104,53 @@ func (a *App) Startup(ctx context.Context) {
 			}
 		}
 	}
+}
 
-	a.gdriveClient = a.GetGdriveClient()
-	a.notifier = notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME)
-	a.lang = a.appData.GetStringWithFallback(constants.LANGUAGE_KEY, cdlconst.EN)
-
-	if a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true) {
-		if err := cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)); err != nil {
-			logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
-		}
+func (a *App) initCacheDb() {
+	if !a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true) {
+		return
 	}
 
-	ticker := time.NewTicker(1 * time.Second) // check for new queues every few second
+	if err := cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)); err != nil {
+		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error initialising cache database!",
+			Message: err.Error(),
+		})
+		if dialogErr != nil {
+			logger.MainLogger.Errorf("Error encountered while trying to show error dialog for cache db: %v", dialogErr)
+		}
+		logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
+	}
+}
+
+func (a *App) initQueueTicker() {
+	a.queueTicker = time.NewTicker(1 * time.Second) // check for new queues every few second
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
-				ticker.Stop()
+			case <-a.ctx.Done():
+				a.queueTicker.Stop()
 				return
-			case <-ticker.C:
+			case <-a.queueTicker.C:
 				a.startNewQueues()
 			}
 		}
 	}()
+}
+
+// startup is called when the app starts. The context is saved
+// so we can call the runtime methods
+func (a *App) Startup(ctx context.Context) {
+	a.ctx = ctx
+	a.changeCacheDbErrHandler()
+	a.initLangDb()
+	a.loadAppData()
+	a.getUserSavedDlDirPath()
+
+	a.gdriveClient = a.GetGdriveClient()
+	a.notifier = notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME)
+	a.lang = a.appData.GetStringWithFallback(constants.LANGUAGE_KEY, cdlconst.EN)
+	a.initCacheDb()
+	a.initQueueTicker()
 }

@@ -2,7 +2,8 @@
     import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
     import { onDestroy } from "svelte";
     import { GetDownloadQueues } from "../scripts/wailsjs/go/app/App";
-    import { GetLocale, translate } from "../scripts/language";
+    import { translate } from "../scripts/language";
+    import { makeDateTimeReadable } from "../scripts/time";
     import Inputs from "./queues/Inputs.svelte";
     import Tasks from "./queues/Tasks.svelte";
     import Actions from "./queues/Actions.svelte";
@@ -38,19 +39,6 @@
                 delete oldRecord[id];
             }
         }
-    };
-
-    const makeDateTimeReadable = (dateTime: string, addSeconds: boolean = false): string => {
-        const date = new Date(dateTime);
-        const options: Intl.DateTimeFormatOptions = {
-            month: "short", day: "numeric", 
-            hour: "numeric", minute: "numeric",
-        };
-
-        if (addSeconds) {
-            options.second = "numeric";
-        }
-        return date.toLocaleString(GetLocale(), options);
     };
 
     // make a polling request to get the download queues
