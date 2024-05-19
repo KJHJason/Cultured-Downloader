@@ -6,6 +6,7 @@
     import { translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
     import CacheDetails from "./CacheDetails.svelte";
+    import { ArchiveSolid } from "flowbite-svelte-icons";
 
     export let formId = generalFormId;
     export let promptSuccess: boolean;
@@ -134,8 +135,9 @@
 
 {#if UseCacheDbInp} 
     <CacheDetails bind:open={cacheDetailsOpened} />
-    <div class="mt-5 text-right">
-        <button type="button" class="btn btn-info" on:click={() => cacheDetailsOpened = true} >
+    <div class="mt-5">
+        <button type="button" class="btn btn-info flex" on:click={() => cacheDetailsOpened = true} >
+            <ArchiveSolid />
             <Translate text="View Cache" />
         </button>
     </div>

@@ -68,7 +68,6 @@
 
     onMount(async () => {
         const data = await fetchDataFunc();
-        console.log(data);
         if (data === null) {
             cache.set([]);
         } else {

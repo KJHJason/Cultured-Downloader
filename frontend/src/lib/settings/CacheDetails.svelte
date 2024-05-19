@@ -16,8 +16,11 @@
     $: kemonoCacheTitle = "Kemono Creator Cache";
     $: ugoiraCacheTitle = "Pixiv Ugoira Cache";
     onMount(async () => {
-        postCacheTitle = await translateText("Post Cache");
         modalTitle = await translateText("Cache Details");
+        postCacheTitle = await translateText("Post Cache");
+        gdriveCacheTitle = await translateText("GDrive Cache");
+        kemonoCacheTitle = await translateText("Kemono Creator Cache");
+        ugoiraCacheTitle = await translateText("Pixiv Ugoira Cache");
     });
 
     const rowsPerPage = 6;

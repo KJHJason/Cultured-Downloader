@@ -9,6 +9,10 @@
     import { pleaseWaitSwal, swal } from "../../../scripts/constants";
     import { FilterOutline, TrashBinSolid } from "flowbite-svelte-icons";
     import { makeDateTimeReadable } from "../../../scripts/time";
+    import fantiaLogo from "../../../assets/images/logos/fantia-logo.png";
+    import pixivFanboxLogo from "../../../assets/images/logos/pixiv-fanbox-logo.png";
+    import pixivLogo from "../../../assets/images/logos/pixiv-logo.png";
+    import kemonoLogo from "../../../assets/images/logos/kemono-logo.png";
 
     export let rowsPerPage: number;
     export let pageNum: Writable<number>;
@@ -181,7 +185,18 @@
                 {#each $paginatedPostCache as post }
                     <TableBodyRow>
                         <TableBodyCell>
-                            {post.Platform}
+                            {@const platform = post.Platform}
+                            {#if platform === "fantia"}
+                                <img src={fantiaLogo} class="w-8 h-8 me-2" alt="fantia logo" />
+                            {:else if platform === "pixiv"}
+                                <img src={pixivLogo} class="w-8 h-8 me-2" alt="pixiv logo" />
+                            {:else if platform === "fanbox"}
+                                <img src={pixivFanboxLogo} class="w-8 h-8 me-2" alt="pixiv fanbox logo" />
+                            {:else if platform === "kemono"}
+                                <img src={kemonoLogo} class="w-8 h-8 me-2" alt="kemono logo" />
+                            {:else}
+                                {platform}
+                            {/if}
                         </TableBodyCell>
                         <TableBodyCell>
                             <div class="text-wrap">

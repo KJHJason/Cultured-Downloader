@@ -24,7 +24,6 @@
     } from "../../scripts/wailsjs/go/app/App";
     import { LogError } from "../../scripts/wailsjs/runtime/runtime";
     import type { Writable } from "svelte/store";
-    import CacheDetails from "./CacheDetails.svelte";
 
     let lang = "";
     export let username: Writable<string>;
@@ -350,10 +349,7 @@
         masterPasswordForm.addEventListener("submit", handleMasterPasswordFormSubmit);
         masterPasswordFormResetBtn.addEventListener("click", resetMasterPasswordForm);
     });
-
-    let cacheDetailsOpened = false;
 </script>
-
 
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="mx-auto text-center">
