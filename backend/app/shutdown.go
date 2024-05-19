@@ -3,10 +3,8 @@ package app
 import (
 	"context"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic/cache"
-	"github.com/KJHJason/Cultured-Downloader-Logic/language"
+	"github.com/KJHJason/Cultured-Downloader-Logic/database"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
-	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
 func (a *App) Shutdown(ctx context.Context) {
@@ -21,18 +19,7 @@ func (a *App) Shutdown(ctx context.Context) {
 		a.gdriveClient.Release()
 	}
 
-	if err := language.CloseDb(); err != nil {
+	if err := database.AppDb.Close(); err != nil {
 		logger.LogError(err, logger.ERROR)
-	}
-
-	savedCacheLocation := a.appData.GetStringWithFallback(constants.CACHE_DB_PATH_KEY, cache.DEFAULT_PATH)
-	if a.mvCacheDbTask != nil && savedCacheLocation != cache.DEFAULT_PATH {
-		if err := a.mvCacheDbTask(); err != nil {
-			logger.LogError(err, logger.ERROR)
-			resetCacheLocErr := a.appData.SetString(constants.CACHE_DB_PATH_KEY, cache.DEFAULT_PATH)
-			if resetCacheLocErr != nil {
-				logger.LogError(resetCacheLocErr, logger.ERROR)
-			}
-		}
 	}
 }

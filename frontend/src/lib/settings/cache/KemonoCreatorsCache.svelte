@@ -5,12 +5,10 @@
 
     export let rowsPerPage: number;
     export let pageNum: Writable<number>;
-    export let language: Writable<string>;
     const parseValue = (arg: string) => arg;
 </script>
 
 <CacheBase
-    {language}
     {rowsPerPage}
     pageNum={pageNum}
     {parseValue}

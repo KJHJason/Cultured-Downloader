@@ -21,19 +21,12 @@
         HasProfilePic,
         GetLanguage,
         SetLanguage,
-        ChangeCacheDbLocation,
-        GetCacheDbLocation,
-        SelectNewCacheDbLocation,
     } from "../../scripts/wailsjs/go/app/App";
     import { LogError } from "../../scripts/wailsjs/runtime/runtime";
     import type { Writable } from "svelte/store";
-    import ButtonGroupBtn from "../common/ButtonGroupBtn.svelte";
     import CacheDetails from "./CacheDetails.svelte";
 
     let lang = "";
-    let cacheDbLocation: string;
-    const cacheSuccessMsg = "Cache Database location has been updated and will take effect after a restarting the application.";
-
     export let username: Writable<string>;
     export let language: Writable<string>;
 
@@ -88,10 +81,6 @@
         const usernameInput = document.getElementById("username") as HTMLInputElement;
         usernameInput.value = $username;
 
-        cacheDbLocation = await GetCacheDbLocation();
-        const cacheDbLocationInput = document.getElementById("cacheDbLocation") as HTMLInputElement;
-        cacheDbLocationInput.value = cacheDbLocation;
-
         const resetImageInputs = (): void => {
             // not using generalForm.reset() as it will reset the select element to the first option
             profileImageInput.value = "";
@@ -129,23 +118,11 @@
                 language.set(lang);
             }
 
-            let hasUpdatedCacheDbLocation = false;
-            const newCacheDbLocation = formData.get("cacheDbLocation") as string;
-            if (newCacheDbLocation === "") {
-                cacheDbLocationInput.value = cacheDbLocation;
-            } else if (cacheDbLocation !== newCacheDbLocation) {
-                await ChangeCacheDbLocation(newCacheDbLocation);
-                cacheDbLocation = newCacheDbLocation;
-                hasUpdatedCacheDbLocation = true;
-            }
-
             resetImageInputs();
-            const baseMsg = await translateText("Your profile has been updated.");
-            const cacheDbMsg = hasUpdatedCacheDbLocation ? await translateText("Additionally, " + cacheSuccessMsg) : "";
             profilePicResetBtn.classList.add("hidden");
             swal.fire({
                 title: await translateText("Success"),
-                text: baseMsg + cacheDbMsg,
+                text: await translateText("Your profile has been updated."),
                 icon: "success",
             });
         };
@@ -375,29 +352,8 @@
     });
 
     let cacheDetailsOpened = false;
-    const selectNewCacheDbLocation = async () => {
-        try {
-            await SelectNewCacheDbLocation();
-            cacheDbLocation = await GetCacheDbLocation();
-            swal.fire({
-                title: await translateText("Success"),
-                text: await translateText(cacheSuccessMsg),
-                icon: "success",
-            })
-        } catch (e) {
-            if (!e) {
-                throw await translateText("An error occurred while selecting the new cache database location.");
-            }
-
-            if (e.toString() === "no directory selected") {
-                return;
-            }
-            throw e;
-        }
-    };
 </script>
 
-<CacheDetails bind:open={cacheDetailsOpened} {language} />
 
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="mx-auto text-center">
@@ -427,24 +383,6 @@
                     items={LANGUAGES} 
                     bind:value={lang} 
                 />
-            </div>
-        </div>
-        <div class="flex">
-            <div class="w-full">
-                <div class="flex align-middle">
-                    <Label for="cacheDbLocation" class="pb-2">
-                        <Translate text="Cache Database Location:" {language} />
-                    </Label>
-                    <button type="button" class="btn-text-link text-xs font-normal ml-1 mb-2" id="browse-cache" on:click={() => {cacheDetailsOpened = true}}>
-                        {translate("View Cache", "browse-cache", $language)}
-                    </button>
-                </div>
-                <ButtonGroup class="w-full">
-                    <Input class="mt-2" name="cacheDbLocation" id="cacheDbLocation" placeholder="C:\Users\User\AppData\Roaming\Cultured-Downloader\cache" />
-                    <ButtonGroupBtn elId="browseCacheDbLocation" clickFn={selectNewCacheDbLocation}>
-                        {translate("browse", "browseCacheDbLocation", $language)}
-                    </ButtonGroupBtn>
-                </ButtonGroup>
             </div>
         </div>
         <div class="flex mt-4">

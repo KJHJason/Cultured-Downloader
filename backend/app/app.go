@@ -19,7 +19,6 @@ type App struct {
 	queueTicker    *time.Ticker
 	gdriveClient   *gdrive.GDrive
 	notifier       notifier.Notifier
-	mvCacheDbTask  func() error // to be executed on shutdown
 }
 
 func NewApp() *App {

@@ -10,10 +10,6 @@ export function CancelQueue(arg1) {
   return window['go']['app']['App']['CancelQueue'](arg1);
 }
 
-export function ChangeCacheDbLocation(arg1) {
-  return window['go']['app']['App']['ChangeCacheDbLocation'](arg1);
-}
-
 export function ChangeMasterPassword(arg1, arg2) {
   return window['go']['app']['App']['ChangeMasterPassword'](arg1, arg2);
 }
@@ -42,8 +38,8 @@ export function DeleteAllUgoiraCache() {
   return window['go']['app']['App']['DeleteAllUgoiraCache']();
 }
 
-export function DeleteCacheKey(arg1) {
-  return window['go']['app']['App']['DeleteCacheKey'](arg1);
+export function DeleteCacheKey(arg1, arg2) {
+  return window['go']['app']['App']['DeleteCacheKey'](arg1, arg2);
 }
 
 export function DeleteProfilePic() {
@@ -64,10 +60,6 @@ export function GetAllKemonoCreatorCache() {
 
 export function GetAllUgoiraCache() {
   return window['go']['app']['App']['GetAllUgoiraCache']();
-}
-
-export function GetCacheDbLocation() {
-  return window['go']['app']['App']['GetCacheDbLocation']();
 }
 
 export function GetDarkMode() {
@@ -168,10 +160,6 @@ export function SelectFfmpegPath() {
 
 export function SelectGDriveServiceAccount() {
   return window['go']['app']['App']['SelectGDriveServiceAccount']();
-}
-
-export function SelectNewCacheDbLocation() {
-  return window['go']['app']['App']['SelectNewCacheDbLocation']();
 }
 
 export function SelectProfilePic() {

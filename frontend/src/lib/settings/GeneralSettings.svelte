@@ -5,6 +5,7 @@
     import { generalFormId, swal } from "../../scripts/constants";
     import { translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
+    import CacheDetails from "./CacheDetails.svelte";
 
     export let formId = generalFormId;
     export let promptSuccess: boolean;
@@ -12,6 +13,8 @@
 
     export let showOrganisePostImagesInp: boolean = true;
     export let showDlGDriveInp: boolean = true;
+
+    let cacheDetailsOpened = false;
 
     let DlPostThumbnailInp: HTMLInputElement;
     let DlPostImagesInp: HTMLInputElement;
@@ -128,3 +131,12 @@
         <Translate text="Use Cache Database" />
     </Toggle>
 </form>
+
+{#if UseCacheDbInp} 
+    <CacheDetails bind:open={cacheDetailsOpened} />
+    <div class="mt-5 text-right">
+        <button type="button" class="btn btn-info" on:click={() => cacheDetailsOpened = true} >
+            <Translate text="View Cache" />
+        </button>
+    </div>
+{/if}

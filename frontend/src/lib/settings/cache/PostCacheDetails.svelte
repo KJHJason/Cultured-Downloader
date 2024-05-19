@@ -12,7 +12,6 @@
 
     export let rowsPerPage: number;
     export let pageNum: Writable<number>;
-    export let language: Writable<string>;
 
     interface Platform {
         name: string;
@@ -40,10 +39,21 @@
         toggleAllFilter(false);
     });
 
+    let translatedDeleteInProgTitle = "";
+    let translatedDeleteInProgText = "";
+    let translatedDeleteSuccessTitle = "";
+    let translatedDeleteSuccessText = "";
+    onMount(async () => {
+        translatedDeleteInProgTitle = await translateText("Deleting Post Cache...");
+        translatedDeleteInProgText = await translateText("This may take a while. Please wait!");
+        translatedDeleteSuccessTitle = await translateText("Post Cache Cleared!");
+        translatedDeleteSuccessText = await translateText("Post Cache has been cleared!");
+    });
+
     const postCache: Writable<any[]> = writable([]);
     const paginatedPostCache: Writable<any[]> = writable([]);
-    const deleteCacheKey = async (key: string) => {
-        await DeleteCacheKey(key);
+    const deleteCacheKey = async (bucket: string, key: string) => {
+        await DeleteCacheKey(bucket, key);
         postCache.update(c => c.filter(c => c.CacheKey !== key));
     };
     const deleteAllPostCache = async () => {
@@ -52,15 +62,15 @@
         }
 
         pleaseWaitSwal.fire({
-            title: await translateText("Deleting Post Cache...", $language),
-            text: await translateText("This may take a while. Please wait!", $language),
+            title: translatedDeleteInProgTitle,
+            text: translatedDeleteInProgText,
         });
         await DeleteAllPostCache();
         pageNum.set(1);
         postCache.set([]);
         swal.fire({
-            title: await translateText("Post Cache Cleared!", $language),
-            text: await translateText("Post Cache has been cleared!", $language),
+            title: translatedDeleteSuccessTitle,
+            text: translatedDeleteSuccessText,
             icon: "success",
             timer: 2000,
         });
@@ -74,8 +84,8 @@
         return $platforms.filter(platform => platform.checked).map(platform => platform.name);
     };
     const platformsUnsubscribe = platforms.subscribe(async () => {
-        const comma = await translateText("filter_comma", $language, ", ");
-        const noResult = await translateText("filter_none", $language, " None"); 
+        const comma = await translateText("filter_comma", "", ", ");
+        const noResult = await translateText("filter_none", "", " None"); 
 
         const selectedPlatforms = getSelectedPlatforms();
         const filter = {
@@ -84,7 +94,14 @@
             PixivFanbox: selectedPlatforms.includes("Pixiv Fanbox"),
             Kemono: selectedPlatforms.includes("Kemono")
         }
-        postCache.set(await GetPostCache(filter));
+
+        const data = await GetPostCache(filter);
+        if (data === null) {
+            postCache.set([]);
+        } else {
+            postCache.set(data);
+        }
+        pageNum.set(1);
 
         modalDetails.update(() => {
             if (selectedPlatforms.length === 0) {
@@ -117,13 +134,13 @@
 
 <div class="flex">
     <div>
-        <Translate text="showing cache_front" {language} fallback="Showing cache for " />
-        <span>{$modalDetails}</span><Translate text="showing filter_back" {language} fallback="." />
+        <Translate text="showing cache_front" fallback="Showing cache for " />
+        <span>{$modalDetails}</span><Translate text="showing filter_back" fallback="." />
     </div>
     <div class="ml-auto">
         <button type="button" class="btn btn-info flex">
             <FilterOutline />
-            <Translate text="Filter" {language} />
+            <Translate text="Filter" />
         </button>
         <Dropdown class="overflow-y-auto px-3 pb-3 text-sm h-44 text-left">
             {#each $platforms as platform }
@@ -141,23 +158,23 @@
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             <TableHeadCell>
-                <Translate text="Platform" {language} />
+                <Translate text="Platform" />
             </TableHeadCell>
             <TableHeadCell>
-                <Translate text="URL" {language} />
+                <Translate text="URL" />
             </TableHeadCell>
             <TableHeadCell>
-                <Translate text="Date/Time" {language} />
+                <Translate text="Date/Time" />
             </TableHeadCell>
             <TableHeadCell>
-                <Translate text="Actions" {language} />
+                <Translate text="Actions" />
             </TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
             {#if $postCache.length === 0}
                 <TableBodyRow>
                     <TableBodyCell tdClass="text-center p-3" colspan="4">
-                        <Translate text="Nothing here!" {language} />
+                        <Translate text="Nothing here!" />
                     </TableBodyCell>
                 </TableBodyRow>
             {:else}
@@ -175,7 +192,7 @@
                             {makeDateTimeReadable(post.Datetime)}
                         </TableBodyCell>
                         <TableBodyCell>
-                            <button class="btn-text-danger" on:click={() => deleteCacheKey(post.CacheKey)}>
+                            <button class="btn-text-danger" on:click={() => deleteCacheKey(post.Bucket, post.CacheKey)}>
                                 <TrashBinSolid />
                             </button>
                         </TableBodyCell>
@@ -187,10 +204,11 @@
 </div>
 
 <Pagination {pageNum} {rowsPerPage} elements={postCache} paginatedEl={paginatedPostCache} />
+
 {#if $postCache.length > 0}
     <div class="mt-3 text-right">
         <button class="btn btn-danger" on:click={deleteAllPostCache}>
-            <Translate text="Clear All Post Cache" {language} />
+            <Translate text="Clear All Post Cache" />
         </button>
     </div>
 {/if}

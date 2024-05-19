@@ -11,16 +11,16 @@
     export let showInfoIfNoEntry: boolean = true;
 
     paginatedEl.set($elements.slice(0, rowsPerPage));
-
     let maxPages = Math.ceil($elements.length / rowsPerPage);
 
     const onNext = () => setToPageNum($pageNum + 1);
     const onPrev = () => setToPageNum($pageNum - 1);
     const setToPageNum = (num: number) => {
-        if (num < 1 || num > maxPages) 
+        if (num < 1 || num > maxPages) {
             return;
+        }
 
-        $pageNum = num;
+        pageNum.set(num);
         const startIndex = ($pageNum - 1) * rowsPerPage;
         const endIndex = $pageNum * rowsPerPage;
         paginatedEl.set($elements.slice(startIndex, endIndex));
@@ -101,7 +101,9 @@
         btnsToAdd = getBtnsToAdd($pageNum);
         setToPageNum($pageNum);
     });
-    onDestroy(() => unsubscribeElChange());
+    onDestroy(() => {
+        unsubscribeElChange()
+    });
 </script>
 
 {#if $elements.length === 0 && showInfoIfNoEntry}

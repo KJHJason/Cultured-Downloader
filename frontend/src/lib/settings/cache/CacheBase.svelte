@@ -23,14 +23,24 @@
 
     export let rowsPerPage: number;
     export let pageNum: Writable<number>;
-    export let language: Writable<string>;
     export let fetchDataFunc: () => Promise<any[]>;
 
     const cache: Writable<any[]> = writable([]);
     const paginatedCache: Writable<any[]> = writable([]);
 
-    const deleteKey = async (key: string) => {
-        await DeleteCacheKey(key);
+    let translatedDeleteInProgTitle = "";
+    let translatedDeleteInProgText = "";
+    let translatedDeleteSuccessTitle = "";
+    let translatedDeleteSuccessText = "";
+    onMount(async() => {
+        translatedDeleteInProgTitle = await translateText(deleteInProgTitle);
+        translatedDeleteInProgText = await translateText(deleteInProgText);
+        translatedDeleteSuccessTitle = await translateText(deleteSuccessTitle);
+        translatedDeleteSuccessText = await translateText(deleteSuccessText);
+    });
+
+    const deleteKey = async (bucket:string, key: string) => {
+        await DeleteCacheKey(bucket, key);
         cache.update(c => c.filter(c => c.Key !== key));
     };
     const wrappedDeleteAllCacheFunc = async () => {
@@ -39,14 +49,14 @@
         }
 
         pleaseWaitSwal.fire({
-            title: await translateText(deleteInProgTitle, $language),
-            text: await translateText(deleteInProgText, $language),
+            title: translatedDeleteInProgTitle,
+            text: translatedDeleteInProgText,
         });
         await deleteAllCacheFunc();
         swal.fire({
-            title: await translateText(deleteSuccessTitle, $language),
             icon: "success",
-            text: await translateText(deleteSuccessText, $language),
+            title: translatedDeleteSuccessTitle,
+            text: translatedDeleteSuccessText,
             timer: 2000,
         });
     };
@@ -57,8 +67,13 @@
     };
 
     onMount(async () => {
-        console.log(await fetchDataFunc());
-        cache.set(await fetchDataFunc());
+        const data = await fetchDataFunc();
+        console.log(data);
+        if (data === null) {
+            cache.set([]);
+        } else {
+            cache.set(data);
+        }
     });
 </script>
 
@@ -67,21 +82,21 @@
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             {#if showKey}
                 <TableHeadCell>
-                    <Translate text={keyTitle} {language} />
+                    <Translate text={keyTitle} />
                 </TableHeadCell>
             {/if}
             <TableHeadCell>
-                <Translate text={valueTitle} {language} />
+                <Translate text={valueTitle} />
             </TableHeadCell>
             <TableHeadCell>
-                <Translate text="Actions" {language} />
+                <Translate text="Actions" />
             </TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
             {#if $cache.length === 0}
                 <TableBodyRow>
                     <TableBodyCell tdClass="text-center p-3" colspan="{showKey ? 3 : 2}">
-                        <Translate text="Nothing here!" {language} />
+                        <Translate text="Nothing here!" />
                     </TableBodyCell>
                 </TableBodyRow>
             {:else}
@@ -90,15 +105,15 @@
                         {#if showKey}
                             <TableBodyCell>
                                 <div class="text-wrap">
-                                    {cache.Key}
+                                    {cache.KeyStr ?? cache.Key}
                                 </div>
                             </TableBodyCell>
                         {/if}
                         <TableBodyCell>
-                            {parseValue(cache.Val)}
+                            {parseValue(cache.ValStr ?? cache.Val)}
                         </TableBodyCell>
                         <TableBodyCell>
-                            <button class="btn-text-danger" on:click={() => deleteKey(cache.CacheKey)}>
+                            <button class="btn-text-danger" on:click={() => deleteKey(cache.Bucket, cache.CacheKey ?? cache.KeyStr)}>
                                 <TrashBinSolid />
                             </button>
                         </TableBodyCell>
@@ -109,10 +124,11 @@
     </Table>
 </div>
 <Pagination {pageNum} {rowsPerPage} elements={cache} paginatedEl={paginatedCache} />
+
 {#if $cache.length > 0}
     <div class="mt-3 text-right">
         <button class="btn btn-danger" on:click={deleteAllKeys}>
-            <Translate text={deleteAllCacheText} {language} />
+            <Translate text={deleteAllCacheText} />
         </button>
     </div>
 {/if}

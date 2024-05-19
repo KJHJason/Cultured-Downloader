@@ -1,5 +1,9 @@
 package constants
 
+import (
+	"github.com/KJHJason/Cultured-Downloader-Logic/constants"
+)
+
 const (
 	DEV_MODE                     = true
 	PROGRAM_NAME                 = "Cultured Downloader"
@@ -15,13 +19,12 @@ const (
 	DOWNLOAD_KEY                 = "download"
 	FFMPEG_KEY                   = "ffmpeg"
 	USE_CACHE_DB_KEY             = "use-cache-db"
-	CACHE_DB_PATH_KEY            = "cache-db-path"
 
 	// Platform names
-	FANTIA       = "fantia"
-	PIXIV        = "pixiv"
-	PIXIV_FANBOX = "pixiv_fanbox"
-	KEMONO       = "kemono"
+	FANTIA       = constants.FANTIA
+	PIXIV        = constants.PIXIV
+	PIXIV_FANBOX = constants.PIXIV_FANBOX
+	KEMONO       = constants.KEMONO
 
 	GDRIVE_API_KEY_KEY       = "gdrive-api-key"
 	GDRIVE_SERVICE_ACC_KEY   = "gdrive-service-acc"

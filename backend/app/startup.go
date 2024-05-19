@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/KJHJason/Cultured-Downloader-Logic/cache"
 	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/database"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/language"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
@@ -38,8 +38,8 @@ func (a *App) getDownloadDir() (dirPath string, err error, hadToFallback bool) {
 	return desktopDir, nil, true
 }
 
-func (a *App) changeCacheDbErrHandler() {
-	cache.HandleErr = func(err error, logMsg string) {
+func (a *App) initAppDb() {
+	database.HandleErr = func(err error, logMsg string) {
 		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 			Type:    runtime.ErrorDialog,
 			Title:   "Error encountered!",
@@ -50,10 +50,22 @@ func (a *App) changeCacheDbErrHandler() {
 		}
 		logger.MainLogger.Fatalf("%s: %s", logMsg, err)
 	}
+
+	if err := database.InitAppDb(); err != nil {
+		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error initialising cache database!",
+			Message: err.Error(),
+		})
+		if dialogErr != nil {
+			logger.MainLogger.Errorf("Error encountered while trying to show error dialog for cache db: %v", dialogErr)
+		}
+		logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
+	}
 }
 
 func (a *App) initLangDb() {
-	language.InitLangDb(a.ctx, func(msg string) {
+	language.InitLangDb(func(msg string) {
 		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 			Type:    runtime.ErrorDialog,
 			Title:   "Error loading language database!",
@@ -106,24 +118,6 @@ func (a *App) getUserSavedDlDirPath() {
 	}
 }
 
-func (a *App) initCacheDb() {
-	if !a.appData.GetBoolWithFallback(constants.USE_CACHE_DB_KEY, true) {
-		return
-	}
-
-	if err := cache.InitCacheDb(a.appData.GetString(constants.CACHE_DB_PATH_KEY)); err != nil {
-		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.ErrorDialog,
-			Title:   "Error initialising cache database!",
-			Message: err.Error(),
-		})
-		if dialogErr != nil {
-			logger.MainLogger.Errorf("Error encountered while trying to show error dialog for cache db: %v", dialogErr)
-		}
-		logger.MainLogger.Fatalf("Error initialising cache db: %v", err)
-	}
-}
-
 func (a *App) initQueueTicker() {
 	a.queueTicker = time.NewTicker(1 * time.Second) // check for new queues every few second
 	go func() {
@@ -143,7 +137,7 @@ func (a *App) initQueueTicker() {
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	a.changeCacheDbErrHandler()
+	a.initAppDb()
 	a.initLangDb()
 	a.loadAppData()
 	a.getUserSavedDlDirPath()
@@ -151,6 +145,5 @@ func (a *App) Startup(ctx context.Context) {
 	a.gdriveClient = a.GetGdriveClient()
 	a.notifier = notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME)
 	a.lang = a.appData.GetStringWithFallback(constants.LANGUAGE_KEY, cdlconst.EN)
-	a.initCacheDb()
 	a.initQueueTicker()
 }
