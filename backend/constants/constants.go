@@ -5,7 +5,6 @@ import (
 )
 
 const (
-	DEV_MODE                     = true
 	PROGRAM_NAME                 = "Cultured Downloader"
 	PROGRAM_VER                  = "5.0.0"
 	LOCAL_USER_ASSET_DIR_NAME    = "assets"
