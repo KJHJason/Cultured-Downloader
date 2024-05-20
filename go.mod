@@ -3,7 +3,7 @@ module github.com/KJHJason/Cultured-Downloader
 go 1.22
 
 require (
-	github.com/KJHJason/Cultured-Downloader-Logic v1.1.1
+	github.com/KJHJason/Cultured-Downloader-Logic v1.1.2
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.24.4
@@ -23,7 +23,7 @@ require (
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.5.1 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/chromedp/cdproto v0.0.0-20240512230644-b3296df1660c // indirect
+	github.com/chromedp/cdproto v0.0.0-20240519224452-66462be74baa // indirect
 	github.com/chromedp/chromedp v0.9.5 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect

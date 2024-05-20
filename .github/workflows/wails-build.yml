@@ -79,9 +79,12 @@ jobs:
         run: |
           echo "building on ${{ matrix.os }}"
           wails build --platform ${{ matrix.build.platform }} -o "${{ env.LINUX_PROGRAM_NAME }}" -upx
+
           echo "generating hash for ${{ env.LINUX_PROGRAM_NAME }}"
           sha256sum "./build/bin/${{ env.LINUX_PROGRAM_NAME }}" | awk '{print $1}' > "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt"
-          echo "hash generated:" && cat "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt"
+          HASH=$(cat "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt")
+          mv "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt" "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.$HASH"
+          echo "hash generated: $HASH"
         shell: bash
       - name: Build Windows App
         if: runner.os == 'Windows'
@@ -89,9 +92,12 @@ jobs:
         run: |
           echo "building on ${{ matrix.os }}"
           wails build --platform ${{ matrix.build.platform }} -o "${{ env.WINDOWS_PROGRAM_NAME }}.exe" -upx
+
           echo "generating hash for ${{ env.WINDOWS_PROGRAM_NAME }}"
           sha256sum "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe" | awk '{print $1}' > "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt"
-          echo "hash generated:" && cat "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt"
+          HASH=$(cat "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt")
+          mv "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt" "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.$HASH"
+          echo "hash generated: $HASH"
         shell: bash
       - name: Build macOS App
         working-directory: "."
@@ -99,13 +105,17 @@ jobs:
         run: |
           echo "building on ${{ matrix.os }}"
           wails build --platform ${{ matrix.build.platform }}
+
           echo "compressing macOS app"
           cd "./build/bin/"
           zip -r "./${{ env.MAC_PROGRAM_NAME }}.app.zip" "./${{ env.MAC_PROGRAM_NAME }}.app"
           rm -rf "./${{ env.MAC_PROGRAM_NAME }}.app"
+
           echo "generating hash for ${{ env.MAC_PROGRAM_NAME }}"
           shasum -a 256 "./${{ env.MAC_PROGRAM_NAME }}.app.zip" | cut -d ' ' -f 1 > "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt"
-          echo "hash generated:" && cat "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt"
+          HASH=$(cat "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt")
+          mv "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt" "./${{ env.MAC_PROGRAM_NAME }}.app.zip.$HASH"
+          echo "hash generated: $HASH"
         shell: bash
 
       - uses: actions/upload-artifact@v3
