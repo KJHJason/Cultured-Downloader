@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
+	cdlogger "github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader/backend/app"
 
@@ -24,6 +25,8 @@ var assets embed.FS
 var icon []byte
 
 func main() {
+	cdlogger.InitLogger()
+
 	// Create an instance of the app structure
 	cdApp := app.NewApp()
 
