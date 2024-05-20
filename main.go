@@ -25,8 +25,6 @@ var assets embed.FS
 var icon []byte
 
 func main() {
-	cdlogger.InitLogger()
-
 	// Create an instance of the app structure
 	cdApp := app.NewApp()
 
