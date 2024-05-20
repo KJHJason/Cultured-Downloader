@@ -1,4 +1,4 @@
-# Pixiv OAuth Guide
+# Session Cookie Guide
 
 ## Introduction
 
