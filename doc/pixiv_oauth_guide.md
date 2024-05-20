@@ -11,13 +11,14 @@ This guide will help you get your refresh token for Pixiv API calls.
 - You must have a Pixiv account.
 - You are running Cultured Downloader as you follow this guide.
 
-## Step 1: Logging in to Pixiv
+## Step 1: Obtaining the OAuth Login URL
 
-1. Enter the command option for `Configure Pixiv OAuth`.
-2. A new tab will open in your default browser and you will be prompted to log in to Pixiv.
-3. ***Important: Do NOT sign in yet!***
+1. Go to the settings by clicking the profile icon in the top right corner and click on `Settings`.
+2. Go to the `Advanced` tab and click on `Start OAuth` under `Pixiv Mobile OAuth Refresh Token`.
+3. A new tab will open in your default browser and you will be prompted to log in to Pixiv.
+4. ***Important: Do NOT sign in yet!***
 
-<img src="/res/guide/pixiv_oauth/step-1.jpg" alt="step 1" style="width: 70%;">
+<img src="/res/guide/pixiv_oauth/step-1.png" alt="step 1" style="width: 70%;">
 
 ## Step 2: Before signing in
 
@@ -46,5 +47,5 @@ This guide will help you get your refresh token for Pixiv API calls.
 
 <img src="/res/guide/pixiv_oauth/step-3.3.jpg" alt="step 3.3" style="width: 70%;">
 
-4. Using the example above, the code we got was `AX3456789wataMeef_-1234568FGGj_-B2A1RDYornt`. We can then use this code and paste it on Cultured Downloader and press `Enter`.
-5. You will be notified that the refresh token has been saved.
+1. Using the example above, the code we got was `AX3456789wataMeef_-1234568FGGj_-B2A1RDYornt`. We can then use this code and paste it on Cultured Downloader and submit it.
+2. You will be notified that the refresh token has been saved.

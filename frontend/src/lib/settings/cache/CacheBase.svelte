@@ -1,6 +1,6 @@
 <script lang="ts">
     import { writable, type Writable } from "svelte/store";
-    import { Table, TableHead, TableHeadCell, TableBody, TableBodyCell, TableBodyRow } from "flowbite-svelte";
+    import { Table, TableHead, TableHeadCell, TableBody, TableBodyCell, TableBodyRow, Search } from "flowbite-svelte";
     import Translate from "../../common/Translate.svelte";
     import Pagination from "../../common/Pagination.svelte";
     import { onMount } from "svelte";
@@ -66,17 +66,41 @@
         cache.set([]);
     };
 
+    let originalElements: any[] = [];
+    let searchInput: HTMLInputElement;
+    const processSearchInput = () => {
+        const searchValue = searchInput.value.toLowerCase();
+        pageNum.set(1);
+        if (searchValue === "") {
+            cache.set(originalElements);
+            return;
+        }
+        cache.set(originalElements.filter(post => {
+            const keyVal = post.KeyStr ?? post.Key;
+            return keyVal.toLowerCase().includes(searchValue)
+        }));
+    };
+    onMount(async () => {
+        const searchPlaceholder = await translateText("Search");
+        searchInput = document.getElementById("searchInput") as HTMLInputElement;
+        searchInput.placeholder = searchPlaceholder;
+        searchInput.addEventListener("input", processSearchInput);
+    })
     onMount(async () => {
         const data = await fetchDataFunc();
         if (data === null) {
             cache.set([]);
+            originalElements = [];
         } else {
             cache.set(data);
+            originalElements = data;
         }
     });
 </script>
 
-<div class="mb-3">
+<Search size="md" id="searchInput" class="rounded-none rounded-l" />
+
+<div class="my-3">
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             {#if showKey}

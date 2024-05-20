@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Table, TableHead, TableHeadCell, TableBody, Dropdown, Checkbox, TableBodyCell, TableBodyRow } from "flowbite-svelte";
+    import { Table, TableHead, TableHeadCell, TableBody, Dropdown, Checkbox, TableBodyCell, TableBodyRow, Search } from "flowbite-svelte";
     import Translate from "../../common/Translate.svelte";
     import { writable, type Writable } from "svelte/store";
     import { translateText } from "../../../scripts/language";
@@ -21,6 +21,7 @@
         name: string;
         checked: boolean;
     }
+    let translatedAll: string;
     const platforms: Writable<Platform[]> = writable([
         { name: "Fantia", checked: false },
         { name: "Pixiv", checked: false },
@@ -28,6 +29,10 @@
         { name: "Kemono", checked: false },
         { name: "All", checked: false }
     ]);
+    onMount(async () => {
+        translatedAll = await translateText("All");
+        platforms.update(plats => plats.map(platform => ({ ...platform, name: platform.name === "All" ? translatedAll : platform.name })));
+    });
 
     let selectAll = true;
     const toggleAllFilter = (allEnabled: boolean) => {
@@ -80,6 +85,24 @@
         });
     };
 
+    let originalElements: any[] = [];
+    let searchInput: HTMLInputElement;
+    const processSearchInput = () => {
+        const searchValue = searchInput.value.toLowerCase();
+        pageNum.set(1);
+        if (searchValue === "") {
+            postCache.set(originalElements);
+            return;
+        }
+        postCache.set(originalElements.filter(post => post.Url.toLowerCase().includes(searchValue)));
+    };
+    onMount(async () => {
+        const searchPlaceholder = await translateText("Search");
+        searchInput = document.getElementById("searchInput") as HTMLInputElement;
+        searchInput.placeholder = searchPlaceholder;
+        searchInput.addEventListener("input", processSearchInput);
+    })
+
     const modalDetails = writable("")
     const getSelectedPlatforms = (): string[] => {
         if (selectAll) {
@@ -102,8 +125,10 @@
         const data = await GetPostCache(filter);
         if (data === null) {
             postCache.set([]);
+            originalElements = [];
         } else {
             postCache.set(data);
+            originalElements = data;
         }
         pageNum.set(1);
 
@@ -119,7 +144,7 @@
     });
 
     const togglePlatform = (index: string): void => {
-        if (index === "All") {
+        if (index === translatedAll) {
             toggleAllFilter(selectAll);
             return;
         } 
@@ -129,20 +154,21 @@
             const isChecked = plats.find(platform => platform.name === index)?.checked as boolean;
             if (selectAll && !isChecked) { // make All index unchecked and the current index unchecked
                 selectAll = false;
-                return plats.map(platform => (platform.name === "All" || platform.name === index ? { ...platform, checked: false } : platform));
+                return plats.map(platform => (platform.name === translatedAll || platform.name === index ? { ...platform, checked: false } : platform));
             }
             return plats.map(platform => (platform.name === index ? { ...platform, checked: isChecked } : platform));
         });
     };
 </script>
 
-<div class="flex">
+<div class="grid grid-cols-1 gap-y-3">
     <div>
         <Translate text="showing cache_front" fallback="Showing cache for " />
-        <span>{$modalDetails}</span><Translate text="showing filter_back" fallback="." />
+        <span>{$modalDetails}</span><Translate text="showing cache_back" fallback="." />
     </div>
-    <div class="ml-auto">
-        <button type="button" class="btn btn-info flex">
+    <div class="flex">
+        <Search size="md" id="searchInput" class="rounded-none rounded-l" />
+        <button type="button" class="btn btn-info flex whitespace-nowrap !rounded-l-none">
             <FilterOutline />
             <Translate text="Filter" />
         </button>
@@ -158,7 +184,7 @@
     </div>
 </div>
 
-<div class="mb-3">
+<div class="my-3">
     <Table hoverable={false} shadow={true}>
         <TableHead theadClass="dark:!bg-gray-900 !bg-gray-200">
             <TableHeadCell>
