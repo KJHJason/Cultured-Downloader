@@ -26,7 +26,7 @@ This is by far the most user-friendly method to obtain the session cookie if you
 
 ## Using Browser's Developer Tools
 
-This method is more technical and requires you to be familiar with your browser's developer tools.
+This method is more technical and you might get lost if you're unfamiliar with your browser's developer tools.
 
 ### Step 1: Opening the developer tools
 
@@ -50,7 +50,7 @@ Mozilla Firefox:
 ### Step 2: Finding the session cookie and copying it
 
 1. Look for the `Cookies` section and click on the respective platform's website.
-2. After that look for the corresponding session cookie name and copy it.
+2. After that look for the corresponding session cookie name and copy the value.
    - For example, for Fantia, the session cookie is `_session_id`.
    - If you are unsure about the cookie name, it is listed in brackets in Cultured Downloader under the `Sessions` settings tab.
 
