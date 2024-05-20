@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
-	cdlogger "github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
+	cdlogger "github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/app"
 
 	"github.com/wailsapp/wails/v2"
