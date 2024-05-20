@@ -408,7 +408,7 @@
             <ButtonGroup class="w-full">
                 <Input class="mt-2" name="downloadLocation" id="downloadLocation" placeholder="C:\Users\Username\Downloads" required />
                 <ButtonGroupBtn elId="browseDownloadLocation" clickFn={SelectDownloadDir}>
-                    <Translate text="Browse" />
+                    <Translate spanClass="whitespace-nowrap" text="Browse" />
                 </ButtonGroupBtn>
             </ButtonGroup>
         </div>
@@ -447,7 +447,7 @@
                 <PasswordToggle elClass="w-full" hideByDefault={true}>
                     <Input class="mt-2" name="pixivOauth" id="pixivOauth" placeholder="zKyAG1RaKUgAK1AB-DEFaIodef12345aBcDeF3zQLcX" required />
                 </PasswordToggle>
-                <ButtonGroupBtn btnClass="w-[140px]" elId="startPixivOauthBtn" clickFn={startPixivOauthProcess}>
+                <ButtonGroupBtn btnClass="whitespace-nowrap" elId="startPixivOauthBtn" clickFn={startPixivOauthProcess}>
                     {translate("Start OAuth", "startPixivOauthBtn")}
                 </ButtonGroupBtn>
             </ButtonGroup>
@@ -466,7 +466,7 @@
             </Label>
             <ButtonGroup class="w-full">
                 <Input class="mt-2" name="ffmpegLocation" id="ffmpegLocation" placeholder="C:\ffmpeg\bin\ffmpeg.exe" required />
-                <ButtonGroupBtn elId="browseFfmpegLocation" clickFn={SelectFfmpegPathFn}>
+                <ButtonGroupBtn btnClass="whitespace-nowrap" elId="browseFfmpegLocation" clickFn={SelectFfmpegPathFn}>
                     {translate("Browse", "browseFfmpegLocation")}
                 </ButtonGroupBtn>
             </ButtonGroup>

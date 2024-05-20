@@ -10,6 +10,7 @@ cultureddownloader*.json
 *.exe
 *test*
 Cultured Downloader-res.syso
+json/*
 
 !*_test.go
 .env

@@ -29,6 +29,9 @@ func validatePixivTag(tagInput string) (valid bool, tag string, pageNum string) 
 	if strings.HasPrefix(tagInput, "https://www.pixiv.net/en/artworks") || strings.HasPrefix(tagInput, "https://www.pixiv.net/artworks") {
 		return false, "", ""
 	}
+	if urlValue, _ := url.Parse(tagInput); urlValue != nil && urlValue.Scheme != "" && urlValue.Host != "" {
+		return false, "", ""
+	}
 
 	// split by ";" and get the last element,
 	// for the other elements, just join them back with ";"
