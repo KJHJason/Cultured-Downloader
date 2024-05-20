@@ -7,8 +7,8 @@ on:
 
 env:
   BUILD_DIR: "executables"
-  MAC_PROGRAM_NAME: "Cultured Downloader" # https://github.com/wailsapp/wails/issues/2290, -o flag doesn't work for macOS, uses the wails.json name instead
-  WINDOWS_PROGRAM_NAME: "Cultured Downloader"
+  MAC_PROGRAM_NAME: "Cultured-Downloader" # https://github.com/wailsapp/wails/issues/2290, -o flag doesn't work for macOS, uses the wails.json name instead
+  WINDOWS_PROGRAM_NAME: "Cultured-Downloader"
   LINUX_PROGRAM_NAME: "cultured-downloader"
   # Necessary for most environments as build failure can occur due to OOM issues
   NODE_OPTIONS: "--max-old-space-size=4096"
