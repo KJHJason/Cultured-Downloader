@@ -60,7 +60,7 @@ func (a *App) GetPreferences() *preferences {
 		OrganisePostImages: a.appData.GetBoolWithFallback(constants.FANTIA_ORGANISE_IMAGES_KEY, true),
 
 		ArtworkType:        a.appData.GetIntWithFallback(constants.PIXIV_ARTWORK_TYPE_KEY, 3),
-		DeleteUgoiraZip:    a.appData.GetBool(constants.PIXIV_DELETE_UGOIRA_ZIP_KEY),
+		DeleteUgoiraZip:    a.appData.GetBoolWithFallback(constants.PIXIV_DELETE_UGOIRA_ZIP_KEY, true),
 		RatingMode:         a.appData.GetIntWithFallback(constants.PIXIV_RATING_MODE_KEY, 6),
 		SearchMode:         a.appData.GetIntWithFallback(constants.PIXIV_SEARCH_MODE_KEY, 8),
 		AiSearchMode:       a.appData.GetIntWithFallback(constants.PIXIV_AI_SEARCH_MODE_KEY, 24),
