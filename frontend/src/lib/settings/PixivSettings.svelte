@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { Label, Select, Input, Toggle, Helper, Spinner } from "flowbite-svelte";
+    import { Label, Select, Input, Toggle, Helper, Spinner, Tooltip } from "flowbite-svelte";
     import { onMount } from "svelte";
     import { GetPreferences, SetPixivPreferences } from "../../scripts/wailsjs/go/app/App";
     import { pixivFormId, swal } from "../../scripts/constants";
     import { translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
+    import { InfoCircleSolid } from "flowbite-svelte-icons";
 
     export let formId = pixivFormId;
     export let promptSuccess: boolean;
@@ -180,12 +181,25 @@
             }
         });
     });
+
+    let deleteUgoiraZipInfo = "";
+    let ugoiraQualityInfo = "";
+    onMount(async () => {
+        deleteUgoiraZipInfo = await translateText("Delete the downloaded Ugoira zip file containing the original image frames after converting it into a usable format via FFmpeg.");
+        ugoiraQualityInfo = await translateText("A lower value would result in better quality but longer conversion times. The range is 0-51 for mp4 and 0-63 for webm. The recommended value is around 10 to balance between quality and conversion time.");
+    });
 </script>
 
 <form id={formId}>
     <div class="grid grid-cols-1 md:grid-cols-2 my-4">
         <Toggle color="green" id="DeleteUgoiraZip" name="DeleteUgoiraZip">
             <Translate text="Delete Ugoira Zip After Conversion" />
+            <button type="button" class="btn-text-link ml-2" id="delete-ugoira-zip-info">
+                <InfoCircleSolid />
+            </button>
+            <Tooltip class="max-w-md" triggeredBy="#delete-ugoira-zip-info">
+                {deleteUgoiraZipInfo}
+            </Tooltip>
         </Toggle>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,9 +285,17 @@
             </div>
         {/await}
         <div>
-            <Label for="UgoiraQuality">
-                <Translate text="Ugoira Quality:" />
-            </Label>
+            <div class="flex">
+                <Label for="UgoiraQuality">
+                    <Translate text="Ugoira Quality:" />
+                </Label>
+                <button type="button" class="btn-text-link ml-2" id="ugoira-quality-info">
+                    <InfoCircleSolid />
+                </button>
+                <Tooltip class="max-w-md" triggeredBy="#ugoira-quality-info">
+                    {ugoiraQualityInfo}
+                </Tooltip>
+            </div>
             <Input 
                 class="mt-2" 
                 name="UgoiraQuality" 
@@ -283,9 +305,6 @@
                 min="0"
                 max="63"
             />
-            <Helper class="mt-1">
-                <Translate text="Lower values mean better quality but longer conversion times!" />
-            </Helper>
         </div>
     </div>
 </form>

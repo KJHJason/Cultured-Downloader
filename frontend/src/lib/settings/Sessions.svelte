@@ -1,7 +1,10 @@
 <script lang="ts">
     import Session from "./Session.svelte";
+    import { Helper } from "flowbite-svelte";
     import { translateText } from "../../scripts/language";
     import { onMount } from "svelte";
+    import Translate from "../common/Translate.svelte";
+    import { BrowserOpenURL } from "../../scripts/wailsjs/runtime/runtime";
 
     $: translatedDeleteBtnText = "";
     $: translatedSaveBtnText = "";
@@ -82,4 +85,10 @@
             {translatedErrText}
         />
     </div>
+    <Helper>
+        <Translate text="Do not know where to obtain your session cookie? Check the guide using the link below!" />
+    </Helper>
+    <button class="btn-text-link text-xs font-normal text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/session_cookie_guide.md")}>
+        https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/session_cookie_guide.md
+    </button>
 </div>
