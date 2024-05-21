@@ -70,13 +70,19 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
    - Clone this repository/Download all the files in this repository.
    - Install the latest version of [Go/Golang](https://go.dev/dl/) and [Node.js](https://nodejs.org/en/download/)
    - Install the Wails CLI by running `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
-     - Refer to the [Wails documentation](https://wails.io/docs/next/gettingstarted/installation#installing-wails) if there is any issues faced when installing the Wails CLI. 
+     - Refer to the [Wails documentation](https://wails.io/docs/next/gettingstarted/installation#installing-wails) if there is any issues faced when installing the Wails CLI.
    - Run `wails build` in the root directory of this repository to build the binary and run the program.
-     - Alternatively, you can run `wails dev` to run the program in development mode. 
+     - Alternatively, you can run `wails dev` to run the program in development mode.
 
 2. Running the executable file
    - Download the latest Cultured Downloader executable file (.exe) from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
+     - Not sure what `x86_64` or `arm64` means? Those are the architectures of your system and `x86_64` is the most common architecture for various systems.
+       - Note: `x86_64` is also known as `x64` or `amd64` in some systems.
+     - Please check your system's architecture before downloading the executable file. For instance, Apple M1 Macs are using the `arm64` architecture.
    - Once downloaded, you can do an integrity check for security reasons by comparing the SHA256 hash of the downloaded executable file the hash provided in the release notes.
+     - For instance, `_checksum_windows_x86_64-628b21a1b0dbf33a1137432e0f350e5c4bd49ecac9fa2f8a261555433967d394` contains the SHA256 hash of the Windows x86_64 executable file.
+       - The 64 characters `628b21a1b0dbf33a1137432e0f350e5c4bd49ecac9fa2f8a261555433967d394` suffix is the SHA256 hash of the executable file.
+       - You can also simply open it as a text file which would contain the SHA256 checksum as well.
    - Finally, you can enjoy running the program!
 
 ## Terms of Use
