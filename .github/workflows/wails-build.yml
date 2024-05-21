@@ -55,12 +55,6 @@ jobs:
         run: brew install mitchellh/gon/gon
         shell: bash
 
-      - name: Install UPX
-        if: runner.os != 'macOS'
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
-
       # https://github.com/wailsapp/wails/issues/2290, -o flag doesn't work for macOS, uses the wails.json name instead
       - name: Install jq for macOS
         if: runner.os == 'macOS'
@@ -76,60 +70,85 @@ jobs:
         working-directory: "."
         run: |
           echo "building on ${{ runner.os }} for x86_64"
-          wails build --platform "linux/amd64" -o "${{ env.PROGRAM_NAME }}_linux_x86_64" -upx
+          wails build -platform "linux/amd64" -o "${{ env.PROGRAM_NAME }}_linux_x86_64"
 
-          echo "generating hash for ${{ env.PROGRAM_NAME }}_linux_x86_64"
-          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_linux_x86_64" | awk '{print $1}' > "./build/bin/sha256.txt"
+          echo "compressing linux app"
+          tar -czvf "./build/bin/${{ env.PROGRAM_NAME }}_linux_x86_64.tar.gz" "./build/bin/${{ env.PROGRAM_NAME }}_linux_x86_64"
+          rm "./build/bin/${{ env.PROGRAM_NAME }}_linux_x86_64"
+
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_linux_x86_64.tar.gz"
+          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_linux_x86_64.tar.gz" | awk '{print $1}' > "./build/bin/sha256.txt"
           HASH=$(cat "./build/bin/sha256.txt")
-          mv "./build/bin/sha256.txt" "./build/bin/checksum_linux_x86_64.$HASH"
+          mv "./build/bin/sha256.txt" "./build/bin/_checksum_linux_x86_64-$HASH"
           echo "hash generated: $HASH"
         shell: bash
-      - name: Build Linux App (arm64)
-        if : runner.os == 'Linux'
-        working-directory: "."
-        run: |
-          echo "building on ${{ runner.os }} for arm64"
-          wails build --platform "linux/arm64" -o "${{ env.PROGRAM_NAME }}_linux_arm64" -upx
+      # Below is commented out due to cross-compilation issue in wails V2 
+      # but should be fixed in wails V3, ref: https://github.com/wailsapp/wails/issues/2833
+      # - name: Build Linux App (arm64)
+      #   if : runner.os == 'Linux'
+      #   env:
+      #     CC: aarch64-linux-gnu-gcc
+      #     GOOS: linux
+      #     GOARCH: arm64
+      #     CGO_ENABLED: 1
+      #     GOARM:
+      #     GOMIPS:
+      #     GOMIPS64:
+      #   working-directory: "."
+      #   run: |
+      #     echo "building on ${{ runner.os }} for arm64"
+      #     export CC=aarch64-linux-gnu-gcc
+      #     wails build -skipbindings -platform "linux/arm64" -o "${{ env.PROGRAM_NAME }}_linux_arm64"
 
-          echo "generating hash for ${{ env.PROGRAM_NAME }}_linux_arm64"
-          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_linux_arm64" | awk '{print $1}' > "./build/bin/sha256.txt"
-          HASH=$(cat "./build/bin/sha256.txt")
-          mv "./build/bin/sha256.txt" "./build/bin/checksum_linux_arm64.$HASH"
-          echo "hash generated: $HASH"
+      #     echo "compressing linux app"
+      #     tar -czvf "./build/bin/${{ env.PROGRAM_NAME }}_linux_arm64.tar.gz" "./build/bin/${{ env.PROGRAM_NAME }}_linux_arm64"
+      #     rm "./build/bin/${{ env.PROGRAM_NAME }}_linux_arm64"
+
+      #     echo "generating hash for ${{ env.PROGRAM_NAME }}_linux_arm64.tar.gz"
+      #     sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_linux_arm64.tar.gz" | awk '{print $1}' > "./build/bin/sha256.txt"
+      #     HASH=$(cat "./build/bin/sha256.txt")
+      #     mv "./build/bin/sha256.txt" "./build/bin/_checksum_linux_arm64-$HASH"
+      #     echo "hash generated: $HASH"
 
       - name: Build Windows App (x86_64)
         if: runner.os == 'Windows'
         working-directory: "."
         run: |
           echo "building on ${{ runner.os }} for x86_64"
-          wails build --platform "windows/amd64" -o "${{ env.PROGRAM_NAME }}_windows_x86_64.exe" -upx
+          wails build -platform "windows/amd64" -o "${{ env.PROGRAM_NAME }}_windows_x86_64.exe"
 
-          echo "generating hash for ${{ env.PROGRAM_NAME }}_windows_x86_64.exe"
-          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_windows_x86_64.exe" | awk '{print $1}' > "./build/bin/sha256.txt"
-          HASH=$(cat "./build/bin/sha256.txt")
-          mv "./build/bin/sha256.txt" "./build/bin/checksum_windows_x86_64.$HASH"
+          echo "compressing windows app for x86_64"
+          Compress-Archive -Path "./build/bin/${{ env.PROGRAM_NAME }}_windows_x86_64.exe" -DestinationPath "./build/bin/${{ env.PROGRAM_NAME }}_windows_x86_64.zip"
+          rm "./build/bin/${{ env.PROGRAM_NAME }}_windows_x86_64.exe"
+
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_windows_x86_64.zip"
+          $HASH=(Get-FileHash -Algorithm SHA256 -Path "./build/bin/${{ env.PROGRAM_NAME }}_windows_x86_64.zip" | Select-Object -ExpandProperty Hash).ToLower()
+          $HASH | Set-Content -Path "./build/bin/_checksum_windows_x86_64-$HASH"
           echo "hash generated: $HASH"
-        shell: bash
+        shell: powershell
       - name: Build Windows App (arm64)
         if: runner.os == 'Windows'
-        working-directory: "."
+        working-directory: "." # Note that upx doesn't work for arm64 builds on Windows
         run: |
           echo "building on ${{ runner.os }} for arm64"
-          wails build --platform "windows/arm64" -o "${{ env.PROGRAM_NAME }}_windows_arm64.exe" -upx
+          wails build -platform "windows/arm64" -o "${{ env.PROGRAM_NAME }}_windows_arm64.exe"
 
-          echo "generating hash for ${{ env.PROGRAM_NAME }}_windows_arm64.exe"
-          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_windows_arm64.exe" | awk '{print $1}' > "./build/bin/sha256.txt"
-          HASH=$(cat "./build/bin/sha256.txt")
-          mv "./build/bin/sha256.txt" "./build/bin/checksum_windows_arm64.$HASH"
+          echo "compressing windows app for arm64"
+          Compress-Archive -Path "./build/bin/${{ env.PROGRAM_NAME }}_windows_arm64.exe" -DestinationPath "./build/bin/${{ env.PROGRAM_NAME }}_windows_arm64.zip"
+          rm "./build/bin/${{ env.PROGRAM_NAME }}_windows_arm64.exe"
+
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_windows_arm64.zip"
+          $HASH=(Get-FileHash -Algorithm SHA256 -Path "./build/bin/${{ env.PROGRAM_NAME }}_windows_arm64.zip" | Select-Object -ExpandProperty Hash).ToLower()
+          $HASH | Set-Content -Path "./build/bin/_checksum_windows_arm64-$HASH"
           echo "hash generated: $HASH"
-        shell: bash
+        shell: powershell
 
       - name: Build macOS App (x86_64)
         working-directory: "."
         if: runner.os == 'macOS'
         run: |
           echo "building on ${{ runner.os }} for x86_64"
-          wails build --platform "darwin/amd64"
+          wails build -platform "darwin/amd64"
 
           echo "compressing macOS app"
           cd "./build/bin/"
@@ -140,7 +159,7 @@ jobs:
           echo "generating hash for ${{ env.PROGRAM_NAME }}_macos_x86_64.tar.gz"
           shasum -a 256 "./${{ env.PROGRAM_NAME }}_macos_x86_64.tar.gz" | cut -d ' ' -f 1 > "./sha256.txt"
           HASH=$(cat "./sha256.txt")
-          mv "./sha256.txt" "./checksum_macos_x86_64.$HASH"
+          mv "./sha256.txt" "./_checksum_macos_x86_64-$HASH"
           echo "hash generated: $HASH"
         shell: bash
       - name: Build macOS App (arm64)
@@ -148,7 +167,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo "building on ${{ runner.os }} for x86_64"
-          wails build --platform "darwin/arm64"
+          wails build -platform "darwin/arm64"
 
           echo "compressing macOS app"
           cd "./build/bin/"
@@ -159,7 +178,7 @@ jobs:
           echo "generating hash for ${{ env.PROGRAM_NAME }}_macos_arm64.tar.gz"
           shasum -a 256 "./${{ env.PROGRAM_NAME }}_macos_arm64.tar.gz" | cut -d ' ' -f 1 > "./sha256.txt"
           HASH=$(cat "./sha256.txt")
-          mv "./sha256.txt" "./checksum_macos_arm64.$HASH"
+          mv "./sha256.txt" "./_checksum_macos_arm64-$HASH"
           echo "hash generated: $HASH"
         shell: bash
 
