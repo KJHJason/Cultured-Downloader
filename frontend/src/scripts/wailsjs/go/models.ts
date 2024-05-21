@@ -351,7 +351,7 @@ export namespace app {
 	    Path: string;
 	    Type: string;
 	    Filename: string;
-	    Data: number[];
+	    Data: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ProfilePic(source);

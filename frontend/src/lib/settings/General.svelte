@@ -41,10 +41,10 @@
         profileImageInput.addEventListener("click", async (e: Event) => { 
             e.preventDefault();
             const profilePicInfo = await SelectProfilePic();
-            const profilePicPath = profilePicInfo.Path as string;
-            const profilePicFilename = profilePicInfo.Filename as string;
-            const profilePicType = profilePicInfo.Type as string;
-            const profilePicData = profilePicInfo.Data as string; // base64 encoded string
+            const profilePicPath = profilePicInfo.Path;
+            const profilePicFilename = profilePicInfo.Filename;
+            const profilePicType = profilePicInfo.Type;
+            const profilePicData = profilePicInfo.Data; // base64 encoded string
 
             if (!profilePicPath) {
                 return;

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,7 +23,7 @@ type ProfilePic struct {
 	Path     string `json:"Path"`
 	Type     string `json:"Type"`
 	Filename string `json:"Filename"`
-	Data     []byte `json:"Data"`
+	Data     string `json:"Data"`
 }
 
 func NewProfilePic(path string) (ProfilePic, error) {
@@ -49,7 +50,7 @@ func NewProfilePic(path string) (ProfilePic, error) {
 	}
 
 	pic.Path = path
-	pic.Data = data
+	pic.Data = base64.StdEncoding.EncodeToString(data)
 	pic.Filename = filepath.Base(path)
 	return pic, nil
 }

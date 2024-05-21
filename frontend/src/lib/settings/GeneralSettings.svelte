@@ -178,7 +178,9 @@
     <CacheDetails bind:open={cacheDetailsOpened} />
     <div class="mt-5">
         <button type="button" class="btn btn-info flex" on:click={() => cacheDetailsOpened = true} >
-            <ArchiveSolid />
+            <div class="text-main">
+                <ArchiveSolid />
+            </div>
             <Translate text="View Cache" />
         </button>
     </div>

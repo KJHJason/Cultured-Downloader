@@ -295,8 +295,8 @@
             <div class="mt-2 text-right">
                 <Helper id="url-helper" color="red" />
                 <button type="submit" class="mt-2 btn btn-success" id="add-to-queue-btn">
-                    <div class="flex">
-                        <ArrowLeftOutline />
+                    <div class="flex text-main">
+                        <ArrowLeftOutline class="" />
                         <Translate text="Add to queue!" />
                     </div>
                 </button>
