@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { generateRandomId } from "../../scripts/random";
+    import { generateRandomId } from "../../scripts/utils/random";
 
     export let hideByDefault = false;
     export let elClass = "";

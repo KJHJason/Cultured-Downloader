@@ -3,8 +3,9 @@
     import { translate, translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
     import { onMount } from "svelte";
+    import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlQ: any;
+    export let dlQ: app.FrontendDownloadQueue;
     export let progHistoryModalsId: Record<number, boolean>;
     export let makeDateTimeReadable: (dateTime: string, addSeconds: boolean) => string;
 

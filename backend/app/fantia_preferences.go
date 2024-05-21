@@ -7,10 +7,10 @@ import (
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
-func (a *App) SetFantiaPreferences(p *preferences) error {
+func (a *App) SetFantiaPreferences(p *FantiaPreferences) error {
 	if p == nil {
 		return fmt.Errorf(
-			"error %d: preferences is nil in SetFantiaPreferences()",
+			"error %d: fantia preferences is nil in SetFantiaPreferences()",
 			cdlerrors.DEV_ERROR,
 		)
 	}

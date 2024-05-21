@@ -11,30 +11,30 @@ import (
 )
 
 type FrontendDownloadQueue struct {
-	Id                int
-	Website           string
-	Msg               string
-	SuccessMsg        string
-	ErrMsg            string
-	ErrSlice          []string
-	HasError          bool
-	Inputs            []Input
-	ProgressBar       *ProgressBar
-	NestedProgressBar []*NestedProgressBar
-	Finished          bool
+	Id                int                  `json:"Id"`
+	Website           string               `json:"Website"`
+	Msg               string               `json:"Msg"`
+	SuccessMsg        string               `json:"SuccessMsg"`
+	ErrMsg            string               `json:"ErrMsg"`
+	ErrSlice          []string             `json:"ErrSlice"`
+	HasError          bool                 `json:"HasError"`
+	Inputs            []Input              `json:"Inputs"`
+	ProgressBar       ProgressBar          `json:"ProgressBar"`
+	NestedProgressBar []*NestedProgressBar `json:"NestedProgressBar"`
+	Finished          bool                 `json:"Finished"`
 }
 
 type FrontendDownloadDetails struct {
-	Msg           string
-	SuccessMsg    string
-	ErrMsg        string
-	Finished      bool
-	HasError      bool
-	FileSize      string
-	Filename      string
-	DownloadSpeed float64
-	DownloadETA   float64
-	Percentage    int
+	Msg           string  `json:"Msg"`
+	SuccessMsg    string  `json:"SuccessMsg"`
+	ErrMsg        string  `json:"ErrMsg"`
+	Finished      bool    `json:"Finished"`
+	HasError      bool    `json:"HasError"`
+	FileSize      string  `json:"FileSize"`
+	Filename      string  `json:"Filename"`
+	DownloadSpeed float64 `json:"DownloadSpeed"`
+	DownloadETA   float64 `json:"DownloadETA"`
+	Percentage    int     `json:"Percentage"`
 }
 
 func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*FrontendDownloadDetails {
@@ -128,7 +128,7 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 			ErrSlice:          errStringSlice,
 			HasError:          checkNestedProgBarForErrors(val),
 			Inputs:            val.inputs,
-			ProgressBar:       val.mainProgressBar,
+			ProgressBar:       *val.mainProgressBar,
 			NestedProgressBar: val.mainProgressBar.nestedProgBars,
 			Finished:          val.finished,
 		})

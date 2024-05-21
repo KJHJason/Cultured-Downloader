@@ -62,7 +62,7 @@ func (a *App) ValidateKemonoInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
 	kemonoSession := a.appData.GetSecuredString(constants.KEMONO_COOKIE_VALUE_KEY)
 	var kemonoSessions []*http.Cookie
 	if kemonoSession == "" {
@@ -116,7 +116,7 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *preferences) (ke
 	return kemonoDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitKemonoToQueue(inputs []string, prefs *preferences) error {
+func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitKemonoToQueue()")
 	}

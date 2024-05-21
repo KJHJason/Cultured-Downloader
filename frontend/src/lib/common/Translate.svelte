@@ -1,7 +1,7 @@
 <script lang="ts">
     import { writable, type Writable } from "svelte/store";
     import { translate } from "../../scripts/language";
-    import { generateRandomId } from "../../scripts/random";
+    import { generateRandomId } from "../../scripts/utils/random";
 
     export let text: string;
     export let fallback: string = "";

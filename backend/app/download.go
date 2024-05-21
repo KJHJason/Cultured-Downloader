@@ -9,10 +9,8 @@ import (
 )
 
 type Input struct {
-	//id      string
-	//pageNum string
-	Input string
-	Url   string
+	Input string `json:"Input"`
+	Url   string `json:"Url"`
 }
 
 type DownloadQueue struct {

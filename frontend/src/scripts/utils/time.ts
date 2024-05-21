@@ -1,4 +1,4 @@
-import { GetLocale } from "./language";
+import { GetLocale } from "../language";
 
 export const convertMinsToMinsAndSecs = (minutes: number): [number, number] => {
     if (minutes < 0) {

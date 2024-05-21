@@ -130,7 +130,7 @@ func (a *App) ValidatePixivInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken string, pref *preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken string, pref *Preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
 	if pixivRefreshToken == "" {
 		//lint:ignore ST1005 Captialised for frontend use
 		return nil, nil, errors.New("Pixiv Refresh Token is empty")
@@ -182,7 +182,7 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 	return pixivMobileDlOptions, mainProgBar, nil
 }
 
-func (a *App) parsePixivSettingsMap(ctx context.Context, pref *preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivSettingsMap(ctx context.Context, pref *Preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
 	pixivSession := a.appData.GetSecuredString(constants.PIXIV_COOKIE_VALUE_KEY)
 	var pixivSessions []*http.Cookie
 	if pixivSession == "" {
@@ -237,7 +237,7 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref *preferences) (pix
 	return pixivWebDlOptions, mainProgBar, nil
 }
 
-func parsePixivUgoiraSettings(pref *preferences) *ugoira.UgoiraOptions {
+func parsePixivUgoiraSettings(pref *Preferences) *ugoira.UgoiraOptions {
 	return &ugoira.UgoiraOptions{
 		DeleteZip:    pref.DeleteUgoiraZip,
 		Quality:      int(pref.UgoiraQuality),
@@ -245,7 +245,7 @@ func parsePixivUgoiraSettings(pref *preferences) *ugoira.UgoiraOptions {
 	}
 }
 
-func (a *App) SubmitPixivToQueue(inputs []string, prefs *preferences) error {
+func (a *App) SubmitPixivToQueue(inputs []string, prefs *Preferences) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitPixivToQueue()")
 	}

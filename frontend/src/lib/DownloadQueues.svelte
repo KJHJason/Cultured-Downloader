@@ -3,7 +3,7 @@
     import { onDestroy } from "svelte";
     import { GetDownloadQueues } from "../scripts/wailsjs/go/app/App";
     import { translate } from "../scripts/language";
-    import { makeDateTimeReadable } from "../scripts/time";
+    import { makeDateTimeReadable } from "../scripts/utils/time";
     import Inputs from "./queues/Inputs.svelte";
     import Tasks from "./queues/Tasks.svelte";
     import Actions from "./queues/Actions.svelte";
@@ -11,6 +11,7 @@
     import type { Writable } from "svelte/store";
     import { type dlModals } from "../scripts/download";
     import Translate from "./common/Translate.svelte";
+    import type { app } from "../scripts/wailsjs/go/models";
 
     export let action: Writable<string>;
 
@@ -18,14 +19,13 @@
     let progHistoryModalsId: Record<number, boolean> = {}; 
     let modalsId: Record<number, dlModals> = {};
     let errModalsId: Record<number, boolean> = {};
-    let downloadQueues: any[] = [];
+    let downloadQueues: app.FrontendDownloadQueue[] = [];
 
-    type DefaultValueFunction<T> = () => T;
     type RecordType = Record<number, dlModals> | Record<number, boolean>;
-    const modalLogic = <T extends RecordType>(oldRecord: T, queues: Record<any, any>, defaultValue: DefaultValueFunction<dlModals> | DefaultValueFunction<boolean>): void => {
+    const modalLogic = <T extends RecordType>(oldRecord: T, queues: app.FrontendDownloadQueue[], defaultValue: () => dlModals | boolean): void => {
         let seen: Set<number> = new Set();
-        for (const key in queues) {
-            const id = queues[key].Id;
+        for (const queue of queues) {
+            const id = queue.Id;
             seen.add(id);
 
             if (oldRecord[id] === undefined) {

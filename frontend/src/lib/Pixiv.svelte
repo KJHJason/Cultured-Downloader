@@ -2,6 +2,7 @@
     import { actions } from "../scripts/constants";
     import PlatformBase from "./PlatformBase.svelte";
     import { SubmitPixivToQueue, ValidatePixivInputs } from "../scripts/wailsjs/go/app/App";
+    import type { app } from "../scripts/wailsjs/go/models";
 
     const urlValidationFn = async (urls: string | string[]): Promise<boolean> => {
         if (typeof urls === "string") {
@@ -10,7 +11,7 @@
         return await ValidatePixivInputs(urls);
     };
 
-    const addToQueueFn = async (inputs: string[], options: Record<string, any>): Promise<void> => {
+    const addToQueueFn = async (inputs: string[], options: app.Preferences): Promise<void> => {
         await SubmitPixivToQueue(inputs, options);
     };
 

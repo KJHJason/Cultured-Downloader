@@ -12,13 +12,14 @@
     import { type dlModals } from "../../scripts/download";
     import { onDestroy, onMount } from "svelte";
     import Translate from "../common/Translate.svelte";
+    import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlQ: any;
+    export let dlQ: app.FrontendDownloadQueue;
     export let modalsId: Record<number, dlModals>;
     export let errModalsId: Record<number, boolean>;
 
     let getDlDetailsInterval: number;
-    const elements: Writable<any> = writable([]);
+    const elements: Writable<app.FrontendDownloadDetails[]> = writable([]);
     let pageNum = writable(modalsId[dlQ.Id].pageNum);
     const pageNumEditUnsubscribe = pageNum.subscribe((val) => modalsId[dlQ.Id].pageNum = val);
 
@@ -53,7 +54,7 @@
     });
 
     const rowsPerPage = 8;
-    const paginatedDownloads: Writable<any[]> = writable([]);
+    const paginatedDownloads: Writable<app.FrontendDownloadDetails[]> = writable([]);
 </script>
 
 <button type="button" class="btn-text-info" id="details-{dlQ.Id}" on:click={() => {modalsId[dlQ.Id].open = true}}>

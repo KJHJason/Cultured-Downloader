@@ -8,11 +8,12 @@
     import { DeleteAllPostCache, DeleteCacheKey, GetPostCache } from "../../../scripts/wailsjs/go/app/App";
     import { pleaseWaitSwal, swal } from "../../../scripts/constants";
     import { FilterOutline, TrashBinSolid } from "flowbite-svelte-icons";
-    import { makeDateTimeReadable } from "../../../scripts/time";
+    import { makeDateTimeReadable } from "../../../scripts/utils/time";
     import fantiaLogo from "../../../assets/images/logos/fantia-logo.png";
     import pixivFanboxLogo from "../../../assets/images/logos/pixiv-fanbox-logo.png";
     import pixivLogo from "../../../assets/images/logos/pixiv-logo.png";
     import kemonoLogo from "../../../assets/images/logos/kemono-logo.png";
+    import type { database } from "../../../scripts/wailsjs/go/models";
 
     export let rowsPerPage: number;
     export let pageNum: Writable<number>;
@@ -59,8 +60,8 @@
         translatedDeleteSuccessText = await translateText("Post Cache has been cleared!");
     });
 
-    const postCache: Writable<any[]> = writable([]);
-    const paginatedPostCache: Writable<any[]> = writable([]);
+    const postCache: Writable<database.PostCache[]> = writable([]);
+    const paginatedPostCache: Writable<database.PostCache[]> = writable([]);
     const deleteCacheKey = async (bucket: string, key: string) => {
         await DeleteCacheKey(bucket, key);
         postCache.update(c => c.filter(c => c.CacheKey !== key));
@@ -85,7 +86,7 @@
         });
     };
 
-    let originalElements: any[] = [];
+    let originalElements: database.PostCache[] = [];
     let searchInput: HTMLInputElement;
     const processSearchInput = () => {
         const searchValue = searchInput.value.toLowerCase();

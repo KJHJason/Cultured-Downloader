@@ -5,12 +5,14 @@
     import Pagination from "../../common/Pagination.svelte";
     import { onMount } from "svelte";
     import { DeleteCacheKey } from "../../../scripts/wailsjs/go/app/App";
-    import { makeDateTimeReadable } from "../../../scripts/time";
+    import { makeDateTimeReadable } from "../../../scripts/utils/time";
     import { pleaseWaitSwal, swal } from "../../../scripts/constants";
     import { translateText } from "../../../scripts/language";
     import { TrashBinSolid } from "flowbite-svelte-icons";
+    import type { app } from "../../../scripts/wailsjs/go/models";
 
     export let showKey: boolean = true;
+    export let hasDateTime: boolean = true;
     export let keyTitle: string = "URL";
     export let valueTitle: string = "Date/Time";
     export let parseValue: (arg: string) => string = makeDateTimeReadable;
@@ -23,10 +25,10 @@
 
     export let rowsPerPage: number;
     export let pageNum: Writable<number>;
-    export let fetchDataFunc: () => Promise<any[]>;
+    export let fetchDataFunc: () => Promise<app.FrontendCacheKeyValue[]>;
 
-    const cache: Writable<any[]> = writable([]);
-    const paginatedCache: Writable<any[]> = writable([]);
+    const cache: Writable<app.FrontendCacheKeyValue[]> = writable([]);
+    const paginatedCache: Writable<app.FrontendCacheKeyValue[]> = writable([]);
 
     let translatedDeleteInProgTitle = "";
     let translatedDeleteInProgText = "";
@@ -66,7 +68,7 @@
         cache.set([]);
     };
 
-    let originalElements: any[] = [];
+    let originalElements: app.FrontendCacheKeyValue[] = [];
     let searchInput: HTMLInputElement;
     const processSearchInput = () => {
         const searchValue = searchInput.value.toLowerCase();
@@ -75,10 +77,7 @@
             cache.set(originalElements);
             return;
         }
-        cache.set(originalElements.filter(post => {
-            const keyVal = post.KeyStr ?? post.Key;
-            return keyVal.toLowerCase().includes(searchValue)
-        }));
+        cache.set(originalElements.filter(post => post.Key.toLowerCase().includes(searchValue)));
     };
     onMount(async () => {
         const searchPlaceholder = await translateText("Search");
@@ -128,15 +127,19 @@
                         {#if showKey}
                             <TableBodyCell>
                                 <div class="text-wrap">
-                                    {cache.KeyStr ?? cache.Key}
+                                    {cache.Key}
                                 </div>
                             </TableBodyCell>
                         {/if}
                         <TableBodyCell>
-                            {parseValue(cache.ValStr ?? cache.Val)}
+                            {#if hasDateTime}
+                                {parseValue(cache.DateTime)}
+                            {:else}
+                                {parseValue(cache.Value)}
+                            {/if}
                         </TableBodyCell>
                         <TableBodyCell>
-                            <button class="btn-text-danger" on:click={() => deleteKey(cache.Bucket, cache.CacheKey ?? cache.KeyStr)}>
+                            <button class="btn-text-danger" on:click={() => deleteKey(cache.Bucket, cache.Key)}>
                                 <TrashBinSolid />
                             </button>
                         </TableBodyCell>

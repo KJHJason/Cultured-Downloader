@@ -42,10 +42,10 @@ const (
 	UnknownValue = "Unknown"
 )
 
-func (a *App) SetPixivPreferences(p *preferences) error {
+func (a *App) SetPixivPreferences(p *PixivPreferences) error {
 	if p == nil {
 		return fmt.Errorf(
-			"pixiv error %d: preferences is nil in SetPixivPreferences()",
+			"pixiv error %d: pixiv preferences is nil in SetPixivPreferences()",
 			cdlerrors.DEV_ERROR,
 		)
 	}

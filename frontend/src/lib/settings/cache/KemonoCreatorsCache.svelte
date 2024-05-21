@@ -13,6 +13,7 @@
     pageNum={pageNum}
     {parseValue}
     showKey={false}
+    hasDateTime={false}
     valueTitle="Creator Name"
     deleteInProgTitle="Deleting Creator Name Cache..."
     deleteSuccessTitle="Creator Name Cache Cleared!"

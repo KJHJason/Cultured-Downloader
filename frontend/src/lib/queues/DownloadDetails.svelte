@@ -1,11 +1,12 @@
 <script lang="ts">
     import { Progressbar, TableBodyCell, TableBodyRow, Spinner } from "flowbite-svelte";
-    import { convertMinsToMinsAndSecs } from "../../scripts/time";
+    import { convertMinsToMinsAndSecs } from "../../scripts/utils/time";
     import Translate from "../common/Translate.svelte";
     import { onMount } from "svelte";
     import { translateText } from "../../scripts/language";
+    import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlDetails: any;
+    export let dlDetails: app.FrontendDownloadDetails;
 
     $: translatedMins = "";
     $: translatedSecs = "";
@@ -35,7 +36,7 @@
         {dlDetails.FileSize}
     </TableBodyCell>
     <TableBodyCell>
-        <span>{parseFloat(dlDetails.DownloadSpeed).toFixed(2)} MB/s</span>
+        <span>{dlDetails.DownloadSpeed.toFixed(2)} MB/s</span>
     </TableBodyCell>
     <TableBodyCell>
         {#if !dlDetails.Finished && dlDetails.DownloadETA == -1}
@@ -51,7 +52,7 @@
                     {:else if dlDetails.DownloadETA > 60}
                         {convertSecondsToMinsAndSecs(dlDetails.DownloadETA / 60)}
                     {:else}
-                        {parseFloat(dlDetails.DownloadETA).toFixed(2)} {translatedSecs}
+                        {dlDetails.DownloadETA.toFixed(2)} {translatedSecs}
                     {/if}
                 </span>
             </div>

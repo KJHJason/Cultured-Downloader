@@ -7,10 +7,11 @@
     import Translate from "../common/Translate.svelte";
     import CacheDetails from "./CacheDetails.svelte";
     import { ArchiveSolid, InfoCircleSolid } from "flowbite-svelte-icons";
+    import type { app } from "../../scripts/wailsjs/go/models";
 
     export let formId = generalFormId;
     export let promptSuccess: boolean;
-    export let preferences: any = undefined;
+    export let preferences: app.Preferences | undefined = undefined;
 
     export let showOrganisePostImagesInp: boolean = true;
     export let showDlGDriveInp: boolean = true;
@@ -28,7 +29,7 @@
 
     let savedFantiaOrgImages: boolean;
 
-    const processPrefs = (preferences: any) => {
+    const processPrefs = (preferences: app.Preferences) => {
         DlPostThumbnailInp.checked   = preferences.DlPostThumbnail;
         DlPostImagesInp.checked      = preferences.DlPostImages;
         DlPostAttachmentsInp.checked = preferences.DlPostAttachments;
@@ -70,11 +71,16 @@
         const prefForm = document.getElementById(formId) as HTMLFormElement;
         prefForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const prefs: Record<string, boolean> = {
+            if (preferences === undefined) {
+                preferences = await GetPreferences();
+            }
+
+            const prefs: app.GeneralPreferences = {
                 DlPostThumbnail:    DlPostThumbnailInp.checked,
                 DlPostImages:       DlPostImagesInp.checked,
                 DlPostAttachments:  DlPostAttachmentsInp.checked,
                 OverwriteFiles:     OverwriteFilesInp.checked,
+                DlGDrive:           false,
                 DetectOtherLinks:   DetectOtherLinksInp.checked,
                 UseCacheDb:         UseCacheDbInp.checked,
             };

@@ -48,7 +48,7 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
 	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
 	var fantiaSessions []*http.Cookie
 	if fantiaSession == "" {
@@ -105,7 +105,7 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *preferences) (fa
 	return fantiaDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitFantiaToQueue(inputs []string, prefs *preferences) error {
+func (a *App) SubmitFantiaToQueue(inputs []string, prefs *Preferences) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitFantiaToQueue()")
 	}

@@ -6,10 +6,11 @@
     import { translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
     import { InfoCircleSolid } from "flowbite-svelte-icons";
+    import type { app } from "../../scripts/wailsjs/go/models";
 
     export let formId = pixivFormId;
     export let promptSuccess: boolean;
-    export let preferences: any = undefined;
+    export let preferences: app.Preferences | undefined = undefined;
     export let pixivArtworkType: number = 3;
 
     type selectValues = { value: number, name: string }[];
@@ -132,7 +133,7 @@
 
     let DeleteUgoiraZipInp: HTMLInputElement;
     let UgoiraQualityInp: HTMLInputElement;
-    const processPrefs = (preferences: any) => {
+    const processPrefs = (preferences: app.Preferences) => {
         DeleteUgoiraZipInp.checked = preferences.DeleteUgoiraZip;
         pixivArtworkType           = preferences.ArtworkType;
         pixivRating                = preferences.RatingMode;
@@ -140,7 +141,7 @@
         pixivAiSearchMode          = preferences.AiSearchMode;
         pixivSortOrder             = preferences.SortOrder;
         pixivUgoiraFormat          = preferences.UgoiraOutputFormat;
-        UgoiraQualityInp.value     = preferences.UgoiraQuality;
+        UgoiraQualityInp.value     = preferences.UgoiraQuality.toString();
     };
 
     onMount(async() => {
@@ -159,7 +160,7 @@
         const prefForm = document.getElementById(formId) as HTMLFormElement;
         prefForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const prefs = {
+            const prefs: app.PixivPreferences = {
                 DeleteUgoiraZip:    DeleteUgoiraZipInp.checked,
                 ArtworkType:        pixivArtworkType,
                 RatingMode:         pixivRating,

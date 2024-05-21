@@ -7,11 +7,8 @@ on:
 
 env:
   BUILD_DIR: "executables"
-  MAC_PROGRAM_NAME: "Cultured-Downloader" # https://github.com/wailsapp/wails/issues/2290, -o flag doesn't work for macOS, uses the wails.json name instead
-  WINDOWS_PROGRAM_NAME: "Cultured-Downloader"
-  LINUX_PROGRAM_NAME: "cultured-downloader"
-  # Necessary for most environments as build failure can occur due to OOM issues
-  NODE_OPTIONS: "--max-old-space-size=4096"
+  PROGRAM_NAME: "cultured_downloader"
+  NODE_OPTIONS: "--max-old-space-size=4096" # Necessary for most environments as build failure can occur due to OOM issues
 
 jobs:
   build:
@@ -20,18 +17,9 @@ jobs:
       # Failure in one platform build won't impact the others
       fail-fast: false
       matrix:
-        build:
-          - name: "App"
-            platform:  "linux/amd64"
-            os: "ubuntu-latest"
-          - name: "App"
-            platform:  "windows/amd64"
-            os: "windows-latest"
-          - name: "App"
-            platform:  "darwin/universal"
-            os: "macos-latest"
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
-    runs-on: ${{ matrix.build.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -73,48 +61,105 @@ jobs:
         with:
           install-only: true
 
-      - name: Build Linux App
+      # https://github.com/wailsapp/wails/issues/2290, -o flag doesn't work for macOS, uses the wails.json name instead
+      - name: Install jq for macOS
+        if: runner.os == 'macOS'
+        run: brew install jq
+        shell: bash
+      - name: Change macOS wails.json name
+        if: runner.os == 'macOS'
+        run: jq '.name = "${{ env.PROGRAM_NAME }}"' wails.json > tmp.$$.json && mv tmp.$$.json wails.json
+        shell: bash
+
+      - name: Build Linux App (x86_64)
         if: runner.os == 'Linux'
         working-directory: "."
         run: |
-          echo "building on ${{ matrix.os }}"
-          wails build --platform ${{ matrix.build.platform }} -o "${{ env.LINUX_PROGRAM_NAME }}" -upx
+          echo "building on ${{ runner.os }} for x86_64"
+          wails build --platform "linux/amd64" -o "${{ env.PROGRAM_NAME }}_linux_x86_64" -upx
 
-          echo "generating hash for ${{ env.LINUX_PROGRAM_NAME }}"
-          sha256sum "./build/bin/${{ env.LINUX_PROGRAM_NAME }}" | awk '{print $1}' > "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt"
-          HASH=$(cat "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt")
-          mv "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.sha256.txt" "./build/bin/${{ env.LINUX_PROGRAM_NAME }}.$HASH"
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_linux_x86_64"
+          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_linux_x86_64" | awk '{print $1}' > "./build/bin/sha256.txt"
+          HASH=$(cat "./build/bin/sha256.txt")
+          mv "./build/bin/sha256.txt" "./build/bin/checksum_linux_x86_64.$HASH"
           echo "hash generated: $HASH"
         shell: bash
-      - name: Build Windows App
+      - name: Build Linux App (arm64)
+        if : runner.os == 'Linux'
+        working-directory: "."
+        run: |
+          echo "building on ${{ runner.os }} for arm64"
+          wails build --platform "linux/arm64" -o "${{ env.PROGRAM_NAME }}_linux_arm64" -upx
+
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_linux_arm64"
+          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_linux_arm64" | awk '{print $1}' > "./build/bin/sha256.txt"
+          HASH=$(cat "./build/bin/sha256.txt")
+          mv "./build/bin/sha256.txt" "./build/bin/checksum_linux_arm64.$HASH"
+          echo "hash generated: $HASH"
+
+      - name: Build Windows App (x86_64)
         if: runner.os == 'Windows'
         working-directory: "."
         run: |
-          echo "building on ${{ matrix.os }}"
-          wails build --platform ${{ matrix.build.platform }} -o "${{ env.WINDOWS_PROGRAM_NAME }}.exe" -upx
+          echo "building on ${{ runner.os }} for x86_64"
+          wails build --platform "windows/amd64" -o "${{ env.PROGRAM_NAME }}_windows_x86_64.exe" -upx
 
-          echo "generating hash for ${{ env.WINDOWS_PROGRAM_NAME }}"
-          sha256sum "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe" | awk '{print $1}' > "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt"
-          HASH=$(cat "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt")
-          mv "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.sha256.txt" "./build/bin/${{ env.WINDOWS_PROGRAM_NAME }}.exe.$HASH"
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_windows_x86_64.exe"
+          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_windows_x86_64.exe" | awk '{print $1}' > "./build/bin/sha256.txt"
+          HASH=$(cat "./build/bin/sha256.txt")
+          mv "./build/bin/sha256.txt" "./build/bin/checksum_windows_x86_64.$HASH"
           echo "hash generated: $HASH"
         shell: bash
-      - name: Build macOS App
+      - name: Build Windows App (arm64)
+        if: runner.os == 'Windows'
+        working-directory: "."
+        run: |
+          echo "building on ${{ runner.os }} for arm64"
+          wails build --platform "windows/arm64" -o "${{ env.PROGRAM_NAME }}_windows_arm64.exe" -upx
+
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_windows_arm64.exe"
+          sha256sum "./build/bin/${{ env.PROGRAM_NAME }}_windows_arm64.exe" | awk '{print $1}' > "./build/bin/sha256.txt"
+          HASH=$(cat "./build/bin/sha256.txt")
+          mv "./build/bin/sha256.txt" "./build/bin/checksum_windows_arm64.$HASH"
+          echo "hash generated: $HASH"
+        shell: bash
+
+      - name: Build macOS App (x86_64)
         working-directory: "."
         if: runner.os == 'macOS'
         run: |
-          echo "building on ${{ matrix.os }}"
-          wails build --platform ${{ matrix.build.platform }}
+          echo "building on ${{ runner.os }} for x86_64"
+          wails build --platform "darwin/amd64"
 
           echo "compressing macOS app"
           cd "./build/bin/"
-          zip -r "./${{ env.MAC_PROGRAM_NAME }}.app.zip" "./${{ env.MAC_PROGRAM_NAME }}.app"
-          rm -rf "./${{ env.MAC_PROGRAM_NAME }}.app"
+          mv "./${{ env.PROGRAM_NAME }}.app" "./${{ env.PROGRAM_NAME }}_macos_x86_64.app"
+          tar -czvf "./${{ env.PROGRAM_NAME }}_macos_x86_64.tar.gz" "./${{ env.PROGRAM_NAME }}_macos_x86_64.app"
+          rm -rf "./${{ env.PROGRAM_NAME }}_macos_x86_64.app"
 
-          echo "generating hash for ${{ env.MAC_PROGRAM_NAME }}"
-          shasum -a 256 "./${{ env.MAC_PROGRAM_NAME }}.app.zip" | cut -d ' ' -f 1 > "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt"
-          HASH=$(cat "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt")
-          mv "./${{ env.MAC_PROGRAM_NAME }}.app.zip.sha256.txt" "./${{ env.MAC_PROGRAM_NAME }}.app.zip.$HASH"
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_macos_x86_64.tar.gz"
+          shasum -a 256 "./${{ env.PROGRAM_NAME }}_macos_x86_64.tar.gz" | cut -d ' ' -f 1 > "./sha256.txt"
+          HASH=$(cat "./sha256.txt")
+          mv "./sha256.txt" "./checksum_macos_x86_64.$HASH"
+          echo "hash generated: $HASH"
+        shell: bash
+      - name: Build macOS App (arm64)
+        working-directory: "."
+        if: runner.os == 'macOS'
+        run: |
+          echo "building on ${{ runner.os }} for x86_64"
+          wails build --platform "darwin/arm64"
+
+          echo "compressing macOS app"
+          cd "./build/bin/"
+          mv "./${{ env.PROGRAM_NAME }}.app" "./${{ env.PROGRAM_NAME }}_macos_arm64.app"
+          tar -czvf "./${{ env.PROGRAM_NAME }}_macos_arm64.tar.gz" "./${{ env.PROGRAM_NAME }}_macos_arm64.app"
+          rm -rf "./${{ env.PROGRAM_NAME }}_macos_arm64.app"
+
+          echo "generating hash for ${{ env.PROGRAM_NAME }}_macos_arm64.tar.gz"
+          shasum -a 256 "./${{ env.PROGRAM_NAME }}_macos_arm64.tar.gz" | cut -d ' ' -f 1 > "./sha256.txt"
+          HASH=$(cat "./sha256.txt")
+          mv "./sha256.txt" "./checksum_macos_arm64.$HASH"
           echo "hash generated: $HASH"
         shell: bash
 

@@ -15,31 +15,57 @@ func (a *App) SetDarkMode(darkMode bool) {
 	a.appData.SetBool(constants.DARK_MODE_KEY, darkMode)
 }
 
-type preferences struct {
-	DlPostThumbnail   bool
-	DlPostImages      bool
-	DlPostAttachments bool
-	OverwriteFiles    bool
+type Preferences struct {
+	DlPostThumbnail   bool `json:"DlPostThumbnail"`
+	DlPostImages      bool `json:"DlPostImages"`
+	DlPostAttachments bool `json:"DlPostAttachments"`
+	OverwriteFiles    bool `json:"OverwriteFiles"`
 
-	DlGDrive         bool
-	DetectOtherLinks bool
-	UseCacheDb       bool
+	DlGDrive         bool `json:"DlGDrive"`
+	DetectOtherLinks bool `json:"DetectOtherLinks"`
+	UseCacheDb       bool `json:"UseCacheDb"`
 
 	// Fantia
-	OrganisePostImages bool
+	OrganisePostImages bool `json:"OrganisePostImages"`
 
 	// Pixiv
-	ArtworkType        int
-	DeleteUgoiraZip    bool
-	RatingMode         int
-	SearchMode         int
-	AiSearchMode       int
-	SortOrder          int
-	UgoiraOutputFormat int
-	UgoiraQuality      int
+	ArtworkType        int  `json:"ArtworkType"`
+	DeleteUgoiraZip    bool `json:"DeleteUgoiraZip"`
+	RatingMode         int  `json:"RatingMode"`
+	SearchMode         int  `json:"SearchMode"`
+	AiSearchMode       int  `json:"AiSearchMode"`
+	SortOrder          int  `json:"SortOrder"`
+	UgoiraOutputFormat int  `json:"UgoiraOutputFormat"`
+	UgoiraQuality      int  `json:"UgoiraQuality"`
 }
 
-func (a *App) GetPreferences() *preferences {
+type GeneralPreferences struct {
+	DlPostThumbnail   bool `json:"DlPostThumbnail"`
+	DlPostImages      bool `json:"DlPostImages"`
+	DlPostAttachments bool `json:"DlPostAttachments"`
+	OverwriteFiles    bool `json:"OverwriteFiles"`
+
+	DlGDrive         bool `json:"DlGDrive"`
+	DetectOtherLinks bool `json:"DetectOtherLinks"`
+	UseCacheDb       bool `json:"UseCacheDb"`
+}
+
+type FantiaPreferences struct {
+	OrganisePostImages bool `json:"OrganisePostImages"`
+}
+
+type PixivPreferences struct {
+	ArtworkType        int  `json:"ArtworkType"`
+	DeleteUgoiraZip    bool `json:"DeleteUgoiraZip"`
+	RatingMode         int  `json:"RatingMode"`
+	SearchMode         int  `json:"SearchMode"`
+	AiSearchMode       int  `json:"AiSearchMode"`
+	SortOrder          int  `json:"SortOrder"`
+	UgoiraOutputFormat int  `json:"UgoiraOutputFormat"`
+	UgoiraQuality      int  `json:"UgoiraQuality"`
+}
+
+func (a *App) GetPreferences() *Preferences {
 	// 0-51 for mp4, 0-63 for webm
 	ugoiraQuality := a.appData.GetIntWithFallback(constants.PIXIV_UGOIRA_QUALITY_KEY, 10)
 	if ugoiraQuality < 0 || ugoiraQuality > 63 {
@@ -47,7 +73,7 @@ func (a *App) GetPreferences() *preferences {
 		a.appData.SetInt(constants.PIXIV_UGOIRA_QUALITY_KEY, ugoiraQuality)
 	}
 
-	pref := &preferences{
+	pref := &Preferences{
 		DlPostThumbnail:   a.appData.GetBool(constants.DL_THUMBNAIL_KEY),
 		DlPostImages:      a.appData.GetBool(constants.DL_IMAGES_KEY),
 		DlPostAttachments: a.appData.GetBool(constants.DL_ATTACHMENT_KEY),
@@ -76,10 +102,10 @@ func (a *App) GetDownloadDir() (string, error) {
 	return dlDirPath, err
 }
 
-func (a *App) SetGeneralPreferences(p *preferences) error {
+func (a *App) SetGeneralPreferences(p *GeneralPreferences) error {
 	if p == nil {
 		return fmt.Errorf(
-			"error %d: preferences is nil in SetGeneralPreferences()",
+			"error %d: general preferences is nil in SetGeneralPreferences()",
 			cdlerrors.DEV_ERROR,
 		)
 	}

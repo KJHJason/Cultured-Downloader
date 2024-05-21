@@ -9,8 +9,8 @@ import (
 )
 
 type ProgramInfo struct {
-	ProgramVer string
-	BackendVer string
+	ProgramVer string `json:"ProgramVer"`
+	BackendVer string `json:"BackendVer"`
 }
 
 func (a *App) GetProgramInfo() ProgramInfo {

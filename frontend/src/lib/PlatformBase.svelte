@@ -7,6 +7,7 @@
     import GeneralSettings from "./settings/GeneralSettings.svelte";
     import MergedSettings from "./settings/MergedSettings.svelte";
     import { GetPreferences } from "../scripts/wailsjs/go/app/App";
+    import type { app } from "../scripts/wailsjs/go/models";
     import Translate from "./common/Translate.svelte";
     import { translateText } from "../scripts/language";
 
@@ -24,7 +25,7 @@
     export let inputPlaceholder: string;
     export let urlValidationFn: (urls: string | string[]) => Promise<boolean>;
     export let checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
-    export let addToQueueFn: (inputs: string[], downloadSettings: Record<string, any>) => Promise<void>;
+    export let addToQueueFn: (inputs: string[], downloadSettings: app.Preferences) => Promise<void>;
 
     if (platformTitle === "") {
         platformTitle = platformName;
@@ -166,27 +167,40 @@
         });
 
         const settingsCard = document.getElementById("settings-card") as HTMLDivElement;
-        const getDownloadSettingsFromForm = (): Record<string, boolean | number> => {
+        const getDownloadSettingsFromForm = (): app.Preferences => {
             const checkboxes = settingsCard.querySelectorAll("input[type=checkbox]") as NodeListOf<HTMLInputElement>;
             const inputs = settingsCard.querySelectorAll("input") as NodeListOf<HTMLInputElement>;
-            const downloadPreferences: Record<string, boolean | number> = {
-                ArtworkType:        pixivArtworkType,
-                RatingMode:         pixivRating,
-                SearchMode:         pixivSearchMode,
-                SortOrder:          pixivSortOrder,
+            const downloadPreferences: app.Preferences = {
+                DlPostThumbnail: false,
+                DlPostImages: false,
+                DlPostAttachments: false,
+                OverwriteFiles: false,
+                DlGDrive: false,
+                DetectOtherLinks: false,
+                UseCacheDb: false,
+                OrganisePostImages: false,
+                ArtworkType: pixivArtworkType,
+                DeleteUgoiraZip: false,
+                RatingMode: pixivRating,
+                SearchMode: pixivSearchMode,
+                AiSearchMode: pixivAiSearchMode,
+                SortOrder: pixivSortOrder,
                 UgoiraOutputFormat: pixivUgoiraFormat,
+                UgoiraQuality: 10,
             };
 
             for (const checkbox of checkboxes) {
-                downloadPreferences[checkbox.name] = checkbox.checked;
+                const key = checkbox.name as keyof app.Preferences;
+                downloadPreferences[key] = checkbox.checked as never;
             }
             for (const input of inputs) {
                 if (input.type === "checkbox") {
                     continue;
                 }
 
+                const key = input.name as keyof app.Preferences;
                 if (input.type === "number") {
-                    downloadPreferences[input.name] = parseInt(input.value);
+                    downloadPreferences[key] = parseInt(input.value) as never;
                 } else {
                     throw new Error(unknownInputError);
                 }

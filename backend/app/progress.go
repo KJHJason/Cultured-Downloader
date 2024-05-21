@@ -16,15 +16,15 @@ type ProgressBar struct {
 	errMsg     string
 
 	// For the frontend
-	IsSpinner      bool
-	Count          int
-	MaxCount       int
-	Active         bool
-	Finished       bool
-	HasError       bool
-	Percentage     int
-	FolderPath     string
-	DateTime       time.Time
+	IsSpinner      bool      `json:"IsSpinner"`
+	Count          int       `json:"Count"`
+	MaxCount       int       `json:"MaxCount"`
+	Active         bool      `json:"Active"`
+	Finished       bool      `json:"Finished"`
+	HasError       bool      `json:"HasError"`
+	Percentage     int       `json:"Percentage"`
+	FolderPath     string    `json:"FolderPath"`
+	DateTime       time.Time `json:"DateTime"`
 	nestedProgBars []*NestedProgressBar
 
 	// download progress bars for more detailed information
@@ -38,16 +38,16 @@ type ProgressBar struct {
 }
 
 type NestedProgressBar struct {
-	Msg        string
-	SuccessMsg string
-	ErrMsg     string
+	Msg        string `json:"Msg"`
+	SuccessMsg string `json:"SuccessMsg"`
+	ErrMsg     string `json:"ErrMsg"`
 
-	IsSpinner bool
+	IsSpinner bool `json:"IsSpinner"`
 
-	Count      int
-	HasError   bool
-	Percentage int
-	DateTime   time.Time
+	Count      int       `json:"Count"`
+	HasError   bool      `json:"HasError"`
+	Percentage int       `json:"Percentage"`
+	DateTime   time.Time `json:"DateTime"`
 }
 
 type Messages struct {

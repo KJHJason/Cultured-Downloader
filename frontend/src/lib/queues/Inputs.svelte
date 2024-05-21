@@ -5,8 +5,9 @@
     import Translate from "../common/Translate.svelte";
     import { onMount } from "svelte";
     import { translateText } from "../../scripts/language";
+    import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlQ: any;
+    export let dlQ: app.FrontendDownloadQueue;
     export let inputModalsId: Record<number, boolean>;
 
     $: inputModalTitle = "";

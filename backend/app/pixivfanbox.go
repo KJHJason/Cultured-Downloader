@@ -64,7 +64,7 @@ func (a *App) ValidatePixivFanboxUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *preferences) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
 	pixivFanboxSession := a.appData.GetSecuredString(constants.PIXIV_FANBOX_COOKIE_VALUE_KEY)
 	var pixivFanboxSessions []*http.Cookie
 	if pixivFanboxSession == "" {
@@ -120,7 +120,7 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *preferences
 	return pixivFanboxDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *preferences) error {
+func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitFantiaToQueue()")
 	}

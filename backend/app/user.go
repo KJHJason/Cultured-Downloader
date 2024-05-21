@@ -19,10 +19,10 @@ func (a *App) SetUsername(username string) {
 }
 
 type ProfilePic struct {
-	Path     string
-	Type     string
-	Filename string
-	Data     []byte
+	Path     string `json:"Path"`
+	Type     string `json:"Type"`
+	Filename string `json:"Filename"`
+	Data     []byte `json:"Data"`
 }
 
 func NewProfilePic(path string) (ProfilePic, error) {
