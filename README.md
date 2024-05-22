@@ -104,6 +104,11 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
   - Pixiv Fanbox
   - Pixiv
   - Kemono
+- Platform niche features:
+  - Fantia:
+    - Able to download products individually or from multiple creators
+  - Pixiv:
+    - Able to search for "illustrations and ugoira" or "manga" with various filters like sort by popularity (*requires Pixiv Premium)
 - Concurrent downloads for faster downloads
   - Note: This is more prominent on Fantia as the other platforms have rate limits or throttles the download speed.
 - Download GDrive links from posts on:
