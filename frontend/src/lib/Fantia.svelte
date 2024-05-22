@@ -22,7 +22,10 @@
 
 <PlatformBase 
     platformName={actions.Fantia}
-    inputPlaceholder={"https://fantia.jp/posts/2239524\nhttps://fantia.jp/fanclubs/5744"} 
+    inputPlaceholder={`https://fantia.jp/posts/2239524
+https://fantia.jp/products/32490
+https://fantia.jp/fanclubs/5744
+https://fantia.jp/fanclubs/5744/products`} 
     {urlValidationFn}
     {addToQueueFn}
     {checkUrlHasPageNumFilter}
