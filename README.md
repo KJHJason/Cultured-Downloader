@@ -78,9 +78,9 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
    - Download the latest Cultured Downloader archive/zip file which will contain the executable files from the [releases page](https://github.com/KJHJason/Cultured-Downloader/releases)
      - Not sure what `x86_64` or `arm64` means? Those are the architectures of your system and `x86_64` is the most common architecture for various systems.
        - Note: `x86_64` is also known as `x64` or `amd64` in some systems.
-     - Please check your system's architecture before downloading the executable file. For instance, Apple M1 Macs are using the `arm64` architecture.
-   - Once downloaded, you can do an integrity check for security reasons by comparing the SHA256 hash of the downloaded executable file the hash provided in the release notes.
-     - For instance, `_checksum_windows_x86_64-628b21a1b0dbf33a1137432e0f350e5c4bd49ecac9fa2f8a261555433967d394` contains the SHA256 hash of the Windows x86_64 executable file.
+     - Please check your system's architecture before downloading the zip file. For instance, Apple M1 Macs are using the `arm64` architecture.
+   - Once downloaded, you can do an integrity check for security reasons by comparing the SHA256 hash of the downloaded zip file with the hash provided in the release notes.
+     - For instance, `_sha256checksum_windows_x86_64-628b21a1b0dbf33a1137432e0f350e5c4bd49ecac9fa2f8a261555433967d394` contains the SHA256 hash of the zip file that contains the executable file for Windows AMD64 systems.
        - The 64 characters `628b21a1b0dbf33a1137432e0f350e5c4bd49ecac9fa2f8a261555433967d394` suffix is the SHA256 hash of the executable file.
        - You can also simply open it as a text file which would contain the SHA256 checksum as well.
    - Finally, extract the executable file from the archive/zip file and run it.
