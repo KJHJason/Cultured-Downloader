@@ -1,6 +1,7 @@
 package app
 
 import (
+	"sort"
 	"time"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/database"
@@ -63,6 +64,9 @@ func parseKeyValues(keyValues []*database.KeyValue, hasDatetime bool) []*Fronten
 		}
 		frontendKeyValues = append(frontendKeyValues, value)
 	}
+	sort.Slice(frontendKeyValues, func(i, j int) bool {
+		return frontendKeyValues[i].DateTime.After(frontendKeyValues[j].DateTime)
+	})
 	return frontendKeyValues
 }
 

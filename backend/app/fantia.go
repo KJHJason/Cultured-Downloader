@@ -25,6 +25,11 @@ func validateFantiaUrls(inputs []string) (bool, []Input, *fantia.FantiaDl) {
 		} else if creatorUrlMatch := cdlconsts.FANTIA_CREATOR_URL_REGEX.FindStringSubmatch(input); len(creatorUrlMatch) > 0 {
 			fantiaDl.FanclubIds = append(fantiaDl.FanclubIds, creatorUrlMatch[cdlconsts.FANTIA_CREATOR_ID_IDX])
 			fantiaDl.FanclubPageNums = append(fantiaDl.FanclubPageNums, creatorUrlMatch[cdlconsts.FANTIA_CREATOR_PAGE_NUM_IDX])
+		} else if productUrlMatch := cdlconsts.FANTIA_PRODUCT_URL_REGEX.FindStringSubmatch(input); len(productUrlMatch) > 0 {
+			fantiaDl.ProductIds = append(fantiaDl.ProductIds, productUrlMatch[cdlconsts.FANTIA_PRODUCT_ID_IDX])
+		} else if fanclubProductUrlMatch := cdlconsts.FANTIA_FANCLUB_PRODUCT_URL_REGEX.FindStringSubmatch(input); len(fanclubProductUrlMatch) > 0 {
+			fantiaDl.ProductFanclubIds = append(fantiaDl.ProductFanclubIds, fanclubProductUrlMatch[cdlconsts.FANTIA_FANCLUB_PRODUCT_ID_IDX])
+			fantiaDl.ProductFanclubPageNums = append(fantiaDl.ProductFanclubPageNums, fanclubProductUrlMatch[cdlconsts.FANTIA_FANCLUB_PRODUCT_PAGE_NUM_IDX])
 		} else {
 			return false, nil, nil
 		}
