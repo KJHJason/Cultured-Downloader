@@ -269,9 +269,8 @@
         })
     };
 
+    let form: HTMLFormElement;
     onMount(async () => {
-        const form = document.getElementById("advanced-form") as HTMLFormElement;
-
         dlLocationInp = document.getElementById("downloadLocation") as HTMLInputElement;
         savedDownloadLoc = await GetDownloadDir();
         dlLocationInp.value = savedDownloadLoc;
@@ -392,7 +391,7 @@
     });
 </script>
 
-<form id="advanced-form">
+<form bind:this={form}>
     <div class="grid grid-cols-1 md:grid-cols-1 gap-y-6">
         <div>
             <Label for="userAgent">

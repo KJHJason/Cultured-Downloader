@@ -14,9 +14,8 @@
     export let language: Writable<string>;
     export let lastSavedUpdateStr: Record<string, string>;
 
+    let settingsContent: HTMLDivElement;
     const changeDefaultDividerColour = () => {
-        const settingsContent = document.getElementById("settingsContent");
-
         // Go to the second div child element within the settingsContent div
         const divider =  settingsContent?.children[1];
         if (divider) {
@@ -30,7 +29,7 @@
     });
 </script>
 
-<div class="container mx-auto" id="settingsContent">
+<div class="container mx-auto" bind:this={settingsContent}>
     <Tabs style="underline">
         <TabItem class="text-main" open>
             <div slot="title" class="flex items-center gap-2">

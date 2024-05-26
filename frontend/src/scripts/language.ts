@@ -21,12 +21,18 @@ export const translate = (text: string, elId: string, lang: string = "", fallbac
     });
 }
 
+export const translateEl = async (text: string, el: HTMLElement, lang: string = "", fallback: string = ""): Promise<void> => {
+    if (!el) 
+        throw new Error("Element is null");
+    el.textContent = await translateText(text, lang, fallback);
+}
+
 export const GetLocale = (): string => {
     switch (cachedLang) {
-        case JP:
-            return "ja-JP";
-        default:
-            return "en-US";
+    case JP:
+        return "ja-JP";
+    default:
+        return "en-US";
     }
 }
 

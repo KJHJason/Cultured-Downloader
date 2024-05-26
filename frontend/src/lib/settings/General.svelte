@@ -118,6 +118,9 @@
             }
 
             resetImageInputs();
+            if (hasProfilePic) {
+                deleteProfileImageBtn.classList.remove("hidden");
+            } 
             profilePicResetBtn.classList.add("hidden");
             swal.fire({
                 title: await translateText("Success"),
