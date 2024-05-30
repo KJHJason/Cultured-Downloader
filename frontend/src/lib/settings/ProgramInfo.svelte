@@ -99,7 +99,7 @@
     </Helper>
     <Helper id="devNote2">
         - <Translate text="Additionally, please consider supporting this project by" />
-        <button on:click={() => BrowserOpenURL("https://ko-fi.com/dratornic")} class="btn-link text-left" id="ko-fi-btn">{translate("buying me a coffee", "ko-fi-btn")}</button>
+        <button on:click={() => BrowserOpenURL("https://ko-fi.com/kjhjason")} class="btn-link text-left" id="ko-fi-btn">{translate("buying me a coffee", "ko-fi-btn")}</button>
         <Translate text="program_info_or" fallback="or" />
         <button on:click={() => BrowserOpenURL("https://github.com/sponsors/KJHJason")} class="btn-link text-left" id="github-sponsor-btn">{translate("program_info_sponsoring me", "github-sponsor-btn", "", "sponsoring me")}</button>
         <Translate text="via GitHub sponsors! Your contribution would help ensure the sustainability of this project. Thank you for reading <3" />

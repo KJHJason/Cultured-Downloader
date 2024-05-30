@@ -145,7 +145,7 @@ After learning [Go/Golang](https://go.dev) however, I decided to rewrite the pro
 1. Please remember that is meant to be used for personal use.
 2. If there is a bug, you can raise an [issue](https://github.com/KJHJason/Cultured-Downloader/issues) and I will do my best to fix it. Otherwise, you can fork this repository and make a [pull request](https://github.com/KJHJason/Cultured-Downloader/pulls) to fix the bug if you would like to do so.
 3. If you would like to improve on this program, you can fork this repository and do the necessary changes and make a [pull request](https://github.com/KJHJason/Cultured-Downloader/pulls). I will then review it and merge it I feel that it is a good contribution.
-4. Please consider supporting this project by [buying me a coffee](https://ko-fi.com/dratornic) or [sponsoring me](https://github.com/sponsors/KJHJason)!
+4. Please consider supporting this project by [buying me a coffee](https://ko-fi.com/kjhjason) or [sponsoring me](https://github.com/sponsors/KJHJason)!
    - Your contribution would help ensure the sustainability of this project. Thank you for reading &lt;3
 
 ## Demo

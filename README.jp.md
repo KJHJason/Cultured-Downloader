@@ -146,7 +146,7 @@ Go/Golangを学んだ後、このプログラムをGolangで書き直し、wails
 1. このプログラムは個人的な使用を想定していますので、ご了承ください。
 2. バグがある場合は、[issue](https://github.com/KJHJason/Cultured-Downloader/issues)を作成していただければ、修正に最善を尽くします。それ以外の場合は、リポジトリをフォークして[プルリクエスト](https://github.com/KJHJason/Cultured-Downloader/pulls)を作成してバグを修正することもできます。
 3. このプログラムを改良したい場合は、このリポジトリをフォークし、必要な変更を行い、[プルリクエスト](https://github.com/KJHJason/Cultured-Downloader/pulls)を作成してください。その後、私がそれを見て、良い貢献であると感じればマージします。
-4. このプロジェクトのサポートを検討していただき、ありがとうございます。こちらから[コーヒー](https://ko-fi.com/dratornic)をご購入いただくか、[GitHubスポンサー](https://github.com/sponsors/KJHJason)としてサポートすることができます。
+4. このプロジェクトのサポートを検討していただき、ありがとうございます。こちらから[コーヒー](https://ko-fi.com/kjhjason)をご購入いただくか、[GitHubスポンサー](https://github.com/sponsors/KJHJason)としてサポートすることができます。
    - 皆様の貢献は、このプロジェクトの持続可能性を確保するのに役立ちます。お読みいただき、ありがとうございます。&lt;3
 
 ## デモ
