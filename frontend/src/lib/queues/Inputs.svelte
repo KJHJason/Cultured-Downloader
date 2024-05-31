@@ -30,8 +30,8 @@
             </TableHeadCell>
         </TableHead>
         <TableBody tableBodyClass="divide-y">
-            <TableBodyRow>
-                {#each dlQ.Inputs as input}
+            {#each dlQ.Inputs as input}
+                <TableBodyRow>
                     <TableBodyCell>
                         {input.Input}
                     </TableBodyCell>
@@ -40,8 +40,8 @@
                             {input.Url}
                         </button>
                     </TableBodyCell>
-                {/each}
-            </TableBodyRow>
+                </TableBodyRow>
+            {/each}
         </TableBody>
     </Table>
 </Modal>
