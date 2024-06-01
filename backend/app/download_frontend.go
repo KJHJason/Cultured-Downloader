@@ -43,15 +43,17 @@ func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*
 		return []*FrontendDownloadDetails{}
 	}
 
-	idx := 0
+	lastIdx := dlDetailsLen - 1
+	inProgPtr := 0
+	donePtr := lastIdx
 	dlDetails := make([]*FrontendDownloadDetails, dlDetailsLen)
 
-	// reverse the order of the download progress bars
-	// so that the latest download progress bar is at the top
-	for i := dlDetailsLen - 1; i >= 0; i-- {
+	// Reverse the order of the download progress bars so that the
+	// latest download progress bar that are still downloading is at the top.
+	// However, the order of the finished download progress bars is not reversed yet.
+	for i := lastIdx; i >= 0; i-- {
 		dlProg := dlProgressBars[i]
-
-		dlDetails[idx] = &FrontendDownloadDetails{
+		dlDetail := &FrontendDownloadDetails{
 			Msg:           dlProg.GetMsg(),
 			SuccessMsg:    dlProg.GetSuccessMsg(),
 			ErrMsg:        dlProg.GetErrMsg(),
@@ -63,7 +65,19 @@ func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*
 			DownloadETA:   dlProg.GetDownloadETA(),
 			Percentage:    dlProg.GetPercentage(),
 		}
-		idx++
+		if dlProg.IsFinished() {
+			dlDetails[donePtr] = dlDetail
+			donePtr--
+		} else {
+			dlDetails[inProgPtr] = dlDetail
+			inProgPtr++
+		}
+	}
+
+	// Reverse the sub-slice of already finished download progress bars within 
+	// dlDetails so that the recently finished download progress bar is at the top
+	for i, j := donePtr + 1, lastIdx; i <= j; i, j = i+1, j-1 {
+		dlDetails[i], dlDetails[j] = dlDetails[j], dlDetails[i]
 	}
 	return dlDetails
 }
