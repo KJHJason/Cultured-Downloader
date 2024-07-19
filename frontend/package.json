@@ -17,13 +17,13 @@
     "vite": "^4.4.9"
   },
   "dependencies": {
-    "flowbite": "^2.3.0",
-    "flowbite-svelte": "^0.46.1",
+    "flowbite": "^2.4.1",
+    "flowbite-svelte": "^0.46.15",
     "flowbite-svelte-icons": "^1.4.2",
     "nanoid": "^5.0.7",
     "svelte": "^4.2.18",
-    "sweetalert2": "^11.10.7",
-    "tailwindcss": "^3.4.3"
+    "sweetalert2": "^11.12.3",
+    "tailwindcss": "^3.4.6"
   },
   "author": "KJHJason"
 }
