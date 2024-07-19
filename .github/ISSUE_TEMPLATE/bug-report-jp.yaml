@@ -59,6 +59,7 @@ body:
         - "1008 (JSON Error)"
         - "1009 (HTML Error)"
         - "1010 (Captcha Error)"
+        - "1011 (Start-up Error)"
     validations:
       required: true
 
