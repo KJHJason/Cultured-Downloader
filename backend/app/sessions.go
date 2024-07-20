@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
+	"github.com/KJHJason/Cultured-Downloader-Logic/api/fantia"
+	pixivcommon "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/common"
+	"github.com/KJHJason/Cultured-Downloader-Logic/api/pixivfanbox"
+	"github.com/KJHJason/Cultured-Downloader-Logic/cdlerrors"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/database"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
@@ -37,6 +41,34 @@ func getCookieDataKeys(website string) (valKey string, txtKey string, jsonKey st
 		return constants.KEMONO_COOKIE_VALUE_KEY, constants.KEMONO_COOKIE_TXT_KEY, constants.KEMONO_COOKIE_JSON_KEY, nil
 	default:
 		return "", "", "", errors.New("invalid website")
+	}
+}
+
+func (a *App) getCaptchaHandler(website, userAgent string, sessionCookies []*http.Cookie) httpfuncs.CaptchaHandler {
+	switch website {
+	case constants.FANTIA:
+		return fantia.NewHttpCaptchaHandler(
+			fantia.CaptchaOptions{
+				Ctx:            a.ctx,
+				UserAgent:      userAgent,
+				SessionCookies: sessionCookies,
+				Notifier:       a.notifier,
+			},
+		)
+	case constants.PIXIV_FANBOX:
+		return pixivfanbox.NewHttpCaptchaHandler(
+			a.ctx, a.notifier,
+		)
+	case constants.PIXIV:
+		return pixivcommon.NewHttpCaptchaHandler(
+			a.ctx, cdlconsts.PIXIV_URL, a.notifier,
+		)
+	case constants.KEMONO:
+		return httpfuncs.CaptchaHandler{}
+	default:
+		panic(
+			fmt.Errorf("error %d: invalid website, %q, in getCaptchaHandler", cdlerrors.DEV_ERROR, website),
+		)
 	}
 }
 
@@ -84,8 +116,16 @@ func (a *App) UploadCookieFile(website string) error {
 		return err
 	}
 
-	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	err = api.VerifyCookies(website, userAgent, cookies)
+	userAgent := a.appData.GetStringWithFallback(
+		constants.USER_AGENT_KEY,
+		httpfuncs.DEFAULT_USER_AGENT,
+	)
+	err = api.VerifyCookies(
+		website,
+		userAgent,
+		cookies,
+		a.getCaptchaHandler(website, userAgent, cookies),
+	)
 	if err != nil {
 		return err
 	}
@@ -121,8 +161,17 @@ func (a *App) SetSessionValue(website, session string) error {
 		return err
 	}
 
+	cookies := []*http.Cookie{
+		api.GetCookie(session, website),
+	}
 	userAgent := a.appData.GetStringWithFallback(constants.USER_AGENT_KEY, httpfuncs.DEFAULT_USER_AGENT)
-	if _, err := api.VerifyAndGetCookie(website, session, userAgent); err != nil {
+	err = api.VerifyCookies(
+		website,
+		userAgent,
+		cookies,
+		a.getCaptchaHandler(website, userAgent, cookies),
+	)
+	if err != nil {
 		return err
 	}
 

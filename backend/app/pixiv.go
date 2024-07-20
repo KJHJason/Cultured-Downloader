@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
+	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv"
+	pixivcommon "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/common"
 	pixivmobile "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/mobile"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/ugoira"
 	pixivweb "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/web"
@@ -98,10 +100,19 @@ func validatePixivInputs(inputs []string) (bool, []Input, *pixiv.PixivDl) {
 			input = tag
 			urlForRef = "https://www.pixiv.net/tags/" + tag
 		} else if artworkUrlMatch := cdlconsts.PIXIV_ARTWORK_URL_REGEX.FindStringSubmatch(input); len(artworkUrlMatch) > 0 {
-			pixivDl.ArtworkIds = append(pixivDl.ArtworkIds, artworkUrlMatch[cdlconsts.PIXIV_ARTWORK_ID_IDX])
+			pixivDl.ArtworkIds = append(
+				pixivDl.ArtworkIds,
+				artworkUrlMatch[cdlconsts.PIXIV_ARTWORK_ID_IDX],
+			)
 		} else if artistUrlMatch := cdlconsts.PIXIV_ARTIST_URL_REGEX.FindStringSubmatch(input); len(artistUrlMatch) > 0 {
-			pixivDl.ArtistIds = append(pixivDl.ArtistIds, artistUrlMatch[cdlconsts.PIXIV_ARTIST_ID_IDX])
-			pixivDl.ArtistPageNums = append(pixivDl.ArtistPageNums, artistUrlMatch[cdlconsts.PIXIV_ARTIST_PAGE_NUM_IDX])
+			pixivDl.ArtistIds = append(
+				pixivDl.ArtistIds,
+				artistUrlMatch[cdlconsts.PIXIV_ARTIST_ID_IDX],
+			)
+			pixivDl.ArtistPageNums = append(
+				pixivDl.ArtistPageNums,
+				artistUrlMatch[cdlconsts.PIXIV_ARTIST_PAGE_NUM_IDX],
+			)
 		} else {
 			return false, nil, nil
 		}
@@ -130,7 +141,12 @@ func (a *App) ValidatePixivInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken string, pref *Preferences) (pixivMobileDlOptions *pixivmobile.PixivMobileDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivMobileSettingsMap(
+	ctx context.Context,
+	pixivRefreshToken string,
+	prefs *Preferences,
+	pixivFilters pixivcommon.PixivFilters,
+) (pixivMobile *pixivmobile.PixivMobile, mainProgBar *ProgressBar, err error) {
 	if pixivRefreshToken == "" {
 		//lint:ignore ST1005 Captialised for frontend use
 		return nil, nil, errors.New("Pixiv Refresh Token is empty")
@@ -148,41 +164,45 @@ func (a *App) parsePixivMobileSettingsMap(ctx context.Context, pixivRefreshToken
 	os.MkdirAll(baseDlDirPath, cdlconsts.DEFAULT_PERMS)
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
-	pixivMobileDlOptions = &pixivmobile.PixivMobileDlOptions{
-		UseCacheDb:          pref.UseCacheDb,
-		BaseDownloadDirPath: baseDlDirPath,
-		SortOrder:           convertSortOrderForBackend(pref.SortOrder),
-		SearchMode:          convertSearchModeForBackend(pref.SearchMode),
-		SearchAiMode:        convertAiSearchModeForBackend(pref.AiSearchMode),
-		RatingMode:          convertRatingModeForBackend(pref.RatingMode),
-		ArtworkType:         convertArtworkTypeForBackend(pref.ArtworkType),
+	pixivMobile, err = pixivmobile.NewPixivMobile(pixivRefreshToken, 15, ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := pixivMobile.SetPixivFilters(pixivFilters); err != nil {
+		return nil, nil, err
+	}
+
+	pixivMobile.Base = &api.BaseDl{
+		UseCacheDb:      prefs.UseCacheDb,
+		DownloadDirPath: baseDlDirPath,
 
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
 			FfmpegPath:     a.GetFfmpegPath(),
-			OverwriteFiles: pref.OverwriteFiles,
-			LogUrls:        pref.DetectOtherLinks,
+			OverwriteFiles: prefs.OverwriteFiles,
+			LogUrls:        prefs.DetectOtherLinks,
 			UserAgent:      userAgent,
 		},
 
-		// MobileClient is initialised when ValidateArgs is called
-
-		RefreshToken: pixivRefreshToken,
-
 		Notifier: a.notifier,
 
-		MainProgBar:          mainProgBar,
-		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
+		ProgressBarInfo: &progress.ProgressBarInfo{
+			MainProgressBar:      mainProgBar,
+			DownloadProgressBars: &[]*progress.DownloadProgressBar{},
+		},
 	}
-	pixivMobileDlOptions.SetContext(ctx)
-	err = pixivMobileDlOptions.ValidateArgs()
-	if err != nil {
+	if err := pixivMobile.ValidateArgs(); err != nil {
 		return nil, nil, err
 	}
-	return pixivMobileDlOptions, mainProgBar, nil
+	return pixivMobile, mainProgBar, nil
 }
 
-func (a *App) parsePixivSettingsMap(ctx context.Context, pref *Preferences) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivWebSettingsMap(
+	ctx context.Context,
+	pref *Preferences,
+	pixivFilters pixivcommon.PixivFilters,
+) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
 	pixivSession := a.appData.GetSecuredString(constants.PIXIV_COOKIE_VALUE_KEY)
 	var pixivSessions []*http.Cookie
 	if pixivSession == "" {
@@ -205,30 +225,34 @@ func (a *App) parsePixivSettingsMap(ctx context.Context, pref *Preferences) (pix
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	pixivWebDlOptions = &pixivweb.PixivWebDlOptions{
-		UseCacheDb:          pref.UseCacheDb,
-		BaseDownloadDirPath: baseDlDirPath,
-		SortOrder:           convertSortOrderForBackend(pref.SortOrder),
-		SearchMode:          convertSearchModeForBackend(pref.SearchMode),
-		SearchAiMode:        convertAiSearchModeForBackend(pref.AiSearchMode),
-		RatingMode:          convertRatingModeForBackend(pref.RatingMode),
-		ArtworkType:         convertArtworkTypeForBackend(pref.ArtworkType),
+		Base: &api.BaseDl{
+			UseCacheDb:      pref.UseCacheDb,
+			DownloadDirPath: baseDlDirPath,
 
-		Configs: &configs.Config{
-			DownloadPath:   downloadPath,
-			FfmpegPath:     a.GetFfmpegPath(),
-			OverwriteFiles: pref.OverwriteFiles,
-			LogUrls:        pref.DetectOtherLinks,
-			UserAgent:      userAgent,
+			Configs: &configs.Config{
+				DownloadPath:   downloadPath,
+				FfmpegPath:     a.GetFfmpegPath(),
+				OverwriteFiles: pref.OverwriteFiles,
+				LogUrls:        pref.DetectOtherLinks,
+				UserAgent:      userAgent,
+			},
+
+			SessionCookieId: pixivSession,
+			SessionCookies:  pixivSessions,
+
+			Notifier: a.notifier,
+
+			ProgressBarInfo: &progress.ProgressBarInfo{
+				MainProgressBar:      mainProgBar,
+				DownloadProgressBars: &[]*progress.DownloadProgressBar{},
+			},
 		},
-
-		SessionCookieId: pixivSession,
-		SessionCookies:  pixivSessions,
-
-		Notifier: a.notifier,
-
-		MainProgBar:          mainProgBar,
-		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
+
+	if err := pixivWebDlOptions.SetPixivFilters(pixivFilters); err != nil {
+		return nil, nil, err
+	}
+
 	pixivWebDlOptions.SetContext(ctx)
 	err = pixivWebDlOptions.ValidateArgs(userAgent)
 	if err != nil {
@@ -258,38 +282,61 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs *Preferences) error {
 	ugoiraOptions := parsePixivUgoiraSettings(prefs)
 	ctx, cancel := context.WithCancel(a.ctx)
 
+	pixivFilters := pixivcommon.PixivFilters{
+		SortOrder:    convertSortOrderForBackend(prefs.SortOrder),
+		SearchMode:   convertSearchModeForBackend(prefs.SearchMode),
+		SearchAiMode: convertAiSearchModeForBackend(prefs.AiSearchMode),
+		RatingMode:   convertRatingModeForBackend(prefs.RatingMode),
+		ArtworkType:  convertArtworkTypeForBackend(prefs.ArtworkType),
+	}
+
 	var mainProgBar *ProgressBar
 	var dlProgBar *[]*progress.DownloadProgressBar
 	var fnToAddToQueue func() []error
 	if pixivMobileRefreshToken := a.appData.GetSecuredString(constants.PIXIV_MOBILE_REFRESH_TOKEN_KEY); pixivMobileRefreshToken != "" {
-		pixivMobileDlOptions, mainProgBarVal, err := a.parsePixivMobileSettingsMap(ctx, pixivMobileRefreshToken, prefs)
+		pixivMobile, mainProgBarVal, err := a.parsePixivMobileSettingsMap(
+			ctx,
+			pixivMobileRefreshToken,
+			prefs,
+			pixivFilters,
+		)
 		if err != nil {
 			cancel()
 			return err
 		}
 
 		mainProgBar = mainProgBarVal
-		dlProgBar = pixivMobileDlOptions.DownloadProgressBars
+		dlProgBar = pixivMobile.Base.DownloadProgressBars()
 
 		fnToAddToQueue = func() []error {
 			defer cancel()
-			errSlice := cdlogic.PixivMobileDownloadProcess(pixivDl, pixivMobileDlOptions, ugoiraOptions)
+			errSlice := cdlogic.PixivMobileDownloadProcess(
+				pixivDl,
+				pixivMobile,
+				ugoiraOptions,
+				constants.CATCH_SIGINT,
+			)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
 		}
 	} else {
-		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivSettingsMap(ctx, prefs)
+		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivWebSettingsMap(ctx, prefs, pixivFilters)
 		if err != nil {
 			cancel()
 			return err
 		}
 
 		mainProgBar = mainProgBarVal
-		dlProgBar = pixivWebDlOptions.DownloadProgressBars
+		dlProgBar = pixivWebDlOptions.Base.DownloadProgressBars()
 
 		fnToAddToQueue = func() []error {
 			defer cancel()
-			errSlice := cdlogic.PixivWebDownloadProcess(pixivDl, pixivWebDlOptions, ugoiraOptions)
+			errSlice := cdlogic.PixivWebDownloadProcess(
+				pixivDl,
+				pixivWebDlOptions,
+				ugoiraOptions,
+				constants.CATCH_SIGINT,
+			)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
 		}

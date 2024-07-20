@@ -10,8 +10,8 @@ import (
 	cdlconst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/database"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
-	"github.com/KJHJason/Cultured-Downloader-Logic/language"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
+	"github.com/KJHJason/Cultured-Downloader-Logic/startup"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
@@ -64,16 +64,20 @@ func (a *App) initAppDb() {
 	}
 }
 
-func (a *App) initLangDb() {
-	language.InitLangDb(func(msg string) {
-		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+func (a *App) checkPrerequisites() {
+	startup.CheckPrerequisites(a.ctx, func(msg string) {
+		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 			Type:    runtime.ErrorDialog,
-			Title:   "Error loading language database!",
+			Title:   "Pre-requisites Check Failed!",
 			Message: msg,
 		})
-		if err != nil {
-			logger.MainLogger.Errorf("Error encountered while trying to show error dialog: %v", err)
+		if dialogErr != nil {
+			logger.MainLogger.Errorf(
+				"Error encountered while trying to show pre-requisites check fail msg: %s",
+				dialogErr, msg,
+			)
 		}
+		logger.MainLogger.Fatalf("Pre-requisites check failed: %s", msg)
 	})
 }
 
@@ -87,7 +91,9 @@ func (a *App) loadAppData() {
 		})
 		if err != nil {
 			logger.MainLogger.Errorf(
-				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", err, initialLoadErr)
+				"Error encountered while trying to show error dialog: %v\nOriginal error: %v",
+				err, initialLoadErr,
+			)
 		}
 		panic("Error loading data from file!")
 	}
@@ -105,7 +111,9 @@ func (a *App) getUserSavedDlDirPath() {
 		})
 		if dialogErr != nil {
 			logger.MainLogger.Errorf(
-				"Error encountered while trying to show error dialog: %v\nOriginal error: %v", dialogErr, err)
+				"Error encountered while trying to show error dialog: %v\nOriginal error: %v",
+				dialogErr, err,
+			)
 		}
 	} else if hadToFallback {
 		// try retrieving the old download directory path from config.json (*Cultured-Downloader-CLI)
@@ -138,7 +146,7 @@ func (a *App) initQueueTicker() {
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.initAppDb()
-	a.initLangDb()
+	a.checkPrerequisites()
 	a.loadAppData()
 	a.getUserSavedDlDirPath()
 
