@@ -277,7 +277,18 @@ export namespace app {
 	        this.UseCacheDb = source["UseCacheDb"];
 	    }
 	}
+	export class GetGDriveOauthResponse {
 	
+	
+	    static createFrom(source: any = {}) {
+	        return new GetGDriveOauthResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	
 	export class PixivPreferences {
 	    ArtworkType: number;
@@ -380,6 +391,18 @@ export namespace app {
 	    }
 	}
 	
+	export class UserAgentResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new UserAgentResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 
 }
 
@@ -423,6 +446,23 @@ export namespace database {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace gdrive {
+	
+	export class GDrive {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new GDrive(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
 	}
 
 }
