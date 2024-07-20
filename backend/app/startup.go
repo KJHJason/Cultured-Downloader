@@ -80,18 +80,23 @@ func (a *App) checkPrerequisites() {
 		logger.MainLogger.Fatalf("Pre-requisites check failed: %s", msg)
 	}
 	infoHandler := func(msg string) {
-		_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Type:    runtime.InfoDialog,
-			Title:   "Pre-requisites Check Info",
-			Message: msg,
-		})
-		if dialogErr != nil {
-			logger.MainLogger.Errorf(
-				"Error encountered while trying to show pre-requisites check info msg: %s",
-				dialogErr, msg,
-			)
-		}
-		logger.MainLogger.Infof("Pre-requisites check info: %s", msg)
+		// Start another goroutine to show the message dialog so that
+		// the frontend can start up properly without crashing the program (nil pointer dereference errors)
+		// since the backend has yet to initialise as it is waiting for the user to click the dialog.
+		go func() {
+			_, dialogErr := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+				Type:    runtime.InfoDialog,
+				Title:   "Pre-requisites Check Info",
+				Message: msg,
+			})
+			if dialogErr != nil {
+				logger.MainLogger.Errorf(
+					"Error encountered while trying to show pre-requisites check info msg: %s",
+					dialogErr, msg,
+				)
+			}
+			logger.MainLogger.Infof("Pre-requisites check info: %s", msg)
+		}()
 	}
 	startup.CheckPrerequisites(a.ctx, infoHandler, panicHandler)
 }
