@@ -73,8 +73,8 @@ func (a *App) checkPrerequisites() {
 		})
 		if dialogErr != nil {
 			logger.MainLogger.Errorf(
-				"Error encountered while trying to show pre-requisites check fail msg: %s",
-				dialogErr, msg,
+				"Error encountered while trying to show pre-requisites check fail msg: %v",
+				dialogErr,
 			)
 		}
 		logger.MainLogger.Fatalf("Pre-requisites check failed: %s", msg)
@@ -91,8 +91,8 @@ func (a *App) checkPrerequisites() {
 			})
 			if dialogErr != nil {
 				logger.MainLogger.Errorf(
-					"Error encountered while trying to show pre-requisites check info msg: %s",
-					dialogErr, msg,
+					"Error encountered while trying to show pre-requisites check info msg: %v",
+					dialogErr,
 				)
 			}
 			logger.MainLogger.Infof("Pre-requisites check info: %s", msg)
