@@ -13,7 +13,7 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.39",
     "tslib": "^2.6.3",
-    "typescript": "^5.5.3",
+    "typescript": "^5.5.4",
     "vite": "^4.4.9"
   },
   "dependencies": {
