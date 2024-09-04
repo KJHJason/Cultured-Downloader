@@ -11,7 +11,7 @@
     "@sveltejs/vite-plugin-svelte": "^2.5.3",
     "@tsconfig/svelte": "^5.0.2",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.39",
+    "postcss": "^8.4.45",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
     "vite": "^4.4.9"
