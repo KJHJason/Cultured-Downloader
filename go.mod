@@ -9,7 +9,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/wailsapp/wails/v2 v2.9.1
 	golang.org/x/crypto v0.25.0
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.23.0
 )
 
 require (
