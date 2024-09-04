@@ -13,7 +13,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) GetGdriveClient() *gdrive.GDrive {
+func (a *App) getGdriveClient() *gdrive.GDrive {
 	if a.gdriveClient != nil {
 		return a.gdriveClient
 	}
@@ -158,8 +158,8 @@ func (a *App) GetGDriveServiceAccount() string {
 }
 
 type GetGDriveOauthResponse struct {
-	ClientJson string
-	TokenJson  string
+	ClientJson string `json:"ClientJson"`
+	TokenJson  string `json:"TokenJson"`
 }
 
 func (a *App) GetGDriveClientAndOauthToken() GetGDriveOauthResponse {

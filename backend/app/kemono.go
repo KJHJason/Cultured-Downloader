@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/kemono"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -92,8 +94,16 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (ke
 			DownloadDirPath: baseDlDirPath,
 			UseCacheDb:      pref.UseCacheDb,
 
-			GdriveClient: a.GetGdriveClient(),
+			GdriveClient: a.getGdriveClient(),
 
+			Filters: &filters.Filters{
+				MinFileSize:    0,
+				MaxFileSize:    0,
+				FileExt:        []string{},
+				StartDate:      time.Time{},
+				EndDate:        time.Time{},
+				FileNameFilter: nil,
+			},
 			Configs: &configs.Config{
 				DownloadPath:   downloadPath,
 				FfmpegPath:     "",

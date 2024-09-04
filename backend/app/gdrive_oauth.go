@@ -50,7 +50,7 @@ func updateGdriveOauthErr(err error) {
 	gdriveOauthErr = err
 }
 
-func (a *App) gdriveOauthFlow(ctx context.Context) {
+func (a *App) gdriveOauthFlow(ctx context.Context, port uint16) {
 	defer func() {
 		gdriveOauthMu.Lock()
 		gdriveOauthCancelFunc()
@@ -61,7 +61,7 @@ func (a *App) gdriveOauthFlow(ctx context.Context) {
 
 	var err error
 	var gdriveOauthToken *oauth2.Token
-	gdriveOauthToken, err = gdrive.StartOAuthListener(ctx, getGdriveOauthConfig())
+	gdriveOauthToken, err = gdrive.StartOAuthListener(ctx, port, getGdriveOauthConfig())
 	if err != nil {
 		updateGdriveOauthErr(err)
 		return
@@ -103,7 +103,7 @@ func (a *App) StartGDriveOauth() error {
 	ctx, gdriveOauthCancelFunc = context.WithCancel(a.ctx)
 	gdriveOauthMu.Unlock()
 
-	go a.gdriveOauthFlow(ctx)
+	go a.gdriveOauthFlow(ctx, 8080)
 	return nil
 }
 

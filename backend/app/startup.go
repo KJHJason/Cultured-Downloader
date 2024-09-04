@@ -170,7 +170,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.loadAppData()
 	a.getUserSavedDlDirPath()
 
-	a.gdriveClient = a.GetGdriveClient()
+	a.gdriveClient = a.getGdriveClient()
 	a.notifier = notifier.NewNotifier(a.ctx, constants.PROGRAM_NAME)
 	a.lang = a.appData.GetStringWithFallback(constants.LANGUAGE_KEY, cdlconst.EN)
 	a.initQueueTicker()

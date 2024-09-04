@@ -278,7 +278,8 @@ export namespace app {
 	    }
 	}
 	export class GetGDriveOauthResponse {
-	
+	    ClientJson: string;
+	    TokenJson: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetGDriveOauthResponse(source);
@@ -286,7 +287,8 @@ export namespace app {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	
+	        this.ClientJson = source["ClientJson"];
+	        this.TokenJson = source["TokenJson"];
 	    }
 	}
 	
@@ -392,7 +394,8 @@ export namespace app {
 	}
 	
 	export class UserAgentResponse {
-	
+	    UserAgent: string;
+	    IsDefault: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new UserAgentResponse(source);
@@ -400,7 +403,8 @@ export namespace app {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	
+	        this.UserAgent = source["UserAgent"];
+	        this.IsDefault = source["IsDefault"];
 	    }
 	}
 
@@ -446,23 +450,6 @@ export namespace database {
 		    }
 		    return a;
 		}
-	}
-
-}
-
-export namespace gdrive {
-	
-	export class GDrive {
-	
-	
-	    static createFrom(source: any = {}) {
-	        return new GDrive(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	
-	    }
 	}
 
 }

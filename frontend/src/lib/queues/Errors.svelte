@@ -12,12 +12,12 @@
         </TableHeadCell>
     </TableHead>
     <TableBody tableBodyClass="divide-y">
-        <TableBodyRow>
-            {#each errors as err}
+        {#each errors as err}
+            <TableBodyRow>
                 <TableBodyCell>
                     <pre class="text-wrap text-sm">{err}</pre>
                 </TableBodyCell>
-            {/each}
-        </TableBodyRow>
+            </TableBodyRow>
+        {/each}
     </TableBody>
 </Table>

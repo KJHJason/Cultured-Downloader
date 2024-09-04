@@ -94,10 +94,6 @@ export function GetGDriveServiceAccount() {
   return window['go']['app']['App']['GetGDriveServiceAccount']();
 }
 
-export function GetGdriveClient() {
-  return window['go']['app']['App']['GetGdriveClient']();
-}
-
 export function GetLanguage() {
   return window['go']['app']['App']['GetLanguage']();
 }

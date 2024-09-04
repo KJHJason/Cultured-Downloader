@@ -330,7 +330,7 @@
             </Helper>
             <GeneralSettings promptSuccess={false} preferences={preferences} showDlGDriveInp={!isPixiv} showOrganisePostImagesInp={platformName === actions.Fantia} />
             {#if isPixiv}
-            <Hr />
+                <Hr />
                 <PixivSettings
                     promptSuccess={false}
                     preferences={preferences}

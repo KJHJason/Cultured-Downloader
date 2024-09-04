@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
@@ -18,6 +19,7 @@ import (
 	pixivweb "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/web"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
+	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
@@ -177,6 +179,14 @@ func (a *App) parsePixivMobileSettingsMap(
 		UseCacheDb:      prefs.UseCacheDb,
 		DownloadDirPath: baseDlDirPath,
 
+		Filters: &filters.Filters{
+			MinFileSize:    0,
+			MaxFileSize:    0,
+			FileExt:        []string{},
+			StartDate:      time.Time{},
+			EndDate:        time.Time{},
+			FileNameFilter: nil,
+		},
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
 			FfmpegPath:     a.GetFfmpegPath(),
@@ -229,6 +239,14 @@ func (a *App) parsePixivWebSettingsMap(
 			UseCacheDb:      pref.UseCacheDb,
 			DownloadDirPath: baseDlDirPath,
 
+			Filters: &filters.Filters{
+				MinFileSize:    0,
+				MaxFileSize:    0,
+				FileExt:        []string{},
+				StartDate:      time.Time{},
+				EndDate:        time.Time{},
+				FileNameFilter: nil,
+			},
 			Configs: &configs.Config{
 				DownloadPath:   downloadPath,
 				FfmpegPath:     a.GetFfmpegPath(),

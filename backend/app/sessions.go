@@ -57,11 +57,11 @@ func (a *App) getCaptchaHandler(website, userAgent string, sessionCookies []*htt
 		)
 	case constants.PIXIV_FANBOX:
 		return pixivfanbox.NewHttpCaptchaHandler(
-			a.ctx, a.notifier,
+			a.ctx, userAgent, a.notifier,
 		)
 	case constants.PIXIV:
 		return pixivcommon.NewHttpCaptchaHandler(
-			a.ctx, cdlconsts.PIXIV_URL, a.notifier,
+			a.ctx, cdlconsts.PIXIV_URL, userAgent, a.notifier,
 		)
 	case constants.KEMONO:
 		return httpfuncs.CaptchaHandler{}
