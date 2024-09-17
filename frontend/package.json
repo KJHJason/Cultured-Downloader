@@ -23,7 +23,7 @@
     "nanoid": "^5.0.7",
     "svelte": "^4.2.18",
     "sweetalert2": "^11.12.3",
-    "tailwindcss": "^3.4.6"
+    "tailwindcss": "^3.4.12"
   },
   "author": "KJHJason"
 }
