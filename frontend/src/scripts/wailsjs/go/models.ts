@@ -153,6 +153,7 @@ export namespace app {
 	    FolderPath: string;
 	    // Go type: time
 	    DateTime: any;
+	    DownloadProgressBars: progress.DownloadProgressBar[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ProgressBar(source);
@@ -169,6 +170,7 @@ export namespace app {
 	        this.Percentage = source["Percentage"];
 	        this.FolderPath = source["FolderPath"];
 	        this.DateTime = this.convertValues(source["DateTime"], null);
+	        this.DownloadProgressBars = this.convertValues(source["DownloadProgressBars"], progress.DownloadProgressBar);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

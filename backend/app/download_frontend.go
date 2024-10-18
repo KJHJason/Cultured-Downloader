@@ -92,7 +92,7 @@ func (a *App) GetFrontendDownloadDetails(id int) []*FrontendDownloadDetails {
 func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 	var queues []FrontendDownloadQueue
 	for e := a.downloadQueues.Back(); e != nil; e = e.Prev() {
-		val := e.Value.(*DownloadQueue)
+		val := e.Value
 
 		msg := val.mainProgressBar.GetBaseMsg()
 		if !val.mainProgressBar.GetIsSpinner() && strings.Contains(msg, "%d") {
