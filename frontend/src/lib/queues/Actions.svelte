@@ -81,7 +81,7 @@
         <TableBody tableBodyClass="divide-y">
             {#if $paginatedDownloads.length === 0}
                 <TableBodyRow>
-                    <TableBodyCell tdClass="text-center p-3" colspan="4">
+                    <TableBodyCell tdClass="text-center p-3" colspan={4}>
                         <Translate text="Nothing here!" />
                     </TableBodyCell>
                 </TableBodyRow>

@@ -55,7 +55,7 @@
             <TableBody tableBodyClass="divide-y">
                 {#if dlQ.NestedProgressBar.length === 0}
                     <TableBodyRow>
-                        <TableBodyCell tdClass="text-center p-3" colspan="3">
+                        <TableBodyCell tdClass="text-center p-3" colspan={3}>
                             <Translate text="Nothing here!" />
                         </TableBodyCell>
                     </TableBodyRow>

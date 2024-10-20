@@ -289,7 +289,7 @@
             <Hr />
             <Textarea 
                 name="inputs"
-                rows="6" 
+                rows={6}
                 placeholder={inputExampleText + "\n" + inputPlaceholder}
             />
             <div class="mt-2 text-right">

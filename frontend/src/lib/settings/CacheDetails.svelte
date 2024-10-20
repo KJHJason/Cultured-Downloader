@@ -1,14 +1,16 @@
 <script lang="ts">
     import { Modal, Tabs, TabItem } from "flowbite-svelte";
-    import { type  Writable, writable } from "svelte/store";
+    import { writable } from "svelte/store";
+    import { ArchiveSolid, InfoCircleSolid } from "flowbite-svelte-icons";
     import PostCacheDetails from "./cache/PostCacheDetails.svelte";
-    import { onDestroy, onMount } from "svelte";
+    import { onMount } from "svelte";
     import { translateText } from "../../scripts/language";
     import GDriveCache from "./cache/GDriveCache.svelte";
     import KemonoCreatorsCache from "./cache/KemonoCreatorsCache.svelte";
     import UgoiraCache from "./cache/UgoiraCache.svelte";
+    import Translate from "../common/Translate.svelte";
 
-    export let open: boolean;
+    let open: boolean;
 
     $: modalTitle = "";
     $: postCacheTitle = "Post Cache";
@@ -46,3 +48,12 @@
         </TabItem>
     </Tabs>
 </Modal>
+
+<div class="mt-5">
+    <button type="button" class="btn btn-info flex" on:click={() => open = true} >
+        <div class="text-main">
+            <ArchiveSolid />
+        </div>
+        <Translate text="View Cache" />
+    </button>
+</div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Label, Select, Input, Toggle, Helper, Spinner, Tooltip } from "flowbite-svelte";
+    import { Label, Select, Input, Toggle, Spinner, Tooltip } from "flowbite-svelte";
     import { onMount } from "svelte";
     import { GetPreferences, SetPixivPreferences } from "../../scripts/wailsjs/go/app/App";
     import { pixivFormId, swal } from "../../scripts/constants";
