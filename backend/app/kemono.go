@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
+	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/kemono"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
@@ -62,7 +63,16 @@ func (a *App) ValidateKemonoInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseKemonoSettingsMap(
+	ctx context.Context,
+	pref *Preferences,
+	dlFilters Filters,
+) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	kemonoSession := a.appData.GetSecuredString(constants.KEMONO_COOKIE_VALUE_KEY)
 	var kemonoSessions []*http.Cookie
 	if kemonoSession == "" {
@@ -85,28 +95,33 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (ke
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	kemonoDlOptions = &kemono.KemonoDlOptions{
-		DlAttachments:       pref.DlPostAttachments,
-		DlGdrive:            pref.DlGDrive,
-		BaseDownloadDirPath: baseDlDirPath,
-		UseCacheDb:          pref.UseCacheDb,
+		Base: &api.BaseDl{
+			DlAttachments:   pref.DlPostAttachments,
+			DlGdrive:        pref.DlGDrive,
+			DownloadDirPath: baseDlDirPath,
+			UseCacheDb:      pref.UseCacheDb,
 
-		GdriveClient: a.GetGdriveClient(),
+			GdriveClient: a.getGdriveClient(),
 
-		Configs: &configs.Config{
-			DownloadPath:   downloadPath,
-			FfmpegPath:     "",
-			OverwriteFiles: pref.OverwriteFiles,
-			LogUrls:        pref.DetectOtherLinks,
-			UserAgent:      userAgent,
+			Filters: filters,
+			Configs: &configs.Config{
+				DownloadPath:   downloadPath,
+				FfmpegPath:     "",
+				OverwriteFiles: pref.OverwriteFiles,
+				LogUrls:        pref.DetectOtherLinks,
+				UserAgent:      userAgent,
+			},
+
+			SessionCookieId: kemonoSession,
+			SessionCookies:  kemonoSessions,
+
+			Notifier: a.notifier,
+
+			ProgressBarInfo: &progress.ProgressBarInfo{
+				MainProgressBar:      mainProgBar,
+				DownloadProgressBars: &[]*progress.DownloadProgressBar{},
+			},
 		},
-
-		SessionCookieId: kemonoSession,
-		SessionCookies:  kemonoSessions,
-
-		Notifier: a.notifier,
-
-		MainProgBar:          mainProgBar,
-		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
 	kemonoDlOptions.SetContext(ctx)
 	err = kemonoDlOptions.ValidateArgs(userAgent)
@@ -116,7 +131,7 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (ke
 	return kemonoDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences) error {
+func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences, dlFilters Filters) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitKemonoToQueue()")
 	}
@@ -127,7 +142,7 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(ctx, prefs)
+	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(ctx, prefs, dlFilters)
 	if err != nil {
 		cancel()
 		return err
@@ -137,10 +152,14 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences) error {
 		website:        cdlconsts.KEMONO,
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,
-		dlProgressBars: kemonoDlOptions.DownloadProgressBars,
+		dlProgressBars: kemonoDlOptions.Base.DownloadProgressBars(),
 		taskHandler: func() []error {
 			defer cancel()
-			errSlice := cdlogic.KemonoDownloadProcess(kemonoDl, kemonoDlOptions)
+			errSlice := cdlogic.KemonoDownloadProcess(
+				kemonoDl,
+				kemonoDlOptions,
+				constants.CATCH_SIGINT,
+			)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
 		},

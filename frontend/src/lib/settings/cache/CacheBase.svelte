@@ -117,7 +117,7 @@
         <TableBody tableBodyClass="divide-y">
             {#if $cache.length === 0}
                 <TableBodyRow>
-                    <TableBodyCell tdClass="text-center p-3" colspan="{showKey ? 3 : 2}">
+                    <TableBodyCell tdClass="text-center p-3" colspan={showKey ? 3 : 2}>
                         <Translate text="Nothing here!" />
                     </TableBodyCell>
                 </TableBodyRow>

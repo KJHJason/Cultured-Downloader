@@ -10,4 +10,4 @@
     const elementId = generateRandomId();
 </script>
 
-<span class={spanClass} id={elementId}>{translate(text, elementId, $language, fallback)}</span>
+<span class={spanClass} id={elementId} {...$$props}>{translate(text, elementId, $language, fallback)}</span>

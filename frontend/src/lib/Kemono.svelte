@@ -11,8 +11,8 @@
         return await ValidateKemonoInputs(urls);
     };
 
-    const addToQueueFn = async (inputs: string[], options: app.Preferences): Promise<void> => {
-        await SubmitKemonoToQueue(inputs, options);
+    const addToQueueFn = async (inputs: string[], options: app.Preferences, filters: app.Filters): Promise<void> => {
+        await SubmitKemonoToQueue(inputs, options, filters);
     };
 
     const creatorUrlRegex = /^https:\/\/kemono.su\/(?:patreon|fanbox|gumroad|subscribestar|dlsite|fantia|boosty)\/user\/\d+$/;

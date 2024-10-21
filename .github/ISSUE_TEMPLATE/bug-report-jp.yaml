@@ -60,6 +60,7 @@ body:
         - "1009 (HTML Error)"
         - "1010 (Captcha Error)"
         - "1011 (Start-up Error)"
+        - "1012 (Docker Error)"
     validations:
       required: true
 

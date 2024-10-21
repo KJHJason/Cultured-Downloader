@@ -6,7 +6,8 @@ import (
 
 const (
 	PROGRAM_NAME                 = "Cultured Downloader"
-	PROGRAM_VER                  = "5.1.0"
+	PROGRAM_VER                  = "5.2.0a"
+	CATCH_SIGINT                 = false
 	LOCAL_USER_ASSET_DIR_NAME    = "assets"
 	LANGUAGE_KEY                 = "lang"
 	HASH_OF_MASTER_PASS_HASH_KEY = "master-password-hash"

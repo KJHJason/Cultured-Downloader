@@ -1,5 +1,16 @@
 import { GetDarkMode, SetDarkMode } from "./wailsjs/go/app/App";
 
+// https://github.com/probablykasper/date-picker-svelte
+const ToggleDatePickerCssProperties = (isDarkMode: boolean): void => {
+    if (isDarkMode) {
+        document.documentElement.style.setProperty("--date-picker-background", "#52525b");
+        document.documentElement.style.setProperty("--date-picker-foreground", "#f7f7f7");
+    } else {
+        document.documentElement.style.setProperty("--date-picker-background", "#fafafa");
+        document.documentElement.style.setProperty("--date-picker-foreground", "#000");
+    }
+};
+
 const linkId = "swal-theme-link";
 const ToggleCSSThemes = (isDarkMode: boolean): void => {
     const existingLink = document.getElementById(linkId);
@@ -18,7 +29,7 @@ const ToggleCSSThemes = (isDarkMode: boolean): void => {
         link.href = "https://cdn.jsdelivr.net/npm/@sweetalert2/theme-default@latest/default.css";
     }
     document.head.appendChild(link);
-}
+};
 
 // when domcontentloaded, check if dark mode is enabled
 export const InitialiseDarkModeConfig = async (): Promise<void> => {
@@ -58,6 +69,7 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
     const isDarkMode = await GetDarkMode();
     toggleToggleText(isDarkMode);
     ToggleCSSThemes(isDarkMode)
+    ToggleDatePickerCssProperties(isDarkMode);
 
     const themeToggleBtn = document.getElementById("theme-toggle") as HTMLElement;
     if (!themeToggleBtn) {
@@ -72,6 +84,7 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
         const isCurrentlyDarkMode = document.documentElement.classList.contains("dark");
         toggleToggleText(!isCurrentlyDarkMode);
         ToggleCSSThemes(!isCurrentlyDarkMode);
+        ToggleDatePickerCssProperties(!isCurrentlyDarkMode);
         await SetDarkMode(!isCurrentlyDarkMode);
     });
 };

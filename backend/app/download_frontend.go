@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	cdlConst "github.com/KJHJason/Cultured-Downloader-Logic/constants"
 	"github.com/KJHJason/Cultured-Downloader-Logic/iofuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
-	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
 type FrontendDownloadQueue struct {
@@ -74,38 +72,12 @@ func formatFrontendDlDetails(dlProgressBars []*progress.DownloadProgressBar) []*
 		}
 	}
 
-	// Reverse the sub-slice of already finished download progress bars within 
+	// Reverse the sub-slice of already finished download progress bars within
 	// dlDetails so that the recently finished download progress bar is at the top
-	for i, j := donePtr + 1, lastIdx; i <= j; i, j = i+1, j-1 {
+	for i, j := donePtr+1, lastIdx; i <= j; i, j = i+1, j-1 {
 		dlDetails[i], dlDetails[j] = dlDetails[j], dlDetails[i]
 	}
 	return dlDetails
-}
-
-func checkNestedProgBarForErrors(dlQueue *DownloadQueue) bool {
-	hasError := false
-	nestedProgBars := dlQueue.mainProgressBar.nestedProgBars
-
-	lastElIdx := len(nestedProgBars) - 1
-	for idx, nestedProgBar := range nestedProgBars {
-		if !hasError && nestedProgBar.HasError {
-			hasError = true
-			if dlQueue.website != constants.FANTIA {
-				// for those that doesn't have a captcha solver
-				continue
-			}
-
-			if nestedProgBar.ErrMsg != cdlConst.ERR_RECAPTCHA_STR {
-				continue
-			}
-
-			// check the next element if it has an error as the captcha error can be ignored if the next element has no error
-			if idx+1 <= lastElIdx && nestedProgBars[idx+1].HasError {
-				hasError = true
-			}
-		}
-	}
-	return hasError
 }
 
 func (a *App) GetFrontendDownloadDetails(id int) []*FrontendDownloadDetails {
@@ -120,7 +92,7 @@ func (a *App) GetFrontendDownloadDetails(id int) []*FrontendDownloadDetails {
 func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 	var queues []FrontendDownloadQueue
 	for e := a.downloadQueues.Back(); e != nil; e = e.Prev() {
-		val := e.Value.(*DownloadQueue)
+		val := e.Value
 
 		msg := val.mainProgressBar.GetBaseMsg()
 		if !val.mainProgressBar.GetIsSpinner() && strings.Contains(msg, "%d") {
@@ -133,6 +105,15 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 			errStringSlice[idx] = err.Error()
 		}
 
+		hasError := false
+		nestedProgBars := val.mainProgressBar.nestedProgBars
+		for _, nestedProgBar := range nestedProgBars {
+			if nestedProgBar.HasError {
+				hasError = true
+				break
+			}
+		}
+
 		queues = append(queues, FrontendDownloadQueue{
 			Id:                val.id,
 			Website:           val.website,
@@ -140,7 +121,7 @@ func (a *App) GetDownloadQueues() []FrontendDownloadQueue {
 			SuccessMsg:        val.mainProgressBar.GetSuccessMsg(),
 			ErrMsg:            val.mainProgressBar.GetErrorMsg(),
 			ErrSlice:          errStringSlice,
-			HasError:          checkNestedProgBarForErrors(val),
+			HasError:          hasError,
 			Inputs:            val.inputs,
 			ProgressBar:       *val.mainProgressBar,
 			NestedProgressBar: val.mainProgressBar.nestedProgBars,

@@ -116,8 +116,8 @@ func (a *App) GetFfmpegPath() string {
 }
 
 type UserAgentResponse struct {
-	UserAgent string
-	IsDefault bool
+	UserAgent string `json:"UserAgent"`
+	IsDefault bool   `json:"IsDefault"`
 }
 
 func (a *App) GetUserAgent() UserAgentResponse {

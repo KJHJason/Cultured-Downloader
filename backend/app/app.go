@@ -1,11 +1,11 @@
 package app
 
 import (
-	"container/list"
 	"context"
 	"time"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/gdrive"
+	"github.com/KJHJason/Cultured-Downloader-Logic/utils/threadsafe"
 	"github.com/KJHJason/Cultured-Downloader/backend/appdata"
 	"github.com/KJHJason/Cultured-Downloader/backend/notifier"
 )
@@ -15,7 +15,7 @@ type App struct {
 	ctx            context.Context
 	appData        *appdata.AppData
 	lang           string
-	downloadQueues list.List // doubly linked list of DownloadQueue
+	downloadQueues threadsafe.DoublyLinkedList[*DownloadQueue] // list.List // doubly linked list of DownloadQueue
 	queueTicker    *time.Ticker
 	gdriveClient   *gdrive.GDrive
 	notifier       notifier.Notifier

@@ -30,6 +30,28 @@ export namespace app {
 	        this.Kemono = source["Kemono"];
 	    }
 	}
+	export class Filters {
+	    MinFileSize: number;
+	    MaxFileSize?: number;
+	    FileExt: string[];
+	    StartDate?: number;
+	    EndDate?: number;
+	    FileNameRegex: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Filters(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.MinFileSize = source["MinFileSize"];
+	        this.MaxFileSize = source["MaxFileSize"];
+	        this.FileExt = source["FileExt"];
+	        this.StartDate = source["StartDate"];
+	        this.EndDate = source["EndDate"];
+	        this.FileNameRegex = source["FileNameRegex"];
+	    }
+	}
 	export class FrontendCacheKeyValue {
 	    Key: string;
 	    Value: string;
@@ -153,6 +175,7 @@ export namespace app {
 	    FolderPath: string;
 	    // Go type: time
 	    DateTime: any;
+	    DownloadProgressBars: progress.DownloadProgressBar[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ProgressBar(source);
@@ -169,6 +192,7 @@ export namespace app {
 	        this.Percentage = source["Percentage"];
 	        this.FolderPath = source["FolderPath"];
 	        this.DateTime = this.convertValues(source["DateTime"], null);
+	        this.DownloadProgressBars = this.convertValues(source["DownloadProgressBars"], progress.DownloadProgressBar);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -277,7 +301,20 @@ export namespace app {
 	        this.UseCacheDb = source["UseCacheDb"];
 	    }
 	}
+	export class GetGDriveOauthResponse {
+	    ClientJson: string;
+	    TokenJson: string;
 	
+	    static createFrom(source: any = {}) {
+	        return new GetGDriveOauthResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ClientJson = source["ClientJson"];
+	        this.TokenJson = source["TokenJson"];
+	    }
+	}
 	
 	export class PixivPreferences {
 	    ArtworkType: number;
@@ -380,6 +417,20 @@ export namespace app {
 	    }
 	}
 	
+	export class UserAgentResponse {
+	    UserAgent: string;
+	    IsDefault: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UserAgentResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.UserAgent = source["UserAgent"];
+	        this.IsDefault = source["IsDefault"];
+	    }
+	}
 
 }
 

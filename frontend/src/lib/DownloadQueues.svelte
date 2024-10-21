@@ -90,7 +90,7 @@
         <TableBody tableBodyClass="divide-y">
             {#if downloadQueues.length === 0}
                 <TableBodyRow>
-                    <TableBodyCell tdClass="text-center p-3" colspan="4">
+                    <TableBodyCell tdClass="text-center p-3" colspan={4}>
                         <Translate text="There are no download queues at the moment." />
                     </TableBodyCell>
                 </TableBodyRow>

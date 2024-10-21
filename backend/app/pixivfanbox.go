@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
+	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/pixivfanbox"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
@@ -20,26 +21,34 @@ func validatePixivFanboxUrls(inputs []string) (bool, []Input, *pixivfanbox.Pixiv
 	pixivFanboxDl := pixivfanbox.PixivFanboxDl{}
 	inputsForRef := make([]Input, len(inputs))
 	for idx, input := range inputs {
-		var id string
-		var pageNum string
 		if postUrl1Match := cdlconsts.PIXIV_FANBOX_POST_URL_REGEX1.FindStringSubmatch(input); len(postUrl1Match) > 0 {
-			id = postUrl1Match[cdlconsts.PIXIV_FANBOX_POST_ID_IDX1]
-			pixivFanboxDl.PostIds = append(pixivFanboxDl.PostIds, id)
+			pixivFanboxDl.PostIds = append(
+				pixivFanboxDl.PostIds,
+				postUrl1Match[cdlconsts.PIXIV_FANBOX_POST_ID_IDX1],
+			)
 		} else if postUrl2Match := cdlconsts.PIXIV_FANBOX_POST_URL_REGEX2.FindStringSubmatch(input); len(postUrl2Match) > 0 {
-			id = postUrl2Match[cdlconsts.PIXIV_FANBOX_POST_ID_IDX2]
-			pixivFanboxDl.PostIds = append(pixivFanboxDl.PostIds, id)
+			pixivFanboxDl.PostIds = append(
+				pixivFanboxDl.PostIds,
+				postUrl2Match[cdlconsts.PIXIV_FANBOX_POST_ID_IDX2],
+			)
 		} else if creatorUrl2Match := cdlconsts.PIXIV_FANBOX_CREATOR_URL_REGEX2.FindStringSubmatch(input); len(creatorUrl2Match) > 0 {
-			id = creatorUrl2Match[cdlconsts.PIXIV_FANBOX_CREATOR_ID_IDX2]
-			pageNum = creatorUrl2Match[cdlconsts.PIXIV_FANBOX_CREATOR_PAGE_NUM_IDX2]
-
-			pixivFanboxDl.CreatorIds = append(pixivFanboxDl.CreatorIds, id)
-			pixivFanboxDl.CreatorPageNums = append(pixivFanboxDl.CreatorPageNums, pageNum)
+			pixivFanboxDl.CreatorIds = append(
+				pixivFanboxDl.CreatorIds,
+				creatorUrl2Match[cdlconsts.PIXIV_FANBOX_CREATOR_ID_IDX2],
+			)
+			pixivFanboxDl.CreatorPageNums = append(
+				pixivFanboxDl.CreatorPageNums,
+				creatorUrl2Match[cdlconsts.PIXIV_FANBOX_CREATOR_PAGE_NUM_IDX2],
+			)
 		} else if creatorUrl1Match := cdlconsts.PIXIV_FANBOX_CREATOR_URL_REGEX1.FindStringSubmatch(input); len(creatorUrl1Match) > 0 {
-			id = creatorUrl1Match[cdlconsts.PIXIV_FANBOX_CREATOR_ID_IDX1]
-			pageNum = creatorUrl1Match[cdlconsts.PIXIV_FANBOX_CREATOR_PAGE_NUM_IDX1]
-
-			pixivFanboxDl.CreatorIds = append(pixivFanboxDl.CreatorIds, id)
-			pixivFanboxDl.CreatorPageNums = append(pixivFanboxDl.CreatorPageNums, pageNum)
+			pixivFanboxDl.CreatorIds = append(
+				pixivFanboxDl.CreatorIds,
+				creatorUrl1Match[cdlconsts.PIXIV_FANBOX_CREATOR_ID_IDX1],
+			)
+			pixivFanboxDl.CreatorPageNums = append(
+				pixivFanboxDl.CreatorPageNums,
+				creatorUrl1Match[cdlconsts.PIXIV_FANBOX_CREATOR_PAGE_NUM_IDX1],
+			)
 		} else {
 			return false, nil, nil
 		}
@@ -64,7 +73,16 @@ func (a *App) ValidatePixivFanboxUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivFanboxSettingsMap(
+	ctx context.Context,
+	pref *Preferences,
+	dlFilters Filters,
+) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	pixivFanboxSession := a.appData.GetSecuredString(constants.PIXIV_FANBOX_COOKIE_VALUE_KEY)
 	var pixivFanboxSessions []*http.Cookie
 	if pixivFanboxSession == "" {
@@ -87,30 +105,35 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences
 	mainProgBar.UpdateFolderPath(baseDlDirPath)
 
 	pixivFanboxDlOptions = &pixivfanbox.PixivFanboxDlOptions{
-		DlThumbnails:        pref.DlPostThumbnail,
-		DlImages:            pref.DlPostImages,
-		DlAttachments:       pref.DlPostAttachments,
-		DlGdrive:            pref.DlGDrive,
-		UseCacheDb:          pref.UseCacheDb,
-		BaseDownloadDirPath: baseDlDirPath,
+		Base: &api.BaseDl{
+			DlThumbnails:    pref.DlPostThumbnail,
+			DlImages:        pref.DlPostImages,
+			DlAttachments:   pref.DlPostAttachments,
+			DlGdrive:        pref.DlGDrive,
+			UseCacheDb:      pref.UseCacheDb,
+			DownloadDirPath: baseDlDirPath,
 
-		GdriveClient: a.GetGdriveClient(),
+			GdriveClient: a.getGdriveClient(),
 
-		Configs: &configs.Config{
-			DownloadPath:   downloadPath,
-			FfmpegPath:     "",
-			OverwriteFiles: pref.OverwriteFiles,
-			LogUrls:        pref.DetectOtherLinks,
-			UserAgent:      userAgent,
+			Filters: filters,
+			Configs: &configs.Config{
+				DownloadPath:   downloadPath,
+				FfmpegPath:     "",
+				OverwriteFiles: pref.OverwriteFiles,
+				LogUrls:        pref.DetectOtherLinks,
+				UserAgent:      userAgent,
+			},
+
+			SessionCookieId: pixivFanboxSession,
+			SessionCookies:  pixivFanboxSessions,
+
+			Notifier: a.notifier,
+
+			ProgressBarInfo: &progress.ProgressBarInfo{
+				MainProgressBar:      mainProgBar,
+				DownloadProgressBars: &[]*progress.DownloadProgressBar{},
+			},
 		},
-
-		SessionCookieId: pixivFanboxSession,
-		SessionCookies:  pixivFanboxSessions,
-
-		Notifier: a.notifier,
-
-		MainProgBar:          mainProgBar,
-		DownloadProgressBars: &[]*progress.DownloadProgressBar{},
 	}
 	pixivFanboxDlOptions.SetContext(ctx)
 	err = pixivFanboxDlOptions.ValidateArgs(userAgent)
@@ -120,7 +143,7 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences
 	return pixivFanboxDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences) error {
+func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences, dlFilters Filters) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitFantiaToQueue()")
 	}
@@ -131,7 +154,7 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences) erro
 	}
 
 	ctx, cancel := context.WithCancel(a.ctx)
-	pixivFanboxDlOptions, mainProgBar, err := a.parsePixivFanboxSettingsMap(ctx, prefs)
+	pixivFanboxDlOptions, mainProgBar, err := a.parsePixivFanboxSettingsMap(ctx, prefs, dlFilters)
 	if err != nil {
 		cancel()
 		return err
@@ -141,10 +164,14 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences) erro
 		website:        cdlconsts.PIXIV_FANBOX,
 		inputs:         inputsForRef,
 		mainProgBar:    mainProgBar,
-		dlProgressBars: pixivFanboxDlOptions.DownloadProgressBars,
+		dlProgressBars: pixivFanboxDlOptions.Base.DownloadProgressBars(),
 		taskHandler: func() []error {
 			defer cancel()
-			errSlice := cdlogic.PixivFanboxDownloadProcess(pixivFanboxDl, pixivFanboxDlOptions)
+			errSlice := cdlogic.PixivFanboxDownloadProcess(
+				pixivFanboxDl,
+				pixivFanboxDlOptions,
+				constants.CATCH_SIGINT,
+			)
 			mainProgBar.MakeLatestSnapshotMain()
 			return errSlice
 		},

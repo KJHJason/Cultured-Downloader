@@ -70,8 +70,8 @@
 
         ffmpegLocSuccessText = await translateText("FFmpeg location set successfully");
 
-        googleClientJsonText = await translateText("Client Secret JSON:")
-        googleOauthJsonText = await translateText("OAuth Token JSON:")
+        googleClientJsonText = await translateText("Client Secret JSON:");
+        googleOauthJsonText = await translateText("OAuth Token JSON:");
 
         googleOauthAuthTitle = await translateText("Authentication Required for OAuth");
         googleOauthAuthMsg = await translateText("Please visit the recently opened tab in your default browser and authenticate yourself.");
