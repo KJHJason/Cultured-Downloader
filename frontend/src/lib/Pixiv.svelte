@@ -11,8 +11,8 @@
         return await ValidatePixivInputs(urls);
     };
 
-    const addToQueueFn = async (inputs: string[], options: app.Preferences): Promise<void> => {
-        await SubmitPixivToQueue(inputs, options);
+    const addToQueueFn = async (inputs: string[], options: app.Preferences, filters: app.Filters): Promise<void> => {
+        await SubmitPixivToQueue(inputs, options, filters);
     };
 
     const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {

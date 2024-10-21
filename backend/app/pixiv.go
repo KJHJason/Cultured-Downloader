@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
@@ -19,7 +18,6 @@ import (
 	pixivweb "github.com/KJHJason/Cultured-Downloader-Logic/api/pixiv/web"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
-	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
@@ -147,8 +145,14 @@ func (a *App) parsePixivMobileSettingsMap(
 	ctx context.Context,
 	pixivRefreshToken string,
 	prefs *Preferences,
+	dlFilters Filters,
 	pixivFilters pixivcommon.PixivFilters,
 ) (pixivMobile *pixivmobile.PixivMobile, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if pixivRefreshToken == "" {
 		//lint:ignore ST1005 Captialised for frontend use
 		return nil, nil, errors.New("Pixiv Refresh Token is empty")
@@ -179,14 +183,7 @@ func (a *App) parsePixivMobileSettingsMap(
 		UseCacheDb:      prefs.UseCacheDb,
 		DownloadDirPath: baseDlDirPath,
 
-		Filters: &filters.Filters{
-			MinFileSize:    0,
-			MaxFileSize:    0,
-			FileExt:        []string{},
-			StartDate:      time.Time{},
-			EndDate:        time.Time{},
-			FileNameFilter: nil,
-		},
+		Filters: filters,
 		Configs: &configs.Config{
 			DownloadPath:   downloadPath,
 			FfmpegPath:     a.GetFfmpegPath(),
@@ -212,7 +209,13 @@ func (a *App) parsePixivWebSettingsMap(
 	ctx context.Context,
 	pref *Preferences,
 	pixivFilters pixivcommon.PixivFilters,
+	dlFilters Filters,
 ) (pixivWebDlOptions *pixivweb.PixivWebDlOptions, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	pixivSession := a.appData.GetSecuredString(constants.PIXIV_COOKIE_VALUE_KEY)
 	var pixivSessions []*http.Cookie
 	if pixivSession == "" {
@@ -239,14 +242,7 @@ func (a *App) parsePixivWebSettingsMap(
 			UseCacheDb:      pref.UseCacheDb,
 			DownloadDirPath: baseDlDirPath,
 
-			Filters: &filters.Filters{
-				MinFileSize:    0,
-				MaxFileSize:    0,
-				FileExt:        []string{},
-				StartDate:      time.Time{},
-				EndDate:        time.Time{},
-				FileNameFilter: nil,
-			},
+			Filters: filters,
 			Configs: &configs.Config{
 				DownloadPath:   downloadPath,
 				FfmpegPath:     a.GetFfmpegPath(),
@@ -287,7 +283,7 @@ func parsePixivUgoiraSettings(pref *Preferences) *ugoira.UgoiraOptions {
 	}
 }
 
-func (a *App) SubmitPixivToQueue(inputs []string, prefs *Preferences) error {
+func (a *App) SubmitPixivToQueue(inputs []string, prefs *Preferences, dlFilters Filters) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitPixivToQueue()")
 	}
@@ -316,6 +312,7 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs *Preferences) error {
 			ctx,
 			pixivMobileRefreshToken,
 			prefs,
+			dlFilters,
 			pixivFilters,
 		)
 		if err != nil {
@@ -338,7 +335,12 @@ func (a *App) SubmitPixivToQueue(inputs []string, prefs *Preferences) error {
 			return errSlice
 		}
 	} else {
-		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivWebSettingsMap(ctx, prefs, pixivFilters)
+		pixivWebDlOptions, mainProgBarVal, err := a.parsePixivWebSettingsMap(
+			ctx,
+			prefs,
+			pixivFilters,
+			dlFilters,
+		)
 		if err != nil {
 			cancel()
 			return err

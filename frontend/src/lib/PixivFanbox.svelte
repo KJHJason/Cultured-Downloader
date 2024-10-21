@@ -11,8 +11,8 @@
         return await ValidatePixivFanboxUrls(urls);
     };
 
-    const addToQueueFn = async (inputs: string[], options: app.Preferences): Promise<void> => {
-        await SubmitPixivFanboxToQueue(inputs, options);
+    const addToQueueFn = async (inputs: string[], options: app.Preferences, filters: app.Filters): Promise<void> => {
+        await SubmitPixivFanboxToQueue(inputs, options, filters);
     };
 
     const pixivCreatorRegex1 = /^https:\/\/[\w&.-]+.fanbox.cc(\/(posts)?)?$/;

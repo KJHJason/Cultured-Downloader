@@ -6,14 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/pixivfanbox"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
-	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -75,7 +73,16 @@ func (a *App) ValidatePixivFanboxUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parsePixivFanboxSettingsMap(
+	ctx context.Context,
+	pref *Preferences,
+	dlFilters Filters,
+) (pixivFanboxDlOptions *pixivfanbox.PixivFanboxDlOptions, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	pixivFanboxSession := a.appData.GetSecuredString(constants.PIXIV_FANBOX_COOKIE_VALUE_KEY)
 	var pixivFanboxSessions []*http.Cookie
 	if pixivFanboxSession == "" {
@@ -108,14 +115,7 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences
 
 			GdriveClient: a.getGdriveClient(),
 
-			Filters: &filters.Filters{
-				MinFileSize:    0,
-				MaxFileSize:    0,
-				FileExt:        []string{},
-				StartDate:      time.Time{},
-				EndDate:        time.Time{},
-				FileNameFilter: nil,
-			},
+			Filters: filters,
 			Configs: &configs.Config{
 				DownloadPath:   downloadPath,
 				FfmpegPath:     "",
@@ -143,7 +143,7 @@ func (a *App) parsePixivFanboxSettingsMap(ctx context.Context, pref *Preferences
 	return pixivFanboxDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences) error {
+func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences, dlFilters Filters) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitFantiaToQueue()")
 	}
@@ -154,7 +154,7 @@ func (a *App) SubmitPixivFanboxToQueue(inputs []string, prefs *Preferences) erro
 	}
 
 	ctx, cancel := context.WithCancel(a.ctx)
-	pixivFanboxDlOptions, mainProgBar, err := a.parsePixivFanboxSettingsMap(ctx, prefs)
+	pixivFanboxDlOptions, mainProgBar, err := a.parsePixivFanboxSettingsMap(ctx, prefs, dlFilters)
 	if err != nil {
 		cancel()
 		return err

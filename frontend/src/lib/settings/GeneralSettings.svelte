@@ -8,7 +8,6 @@
     import CacheDetails from "./CacheDetails.svelte";
     import { InfoCircleSolid } from "flowbite-svelte-icons";
     import type { app } from "../../scripts/wailsjs/go/models";
-    import FilterSettings from "./FilterSettings.svelte";
 
     export let formId = generalFormId;
     export let promptSuccess: boolean;
@@ -173,8 +172,4 @@
     </Toggle>
 </form>
 
-<div class="flex">
-    <CacheDetails />
-    <FilterSettings />
-</div>
-
+<CacheDetails />

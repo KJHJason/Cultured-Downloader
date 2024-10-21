@@ -7,9 +7,10 @@
     import GeneralSettings from "./settings/GeneralSettings.svelte";
     import MergedSettings from "./settings/MergedSettings.svelte";
     import { GetPreferences } from "../scripts/wailsjs/go/app/App";
-    import type { app } from "../scripts/wailsjs/go/models";
+    import { app } from "../scripts/wailsjs/go/models";
     import Translate from "./common/Translate.svelte";
     import { translateText } from "../scripts/language";
+    import FilterSettings from "./settings/FilterSettings.svelte";
 
     let pixivArtworkType: number;
     let pixivRating: number;
@@ -18,6 +19,13 @@
     let pixivSortOrder: number;
     let pixivUgoiraFormat: number;
 
+    // Filters
+    let minFileSize: number = 0;
+    let maxFileSize: number | null = Infinity;
+    let postDateRange: Record<string, null | Date> = { from: null, to: null };
+    let fileExtensions: string = "";
+    let filenameRegex: string = "";
+
     let translatedPageNoPlaceholder: string;
 
     export let platformTitle: string = "";
@@ -25,7 +33,7 @@
     export let inputPlaceholder: string;
     export let urlValidationFn: (urls: string | string[]) => Promise<boolean>;
     export let checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
-    export let addToQueueFn: (inputs: string[], downloadSettings: app.Preferences) => Promise<void>;
+    export let addToQueueFn: (inputs: string[], downloadSettings: app.Preferences, filters: app.Filters) => Promise<void>;
 
     if (platformTitle === "") {
         platformTitle = platformName;
@@ -208,9 +216,17 @@
             return downloadPreferences;
         };
 
+        const startMoreThanEndDates = await translateText("Start Date cannot be newer than your specified End Date!");
+
         const addToQueueForm = document.getElementById("add-to-queue-form") as HTMLFormElement;
         addToQueueForm.addEventListener("submit", async (e: Event): Promise<void> => {
             e.preventDefault();
+
+            const dlFilterSettingsForm = document.getElementById("dl-filter-settings-form") as HTMLFormElement;
+            if (!dlFilterSettingsForm.checkValidity()) {
+                dlFilterSettingsForm.reportValidity();
+                return;
+            }
 
             const textareaInput = textareaEl.value;
             if (textareaInput === "") {
@@ -254,12 +270,46 @@
                 return;
             }
 
+            // Filter File Extensions to non-empty trimmed values
+            const splittedFileExtensions = fileExtensions
+                .split(",")
+                .reduce<string[]>((accumulator, ext) => {
+                    const trimmed = ext.trim();
+                    if (trimmed) {
+                        accumulator.push(trimmed);
+                    }
+                    return accumulator;
+                }, [] as string[]);
+            const dlFilters: app.Filters = {
+                MinFileSize: minFileSize,
+                FileExt: splittedFileExtensions,
+                FileNameRegex: filenameRegex,
+            };
+            if (postDateRange.from !== null) {
+                dlFilters.StartDate = postDateRange.from.getTime();
+            }
+            if (postDateRange.to !== null) {
+                dlFilters.EndDate = postDateRange.to.getTime();
+            }
+            if (maxFileSize !== null) {
+                dlFilters.MaxFileSize = maxFileSize;
+            }
+
+            if (dlFilters.StartDate !== undefined && dlFilters.EndDate !== undefined && dlFilters.StartDate > dlFilters.EndDate) {
+                swal.fire({
+                    title: inputErr,
+                    text: startMoreThanEndDates,
+                    icon: "error",
+                })
+                return;
+            }
+
             pleaseWaitSwal.fire({
                 title: addingToQueue,
                 text: queuePleaseWait,
             })
             try {
-                await addToQueueFn(inputs, downloadPreferences);
+                await addToQueueFn(inputs, downloadPreferences, dlFilters);
                 swal.fire({
                     timer: 2000,
                     title: addedToQueue,
@@ -315,6 +365,14 @@
             </div>
         </Card>
     </form>
+
+    <FilterSettings
+        bind:minFileSize={minFileSize}
+        bind:maxFileSize={maxFileSize}
+        bind:postDateRange={postDateRange}
+        bind:fileExtensions={fileExtensions}
+        bind:filenameRegex={filenameRegex}
+    />
 
     <Card class="mt-2 max-w-full" size="xl" id="settings-card">
         <h4><Translate text="Download Settings" /></h4>

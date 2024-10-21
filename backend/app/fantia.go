@@ -6,14 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/fantia"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
-	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -74,7 +72,16 @@ func (a *App) ValidateFantiaUrls(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *Preferences) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseFantiaSettingsMap(
+	ctx context.Context,
+	pref *Preferences,
+	dlFilters Filters,
+) (fantiaDlOptions *fantia.FantiaDlOptions, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	fantiaSession := a.appData.GetSecuredString(constants.FANTIA_COOKIE_VALUE_KEY)
 	var fantiaSessions []*http.Cookie
 	if fantiaSession == "" {
@@ -108,14 +115,7 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *Preferences) (fa
 
 			GdriveClient: a.getGdriveClient(),
 
-			Filters: &filters.Filters{
-				MinFileSize:    0,
-				MaxFileSize:    0,
-				FileExt:        []string{},
-				StartDate:      time.Time{},
-				EndDate:        time.Time{},
-				FileNameFilter: nil,
-			},
+			Filters: filters,
 			Configs: &configs.Config{
 				DownloadPath:   downloadPath,
 				FfmpegPath:     "",
@@ -143,7 +143,7 @@ func (a *App) parseFantiaSettingsMap(ctx context.Context, pref *Preferences) (fa
 	return fantiaDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitFantiaToQueue(inputs []string, prefs *Preferences) error {
+func (a *App) SubmitFantiaToQueue(inputs []string, prefs *Preferences, dlFilters Filters) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitFantiaToQueue()")
 	}
@@ -154,7 +154,7 @@ func (a *App) SubmitFantiaToQueue(inputs []string, prefs *Preferences) error {
 	}
 
 	ctx, cancel := context.WithCancel(a.ctx)
-	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(ctx, prefs)
+	fantiaDlOptions, mainProgBar, err := a.parseFantiaSettingsMap(ctx, prefs, dlFilters)
 	if err != nil {
 		cancel()
 		return err

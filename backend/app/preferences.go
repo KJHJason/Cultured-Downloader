@@ -2,8 +2,12 @@ package app
 
 import (
 	"fmt"
+	"regexp"
+	"time"
 
 	"github.com/KJHJason/Cultured-Downloader-Logic/cdlerrors"
+	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
+	"github.com/KJHJason/Cultured-Downloader-Logic/logger"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
 )
 
@@ -13,6 +17,87 @@ func (a *App) GetDarkMode() bool {
 
 func (a *App) SetDarkMode(darkMode bool) {
 	a.appData.SetBool(constants.DARK_MODE_KEY, darkMode)
+}
+
+type Filters struct {
+	// In bytes
+	MinFileSize int64  `json:"MinFileSize"`
+	MaxFileSize *int64 `json:"MaxFileSize"`
+
+	FileExt []string `json:"FileExt"`
+
+	// Unix time (ms)
+	StartDate *int64 `json:"StartDate"`
+	EndDate   *int64 `json:"EndDate"`
+
+	FileNameRegex string `json:"FileNameRegex"`
+}
+
+func (f *Filters) ConvertUnixToTime() (startDate time.Time, endDate time.Time) {
+	if f.StartDate == nil {
+		startDate = time.Time{}
+	} else {
+		startDate = time.Unix(*f.StartDate, 0)
+	}
+
+	if f.EndDate == nil {
+		endDate = time.Time{}
+	} else {
+		endDate = time.Unix(*f.EndDate, 0)
+	}
+	return startDate, endDate
+}
+
+func (f *Filters) ConverToCDLFilters() (*filters.Filters, error) {
+	var maxFileSize int64
+	if f.MaxFileSize == nil {
+		maxFileSize = filters.NO_MAX_FILESIZE
+	} else {
+		maxFileSize = *f.MaxFileSize
+	}
+
+	startDate, endDate := f.ConvertUnixToTime()
+
+	var fileNameFilter *regexp.Regexp
+	if f.FileNameRegex != "" {
+		var err error
+		fileNameFilter, err = regexp.Compile(f.FileNameRegex)
+		if err != nil {
+			fmtErr := fmt.Errorf(
+				"error %d: failed to parse %s into regex => %w",
+				cdlerrors.INPUT_ERROR,
+				f.FileNameRegex,
+				err,
+			)
+			logger.MainLogger.Error(fmtErr.Error())
+			return nil, fmtErr
+		}
+	}
+
+	dlFilters := filters.Filters{
+		MinFileSize: f.MinFileSize,
+		MaxFileSize: maxFileSize,
+
+		FileExt: f.FileExt,
+
+		StartDate: startDate,
+		EndDate:   endDate,
+
+		FileNameFilter: fileNameFilter,
+	}
+	dlFilters.ConvertFileSizeFromMB()
+	dlFilters.RemoveDuplicateFileExt()
+
+	if err := dlFilters.ValidateArgs(); err != nil {
+		fmtErr := fmt.Errorf(
+			"error %d: download filters validations failed => %w",
+			cdlerrors.INPUT_ERROR,
+			err,
+		)
+		logger.MainLogger.Error(fmtErr.Error())
+		return nil, fmtErr
+	}
+	return &dlFilters, nil
 }
 
 type Preferences struct {

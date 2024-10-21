@@ -222,20 +222,20 @@ export function StartPixivOAuth() {
   return window['go']['app']['App']['StartPixivOAuth']();
 }
 
-export function SubmitFantiaToQueue(arg1, arg2) {
-  return window['go']['app']['App']['SubmitFantiaToQueue'](arg1, arg2);
+export function SubmitFantiaToQueue(arg1, arg2, arg3) {
+  return window['go']['app']['App']['SubmitFantiaToQueue'](arg1, arg2, arg3);
 }
 
-export function SubmitKemonoToQueue(arg1, arg2) {
-  return window['go']['app']['App']['SubmitKemonoToQueue'](arg1, arg2);
+export function SubmitKemonoToQueue(arg1, arg2, arg3) {
+  return window['go']['app']['App']['SubmitKemonoToQueue'](arg1, arg2, arg3);
 }
 
-export function SubmitPixivFanboxToQueue(arg1, arg2) {
-  return window['go']['app']['App']['SubmitPixivFanboxToQueue'](arg1, arg2);
+export function SubmitPixivFanboxToQueue(arg1, arg2, arg3) {
+  return window['go']['app']['App']['SubmitPixivFanboxToQueue'](arg1, arg2, arg3);
 }
 
-export function SubmitPixivToQueue(arg1, arg2) {
-  return window['go']['app']['App']['SubmitPixivToQueue'](arg1, arg2);
+export function SubmitPixivToQueue(arg1, arg2, arg3) {
+  return window['go']['app']['App']['SubmitPixivToQueue'](arg1, arg2, arg3);
 }
 
 export function Translate(arg1, arg2, arg3) {

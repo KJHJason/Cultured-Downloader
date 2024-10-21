@@ -6,14 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	cdlogic "github.com/KJHJason/Cultured-Downloader-Logic"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api"
 	"github.com/KJHJason/Cultured-Downloader-Logic/api/kemono"
 	"github.com/KJHJason/Cultured-Downloader-Logic/configs"
 	cdlconsts "github.com/KJHJason/Cultured-Downloader-Logic/constants"
-	"github.com/KJHJason/Cultured-Downloader-Logic/filters"
 	"github.com/KJHJason/Cultured-Downloader-Logic/httpfuncs"
 	"github.com/KJHJason/Cultured-Downloader-Logic/progress"
 	"github.com/KJHJason/Cultured-Downloader/backend/constants"
@@ -65,7 +63,16 @@ func (a *App) ValidateKemonoInputs(inputs []string) bool {
 	return valid
 }
 
-func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+func (a *App) parseKemonoSettingsMap(
+	ctx context.Context,
+	pref *Preferences,
+	dlFilters Filters,
+) (kemonoDlOptions *kemono.KemonoDlOptions, mainProgBar *ProgressBar, err error) {
+	filters, err := dlFilters.ConverToCDLFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	kemonoSession := a.appData.GetSecuredString(constants.KEMONO_COOKIE_VALUE_KEY)
 	var kemonoSessions []*http.Cookie
 	if kemonoSession == "" {
@@ -96,14 +103,7 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (ke
 
 			GdriveClient: a.getGdriveClient(),
 
-			Filters: &filters.Filters{
-				MinFileSize:    0,
-				MaxFileSize:    0,
-				FileExt:        []string{},
-				StartDate:      time.Time{},
-				EndDate:        time.Time{},
-				FileNameFilter: nil,
-			},
+			Filters: filters,
 			Configs: &configs.Config{
 				DownloadPath:   downloadPath,
 				FfmpegPath:     "",
@@ -131,7 +131,7 @@ func (a *App) parseKemonoSettingsMap(ctx context.Context, pref *Preferences) (ke
 	return kemonoDlOptions, mainProgBar, nil
 }
 
-func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences) error {
+func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences, dlFilters Filters) error {
 	if prefs == nil {
 		return errors.New("preferences is nil in SubmitKemonoToQueue()")
 	}
@@ -142,7 +142,7 @@ func (a *App) SubmitKemonoToQueue(inputs []string, prefs *Preferences) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(ctx, prefs)
+	kemonoDlOptions, mainProgBar, err := a.parseKemonoSettingsMap(ctx, prefs, dlFilters)
 	if err != nil {
 		cancel()
 		return err

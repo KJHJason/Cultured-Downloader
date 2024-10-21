@@ -11,8 +11,8 @@
         return await ValidateFantiaUrls(urls);
     };
 
-    const addToQueueFn = async (inputs: string[], options: app.Preferences): Promise<void> => {
-        await SubmitFantiaToQueue(inputs, options);
+    const addToQueueFn = async (inputs: string[], options: app.Preferences, filters: app.Filters): Promise<void> => {
+        await SubmitFantiaToQueue(inputs, options, filters);
     };
 
     const checkUrlHasPageNumFilter = (inputUrl: string): boolean => {

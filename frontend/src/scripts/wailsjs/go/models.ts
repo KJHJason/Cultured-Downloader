@@ -30,6 +30,28 @@ export namespace app {
 	        this.Kemono = source["Kemono"];
 	    }
 	}
+	export class Filters {
+	    MinFileSize: number;
+	    MaxFileSize?: number;
+	    FileExt: string[];
+	    StartDate?: number;
+	    EndDate?: number;
+	    FileNameRegex: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Filters(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.MinFileSize = source["MinFileSize"];
+	        this.MaxFileSize = source["MaxFileSize"];
+	        this.FileExt = source["FileExt"];
+	        this.StartDate = source["StartDate"];
+	        this.EndDate = source["EndDate"];
+	        this.FileNameRegex = source["FileNameRegex"];
+	    }
+	}
 	export class FrontendCacheKeyValue {
 	    Key: string;
 	    Value: string;

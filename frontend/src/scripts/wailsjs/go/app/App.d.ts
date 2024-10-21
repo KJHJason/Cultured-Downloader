@@ -113,13 +113,13 @@ export function StartGDriveOauth():Promise<void>;
 
 export function StartPixivOAuth():Promise<string>;
 
-export function SubmitFantiaToQueue(arg1:Array<string>,arg2:app.Preferences):Promise<void>;
+export function SubmitFantiaToQueue(arg1:Array<string>,arg2:app.Preferences,arg3:app.Filters):Promise<void>;
 
-export function SubmitKemonoToQueue(arg1:Array<string>,arg2:app.Preferences):Promise<void>;
+export function SubmitKemonoToQueue(arg1:Array<string>,arg2:app.Preferences,arg3:app.Filters):Promise<void>;
 
-export function SubmitPixivFanboxToQueue(arg1:Array<string>,arg2:app.Preferences):Promise<void>;
+export function SubmitPixivFanboxToQueue(arg1:Array<string>,arg2:app.Preferences,arg3:app.Filters):Promise<void>;
 
-export function SubmitPixivToQueue(arg1:Array<string>,arg2:app.Preferences):Promise<void>;
+export function SubmitPixivToQueue(arg1:Array<string>,arg2:app.Preferences,arg3:app.Filters):Promise<void>;
 
 export function Translate(arg1:string,arg2:string,arg3:string):Promise<string>;
 
