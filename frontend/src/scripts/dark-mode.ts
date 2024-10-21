@@ -3,10 +3,10 @@ import { GetDarkMode, SetDarkMode } from "./wailsjs/go/app/App";
 // https://github.com/probablykasper/date-picker-svelte
 const ToggleDatePickerCssProperties = (isDarkMode: boolean): void => {
     if (isDarkMode) {
-        document.documentElement.style.setProperty("--date-picker-background", "#27272a");
+        document.documentElement.style.setProperty("--date-picker-background", "#52525b");
         document.documentElement.style.setProperty("--date-picker-foreground", "#f7f7f7");
     } else {
-        document.documentElement.style.setProperty("--date-picker-background", "#fff");
+        document.documentElement.style.setProperty("--date-picker-background", "#fafafa");
         document.documentElement.style.setProperty("--date-picker-foreground", "#000");
     }
 };
@@ -84,7 +84,7 @@ export const InitialiseDarkModeConfig = async (): Promise<void> => {
         const isCurrentlyDarkMode = document.documentElement.classList.contains("dark");
         toggleToggleText(!isCurrentlyDarkMode);
         ToggleCSSThemes(!isCurrentlyDarkMode);
-        ToggleDatePickerCssProperties(isDarkMode);
+        ToggleDatePickerCssProperties(!isCurrentlyDarkMode);
         await SetDarkMode(!isCurrentlyDarkMode);
     });
 };
