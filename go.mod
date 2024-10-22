@@ -3,7 +3,7 @@ module github.com/KJHJason/Cultured-Downloader
 go 1.23
 
 require (
-	github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241022102914-774e26c60483
+	github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241022120906-48bd81621e8a
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.24.5
