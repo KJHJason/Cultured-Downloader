@@ -233,12 +233,6 @@
         addToQueueForm.addEventListener("submit", async (e: Event): Promise<void> => {
             e.preventDefault();
 
-            const dlFilterSettingsForm = document.getElementById("dl-filter-settings-form") as HTMLFormElement;
-            if (!dlFilterSettingsForm.checkValidity()) {
-                dlFilterSettingsForm.reportValidity();
-                return;
-            }
-
             const textareaInput = textareaEl.value;
             if (textareaInput === "") {
                 helperEl.textContent = inputErrNoUrl;
