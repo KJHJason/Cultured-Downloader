@@ -6,10 +6,14 @@
     import { EN, GetCachedLanguage, JP, translate, translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
 
-    let programVer: string;
-    let programLogicVer: string;
+    let programVer: string = $state("");
+    let programLogicVer: string = $state("");
 
-    export let lastSavedUpdateStr: Record<string, string>;
+    interface Props {
+        lastSavedUpdateStr: Record<string, string>;
+    }
+
+    let { lastSavedUpdateStr = $bindable() }: Props = $props();
     const language = GetCachedLanguage();
 
     onMount(async() => {
@@ -67,11 +71,11 @@
 <h4 class="my-0">Cultured Downloader</h4>
 <p>
     <Translate text="Version" /> {programVer} <Translate text="program_info_by" />
-    <button class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason")}>KJHJason</button>
+    <button class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason")}>KJHJason</button>
 </p>
 <p>
     <Translate text="Repository:" />
-    <button class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader")}>https://github.com/KJHJason/Cultured-Downloader</button>
+    <button class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader")}>https://github.com/KJHJason/Cultured-Downloader</button>
 </p>
 <p>
     <Translate text="Latest version:" /> <span id="latest-ver">Unknown</span>
@@ -80,11 +84,11 @@
 <h4>Cultured Downloader Logic</h4>
 <p>
     <Translate text="Version" /> {programLogicVer} <Translate text="program_info_by" />
-    <button class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason")}>KJHJason</button>
+    <button class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason")}>KJHJason</button>
 </p>
 <p>
     <Translate text="Repository:" />
-    <button class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader-Logic")}>https://github.com/KJHJason/Cultured-Downloader-Logic</button>
+    <button class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader-Logic")}>https://github.com/KJHJason/Cultured-Downloader-Logic</button>
 </p>
 <Hr />
 
@@ -94,14 +98,14 @@
     </Helper>
     <Helper>
         - <Translate text="If you like using Cultured Downloader, please consider giving it a star on" />
-        <button class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader")}>GitHub</button>
+        <button class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader")}>GitHub</button>
         <Translate text="program_info_if you haven't already!" fallback="if you haven't already!" />
     </Helper>
     <Helper id="devNote2">
         - <Translate text="Additionally, please consider supporting this project by" />
-        <button on:click={() => BrowserOpenURL("https://ko-fi.com/kjhjason")} class="btn-link text-left" id="ko-fi-btn">{translate("buying me a coffee", "ko-fi-btn")}</button>
+        <button onclick={() => BrowserOpenURL("https://ko-fi.com/kjhjason")} class="btn-link text-left" id="ko-fi-btn">{translate("buying me a coffee", "ko-fi-btn")}</button>
         <Translate text="program_info_or" fallback="or" />
-        <button on:click={() => BrowserOpenURL("https://github.com/sponsors/KJHJason")} class="btn-link text-left" id="github-sponsor-btn">{translate("program_info_sponsoring me", "github-sponsor-btn", "", "sponsoring me")}</button>
+        <button onclick={() => BrowserOpenURL("https://github.com/sponsors/KJHJason")} class="btn-link text-left" id="github-sponsor-btn">{translate("program_info_sponsoring me", "github-sponsor-btn", "", "sponsoring me")}</button>
         <Translate text="via GitHub sponsors! Your contribution would help ensure the sustainability of this project. Thank you for reading <3" />
     </Helper>
     <button class="mt-2 ms-auto flex btn btn-success items-center" id="update-btn">

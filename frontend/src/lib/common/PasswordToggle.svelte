@@ -1,21 +1,34 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    export let hideByDefault = false;
-    export let elClass = "";
+    interface Props {
+        hideByDefault?: boolean;
+        elClass?: string;
+        children?: import('svelte').Snippet;
+    }
 
-    let btn: HTMLButtonElement;
-    let show: SVGSVGElement;
-    let hide: SVGSVGElement;
-    let mainDiv: HTMLDivElement;
+    let { hideByDefault = false, elClass = "", children }: Props = $props();
+
+    let btn: HTMLButtonElement | null = $state(null);
+    let show: SVGSVGElement | null = $state(null);
+    let hide: SVGSVGElement | null = $state(null);
+    let mainDiv: HTMLDivElement | null = $state(null);
 
     onMount(() => {
+        if (btn === null || show === null || hide === null || mainDiv === null) {
+            throw new Error("Password toggle html elements not initialised yet...");
+        }
+
         const input = mainDiv.querySelector("input") as HTMLInputElement;
         if (!input) {
             throw new Error(`Input element in PasswordToggle not found`);
         }
 
         btn.addEventListener("click", () => {
+            if (hide === null || show === null) {
+                throw new Error("Password toggle show/hide html elements not initialised yet...");
+            }
+
             if (input.type === "password") {
                 input.type = "text";
                 show.classList.add("hidden");
@@ -34,7 +47,7 @@
 </script>
 
 <div class="relative {elClass}" bind:this={mainDiv}>
-    <slot />
+    {@render children?.()}
     <button bind:this={btn} class="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-700 dark:text-white" type="button">
         <svg bind:this={show} class="h-6" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
             <path fill="currentColor"

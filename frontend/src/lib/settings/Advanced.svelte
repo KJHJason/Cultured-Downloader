@@ -269,7 +269,7 @@
         })
     };
 
-    let form: HTMLFormElement;
+    let form: HTMLFormElement | null = $state(null);
     onMount(async () => {
         dlLocationInp = document.getElementById("downloadLocation") as HTMLInputElement;
         savedDownloadLoc = await GetDownloadDir();
@@ -344,6 +344,10 @@
         const savingText = await translateText("Saving...");
         const pleaseWaitText = await translateText("Please wait a moment.");
         const settingSavedText = await translateText("Settings saved successfully");
+
+        if (form === null) {
+            throw new Error("Advanced settings form not initialised yet");
+        }
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             pleaseWaitSwal.fire({
@@ -385,7 +389,8 @@
         });
     });
 
-    $: browseApiJsonText = "";
+    let browseApiJsonText = $state("");
+    
     onMount(async () => {
         browseApiJsonText = await translateText("Upload Google Cloud Platform JSON file");
     });
@@ -432,7 +437,7 @@
                 *<Translate text="If you're unsure how to obtain the relevant API key or credentials, please refer to the guide below." />
             </Helper>
             <Helper>
-                <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md")}>
+                <button type="button" class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md")}>
                     https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/gcp_setup_guide.md
                 </button>
             </Helper>
@@ -454,7 +459,7 @@
                 *<Translate text={`If you're unsure what to do after clicking "Start OAuth", please refer to the guide below.`} />
             </Helper>
             <Helper>
-                <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md")}>
+                <button type="button" class="btn-link text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md")}>
                     https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/pixiv_oauth_guide.md
                 </button>
             </Helper>
@@ -473,7 +478,7 @@
                 *<Translate text="This is used for Pixiv Ugoira downloads. If you're not downloading from Pixiv, you can ignore this. Otherwise you can install it from the link below." />
             </Helper>
             <Helper>
-                <button type="button" class="btn-link text-left" on:click={() => BrowserOpenURL("https://ffmpeg.org/download.html")}>
+                <button type="button" class="btn-link text-left" onclick={() => BrowserOpenURL("https://ffmpeg.org/download.html")}>
                     https://ffmpeg.org/download.html
                 </button>
             </Helper>

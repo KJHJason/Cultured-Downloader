@@ -7,16 +7,19 @@
     import { translateText } from "../../scripts/language";
     import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlQ: app.FrontendDownloadQueue;
-    export let inputModalsId: Record<number, boolean>;
+    interface Props {
+        dlQ: app.FrontendDownloadQueue;
+        inputModalsId: Record<number, boolean>;
+    }
 
-    $: inputModalTitle = "";
+    let { dlQ, inputModalsId = $bindable() }: Props = $props();
+    let inputModalTitle = $state("");
     onMount(async () => {
         inputModalTitle = await translateText("Your Inputs");
     });
 </script>
 
-<button class="btn btn-info" on:click={() => {inputModalsId[dlQ.Id] = true}}>
+<button class="btn btn-info" onclick={() => {inputModalsId[dlQ.Id] = true}}>
     <ClipboardListSolid />
 </button>
 <Modal bind:open={inputModalsId[dlQ.Id]} title={inputModalTitle} id="view-inputs-{dlQ.Id}" size="lg" autoclose>
@@ -36,7 +39,7 @@
                         {input.Input}
                     </TableBodyCell>
                     <TableBodyCell>
-                        <button class="text-link" on:click={() => BrowserOpenURL(input.Url)}>
+                        <button class="text-link" onclick={() => BrowserOpenURL(input.Url)}>
                             {input.Url}
                         </button>
                     </TableBodyCell>

@@ -5,20 +5,31 @@
     import { InfoCircleSolid } from "flowbite-svelte-icons";
     import { translateText } from "../../scripts/language";
     import Translate from "../common/Translate.svelte";
+    import { translate } from "../../scripts/language";
 
-    export let minFileSize: number = 0;
-    export let maxFileSize: number | null = Infinity;
-    export let postDateRange: Record<string, null | Date> = { from: null, to: null };
-    export let fileExtensions: string = "";
-    export let filenameRegex: string = "";
+    interface Props {
+        minFileSize?: number;
+        maxFileSize?: number | null;
+        postDateRange?: Record<string, null | Date>;
+        fileExtensions?: string;
+        filenameRegex?: string;
+    }
+
+    let {
+        minFileSize = $bindable(0),
+        maxFileSize = $bindable(Infinity),
+        postDateRange = $bindable({ from: null, to: null }),
+        fileExtensions = $bindable(""),
+        filenameRegex = $bindable("")
+    }: Props = $props();
 
     const now = new Date();
 
-    $: maxFileSizePlaceholder = "";
-    $: fileExtTextAreaPlaceholder = "";
-    $: fileExtTextareaExample = "";
-    $: filenameRegexPlaceholder = "";
-    $: filenameRegexTooltipInfo = "";
+    let maxFileSizePlaceholder = $state("");
+    let fileExtTextAreaPlaceholder = $state("");
+    let fileExtTextareaExample = $state("");
+    let filenameRegexPlaceholder = $state("");
+    let filenameRegexTooltipInfo = $state("");
     onMount(async () => {
         maxFileSizePlaceholder = await translateText("Leave it empty for infinity");
         fileExtTextAreaPlaceholder = await translateText("Leave it empty or separate it with newlines like the following...");
@@ -30,7 +41,9 @@
 
 <Accordion class="mt-2" inactiveClass="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:dark:bg-gray-800">
     <AccordionItem tag="h4" borderOpenClass="border-s border-e bg-gray-100 dark:bg-gray-800 rounded-b-lg">
-        <Translate text="Filter Settings" slot="header" />
+        <span slot="header" id="dl-filter-accordion-header">
+            {translate("Filter Settings", "dl-filter-accordion-header", "", "")}
+        </span>
         <form id="dl-filter-settings-form">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -75,7 +88,7 @@
                         <Translate text="Maximum File Size:" />
                     </Label>
                     <ButtonGroup class="w-full mt-2">
-                        <Input id="MaxFileSize" name="MaxFileSize" placeholder="{maxFileSizePlaceholder}" type="number" bind:value={maxFileSize} />
+                        <Input id="MaxFileSize" name="MaxFileSize" placeholder={maxFileSizePlaceholder} type="number" bind:value={maxFileSize} />
                         <InputAddon class="font-bold">
                             MB
                         </InputAddon>

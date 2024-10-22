@@ -9,12 +9,21 @@
     import { InfoCircleSolid } from "flowbite-svelte-icons";
     import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let formId = generalFormId;
-    export let promptSuccess: boolean;
-    export let preferences: app.Preferences | undefined = undefined;
+    interface Props {
+        formId?: any;
+        promptSuccess: boolean;
+        preferences?: app.Preferences | undefined;
+        showOrganisePostImagesInp?: boolean;
+        showDlGDriveInp?: boolean;
+    }
 
-    export let showOrganisePostImagesInp: boolean = true;
-    export let showDlGDriveInp: boolean = true;
+    let {
+        formId = generalFormId,
+        promptSuccess,
+        preferences = $bindable(undefined),
+        showOrganisePostImagesInp = true,
+        showDlGDriveInp = true
+    }: Props = $props();
 
     let DlPostThumbnailInp: HTMLInputElement;
     let DlPostImagesInp: HTMLInputElement;
@@ -105,10 +114,10 @@
         });
     });
 
-    let organisePostImagesTooltip = "";
-    let overwriteFilesTooltip = "";
-    let detectOtherLinksTooltip = "";
-    let useCacheDbTooltip = "";
+    let organisePostImagesTooltip = $state("");
+    let overwriteFilesTooltip = $state("");
+    let detectOtherLinksTooltip = $state("");
+    let useCacheDbTooltip = $state("");
     onMount(async () => {
         organisePostImagesTooltip = await translateText("Organise downloaded images into numbered folders and image files.");
         overwriteFilesTooltip = await translateText("This should not be turned on as the program will check the expected file size with your local/downloaded files and resume downloading if it's incomplete except for Pixiv Fanbox where it will skip if the file exists. Hence, this is not recommended unless you have corrupted files or incomplete Pixiv Fanbox files because your anti-virus software may flag the program as a ransomware!");

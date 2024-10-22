@@ -3,9 +3,13 @@
     import { generalFormId, pixivFormId, swal } from "../../scripts/constants";
     import { translate, translateText } from "../../scripts/language";
 
-    export let btnString: string;
-    export let customGeneralFormId = generalFormId;
-    export let customPixivFormId = pixivFormId;
+    interface Props {
+        btnString: string;
+        customGeneralFormId?: any;
+        customPixivFormId?: any;
+    }
+
+    let { btnString, customGeneralFormId = generalFormId, customPixivFormId = pixivFormId }: Props = $props();
 
     onMount(async () => {
         let generalForm: HTMLFormElement;

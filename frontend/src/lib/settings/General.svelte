@@ -25,9 +25,13 @@
     import { LogError } from "../../scripts/wailsjs/runtime/runtime";
     import type { Writable } from "svelte/store";
 
-    let lang = "";
-    export let username: Writable<string>;
-    export let language: Writable<string>;
+    let lang = $state("");
+    interface Props {
+        username: Writable<string>;
+        language: Writable<string>;
+    }
+
+    let { username, language }: Props = $props();
 
     onMount(async () => {
         lang = await GetLanguage();
@@ -168,7 +172,8 @@
         deleteProfileImageBtn.addEventListener("click", handleDeleteProfilePic);
     });
 
-    $: hasMasterPassword = false;
+    let hasMasterPassword = $state(false);
+    
     onMount(async () => {
         const masterPasswordForm = document.getElementById("master-password-form") as HTMLFormElement;
         const masterPasswordFormResetBtn = document.getElementById("master-password-form-reset-btn") as HTMLButtonElement;

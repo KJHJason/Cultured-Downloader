@@ -8,18 +8,33 @@
     import ButtonGroupBtn from "../common/ButtonGroupBtn.svelte";
     import { translateText } from "../../scripts/language";
 
-    export let elId: string;
-    export let title: string;
-    export let website: string;
-    export let placeholder: string;
+    interface Props {
+        elId: string;
+        title: string;
+        website: string;
+        placeholder: string;
+        translatedDeleteBtnText: string;
+        translatedSaveBtnText: string;
+        translatedUploadBtnText: string;
+        translatedPixivOauthText: string;
+        translatedSavedSessionCookieText: string;
+        translatedDeletedSessionCookieText: string;
+        translatedErrText: string;
+    }
 
-    export let translatedDeleteBtnText: string;
-    export let translatedSaveBtnText: string;
-    export let translatedUploadBtnText: string;
-    export let translatedPixivOauthText: string;
-    export let translatedSavedSessionCookieText: string;
-    export let translatedDeletedSessionCookieText: string;
-    export let translatedErrText: string;
+    let {
+        elId,
+        title,
+        website,
+        placeholder,
+        translatedDeleteBtnText,
+        translatedSaveBtnText,
+        translatedUploadBtnText,
+        translatedPixivOauthText,
+        translatedSavedSessionCookieText,
+        translatedDeletedSessionCookieText,
+        translatedErrText
+    }: Props = $props();
 
     let inpEl: HTMLInputElement;
     const saveSwalAlert = () => swal.fire({

@@ -6,13 +6,13 @@
     import Translate from "../common/Translate.svelte";
     import { BrowserOpenURL } from "../../scripts/wailsjs/runtime/runtime";
 
-    $: translatedDeleteBtnText = "";
-    $: translatedSaveBtnText = "";
-    $: translatedUploadBtnText = "";
-    $: translatedPixivOauthText = "";
-    $: translatedSavedSessionCookieText = "";
-    $: translatedDeletedSessionCookieText = "";
-    $: translatedErrText = "";
+    let translatedDeleteBtnText = $state("");
+    let translatedSaveBtnText = $state("");
+    let translatedUploadBtnText = $state("");
+    let translatedPixivOauthText = $state("");
+    let translatedSavedSessionCookieText = $state("");
+    let translatedDeletedSessionCookieText = $state("");
+    let translatedErrText = $state("");
     onMount(async () => {
         translatedDeleteBtnText = await translateText("Delete");
         translatedSaveBtnText = await translateText("Save");
@@ -88,7 +88,7 @@
     <Helper>
         <Translate text="Do not know where to obtain your session cookie? Check the guide using the link below!" />
     </Helper>
-    <button class="btn-text-link text-xs font-normal text-left" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/session_cookie_guide.md")}>
+    <button class="btn-text-link text-xs font-normal text-left" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/session_cookie_guide.md")}>
         https://github.com/KJHJason/Cultured-Downloader/blob/main/doc/session_cookie_guide.md
     </button>
 </div>

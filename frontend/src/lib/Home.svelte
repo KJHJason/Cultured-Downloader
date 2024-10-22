@@ -14,8 +14,12 @@
     import kemonoLogo from "../assets/images/logos/kemono-logo.png";
     import Translate from "./common/Translate.svelte";
 
-    export let action: Writable<string>;
-    export let username: Writable<string>;
+    interface Props {
+        action: Writable<string>;
+        username: Writable<string>;
+    }
+
+    let { action, username }: Props = $props();
 
     const timing = 1000;
     const deg = tweened(0, { 
@@ -24,7 +28,7 @@
     });
     let interval: number;
 
-    let issueTooltipText = "";
+    let issueTooltipText = $state("");
     onMount(async () => {
         issueTooltipText = await translateText("Found an issue? Click me!");
 
@@ -77,7 +81,7 @@
     </div>
 
     <div class="fixed bottom-3 right-0 p-4">
-        <button id="issue-btn" type="button" class="bg-main text-white rounded-lg p-2" on:click={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/issues")}>
+        <button id="issue-btn" type="button" class="bg-main text-white rounded-lg p-2" onclick={() => BrowserOpenURL("https://github.com/KJHJason/Cultured-Downloader/issues")}>
             <img style="transform: rotate({$deg}deg);" src="{ChibiRakugaki}" class="w-24 h-auto" alt="Rakugaki-chan Chibi by Karutamo" />
         </button>
         <Tooltip triggeredBy="#issue-btn" defaultClass="py-2 px-3 text-sm font-medium text-center !bg-gray-200 dark:!bg-zinc-800">
@@ -87,7 +91,7 @@
     <div class="fixed bottom-0 right-0 p-4">
         <p class="text-xs">
             <span id="image-credits">{translate("Image:", "image-credits")}</span>
-            <button type="button" id="image-credits-name" class="btn-text-link text-left p-0" on:click={() => BrowserOpenURL("https://www.pixiv.net/users/10600906/artworks")}> 
+            <button type="button" id="image-credits-name" class="btn-text-link text-left p-0" onclick={() => BrowserOpenURL("https://www.pixiv.net/users/10600906/artworks")}> 
                 {translate("Karutamo", "image-credits-name")}
             </button>
         </p>

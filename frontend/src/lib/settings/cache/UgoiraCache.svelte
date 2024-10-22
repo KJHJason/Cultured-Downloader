@@ -3,8 +3,12 @@
     import CacheBase from "./CacheBase.svelte";
     import { GetAllUgoiraCache, DeleteAllUgoiraCache } from "../../../scripts/wailsjs/go/app/App";
 
-    export let rowsPerPage: number;
-    export let pageNum: Writable<number>;
+    interface Props {
+        rowsPerPage: number;
+        pageNum: Writable<number>;
+    }
+
+    let { rowsPerPage, pageNum }: Props = $props();
 </script>
 
 <CacheBase

@@ -4,17 +4,21 @@
     import { translate } from "../../scripts/language";
     import type { Writable } from "svelte/store";
 
-    export let action: Writable<string>;
-    export let language: Writable<string>;
-    export let btnRole: string;
+    interface Props {
+        action: Writable<string>;
+        language: Writable<string>;
+        btnRole: string;
+    }
+
+    let { action, language, btnRole }: Props = $props();
 
     const sideNavBarId = `${btnRole}-side-navbar`;
     const actionTitle = actionTitleCase(btnRole);
-    $: actionMatches = $action === btnRole;
+    let actionMatches = $derived($action === btnRole);
 </script>
 
 <button 
-    on:click={() => {action.set(btnRole)}} 
+    onclick={() => {action.set(btnRole)}} 
     class="w-full flex items-center p-2 rounded-lg group {
         actionMatches ? 
         "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white" : 

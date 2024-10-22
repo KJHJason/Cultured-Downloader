@@ -1,8 +1,9 @@
 import App from "./App.svelte";
 import "./index.css";
 import "flowbite";
+import { mount } from "svelte";
 
-const app = new App({
+const app = mount(App, {
     target: document.body,
 });
 

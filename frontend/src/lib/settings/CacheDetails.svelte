@@ -10,13 +10,12 @@
     import UgoiraCache from "./cache/UgoiraCache.svelte";
     import Translate from "../common/Translate.svelte";
 
-    let open: boolean;
-
-    $: modalTitle = "";
-    $: postCacheTitle = "Post Cache";
-    $: gdriveCacheTitle = "GDrive Cache";
-    $: kemonoCacheTitle = "Kemono Creator Cache";
-    $: ugoiraCacheTitle = "Pixiv Ugoira Cache";
+    let open: boolean = $state(false);
+    let modalTitle = $state("");
+    let postCacheTitle = $state("Post Cache");
+    let gdriveCacheTitle = $state("GDrive Cache");
+    let kemonoCacheTitle = $state("Kemono Creator Cache");
+    let ugoiraCacheTitle = $state("Pixiv Ugoira Cache");
     onMount(async () => {
         modalTitle = await translateText("Cache Details");
         postCacheTitle = await translateText("Post Cache");
@@ -32,7 +31,7 @@
     const ugoiraCachePageNum = writable(1);
 </script>
 
-<Modal bind:open={open} title="{modalTitle}" id="view-cache-details" size="lg" autoclose={false}>
+<Modal bind:open={open} title={modalTitle} id="view-cache-details" size="lg" autoclose={false}>
     <Tabs tabStyle="underline">
         <TabItem open title={postCacheTitle}>
             <PostCacheDetails {rowsPerPage} pageNum={postCachePageNum} />
@@ -50,7 +49,7 @@
 </Modal>
 
 <div class="mt-5">
-    <button type="button" class="btn btn-info flex" on:click={() => open = true} >
+    <button type="button" class="btn btn-info flex" onclick={() => open = true} >
         <div class="text-main">
             <ArchiveSolid />
         </div>

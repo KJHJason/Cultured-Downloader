@@ -6,11 +6,13 @@
     import { translateText } from "../../scripts/language";
     import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlDetails: app.FrontendDownloadDetails;
+    interface Props {
+        dlDetails: app.FrontendDownloadDetails;
+    }
 
-    $: translatedMins = "";
-    $: translatedSecs = "";
-
+    let { dlDetails }: Props = $props();
+    let translatedMins = $state("");
+    let translatedSecs = $state("");
     onMount(async () => {
         translatedMins = (await translateText("minutes")).toLocaleLowerCase();
         translatedSecs = (await translateText("seconds")).toLocaleLowerCase();
@@ -62,7 +64,7 @@
             {:else if dlDetails.HasError}
                 <Progressbar progress="100" color="red" animate={true} />
             {:else}
-                <Progressbar progress="{dlDetails.Percentage}" color="blue" animate={true} />
+                <Progressbar progress={dlDetails.Percentage} color="blue" animate={true} />
             {/if}
         {/if}
     </TableBodyCell>

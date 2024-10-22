@@ -10,11 +10,15 @@
     import type { Writable } from "svelte/store";
     import Translate from "./common/Translate.svelte";
 
-    export let username: Writable<string>;
-    export let language: Writable<string>;
-    export let lastSavedUpdateStr: Record<string, string>;
+    interface Props {
+        username: Writable<string>;
+        language: Writable<string>;
+        lastSavedUpdateStr: Record<string, string>;
+    }
 
-    let settingsContent: HTMLDivElement;
+    let { username, language, lastSavedUpdateStr = $bindable() }: Props = $props();
+
+    let settingsContent: HTMLDivElement | null = $state(null);
     const changeDefaultDividerColour = () => {
         // Go to the second div child element within the settingsContent div
         const divider =  settingsContent?.children[1];

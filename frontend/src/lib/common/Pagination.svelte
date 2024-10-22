@@ -4,14 +4,24 @@
     import Translate from "./Translate.svelte";
     import { onDestroy } from "svelte";
 
-    export let pageNum: Writable<number> = writable(1);
-    export let rowsPerPage: number;
-    export let elements: Writable<any[]>;
-    export let paginatedEl: Writable<any[]>;
-    export let showInfoIfNoEntry: boolean = true;
+    interface Props {
+        pageNum?: Writable<number>;
+        rowsPerPage: number;
+        elements: Writable<any[]>;
+        paginatedEl: Writable<any[]>;
+        showInfoIfNoEntry?: boolean;
+    }
+
+    let {
+        pageNum = writable(1),
+        rowsPerPage,
+        elements,
+        paginatedEl,
+        showInfoIfNoEntry = true
+    }: Props = $props();
 
     paginatedEl.set($elements.slice(0, rowsPerPage));
-    let maxPages = Math.ceil($elements.length / rowsPerPage);
+    let maxPages = $state(Math.ceil($elements.length / rowsPerPage));
 
     const onNext = () => setToPageNum($pageNum + 1);
     const onPrev = () => setToPageNum($pageNum - 1);
@@ -34,19 +44,19 @@
         return disabled ? "text-gray-500 dark:text-gray-400" : "btn-text-link";
     };
 
-    $: prevBtnDisabled = $pageNum === 1;
-    $: nextBtnDisabled = $pageNum === maxPages;
+    let prevBtnDisabled = $derived($pageNum === 1);
+    let nextBtnDisabled = $derived($pageNum === maxPages);
 
-    $: minElIdx = ($pageNum - 1) * rowsPerPage + 1;
-    $: maxElIdx = Math.min($pageNum * rowsPerPage, $elements.length);
+    let minElIdx = $derived(($pageNum - 1) * rowsPerPage + 1);
+    let maxElIdx = $derived(Math.min($pageNum * rowsPerPage, $elements.length));
 
-    interface btnsToAdd {
+    interface btnsToAddInfo {
         i:        number;
         isBuffer: boolean;
     }
 
-    const getBtnsToAdd = (pageNum: number): btnsToAdd[] => {
-        const btnsToAddSlice: btnsToAdd[] = [];
+    const getBtnsToAdd = (pageNum: number): btnsToAddInfo[] => {
+        const btnsToAddSlice: btnsToAddInfo[] = [];
         if (maxPages <= 7) {
             for (let i = 1; i <= maxPages; i++) {
                 btnsToAddSlice.push({ i, isBuffer: false });
@@ -95,7 +105,7 @@
         return btnsToAddSlice;
     };
 
-    let btnsToAdd: btnsToAdd[] = [];
+    let btnsToAdd: btnsToAddInfo[] = $state([]);
     const unsubscribeElChange = elements.subscribe((newElements) => {
         maxPages = Math.ceil(newElements.length / rowsPerPage);
         btnsToAdd = getBtnsToAdd($pageNum);
@@ -121,7 +131,7 @@
         </span>
         <ul class="inline-flex mt-2 xs:mt-0 -space-x-px h-10 text-base">
             <li>
-                <button type="button" on:click={onPrev} class="flex items-center justify-center px-4 h-10 ms-0 leading-tight bg-white border border-e-0 border-gray-300 rounded-s-lg dark:bg-gray-800 dark:border-gray-700 {getHoverBtnClass(prevBtnDisabled)} {getBtnTextClass(prevBtnDisabled)}" disabled={prevBtnDisabled}>
+                <button type="button" onclick={onPrev} class="flex items-center justify-center px-4 h-10 ms-0 leading-tight bg-white border border-e-0 border-gray-300 rounded-s-lg dark:bg-gray-800 dark:border-gray-700 {getHoverBtnClass(prevBtnDisabled)} {getBtnTextClass(prevBtnDisabled)}" disabled={prevBtnDisabled}>
                     <Translate spanClass="sr-only" text="Previous" />
                     <svg class="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
@@ -136,14 +146,14 @@
                 {:else}
                     {@const disabled = i === $pageNum}
                     <li>
-                        <button on:click={() => setToPageNum(i)} class="flex items-center justify-center px-4 h-10 leading-tight bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 {getBtnTextClass(disabled)} {getHoverBtnClass(disabled)}" {disabled}>
+                        <button onclick={() => setToPageNum(i)} class="flex items-center justify-center px-4 h-10 leading-tight bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 {getBtnTextClass(disabled)} {getHoverBtnClass(disabled)}" {disabled}>
                             {i}
                         </button>
                     </li>
                 {/if}
             {/each}
             <li>
-                <button type="button" on:click={onNext} class="flex items-center justify-center px-4 h-10 leading-tight bg-white border border-gray-300 rounded-e-lg dark:bg-gray-800 dark:border-gray-700 {getHoverBtnClass(nextBtnDisabled)} {getBtnTextClass(nextBtnDisabled)}" disabled={nextBtnDisabled}>
+                <button type="button" onclick={onNext} class="flex items-center justify-center px-4 h-10 leading-tight bg-white border border-gray-300 rounded-e-lg dark:bg-gray-800 dark:border-gray-700 {getHoverBtnClass(nextBtnDisabled)} {getBtnTextClass(nextBtnDisabled)}" disabled={nextBtnDisabled}>
                     <Translate spanClass="sr-only" text="Next" />
                     <svg class="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>

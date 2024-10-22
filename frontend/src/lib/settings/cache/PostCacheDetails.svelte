@@ -15,8 +15,12 @@
     import kemonoLogo from "../../../assets/images/logos/kemono-logo.png";
     import type { database } from "../../../scripts/wailsjs/go/models";
 
-    export let rowsPerPage: number;
-    export let pageNum: Writable<number>;
+    interface Props {
+        rowsPerPage: number;
+        pageNum: Writable<number>;
+    }
+
+    let { rowsPerPage, pageNum }: Props = $props();
 
     interface Platform {
         name: string;
@@ -234,7 +238,7 @@
                             {makeDateTimeReadable(post.Datetime)}
                         </TableBodyCell>
                         <TableBodyCell>
-                            <button class="btn-text-danger" on:click={() => deleteCacheKey(post.Bucket, post.CacheKey)}>
+                            <button class="btn-text-danger" onclick={() => deleteCacheKey(post.Bucket, post.CacheKey)}>
                                 <TrashBinSolid />
                             </button>
                         </TableBodyCell>
@@ -249,7 +253,7 @@
 
 {#if $postCache.length > 0}
     <div class="mt-3 text-right">
-        <button class="btn btn-danger" on:click={deleteAllPostCache}>
+        <button class="btn btn-danger" onclick={deleteAllPostCache}>
             <Translate text="Clear All Post Cache" />
         </button>
     </div>

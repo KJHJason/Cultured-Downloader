@@ -11,21 +11,40 @@
     import { TrashBinSolid } from "flowbite-svelte-icons";
     import type { app } from "../../../scripts/wailsjs/go/models";
 
-    export let showKey: boolean = true;
-    export let hasDateTime: boolean = true;
-    export let keyTitle: string = "URL";
-    export let valueTitle: string = "Date/Time";
-    export let parseValue: (arg: string) => string = makeDateTimeReadable;
-    export let deleteAllCacheText: string;
-    export let deleteAllCacheFunc: () => Promise<void>;
-    export let deleteInProgTitle: string;
-    export let deleteInProgText: string = "This may take a while. Please wait!";
-    export let deleteSuccessTitle: string;
-    export let deleteSuccessText: string;
 
-    export let rowsPerPage: number;
-    export let pageNum: Writable<number>;
-    export let fetchDataFunc: () => Promise<app.FrontendCacheKeyValue[]>;
+    interface Props {
+        showKey?: boolean;
+        hasDateTime?: boolean;
+        keyTitle?: string;
+        valueTitle?: string;
+        parseValue?: (arg: string) => string;
+        deleteAllCacheText: string;
+        deleteAllCacheFunc: () => Promise<void>;
+        deleteInProgTitle: string;
+        deleteInProgText?: string;
+        deleteSuccessTitle: string;
+        deleteSuccessText: string;
+        rowsPerPage: number;
+        pageNum: Writable<number>;
+        fetchDataFunc: () => Promise<app.FrontendCacheKeyValue[]>;
+    }
+
+    let {
+        showKey = true,
+        hasDateTime = true,
+        keyTitle = "URL",
+        valueTitle = "Date/Time",
+        parseValue = makeDateTimeReadable,
+        deleteAllCacheText,
+        deleteAllCacheFunc,
+        deleteInProgTitle,
+        deleteInProgText = "This may take a while. Please wait!",
+        deleteSuccessTitle,
+        deleteSuccessText,
+        rowsPerPage,
+        pageNum,
+        fetchDataFunc
+    }: Props = $props();
 
     const cache: Writable<app.FrontendCacheKeyValue[]> = writable([]);
     const paginatedCache: Writable<app.FrontendCacheKeyValue[]> = writable([]);
@@ -139,7 +158,7 @@
                             {/if}
                         </TableBodyCell>
                         <TableBodyCell>
-                            <button class="btn-text-danger" on:click={() => deleteKey(cache.Bucket, cache.Key)}>
+                            <button class="btn-text-danger" onclick={() => deleteKey(cache.Bucket, cache.Key)}>
                                 <TrashBinSolid />
                             </button>
                         </TableBodyCell>
@@ -153,7 +172,7 @@
 
 {#if $cache.length > 0}
     <div class="mt-3 text-right">
-        <button class="btn btn-danger" on:click={deleteAllKeys}>
+        <button class="btn btn-danger" onclick={deleteAllKeys}>
             <Translate text={deleteAllCacheText} />
         </button>
     </div>

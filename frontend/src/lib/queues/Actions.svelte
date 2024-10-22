@@ -14,22 +14,25 @@
     import Translate from "../common/Translate.svelte";
     import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlQ: app.FrontendDownloadQueue;
-    export let modalsId: Record<number, dlModals>;
-    export let errModalsId: Record<number, boolean>;
+    interface Props {
+        dlQ: app.FrontendDownloadQueue;
+        modalsId: Record<number, dlModals>;
+        errModalsId: Record<number, boolean>;
+    }
+
+    let { dlQ, modalsId = $bindable(), errModalsId = $bindable() }: Props = $props();
 
     let getDlDetailsInterval: number;
     const elements: Writable<app.FrontendDownloadDetails[]> = writable([]);
     let pageNum = writable(modalsId[dlQ.Id].pageNum);
     const pageNumEditUnsubscribe = pageNum.subscribe((val) => modalsId[dlQ.Id].pageNum = val);
 
-    $: viewDownloadDetails = "";
-    $: viewDownloadFiles = "";
-    $: viewErrors = "";
-    $: stopDownload = "";
-    $: removeFromQueue = "";
-    $: downloadDetailsModalTitle = "";
-
+    let viewDownloadDetails = $state("");
+    let viewDownloadFiles = $state("");
+    let viewErrors = $state("");
+    let stopDownload = $state("");
+    let removeFromQueue = $state("");
+    let downloadDetailsModalTitle = $state("");
     onMount(async () => {
         getDlDetailsInterval = setInterval(async () => {
             if (!modalsId[dlQ.Id].open) {
@@ -57,7 +60,7 @@
     const paginatedDownloads: Writable<app.FrontendDownloadDetails[]> = writable([]);
 </script>
 
-<button type="button" class="btn-text-info" id="details-{dlQ.Id}" on:click={() => {modalsId[dlQ.Id].open = true}}>
+<button type="button" class="btn-text-info" id="details-{dlQ.Id}" onclick={() => {modalsId[dlQ.Id].open = true}}>
     <NewspaperSolid />
 </button>
 <Tooltip triggeredBy="#details-{dlQ.Id}">{viewDownloadDetails}</Tooltip>
@@ -97,12 +100,12 @@
 
 {#if dlQ.Finished}
     {#if !dlQ.HasError}
-        <button type="button" id="view-{dlQ.Id}" on:click={() => BrowserOpenURL(dlQ.ProgressBar.FolderPath)} class="view btn-text-success">
+        <button type="button" id="view-{dlQ.Id}" onclick={() => BrowserOpenURL(dlQ.ProgressBar.FolderPath)} class="view btn-text-success">
             <FolderSolid />
         </button>
         <Tooltip triggeredBy="#view-{dlQ.Id}">{viewDownloadFiles}</Tooltip>
     {:else}
-        <button type="button" class="btn-text-danger" id="errors-{dlQ.Id}" on:click={() => {errModalsId[dlQ.Id] = true}}>
+        <button type="button" class="btn-text-danger" id="errors-{dlQ.Id}" onclick={() => {errModalsId[dlQ.Id] = true}}>
             <ClipboardListSolid />
         </button>
         <Tooltip triggeredBy="#errors-{dlQ.Id}">{viewErrors}</Tooltip>
@@ -112,13 +115,13 @@
         </Modal>
     {/if}
 {:else}
-    <button type="button" class="btn-text-danger" id="stop-{dlQ.Id}" on:click={() => CancelQueue(dlQ.Id)}>
+    <button type="button" class="btn-text-danger" id="stop-{dlQ.Id}" onclick={() => CancelQueue(dlQ.Id)}>
         <StopSolid />
     </button>
     <Tooltip triggeredBy="#stop-{dlQ.Id}">{stopDownload}</Tooltip>
 {/if}
 
-<button type="button" class="btn-text-danger" id="remove-{dlQ.Id}" on:click={() => DeleteQueue(dlQ.Id)}>
+<button type="button" class="btn-text-danger" id="remove-{dlQ.Id}" onclick={() => DeleteQueue(dlQ.Id)}>
     <TrashBinSolid />
 </button>
 <Tooltip triggeredBy="#remove-{dlQ.Id}">{removeFromQueue}</Tooltip>

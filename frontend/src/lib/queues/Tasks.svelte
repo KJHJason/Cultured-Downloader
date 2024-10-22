@@ -5,11 +5,14 @@
     import { onMount } from "svelte";
     import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let dlQ: app.FrontendDownloadQueue;
-    export let progHistoryModalsId: Record<number, boolean>;
-    export let makeDateTimeReadable: (dateTime: string, addSeconds: boolean) => string;
+    interface Props {
+        dlQ: app.FrontendDownloadQueue;
+        progHistoryModalsId: Record<number, boolean>;
+        makeDateTimeReadable: (dateTime: string, addSeconds: boolean) => string;
+    }
 
-    $: taskModalTitle = "";
+    let { dlQ, progHistoryModalsId = $bindable(), makeDateTimeReadable }: Props = $props();
+    let taskModalTitle = $state("");
     onMount(async () => {
         taskModalTitle = await translateText("Tasks History");
     });
@@ -33,12 +36,12 @@
 {:else if dlQ.Finished && dlQ.HasError}
     <Progressbar progress="100" color="red" animate={true} />
 {:else}
-    <Progressbar progress="{dlQ.ProgressBar.Percentage}" color="blue" animate={true} />
+    <Progressbar progress={dlQ.ProgressBar.Percentage} color="blue" animate={true} />
 {/if}
 
 {#if dlQ.NestedProgressBar?.length > 0}
     <div class="text-right mt-2">
-        <button type="button" class="btn-text-info text-xs" id="view-prog-{dlQ.Id}" on:click={() => {progHistoryModalsId[dlQ.Id] = true}}>
+        <button type="button" class="btn-text-info text-xs" id="view-prog-{dlQ.Id}" onclick={() => {progHistoryModalsId[dlQ.Id] = true}}>
             {translate("View tasks history...", "view-prog-" + dlQ.Id)}
         </button>
     </div>

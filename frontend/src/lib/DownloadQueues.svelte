@@ -13,13 +13,17 @@
     import Translate from "./common/Translate.svelte";
     import type { app } from "../scripts/wailsjs/go/models";
 
-    export let action: Writable<string>;
+    interface Props {
+        action: Writable<string>;
+    }
+
+    let { action }: Props = $props();
 
     let inputModalsId: Record<number, boolean> = {};
     let progHistoryModalsId: Record<number, boolean> = {}; 
     let modalsId: Record<number, dlModals> = {};
     let errModalsId: Record<number, boolean> = {};
-    let downloadQueues: app.FrontendDownloadQueue[] = [];
+    let downloadQueues: app.FrontendDownloadQueue[] = $state([]);
 
     type RecordType = Record<number, dlModals> | Record<number, boolean>;
     const modalLogic = <T extends RecordType>(oldRecord: T, queues: app.FrontendDownloadQueue[], defaultValue: () => dlModals | boolean): void => {

@@ -8,11 +8,6 @@
     import { InfoCircleSolid } from "flowbite-svelte-icons";
     import type { app } from "../../scripts/wailsjs/go/models";
 
-    export let formId = pixivFormId;
-    export let promptSuccess: boolean;
-    export let preferences: app.Preferences | undefined = undefined;
-    export let pixivArtworkType: number = 3;
-
     type selectValues = { value: number, name: string }[];
     const pixivArtworkTypes: selectValues = [];
     const initPixivArtworkTypes = async () => {
@@ -30,7 +25,6 @@
         });
     };
 
-    export let pixivRating: number = 6;
     const pixivRatings: selectValues = [];
     const initPixivRatings = async () => {
         pixivRatings.push({
@@ -47,7 +41,6 @@
         });
     };
 
-    export let pixivSearchMode: number = 8;
     const pixivSearchModes: selectValues = [];
     const initPixivSearchModes = async () => {
         pixivSearchModes.push({
@@ -64,7 +57,6 @@
         });
     };
 
-    export let pixivSortOrder: number = 10;
     const pixivSortOrders: selectValues = [];
     const initPixivSortOrders = async () => {
         pixivSortOrders.push({
@@ -101,7 +93,6 @@
         });
     };
 
-    export let pixivUgoiraFormat: number = 18;
     const pixivUgoiraFormats = [
         { value: 18, name: ".gif" },
         { value: 19, name: ".apng" },
@@ -110,7 +101,29 @@
         { value: 22, name: ".mp4" },
     ];
 
-    export let pixivAiSearchMode: number = 24;
+    interface Props {
+        formId?: any;
+        promptSuccess: boolean;
+        preferences?: app.Preferences | undefined;
+        pixivArtworkType?: number;
+        pixivRating?: number;
+        pixivSearchMode?: number;
+        pixivSortOrder?: number;
+        pixivUgoiraFormat?: number;
+        pixivAiSearchMode?: number;
+    }
+
+    let {
+        formId = pixivFormId,
+        promptSuccess,
+        preferences = $bindable(undefined),
+        pixivArtworkType = $bindable(3),
+        pixivRating = $bindable(6),
+        pixivSearchMode = $bindable(8),
+        pixivSortOrder = $bindable(10),
+        pixivUgoiraFormat = $bindable(18),
+        pixivAiSearchMode = $bindable(24)
+    }: Props = $props();
     const pixivAiSearchModes: selectValues = [];
     const initPixivAiSearchModes = async () => {
         pixivAiSearchModes.push({
@@ -183,8 +196,8 @@
         });
     });
 
-    let deleteUgoiraZipInfo = "";
-    let ugoiraQualityInfo = "";
+    let deleteUgoiraZipInfo = $state("");
+    let ugoiraQualityInfo = $state("");
     onMount(async () => {
         deleteUgoiraZipInfo = await translateText("Delete the downloaded Ugoira zip file containing the original image frames after converting it into a usable format via FFmpeg.");
         ugoiraQualityInfo = await translateText("A lower value would result in better quality but longer conversion times. The range is 0-51 for mp4 and 0-63 for webm. The recommended value is around 10 to balance between quality and conversion time.");

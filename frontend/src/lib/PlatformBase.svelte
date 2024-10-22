@@ -12,28 +12,39 @@
     import { translateText } from "../scripts/language";
     import FilterSettings from "./settings/FilterSettings.svelte";
 
-    let pixivArtworkType: number;
-    let pixivRating: number;
-    let pixivSearchMode: number;
-    let pixivAiSearchMode: number;
-    let pixivSortOrder: number;
-    let pixivUgoiraFormat: number;
+    let pixivArtworkType: number = $state(3);
+    let pixivRating: number = $state(6);
+    let pixivSearchMode: number = $state(8);
+    let pixivAiSearchMode: number = $state(10);
+    let pixivSortOrder: number = $state(18);
+    let pixivUgoiraFormat: number = $state(24);
 
     // Filters
-    let minFileSize: number = 0;
-    let maxFileSize: number | null = Infinity;
-    let postDateRange: Record<string, null | Date> = { from: null, to: null };
-    let fileExtensions: string = "";
-    let filenameRegex: string = "";
+    let minFileSize: number = $state(0);
+    let maxFileSize: number | null = $state(Infinity);
+    let postDateRange: Record<string, null | Date> = $state({ from: null, to: null });
+    let fileExtensions: string = $state("");
+    let filenameRegex: string = $state("");
 
     let translatedPageNoPlaceholder: string;
 
-    export let platformTitle: string = "";
-    export let platformName: string;
-    export let inputPlaceholder: string;
-    export let urlValidationFn: (urls: string | string[]) => Promise<boolean>;
-    export let checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
-    export let addToQueueFn: (inputs: string[], downloadSettings: app.Preferences, filters: app.Filters) => Promise<void>;
+    interface Props {
+        platformTitle?: string;
+        platformName: string;
+        inputPlaceholder: string;
+        urlValidationFn: (urls: string | string[]) => Promise<boolean>;
+        checkUrlHasPageNumFilter: (inputUrl: string) => boolean;
+        addToQueueFn: (inputs: string[], downloadSettings: app.Preferences, filters: app.Filters) => Promise<void>;
+    }
+
+    let {
+        platformTitle = $bindable(""),
+        platformName,
+        inputPlaceholder,
+        urlValidationFn,
+        checkUrlHasPageNumFilter,
+        addToQueueFn
+    }: Props = $props();
 
     if (platformTitle === "") {
         platformTitle = platformName;
@@ -58,8 +69,8 @@
         return label;
     };
 
-    let inputExampleText = "";
-    $: hasPageNoFilter = false;
+    let inputExampleText = $state("");
+    let hasPageNoFilter = $state(false);
     const divId = `${platformName}-base`;
     onMount(async () => {
         translatedPageNoPlaceholder = await translateText("e.g. \"1\" for page 1 or \"1-2\" for pages 1 to 2");

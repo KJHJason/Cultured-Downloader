@@ -3,11 +3,23 @@
     import { translate } from "../../scripts/language";
     import { generateRandomId } from "../../scripts/utils/random";
 
-    export let text: string;
-    export let fallback: string = "";
-    export let spanClass: string = "";
-    export let language: Writable<string> = writable("");
+    interface Props {
+        text: string;
+        fallback?: string;
+        spanClass?: string;
+        language?: Writable<string>;
+        otherAttributes?: Record<string, string>;
+    }
+
+    let {
+        text,
+        fallback = "",
+        spanClass = "",
+        language = writable(""),
+        otherAttributes = {}
+    }: Props = $props();
+
     const elementId = generateRandomId();
 </script>
 
-<span class={spanClass} id={elementId} {...$$props}>{translate(text, elementId, $language, fallback)}</span>
+<span class={spanClass} id={elementId} {...otherAttributes}>{translate(text, elementId, $language, fallback)}</span>

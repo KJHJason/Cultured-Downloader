@@ -50,7 +50,7 @@
         triggerSwalError(errorMsg);
     });
 
-    let lastSavedUpdateStr: Record<string, string> = {};
+    let lastSavedUpdateStr: Record<string, string> = $state({});
     const username = writable("");
     const action = writable(actions.Home);
     const language = writable(EN);

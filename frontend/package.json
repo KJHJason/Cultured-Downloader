@@ -14,7 +14,7 @@
     "postcss": "^8.4.39",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
-    "vite": "^4.4.9"
+    "vite": "^5.4.4"
   },
   "dependencies": {
     "date-picker-svelte": "^2.13.0",

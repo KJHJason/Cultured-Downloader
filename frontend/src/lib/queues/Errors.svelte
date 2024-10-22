@@ -2,7 +2,11 @@
     import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
     import Translate from "../common/Translate.svelte";
 
-    export let errors: string[];
+    interface Props {
+        errors: string[];
+    }
+
+    let { errors }: Props = $props();
 </script>
 
 <Table hoverable={false} shadow={true}>
