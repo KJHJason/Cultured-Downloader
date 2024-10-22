@@ -8,7 +8,6 @@
         fallback?: string;
         spanClass?: string;
         language?: Writable<string>;
-        otherAttributes?: Record<string, string>;
     }
 
     let {
@@ -16,10 +15,9 @@
         fallback = "",
         spanClass = "",
         language = writable(""),
-        otherAttributes = {}
     }: Props = $props();
 
     const elementId = generateRandomId();
 </script>
 
-<span class={spanClass} id={elementId} {...otherAttributes}>{translate(text, elementId, $language, fallback)}</span>
+<span class={spanClass} id={elementId}>{translate(text, elementId, $language, fallback)}</span>
