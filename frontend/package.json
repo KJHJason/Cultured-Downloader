@@ -19,7 +19,7 @@
   "dependencies": {
     "date-picker-svelte": "^2.14.0",
     "flowbite": "^2.4.1",
-    "flowbite-svelte": "^0.47.1",
+    "flowbite-svelte": "^0.47.3",
     "flowbite-svelte-icons": "^1.4.2",
     "nanoid": "^5.0.7",
     "svelte": "^5.1.0",
