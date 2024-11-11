@@ -25,8 +25,8 @@ github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOEl
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241111083352-fb03d152eac5 h1:H1aIKq3QLsDnNTTvNhIiissZbLwoAEgVlkGKLWzjR/4=
-github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241111083352-fb03d152eac5/go.mod h1:TAdWUyR9l2PPx6XqTlhDrVMx4fCDcaSFe9f6+1xCcx0=
+github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241111091441-7da16092b5c5 h1:aC7SwoQ3v2YK3ukz7xmVax9E+4S8Qj4Qkl182HdGzfk=
+github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241111091441-7da16092b5c5/go.mod h1:TAdWUyR9l2PPx6XqTlhDrVMx4fCDcaSFe9f6+1xCcx0=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/PuerkitoBio/goquery v1.10.0 h1:6fiXdLuUvYs2OJSvNRqlNPoBm6YABE226xrbavY5Wv4=
