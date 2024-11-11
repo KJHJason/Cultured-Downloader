@@ -3,7 +3,7 @@ module github.com/KJHJason/Cultured-Downloader
 go 1.23
 
 require (
-	github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241111082519-63076d99bb42
+	github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20241111083352-fb03d152eac5
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -19,7 +19,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/PuerkitoBio/goquery v1.10.0 // indirect
-	github.com/STARRY-S/zip v0.2.1 // indirect
+	github.com/STARRY-S/zip v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
