@@ -17,7 +17,7 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
-    "date-picker-svelte": "^2.14.0",
+    "date-picker-svelte": "^2.15.0",
     "flowbite": "^2.4.1",
     "flowbite-svelte": "^0.47.1",
     "flowbite-svelte-icons": "^2.0.2",
