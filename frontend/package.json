@@ -23,7 +23,7 @@
     "flowbite-svelte-icons": "^2.0.2",
     "nanoid": "^5.0.9",
     "svelte": "^5.19.9",
-    "sweetalert2": "^11.15.10",
+    "sweetalert2": "^11.16.1",
     "tailwindcss": "^4.0.4"
   },
   "author": "KJHJason"
