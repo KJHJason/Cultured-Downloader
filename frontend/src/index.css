@@ -1,8 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "./../tailwind.config.cjs";
 
-.text-main {
+@utility text-main {
     @apply text-black dark:text-white;
 }
 
@@ -20,6 +19,24 @@
     }
     100% {
         transform: rotate(360deg);
+    }
+}
+
+@layer components {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    textarea {
+        @apply cursor-text;
+    }
+
+    a,
+    input[type="checkbox"],
+    input[type="radio"],
+    input[type="file"],
+    select,
+    button {
+        @apply cursor-pointer;
     }
 }
 
@@ -51,27 +68,27 @@ h6 {
     @apply text-lg font-bold;
 }
 
-.text-primary {
+@utility text-primary {
     @apply text-blue-700 dark:text-blue-600;
 }
 
-.text-success {
+@utility text-success {
     @apply text-green-700 dark:text-green-600;
 }
 
-.text-danger {
+@utility text-danger {
     @apply text-red-700 dark:text-red-600;
 }
 
-.text-info {
+@utility text-info {
     @apply text-cyan-400 dark:text-cyan-600;
 }
 
-.text-warning {
+@utility text-warning {
     @apply text-yellow-400 dark:text-yellow-600;
 }
 
-.text-link {
+@utility text-link {
     @apply text-blue-500 dark:text-blue-400;
 }
 
@@ -107,7 +124,7 @@ h6 {
     @apply text-warning hover:text-yellow-500 dark:hover:text-yellow-700;
 }
 
-.btn-text-link {
+@utility btn-text-link {
     @apply text-link hover:text-blue-600 dark:hover:text-blue-500;
 }
 

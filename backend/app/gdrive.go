@@ -94,7 +94,7 @@ func (a *App) SelectGDriveServiceAccount() error {
 		},
 	})
 
-	if err != nil {
+	if err != nil && err.Error() != constants.WAILS_FILE_NONE_SELECTED {
 		return err
 	}
 	if file == "" {

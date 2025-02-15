@@ -86,7 +86,7 @@ func (a *App) UploadCookieFile(website string) error {
 			},
 		},
 	})
-	if err != nil {
+	if err != nil && err.Error() != constants.WAILS_FILE_NONE_SELECTED {
 		return err
 	}
 	if filePath == "" {

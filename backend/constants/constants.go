@@ -20,6 +20,11 @@ const (
 	FFMPEG_KEY                   = "ffmpeg"
 	USE_CACHE_DB_KEY             = "use-cache-db"
 
+	// For wails file dialog
+	// https://github.com/search?q=repo%3Awailsapp%2Fwails+%22shellItem+is+nil%22&type=code
+	// https://github.com/wailsapp/wails/blob/1fb6403e7dfc266b952dbfd1484aeaaa0f66d6f1/v2/internal/go-common-file-dialog/cfd/iShellItemArray.go#L60
+	WAILS_FILE_NONE_SELECTED = "shellItem is nil"
+
 	// Platform names
 	FANTIA       = constants.FANTIA
 	PIXIV        = constants.PIXIV

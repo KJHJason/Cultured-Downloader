@@ -316,6 +316,7 @@ export namespace app {
 	    }
 	}
 	
+	
 	export class PixivPreferences {
 	    ArtworkType: number;
 	    DeleteUgoiraZip: boolean;

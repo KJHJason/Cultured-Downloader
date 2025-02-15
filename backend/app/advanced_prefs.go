@@ -17,7 +17,7 @@ func (a *App) SelectDlDirPath() error {
 	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Select download directory",
 	})
-	if err != nil {
+	if err != nil && err.Error() != constants.WAILS_FILE_NONE_SELECTED {
 		return err
 	}
 	if dirPath == "" {
@@ -72,7 +72,7 @@ func (a *App) SelectFfmpegPath() error {
 		Title:   "Select FFmpeg executable",
 		Filters: filters,
 	})
-	if err != nil {
+	if err != nil && err.Error() != constants.WAILS_FILE_NONE_SELECTED {
 		return err
 	}
 	if ffmpegPath == "" {
