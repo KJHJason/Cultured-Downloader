@@ -6,7 +6,7 @@ require (
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.24.5
-	github.com/wailsapp/wails/v2 v2.10.0
+	github.com/wailsapp/wails/v2 v2.10.1
 	golang.org/x/crypto v0.33.0
 	golang.org/x/oauth2 v0.27.0
 )
