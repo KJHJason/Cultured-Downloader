@@ -23,7 +23,7 @@
     "flowbite-svelte": "^0.47.4",
     "flowbite-svelte-icons": "^2.0.2",
     "nanoid": "^5.0.9",
-    "svelte": "^5.19.9",
+    "svelte": "^5.22.1",
     "sweetalert2": "^11.17.2",
     "tailwindcss": "^4.0.6"
   },
