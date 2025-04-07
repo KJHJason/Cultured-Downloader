@@ -1,6 +1,8 @@
 module github.com/KJHJason/Cultured-Downloader
 
 go 1.23
+toolchain go1.24.1
+
 require (
 	github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20250215093305-40fa8b3621bb
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
@@ -8,7 +10,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/wailsapp/wails/v2 v2.10.1
 	golang.org/x/crypto v0.35.0
-	golang.org/x/oauth2 v0.27.0
+	golang.org/x/oauth2 v0.29.0
 )
 
 require (
