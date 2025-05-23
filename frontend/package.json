@@ -13,14 +13,14 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.5.3",
     "tslib": "^2.6.3",
-    "typescript": "^5.8.3",
+    "typescript": "^5.7.3",
     "vite": "^6.2.0"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.9",
     "date-picker-svelte": "^2.15.1",
     "flowbite": "^3.1.2",
-    "flowbite-svelte": "^1.4.3",
+    "flowbite-svelte": "^0.47.4",
     "flowbite-svelte-icons": "^2.0.2",
     "nanoid": "^5.1.5",
     "svelte": "^5.19.9",
