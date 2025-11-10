@@ -1,8 +1,6 @@
 module github.com/KJHJason/Cultured-Downloader
 
-go 1.23.0
-
-toolchain go1.23.3
+go 1.24.0
 
 require (
 	github.com/KJHJason/Cultured-Downloader-Logic v1.2.1-0.20250523100737-11f21ed70156
@@ -11,7 +9,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/wailsapp/wails/v2 v2.10.1
 	golang.org/x/crypto v0.38.0
-	golang.org/x/oauth2 v0.30.0
+	golang.org/x/oauth2 v0.33.0
 )
 
 require (
